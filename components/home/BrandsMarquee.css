@@ -1,0 +1,159 @@
+/* ==========================================================================
+   Brands Marquee (Auto-Sliding Trusted Production Houses Strip)
+   ========================================================================== */
+
+.brands-marquee-section {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  background-color: rgba(7, 11, 18, 0.92);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px 0;
+  margin-bottom: 48px; /* 48px of space after the strip before the next section */
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  overflow-x: clip;
+  box-sizing: border-box;
+}
+
+/* Gradient Fade Masks on Left and Right Edges (8% fade) */
+.brands-marquee-mask {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  overflow-x: clip;
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 1) 8%,
+    rgba(0, 0, 0, 1) 92%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 1) 8%,
+    rgba(0, 0, 0, 1) 92%,
+    transparent 100%
+  );
+}
+
+/* Moving Track (Linear Infinite Animation) */
+.brands-marquee-track {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  width: max-content;
+  line-height: 1.2;
+  will-change: transform;
+  animation: brandsScroll 35s linear infinite;
+}
+
+/* Pause on Hover and Keyboard Focus */
+.brands-marquee-section:hover .brands-marquee-track,
+.brands-marquee-section:focus-within .brands-marquee-track {
+  animation-play-state: paused;
+}
+
+/* Brand Group List (Equal Gap & Right Padding for 100% Seamless Loop) */
+.brands-marquee-group {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: clamp(28px, 3.5vw, 48px);
+  padding-right: clamp(28px, 3.5vw, 48px);
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+/* Individual Brand Item */
+.brand-item {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(28px, 3.5vw, 48px);
+  white-space: nowrap;
+  user-select: none;
+  line-height: 1.2;
+  padding: 0;
+  margin: 0;
+}
+
+.brand-name {
+  font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+  font-size: clamp(15px, 1.5vw, 19px);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.brand-name:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.brand-separator {
+  font-size: 8px;
+  color: #ffc928;
+  opacity: 0.55;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Continuous Infinite Scroll Keyframes from 0 to -50% */
+@keyframes brandsScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Accessibility: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .brands-marquee-track {
+    animation: none !important;
+  }
+
+  .brands-marquee-mask {
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+  }
+
+  .brands-marquee-mask::-webkit-scrollbar {
+    display: none;
+  }
+
+  .brand-item {
+    scroll-snap-align: start;
+  }
+
+  .brands-marquee-group-clone {
+    display: none !important;
+  }
+}
+
+/* Mobile Adjustments */
+@media (max-width: 640px) {
+  .brands-marquee-section {
+    padding: 14px 0;
+    margin-bottom: 36px;
+  }
+
+  .brand-name {
+    font-size: 14px;
+    letter-spacing: 0.06em;
+  }
+}

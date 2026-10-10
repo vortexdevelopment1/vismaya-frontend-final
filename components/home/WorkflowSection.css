@@ -1,0 +1,68 @@
+/* Workflow / How Vismaya Works Section Styles */
+
+.workflow-section {
+  background-color: var(--bg-primary);
+}
+
+.workflow-header {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 48px auto;
+}
+
+.workflow-heading {
+  font-family: var(--font-heading), 'Playfair Display', serif;
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.15;
+  font-weight: 700;
+  color: #eceaf5;
+  margin: 0 0 12px 0;
+}
+
+.workflow-subtext {
+  font-size: 15px;
+  color: #a3acc2;
+  margin: 0;
+  line-height: 26px;
+}
+
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.workflow-card {
+  padding: 36px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.workflow-step-num {
+  font-family: var(--font-heading), 'Playfair Display', serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(135deg, #ffd54a 0%, #ffbc00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.workflow-step-title {
+  font-family: var(--font-heading), 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #eceaf5;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.workflow-step-desc {
+  font-size: 14px;
+  color: #a3acc2;
+  line-height: 24px;
+  margin: 0;
+}

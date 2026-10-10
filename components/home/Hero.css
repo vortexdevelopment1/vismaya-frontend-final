@@ -1,0 +1,466 @@
+/* ==========================================================================
+   Hero Section Styles (Standard Pure CSS)
+   ========================================================================== */
+
+.hero {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background-color: #050b14;
+  background-image: url("/images/vismaya-hero-bg.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Subtle dark overlay for text contrast */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(5, 11, 20, 0.85) 0%,
+    rgba(5, 11, 20, 0.60) 38%,
+    rgba(5, 11, 20, 0.15) 65%,
+    rgba(5, 11, 20, 0.05) 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Top Navbar
+   -------------------------------------------------------------------------- */
+.hero-navbar-wrapper {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 16px;
+  z-index: 30;
+}
+
+.hero-navbar {
+  display: flex;
+  height: 82px;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 45px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background-color: rgba(17, 25, 39, 0.85);
+  padding: 0 24px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.40);
+}
+
+.hero-logo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+}
+
+.hero-logo-icon {
+  display: flex;
+  height: 48px;
+  width: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background-color: #ffc928;
+  font-size: 24px;
+  font-weight: 700;
+  color: #000000;
+  box-shadow: 0 0 25px rgba(255, 201, 40, 0.40);
+  font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+}
+
+.hero-logo-text {
+  font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.hero-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.hero-nav-link-active {
+  border-radius: 9999px;
+  border: 1px solid rgba(230, 174, 32, 0.60);
+  background-color: #302d1b;
+  padding: 10px 28px;
+  font-weight: 600;
+  color: #ffc928;
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.hero-nav-link {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.80);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.hero-nav-link:hover {
+  color: #ffc928;
+}
+
+.hero-nav-cta {
+  border-radius: 9999px;
+  background-color: #ffc928;
+  padding: 14px 32px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #000000;
+  text-decoration: none;
+  box-shadow: 0 0 25px rgba(255, 201, 40, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  text-transform: uppercase;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hero-nav-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 32px rgba(255, 201, 40, 0.55);
+}
+
+/* --------------------------------------------------------------------------
+   Upper-Right Floating Badges
+   -------------------------------------------------------------------------- */
+.hero-live-badge {
+  position: absolute;
+  right: 27%;
+  top: 18%;
+  z-index: 20;
+  border-radius: 9999px;
+  border: 1px solid rgba(52, 211, 153, 0.70);
+  background-color: rgba(6, 26, 25, 0.80);
+  padding: 10px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #34d399;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 14px rgba(52, 211, 153, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-live-dot {
+  color: #34d399;
+  font-size: 10px;
+  animation: heroPulse 2s ease-in-out infinite;
+}
+
+@keyframes heroPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.6;
+  }
+}
+
+.hero-relay-badge {
+  position: absolute;
+  right: 8%;
+  top: 18%;
+  z-index: 20;
+  border-radius: 9999px;
+  border: 1px solid #c99618;
+  background-color: rgba(16, 23, 33, 0.80);
+  padding: 10px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #ffc928;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 14px rgba(255, 201, 40, 0.20);
+}
+
+/* --------------------------------------------------------------------------
+   Left-Side Hero Content
+   -------------------------------------------------------------------------- */
+.hero-body-wrapper {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+}
+
+.hero-content {
+  width: 100%;
+  max-width: 800px;
+  padding-left: 5%;
+  padding-right: 5%;
+  padding-top: 96px;
+}
+
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.hero-eyebrow-line {
+  height: 2px;
+  width: 56px;
+  background-color: #ffc928;
+}
+
+.hero-eyebrow-text {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #ffc928;
+  text-transform: uppercase;
+}
+
+.hero-title {
+  font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+  font-size: clamp(58px, 6.4vw, 96px);
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 0.95;
+  letter-spacing: -2px;
+  color: #ffffff;
+  margin: 0 0 24px 0;
+}
+
+.hero-title-line {
+  display: block;
+  white-space: nowrap;
+}
+
+.hero-title-accent {
+  color: #ffc928;
+  display: inline-block;
+  white-space: nowrap;
+  text-shadow: 0 0 35px rgba(255, 201, 40, 0.45);
+}
+
+.hero-description {
+  margin-top: 24px;
+  max-width: 680px;
+  font-size: 17px;
+  line-height: 32px;
+  color: #cbd5e1;
+  margin-bottom: 36px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+}
+
+.hero-btn-primary {
+  border-radius: 9999px;
+  background-color: #ffc928;
+  padding: 16px 36px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #000000;
+  text-decoration: none;
+  box-shadow: 0 0 30px rgba(255, 201, 40, 0.35);
+  font-size: 13px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hero-btn-primary:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 36px rgba(255, 201, 40, 0.55);
+}
+
+.hero-btn-secondary {
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.40);
+  background-color: rgba(0, 0, 0, 0.20);
+  padding: 16px 36px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  text-decoration: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 13px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.hero-btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* --------------------------------------------------------------------------
+   Bottom-Right Glass Card
+   -------------------------------------------------------------------------- */
+.hero-stage-card {
+  position: absolute;
+  bottom: 9%;
+  right: 5%;
+  z-index: 20;
+  max-width: 470px;
+  width: calc(100% - 48px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(8, 18, 30, 0.90);
+  padding: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.60);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.hero-stage-card-body {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.hero-stage-card-icon {
+  font-size: 24px;
+  color: #ffc928;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.hero-stage-card-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+}
+
+.hero-stage-card-desc {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 24px;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Bottom-Left Decorative Curves
+   -------------------------------------------------------------------------- */
+.hero-curves {
+  pointer-events: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 128px;
+  width: 55%;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.hero-curve-1 {
+  position: absolute;
+  bottom: 40px;
+  left: -10%;
+  height: 1px;
+  width: 100%;
+  transform: rotate(-3deg);
+  background-color: rgba(201, 150, 24, 0.70);
+}
+
+.hero-curve-2 {
+  position: absolute;
+  bottom: 8px;
+  left: -8%;
+  height: 1px;
+  width: 100%;
+  transform: rotate(2deg);
+  background-color: rgba(201, 150, 24, 0.50);
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Rules
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .hero-live-badge,
+  .hero-relay-badge,
+  .hero-stage-card {
+    display: none;
+  }
+
+  .hero-content {
+    max-width: 100%;
+    padding-top: 130px;
+  }
+}
+
+@media (max-width: 860px) {
+  .hero-nav-links {
+    display: none;
+  }
+
+  .hero-navbar-wrapper {
+    left: 16px;
+    right: 16px;
+  }
+
+  .hero-navbar {
+    height: 70px;
+    padding: 0 16px;
+  }
+
+  .hero-title-line,
+  .hero-title-accent {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 520px) {
+  .hero-eyebrow {
+    margin-bottom: 16px;
+  }
+
+  .hero-eyebrow-line {
+    width: 32px;
+  }
+
+  .hero-eyebrow-text {
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-btn-primary,
+  .hero-btn-secondary {
+    justify-content: center;
+    width: 100%;
+  }
+}

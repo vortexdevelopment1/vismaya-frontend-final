@@ -1,0 +1,107 @@
+/* Portals / Unified Ecosystem Section Styles */
+
+.portals-section {
+  background-color: var(--bg-alt);
+}
+
+.portals-header-wrap {
+  max-width: 680px;
+  margin-bottom: 48px;
+}
+
+.portals-heading {
+  font-family: var(--font-heading), 'Playfair Display', serif;
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.15;
+  font-weight: 700;
+  color: #eceaf5;
+  margin: 0 0 12px 0;
+}
+
+.portals-subtext {
+  font-size: 15px;
+  color: #a3acc2;
+  margin: 0;
+  line-height: 26px;
+}
+
+.portals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.portal-card {
+  padding: 36px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.portal-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 188, 0, 0.35);
+}
+
+.portal-card-top {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.portal-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.portal-icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 213, 74, 0.15) 0%, rgba(255, 188, 0, 0.25) 100%);
+  border: 1px solid rgba(255, 188, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.portal-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #a3acc2;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.portal-title {
+  font-family: var(--font-heading), 'Playfair Display', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #eceaf5;
+  margin: 0 0 6px 0;
+}
+
+.portal-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold);
+  display: block;
+  margin-bottom: 12px;
+}
+
+.portal-description {
+  font-size: 14px;
+  color: #a3acc2;
+  line-height: 24px;
+  margin: 0;
+}

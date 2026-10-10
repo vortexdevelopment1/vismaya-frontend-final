@@ -1,0 +1,259 @@
+/* ==========================================================================
+   Public Opportunities Page Styles
+   ========================================================================== */
+
+.opp-page-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: var(--bg-primary);
+  margin: 0;
+  padding: 0;
+}
+
+/* --------------------------------------------------------------------------
+   1. Header Section
+   - padding-top: 112px on desktop (clears navbar), 96px on mobile
+   - padding-bottom: 24px (24px space from description to divider line)
+   - border-bottom: 1px solid divider line
+   -------------------------------------------------------------------------- */
+.opp-header-section {
+  position: relative;
+  width: 100%;
+  padding-top: 112px;
+  padding-bottom: 24px;
+  margin: 0;
+  background-color: #070b12;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.opp-header-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(50% 50% at 80% 20%, rgba(255, 188, 0, 0.08), transparent 70%);
+  pointer-events: none;
+}
+
+.opp-header-content {
+  max-width: 640px;
+  position: relative;
+  z-index: 5;
+  margin: 0;
+}
+
+.opp-eyebrow {
+  margin-bottom: 12px;
+}
+
+.opp-title {
+  font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+  font-size: clamp(32px, 4.4vw, 52px);
+  font-weight: 700;
+  color: #eceaf5;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px 0;
+}
+
+.opp-description {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #a3acc2;
+  margin: 0;
+  max-width: 640px;
+}
+
+/* --------------------------------------------------------------------------
+   2. Main Section (Filter Card + Opportunity Cards)
+   - padding-top: 24px (exact 24px gap below divider line to filter card)
+   - padding-bottom: 64px (space before footer)
+   - does NOT use global .public-section clamp padding
+   -------------------------------------------------------------------------- */
+.opp-main-section {
+  width: 100%;
+  padding-top: 24px;
+  padding-bottom: 64px;
+  margin: 0;
+  background-color: var(--bg-primary);
+  box-sizing: border-box;
+}
+
+.opp-main-container {
+  display: flex;
+  flex-direction: column;
+  gap: 28px; /* 28px gap between filter card and opportunity cards */
+  margin: 0 auto;
+}
+
+/* --------------------------------------------------------------------------
+   3. Search & Filter Bar Card
+   -------------------------------------------------------------------------- */
+.opp-filter-card {
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* 16px gap between search row and filter fields */
+  border-radius: 20px;
+  background: var(--glass-bg-elevated);
+  border: 1px solid var(--glass-border-elevated);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+  box-sizing: border-box;
+}
+
+/* Search input row */
+.opp-search-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.opp-search-icon {
+  position: absolute;
+  left: 16px;
+  color: #a3acc2;
+  pointer-events: none;
+}
+
+.opp-search-input {
+  width: 100%;
+  padding-left: 46px;
+  padding-right: 42px;
+  height: 48px;
+  box-sizing: border-box;
+}
+
+.opp-search-clear {
+  position: absolute;
+  right: 12px;
+  color: #a3acc2;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  transition: color 0.2s ease;
+}
+
+.opp-search-clear:hover {
+  color: #ffffff;
+}
+
+/* Filter Dropdowns Grid (4 equal columns on desktop) */
+.opp-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px; /* 16px gap between filter fields */
+  width: 100%;
+}
+
+.opp-filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.opp-filter-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+}
+
+/* Results Count & Reset Row (14px padding-top above divider) */
+.opp-results-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 14px;
+  font-size: 13px;
+  width: 100%;
+}
+
+.opp-results-text {
+  color: #a3acc2;
+}
+
+.opp-results-count {
+  color: var(--gold);
+}
+
+.opp-reset-btn {
+  font-size: 12px;
+  color: var(--gold);
+  font-weight: 700;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: opacity 0.2s ease;
+}
+
+.opp-reset-btn:hover {
+  opacity: 0.85;
+}
+
+/* --------------------------------------------------------------------------
+   4. Opportunity Cards Grid
+   -------------------------------------------------------------------------- */
+.opp-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 24px; /* 24px gap between cards */
+  align-items: stretch;
+  width: 100%;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   5. Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .opp-filters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .opp-header-section {
+    padding-top: 96px; /* 96px on mobile */
+    padding-bottom: 20px;
+  }
+
+  .opp-main-section {
+    padding-top: 20px;
+    padding-bottom: 48px;
+  }
+
+  .opp-filter-card {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .opp-filters-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .opp-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
