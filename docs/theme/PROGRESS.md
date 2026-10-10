@@ -10,7 +10,7 @@
 - [x] Step 1: Reference Design Token Extraction (Playwright screenshots & style extraction).
 - [x] Step 2: Current Theme Audit & Mapping (globals.css, Tailwind, CSS variables, components).
 - [x] Step 3: Theme Implementation across Public, Auth, Talent, Recruiter, Admin & Shared components.
-- [ ] Step 4: Verification (build check, before/after screenshots, responsiveness check, git diff audit).
+- [x] Step 4: Verification (build check, before/after screenshots, responsiveness check, git diff audit).
 
 ## Changelog / Log
 - Initialized branch `theme-reference`.
@@ -21,3 +21,4 @@
 - Updated section & component stylesheets (`Hero.css`, `WorkflowSection.css`, `TalentRosterSection.css`, `StatsStudioStrip.css`, `PortalsSection.css`, `BrandsMarquee.css`, `opportunities.css`, `PublicNav.js`, `PublicFooter.js`, `Logo.js`, `AdminSidebar.js`, `RecruiterSidebar.js`, `TalentSidebar.js`, `AdminTopbar.js`, `RecruiterTopbar.js`, `TalentTopbar.js`).
 - Styled Auth pages (`login`, `register`, `forgot-password`).
 - Verified build: `npm run build` passed with zero errors!
+- Captured verification screenshots for desktop & mobile across all public & auth pages into `docs/theme/screenshots/`.
