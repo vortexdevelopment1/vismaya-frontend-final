@@ -114,7 +114,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
           width: "var(--sidebar-width, 260px)",
           height: "100vh",
           maxHeight: "100vh",
-          backgroundColor: "#070b12",
+          backgroundColor: "var(--bg-deep, #292C29)",
           borderRight: "1px solid rgba(255, 255, 255, 0.08)",
           display: "flex",
           flexDirection: "column",
@@ -327,7 +327,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
           style={{
             padding: "10px 14px",
             borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-            backgroundColor: "#070b12",
+            backgroundColor: "var(--bg-deep, #292C29)",
             flexShrink: 0,
           }}
         >

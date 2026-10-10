@@ -45,12 +45,12 @@ export default function Logo({
       <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
         <span
           style={{
-            fontFamily: "var(--font-heading), 'Playfair Display', serif",
-            fontWeight: "700",
+            fontFamily: "var(--font-heading), Georgia, serif",
+            fontWeight: "400",
             fontSize: isSmall ? "16px" : "20px",
             letterSpacing: "0.14em",
             textTransform: "uppercase",
-            color: "#eceaf5",
+            color: variant === "dark" ? "var(--text-primary, #292C29)" : "#FAF9F6",
           }}
         >
           VISMAYA

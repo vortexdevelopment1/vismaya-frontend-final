@@ -130,13 +130,13 @@ export default function ForgotPasswordPage() {
             style={{
               width: "100%",
               maxWidth: "460px",
-              backgroundColor: "rgba(15, 22, 38, 0.85)",
-              borderRadius: "24px",
+              backgroundColor: "var(--bg-surface)",
+              borderRadius: "var(--radius-card)",
               padding: "clamp(28px, 5vw, 40px)",
-              boxShadow: "0 24px 60px rgba(0, 0, 0, 0.65)",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
+              boxShadow: "var(--shadow-md)",
+              border: "1px solid var(--border-color)",
               boxSizing: "border-box",
-              color: "#eceaf5",
+              color: "var(--text-primary)",
             }}
           >
             <div style={{ textAlign: "center", marginBottom: "24px" }}>

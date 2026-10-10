@@ -5,13 +5,13 @@ export default function PublicFooter() {
   return (
     <footer
       style={{
-        backgroundColor: "#070b12",
-        borderTop: "1px solid rgba(255, 255, 255, 0.10)",
+        backgroundColor: "var(--bg-deep, #292C29)",
+        borderTop: "1px solid rgba(255, 255, 255, 0.12)",
         paddingTop: "clamp(56px, 8vw, 84px)",
         paddingBottom: "36px",
         marginTop: "auto",
         width: "100%",
-        color: "#eceaf5",
+        color: "var(--text-dark-primary, #FAF9F6)",
       }}
     >
       <div className="public-container">
@@ -34,7 +34,7 @@ export default function PublicFooter() {
             {/* Brand column */}
             <div style={{ maxWidth: "380px", display: "flex", flexDirection: "column", gap: "16px" }}>
               <Logo href="/" variant="light" showSubtitle={true} />
-              <p style={{ color: "#a3acc2", fontSize: "14px", lineHeight: "24px", margin: 0 }}>
+              <p style={{ color: "var(--text-dark-muted, #99948A)", fontSize: "14px", lineHeight: "24px", margin: 0 }}>
                 India&apos;s premier verified entertainment casting platform connecting elite artists, casting directors, and top production houses with guaranteed authenticity.
               </p>
             </div>
@@ -53,16 +53,16 @@ export default function PublicFooter() {
                 <span style={{ fontSize: "11px", fontWeight: "800", color: "var(--gold)", letterSpacing: "0.16em", textTransform: "uppercase" }}>
                   Platform
                 </span>
-                <Link href="/talent/dashboard" style={{ fontSize: "14px", color: "#a3acc2", textDecoration: "none" }} className="footer-link">
+                <Link href="/talent/dashboard" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   Talent Portal
                 </Link>
-                <Link href="/recruiter/dashboard" style={{ fontSize: "14px", color: "#a3acc2", textDecoration: "none" }} className="footer-link">
+                <Link href="/recruiter/dashboard" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   Organization Portal
                 </Link>
-                <Link href="/admin/dashboard" style={{ fontSize: "14px", color: "#a3acc2", textDecoration: "none" }} className="footer-link">
+                <Link href="/admin/dashboard" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   Vismaya Desk
                 </Link>
-                <Link href="/opportunities" style={{ fontSize: "14px", color: "#a3acc2", textDecoration: "none" }} className="footer-link">
+                <Link href="/opportunities" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   Active Casting Calls
                 </Link>
               </div>
@@ -72,16 +72,16 @@ export default function PublicFooter() {
                 <span style={{ fontSize: "11px", fontWeight: "800", color: "var(--gold)", letterSpacing: "0.16em", textTransform: "uppercase" }}>
                   Company
                 </span>
-                <Link href="/" style={{ fontSize: "14px", color: "#a3acc2", textDecoration: "none" }} className="footer-link">
+                <Link href="/" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   Home
                 </Link>
-                <Link href="/about" style={{ fontSize: "14px", color: "#a3acc2", textDecoration: "none" }} className="footer-link">
+                <Link href="/about" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   About Us
                 </Link>
-                <Link href="/contact" style={{ fontSize: "14px", color: "#a3acc2", textDecoration: "none" }} className="footer-link">
+                <Link href="/contact" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   Contact Support
                 </Link>
-                <Link href="/register" style={{ fontSize: "14px", color: "#a3acc2", textDecoration: "none" }} className="footer-link">
+                <Link href="/register" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   Join Network
                 </Link>
               </div>
@@ -91,16 +91,16 @@ export default function PublicFooter() {
                 <span style={{ fontSize: "11px", fontWeight: "800", color: "var(--gold)", letterSpacing: "0.16em", textTransform: "uppercase" }}>
                   Trust &amp; Legal
                 </span>
-                <Link href="/about" style={{ fontSize: "14px", color: "#a3acc2", textDecoration: "none" }} className="footer-link">
+                <Link href="/about" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   KYC Verification
                 </Link>
-                <Link href="/about" style={{ fontSize: "14px", color: "#a3acc2", textDecoration: "none" }} className="footer-link">
+                <Link href="/about" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   Privacy Policy
                 </Link>
-                <Link href="/about" style={{ fontSize: "14px", color: "#a3acc2", textDecoration: "none" }} className="footer-link">
+                <Link href="/about" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   Terms of Service
                 </Link>
-                <Link href="/login" style={{ fontSize: "14px", color: "#a3acc2", textDecoration: "none" }} className="footer-link">
+                <Link href="/login" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   Account Sign In
                 </Link>
               </div>
@@ -118,7 +118,7 @@ export default function PublicFooter() {
               alignItems: "center",
               gap: "16px",
               fontSize: "13px",
-              color: "#a3acc2",
+              color: "var(--text-dark-muted, #99948A)",
             }}
           >
             <span>&copy; {new Date().getFullYear()} Vismaya Casting &amp; Talent Platform. All rights reserved.</span>
@@ -132,7 +132,7 @@ export default function PublicFooter() {
           transition: color 0.18s ease;
         }
         :global(.footer-link:hover) {
-          color: #ffbc00 !important;
+          color: var(--gold) !important;
         }
         @media (max-width: 767px) {
           .footer-columns {

@@ -24,8 +24,8 @@
   padding-top: 112px;
   padding-bottom: 24px;
   margin: 0;
-  background-color: #070b12;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  background-color: var(--bg-alt);
+  border-bottom: 1px solid var(--border-color);
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -33,7 +33,7 @@
 .opp-header-glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(50% 50% at 80% 20%, rgba(255, 188, 0, 0.08), transparent 70%);
+  background: radial-gradient(50% 50% at 80% 20%, rgba(155, 122, 63, 0.08), transparent 70%);
   pointer-events: none;
 }
 
@@ -49,10 +49,10 @@
 }
 
 .opp-title {
-  font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+  font-family: var(--font-heading), Georgia, serif;
   font-size: clamp(32px, 4.4vw, 52px);
-  font-weight: 700;
-  color: #eceaf5;
+  font-weight: 400;
+  color: var(--text-primary);
   line-height: 1.1;
   letter-spacing: -0.02em;
   margin: 0 0 12px 0;
@@ -60,8 +60,8 @@
 
 .opp-description {
   font-size: 15px;
-  line-height: 1.6;
-  color: #a3acc2;
+  line-height: 1.8;
+  color: var(--text-secondary);
   margin: 0;
   max-width: 640px;
 }

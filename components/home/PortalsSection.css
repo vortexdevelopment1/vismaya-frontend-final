@@ -9,18 +9,27 @@
   margin-bottom: 48px;
 }
 
+.portals-section {
+  background-color: var(--bg-alt);
+}
+
+.portals-header-wrap {
+  max-width: 680px;
+  margin-bottom: 48px;
+}
+
 .portals-heading {
-  font-family: var(--font-heading), 'Playfair Display', serif;
+  font-family: var(--font-heading), Georgia, serif;
   font-size: clamp(30px, 4vw, 44px);
   line-height: 1.15;
-  font-weight: 700;
-  color: #eceaf5;
+  font-weight: 400;
+  color: var(--text-primary);
   margin: 0 0 12px 0;
 }
 
 .portals-subtext {
   font-size: 15px;
-  color: #a3acc2;
+  color: var(--text-secondary);
   margin: 0;
   line-height: 26px;
 }
@@ -38,12 +47,15 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 24px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
   transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
 .portal-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 188, 0, 0.35);
+  border-color: var(--gold);
 }
 
 .portal-card-top {
@@ -61,33 +73,32 @@
 .portal-icon-box {
   width: 52px;
   height: 52px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(255, 213, 74, 0.15) 0%, rgba(255, 188, 0, 0.25) 100%);
-  border: 1px solid rgba(255, 188, 0, 0.35);
+  border-radius: var(--radius-btn);
+  background: var(--gold-bg);
+  border: 1px solid var(--gold-border);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--gold);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .portal-chip {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 4px 10px;
-  border-radius: 999px;
-  background-color: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #a3acc2;
+  border-radius: var(--radius-pill);
+  background-color: var(--bg-alt);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 .portal-title {
-  font-family: var(--font-heading), 'Playfair Display', serif;
+  font-family: var(--font-heading), Georgia, serif;
   font-size: 24px;
-  font-weight: 700;
-  color: #eceaf5;
+  font-weight: 400;
+  color: var(--text-primary);
   margin: 0 0 6px 0;
 }
 
@@ -101,7 +112,7 @@
 
 .portal-description {
   font-size: 14px;
-  color: #a3acc2;
+  color: var(--text-secondary);
   line-height: 24px;
   margin: 0;
 }

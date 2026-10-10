@@ -72,7 +72,7 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
       <aside
         style={{
           width: "var(--sidebar-width)",
-          backgroundColor: "#070b12",
+          backgroundColor: "var(--bg-deep, #292C29)",
           borderRight: "1px solid rgba(255, 255, 255, 0.08)",
           display: "flex",
           flexDirection: "column",
@@ -259,7 +259,7 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
             padding: "16px",
             paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))",
             borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-            backgroundColor: "#070b12",
+            backgroundColor: "var(--bg-deep, #292C29)",
           }}
         >
           <div

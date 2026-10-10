@@ -40,10 +40,10 @@ export default function AdminTopbar({ onOpenMobile }) {
       style={{
         height: "var(--topbar-height, 72px)",
         minHeight: "72px",
-        backgroundColor: "rgba(10, 15, 25, 0.88)",
+        backgroundColor: "rgba(250, 249, 246, 0.95)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+        borderBottom: "1px solid var(--border-color, #E4E1D9)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",

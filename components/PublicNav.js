@@ -49,12 +49,12 @@ export default function PublicNav() {
           margin: "0 auto",
           height: "64px",
           padding: "0 10px 0 24px",
-          borderRadius: "999px",
-          backgroundColor: "rgba(255, 255, 255, 0.055)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
-          backdropFilter: "blur(16px) saturate(150%)",
-          WebkitBackdropFilter: "blur(16px) saturate(150%)",
-          boxShadow: "0 20px 50px rgba(0, 0, 0, 0.40)",
+          borderRadius: "var(--radius-card, 6px)",
+          backgroundColor: "rgba(250, 249, 246, 0.95)",
+          border: "1px solid var(--border-color, #E4E1D9)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          boxShadow: "var(--shadow-sm, 0 1px 4px rgba(41, 44, 41, 0.04))",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -62,7 +62,7 @@ export default function PublicNav() {
         }}
       >
         {/* Left: Logo */}
-        <Logo href="/" variant="light" />
+        <Logo href="/" variant="dark" />
 
         {/* Center: Navigation Links */}
         <nav
@@ -83,17 +83,17 @@ export default function PublicNav() {
                 aria-current={active ? "page" : undefined}
                 style={{
                   padding: "8px 18px",
-                  borderRadius: "999px",
-                  fontWeight: active ? "700" : "500",
+                  borderRadius: "var(--radius-pill, 999px)",
+                  fontWeight: active ? "600" : "400",
                   fontSize: "13px",
                   letterSpacing: "0.02em",
                   display: "inline-flex",
                   alignItems: "center",
                   whiteSpace: "nowrap",
                   textDecoration: "none",
-                  color: active ? "#FFC72C" : "rgba(236, 234, 245, 0.85)",
-                  backgroundColor: active ? "rgba(255, 255, 255, 0.08)" : "transparent",
-                  border: active ? "1px solid rgba(255, 199, 44, 0.35)" : "1px solid transparent",
+                  color: active ? "var(--gold, #9B7A3F)" : "var(--text-primary, #292C29)",
+                  backgroundColor: active ? "var(--gold-bg, rgba(155, 122, 63, 0.1))" : "transparent",
+                  border: active ? "1px solid var(--gold-border, rgba(155, 122, 63, 0.28))" : "1px solid transparent",
                   transition: "all 0.18s ease",
                 }}
                 className="nav-link-pill"
@@ -109,27 +109,27 @@ export default function PublicNav() {
           <Link
             href="/register"
             style={{
-              minHeight: "42px",
-              height: "42px",
+              minHeight: "40px",
+              height: "40px",
               padding: "0 22px",
               fontSize: "12px",
-              fontWeight: "900",
-              borderRadius: "999px",
+              fontWeight: "600",
+              borderRadius: "var(--radius-btn, 4px)",
               display: "inline-flex",
               alignItems: "center",
               gap: "6px",
               letterSpacing: "0.10em",
               textTransform: "uppercase",
-              backgroundColor: "#FFC72C",
-              color: "#080c14",
+              backgroundColor: "var(--gold, #9B7A3F)",
+              color: "var(--text-dark-primary, #FAF9F6)",
               textDecoration: "none",
-              boxShadow: "0 0 24px rgba(255, 199, 44, 0.55)",
+              boxShadow: "var(--gold-glow)",
               transition: "all 0.2s ease",
             }}
             className="nav-register-btn"
           >
             <span>Register</span>
-            <ArrowRight size={14} strokeWidth={2.5} />
+            <ArrowRight size={14} strokeWidth={2} />
           </Link>
         </div>
 
@@ -140,14 +140,12 @@ export default function PublicNav() {
           aria-expanded={mobileMenuOpen}
           className="public-nav-burger"
           style={{
-            width: "44px",
-            height: "44px",
-            borderRadius: "50%",
-            border: "1px solid rgba(255, 255, 255, 0.18)",
-            backgroundColor: "rgba(255, 255, 255, 0.08)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            color: "#eceaf5",
+            width: "40px",
+            height: "40px",
+            borderRadius: "var(--radius-btn, 4px)",
+            border: "1px solid var(--border-color, #E4E1D9)",
+            backgroundColor: "var(--bg-surface, #FFFFFF)",
+            color: "var(--text-primary, #292C29)",
             cursor: "pointer",
             display: "none",
             alignItems: "center",
@@ -169,12 +167,10 @@ export default function PublicNav() {
             maxWidth: "1280px",
             margin: "12px auto 0 auto",
             padding: "20px 24px",
-            backgroundColor: "rgba(15, 22, 38, 0.96)",
-            backdropFilter: "blur(20px) saturate(160%)",
-            WebkitBackdropFilter: "blur(20px) saturate(160%)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
-            borderRadius: "24px",
-            boxShadow: "0 24px 50px rgba(0, 0, 0, 0.60)",
+            backgroundColor: "var(--bg-surface, #FFFFFF)",
+            border: "1px solid var(--border-color, #E4E1D9)",
+            borderRadius: "var(--radius-card, 6px)",
+            boxShadow: "var(--shadow-md)",
             display: "flex",
             flexDirection: "column",
             gap: "8px",
@@ -193,11 +189,11 @@ export default function PublicNav() {
                   display: "flex",
                   alignItems: "center",
                   padding: "0 14px",
-                  fontWeight: active ? "700" : "600",
+                  fontWeight: active ? "600" : "400",
                   fontSize: "14px",
-                  color: active ? "#ffbc00" : "#eceaf5",
-                  backgroundColor: active ? "rgba(255, 188, 0, 0.12)" : "transparent",
-                  borderRadius: "12px",
+                  color: active ? "var(--gold, #9B7A3F)" : "var(--text-primary, #292C29)",
+                  backgroundColor: active ? "var(--gold-bg, rgba(155, 122, 63, 0.1))" : "transparent",
+                  borderRadius: "var(--radius-btn, 4px)",
                   textDecoration: "none",
                   transition: "all 0.18s ease",
                 }}
@@ -207,7 +203,7 @@ export default function PublicNav() {
             );
           })}
 
-          <div style={{ height: "1px", backgroundColor: "rgba(255, 255, 255, 0.10)", margin: "8px 0" }} />
+          <div style={{ height: "1px", backgroundColor: "var(--border-color, #E4E1D9)", margin: "8px 0" }} />
 
           <Link
             href="/register"
@@ -215,17 +211,19 @@ export default function PublicNav() {
             className="btn-primary"
             style={{
               width: "100%",
-              height: "48px",
-              minHeight: "48px",
+              height: "44px",
+              minHeight: "44px",
               fontSize: "12px",
-              fontWeight: "800",
+              fontWeight: "600",
               justifyContent: "center",
-              borderRadius: "12px",
+              borderRadius: "var(--radius-btn, 4px)",
               display: "inline-flex",
               alignItems: "center",
               gap: "8px",
               textTransform: "uppercase",
               letterSpacing: "0.12em",
+              backgroundColor: "var(--gold, #9B7A3F)",
+              color: "var(--text-dark-primary, #FAF9F6)",
             }}
           >
             <span>Register</span>
@@ -236,8 +234,8 @@ export default function PublicNav() {
 
       <style jsx>{`
         :global(.nav-link-pill:hover) {
-          color: #ffbc00 !important;
-          background-color: rgba(255, 255, 255, 0.08) !important;
+          color: var(--gold, #9B7A3F) !important;
+          background-color: var(--gold-bg, rgba(155, 122, 63, 0.08)) !important;
         }
 
         @media (max-width: 900px) {

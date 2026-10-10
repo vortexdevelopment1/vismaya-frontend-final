@@ -73,7 +73,7 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
         style={{
           width: "var(--sidebar-width)",
           maxWidth: "min(var(--sidebar-width), 85vw)",
-          backgroundColor: "#070b12",
+          backgroundColor: "var(--bg-deep, #292C29)",
           borderRight: "1px solid rgba(255, 255, 255, 0.08)",
           display: "flex",
           flexDirection: "column",
@@ -259,7 +259,7 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
           style={{
             padding: "16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px",
             borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-            backgroundColor: "#070b12",
+            backgroundColor: "var(--bg-deep, #292C29)",
             flexShrink: 0,
           }}
         >

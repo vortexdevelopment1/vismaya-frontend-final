@@ -3,7 +3,8 @@
    ========================================================================== */
 
 .talent-roster-section {
-  background-color: #070b12;
+  background-color: var(--bg-deep);
+  color: var(--text-inverse);
   position: relative;
   overflow: hidden;
 }
@@ -36,30 +37,30 @@
 .talent-eyebrow-line {
   height: 2px;
   width: 36px;
-  background-color: #ffc928;
+  background-color: var(--gold);
   display: inline-block;
 }
 
 .talent-eyebrow-text {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #ffc928;
+  color: var(--gold);
 }
 
 .talent-section-title {
-  font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+  font-family: var(--font-heading), Georgia, serif;
   font-size: clamp(32px, 4.4vw, 52px);
   line-height: 1.1;
-  font-weight: 700;
-  color: #eceaf5;
+  font-weight: 400;
+  color: var(--text-dark-primary);
   margin: 0 0 16px 0;
 }
 
 .talent-section-desc {
   font-size: 15px;
-  color: #94a3b8;
+  color: var(--text-dark-muted);
   line-height: 26px;
   max-width: 560px;
   margin: 0 0 28px 0;
@@ -74,39 +75,36 @@
   justify-content: center;
   gap: 8px;
   width: auto;
-  height: 50px;
+  height: 48px;
   padding: 0 28px;
-  border-radius: 12px;
-  font-family: var(--font-sans), 'Inter', sans-serif;
-  font-weight: 800;
+  border-radius: var(--radius-btn);
+  font-family: var(--font-body), Arial, sans-serif;
+  font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  background: linear-gradient(135deg, #ffd54a 0%, #ffbc00 100%);
-  color: #1a1300;
+  background: var(--gold);
+  color: var(--text-dark-primary);
   text-decoration: none;
-  box-shadow: 0 0 24px rgba(255, 188, 0, 0.28);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--gold-glow);
+  transition: transform 0.2s ease, background-color 0.2s ease;
   flex-shrink: 0;
   box-sizing: border-box;
 }
 
 .talent-join-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 32px rgba(255, 188, 0, 0.45);
+  background-color: var(--primary-hover);
 }
 
 /* --------------------------------------------------------------------------
-   Right Column: Glass Info Box & Segmented Filter Pills
+   Right Column: Info Box & Segmented Filter Pills
    -------------------------------------------------------------------------- */
 .talent-info-box {
-  background-color: rgba(255, 255, 255, 0.055);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-card);
   padding: 20px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   display: flex;
   flex-direction: column;
 }
