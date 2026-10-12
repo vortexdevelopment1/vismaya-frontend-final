@@ -3,82 +3,59 @@
 import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Star, CheckCircle2, Lock, Shield, User } from "lucide-react";
+import { Star, Shield, MapPin, User, ArrowRight } from "lucide-react";
 import { eliteTalentRoster } from "@/lib/public/homeData";
 import "./TalentRosterSection.css";
 
-// Single Talent Card Component with Error Fallback
-function TalentCardItem({ talent }) {
+// Single Talent Card Item
+function TalentCardItem({ talent, index }) {
   const [imgError, setImgError] = useState(false);
+  const isHighlighted = talent.rating === "5.0" || talent.slug === "kabir-mehta" || talent.featured;
 
   return (
-    <div className="talent-card">
-      {/* 1. Full Bleed 4:5 Photo Area */}
-      <div className="talent-photo-wrap">
+    <article
+      className={`talent-card ${isHighlighted ? "talent-card-highlighted" : ""}`}
+      style={{ animationDelay: `${(index + 1) * 90}ms` }}
+    >
+      {/* 1. Real Portrait Photo Area (4:5 Aspect Ratio, No dark card overlay) */}
+      <div className="talent-card-photo-wrap">
         {!imgError && talent.image ? (
           <Image
             src={talent.image}
             alt={`${talent.name}, ${talent.role}`}
             fill
-            sizes="(max-width: 600px) 100vw, (max-width: 960px) 50vw, 25vw"
-            className="talent-photo"
+            sizes="(max-width: 600px) 100vw, (max-width: 1050px) 50vw, 25vw"
+            className="talent-card-photo"
             unoptimized={true}
             priority={true}
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="talent-fallback-silhouette" aria-hidden="true">
-            <User size={72} strokeWidth={1.2} className="talent-silhouette-icon" />
+          <div className="talent-card-fallback" aria-hidden="true">
+            <User size={64} strokeWidth={1.2} className="talent-fallback-icon" />
           </div>
         )}
 
-        {/* Bottom Dark Gradient Vignette Overlay */}
-        <div className="talent-photo-gradient" aria-hidden="true" />
-
-        {/* Top-Right Clean Rating Chip */}
-        <div className="talent-rating-chip" aria-label={`Rating: ${talent.rating} out of 5 stars`}>
-          <Star size={11} fill="#ffc928" stroke="#ffc928" />
+        {/* Top-Right Clean Rating Badge: White pill, gold star, charcoal score */}
+        <div
+          className="talent-card-rating-badge"
+          aria-label={`Rating: ${talent.rating} out of 5 stars`}
+        >
+          <Star size={12} fill="#8A6B2E" stroke="#8A6B2E" />
           <span>{talent.rating}</span>
         </div>
-
-        {/* Bottom Text Overlaid on Photo Gradient */}
-        <div className="talent-photo-info">
-          <h3 className="talent-photo-name" title={talent.name}>
-            {talent.name}
-          </h3>
-          <div className="talent-photo-subline" title={`${talent.role} • ${talent.city}`}>
-            <span className="talent-photo-role">{talent.role}</span>
-            <span className="talent-photo-dot">•</span>
-            <span className="talent-photo-city">{talent.city}</span>
-          </div>
-        </div>
       </div>
 
-      {/* 2. Card Body Details */}
-      <div className="talent-card-body">
-        {/* Experience Line */}
-        <div className="talent-card-exp">
-          <CheckCircle2 size={13} className="talent-check-icon" />
-          <span>{talent.experience}</span>
+      {/* 2. Bottom Info Area: White, clean typography, no text truncation */}
+      <div className="talent-card-info">
+        <h3 className="talent-card-name">{talent.name}</h3>
+        <p className="talent-card-role">{talent.role}</p>
+        <div className="talent-card-city">
+          <MapPin size={13} className="talent-city-icon" />
+          <span>{talent.city}</span>
         </div>
-
-        {/* Category Tag Chips */}
-        <div className="talent-card-tags">
-          {talent.tags &&
-            talent.tags.map((tag) => (
-              <span key={tag} className="talent-tag-pill">
-                {tag}
-              </span>
-            ))}
-        </div>
-
-        {/* Locked Portfolio Action Button (Pinned to Bottom) */}
-        <Link href="/login" className="talent-card-btn">
-          <Lock size={12} />
-          <span>LOGIN TO VIEW PORTFOLIO</span>
-        </Link>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -95,7 +72,7 @@ export default function TalentRosterSection({ roster }) {
     setTimeout(() => {
       setActiveCategory(category);
       setIsFading(false);
-    }, 150);
+    }, 120);
   };
 
   const filteredTalent = useMemo(() => {
@@ -111,43 +88,50 @@ export default function TalentRosterSection({ roster }) {
   }, [activeCategory, allTalent]);
 
   return (
-    <section className="public-section talent-roster-section" id="talent-roster">
-      <div className="public-container">
-        {/* 1. Header Row (2-Column Grid) */}
-        <div className="talent-header-grid">
+    <section className="talent-roster-section-light" id="talent-roster">
+      {/* Subtle radial gold glow at top-left (no pink tint) */}
+      <div className="talent-roster-bg-glow" aria-hidden="true" />
+
+      <div className="talent-roster-container">
+        {/* 1. Header Row (Left Editorial + Right Info Card) */}
+        <div className="talent-roster-header">
           {/* Left Column */}
-          <div className="talent-header-left">
-            <div className="talent-eyebrow">
-              <span className="talent-eyebrow-line" />
-              <span className="talent-eyebrow-text">VERIFIED SPOTLIGHT</span>
+          <div className="talent-roster-header-left">
+            <div className="talent-roster-eyebrow">
+              <span className="talent-roster-eyebrow-line" aria-hidden="true" />
+              <span className="talent-roster-eyebrow-text">VERIFIED SPOTLIGHT</span>
             </div>
 
-            <h2 className="talent-section-title">Elite Talent Roster.</h2>
+            <h2 className="talent-roster-title">
+              Elite Talent Roster<span className="talent-roster-title-dot">.</span>
+            </h2>
 
-            <p className="talent-section-desc">
-              Discover verified actors, lead models, voice artists, and performers vetted by Vismaya compliance desk.
+            <p className="talent-roster-subtext">
+              Discover verified actors, lead models, voice artists, and performers vetted by the
+              Vismaya compliance desk.
             </p>
 
-            <Link href="/register" className="talent-join-btn">
-              <span>Join as Talent</span>
-              <ArrowRight size={14} />
+            <Link href="/register" className="talent-roster-cta-btn">
+              <span>JOIN AS TALENT →</span>
             </Link>
           </div>
 
-          {/* Right Column: Glass Info Box with Filter Pills */}
-          <div className="talent-info-box">
-            <div className="talent-info-header">
-              <Shield size={16} className="talent-shield-icon" />
-              <h3 className="talent-info-title">Why is data obscured?</h3>
+          {/* Right Column (~440px Info Card with Filter Pills) */}
+          <div className="talent-roster-info-card">
+            <div className="talent-roster-info-head">
+              <Shield size={18} className="talent-roster-shield-icon" />
+              <h3 className="talent-roster-info-title">Why is data obscured?</h3>
             </div>
 
-            <p className="talent-info-desc">
-              To protect our roster from scraping and unsolicited contact, full portfolios and contact details are visible only to logged-in users. All contact is handled through Vismaya.
+            <p className="talent-roster-info-body">
+              To protect our roster from scraping and unsolicited contact, full portfolios and
+              contact details are visible only to logged-in users. All contact is handled through
+              Vismaya.
             </p>
 
-            {/* Segmented Filter Pills */}
+            {/* Filter Pills in Track */}
             <div
-              className="talent-filter-segmented"
+              className="talent-roster-filter-track"
               role="group"
               aria-label="Filter talent by category"
             >
@@ -155,7 +139,9 @@ export default function TalentRosterSection({ roster }) {
                 <button
                   key={cat}
                   type="button"
-                  className={`talent-filter-pill ${activeCategory === cat ? "talent-filter-pill-active" : ""}`}
+                  className={`talent-roster-filter-pill ${
+                    activeCategory === cat ? "active" : ""
+                  }`}
                   onClick={() => handleCategoryChange(cat)}
                   aria-pressed={activeCategory === cat}
                 >
@@ -166,18 +152,19 @@ export default function TalentRosterSection({ roster }) {
           </div>
         </div>
 
-        {/* 1px Divider Below Header */}
-        <div className="talent-header-divider" aria-hidden="true" />
-
-        {/* 2. Talent Cards Grid with Fixed Track Columns */}
-        <div className={`talent-cards-grid ${isFading ? "talent-grid-fade" : ""}`}>
+        {/* 2. Cards Grid */}
+        <div className={`talent-roster-cards-grid ${isFading ? "is-fading" : ""}`}>
           {filteredTalent.length > 0 ? (
-            filteredTalent.map((talent) => (
-              <TalentCardItem key={talent.slug || talent.name} talent={talent} />
+            filteredTalent.map((talent, index) => (
+              <TalentCardItem
+                key={talent.slug || talent.name}
+                talent={talent}
+                index={index}
+              />
             ))
           ) : (
-            <div className="talent-empty-state">
-              <p className="talent-empty-text">No talent in this category yet.</p>
+            <div className="talent-roster-empty">
+              <p>No verified talent found in this category.</p>
             </div>
           )}
         </div>

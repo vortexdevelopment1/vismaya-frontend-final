@@ -73,13 +73,13 @@ export default function AdminAnalyticsPage() {
         subtitle="Live casting velocity metrics, talent demographic distributions, application conversion funnels, and broadcast messaging center."
         badge="Platform Intelligence"
         action={
-          /* Date Range Selector */
+          /* Date Range Selector - Segmented Control */
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
               borderRadius: "12px",
               padding: "4px",
               gap: "4px",
@@ -100,17 +100,18 @@ export default function AdminAnalyticsPage() {
                   key={range.key}
                   onClick={() => setTimeRange(range.key)}
                   style={{
-                    padding: "6px clamp(8px, 2vw, 14px)",
+                    padding: "6px clamp(10px, 2vw, 14px)",
                     borderRadius: "8px",
-                    backgroundColor: isActive ? "var(--gold)" : "transparent",
-                    color: isActive ? "#1a1300" : "#a3acc2",
+                    backgroundColor: isActive ? "#8A6B2E" : "transparent",
+                    color: isActive ? "#FFFFFF" : "#5A584F",
                     border: "none",
-                    fontSize: "12px",
-                    fontWeight: "700",
+                    fontSize: "13px",
+                    fontWeight: "600",
                     cursor: "pointer",
                     transition: "all 0.18s ease",
                     whiteSpace: "nowrap",
                     flexShrink: 0,
+                    fontFamily: "Inter, sans-serif",
                   }}
                 >
                   {range.label}
@@ -174,36 +175,34 @@ export default function AdminAnalyticsPage() {
         {/* User Growth Line Chart */}
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
             borderRadius: "16px",
             padding: "24px",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+            boxShadow: "0 2px 4px rgba(43,45,42,0.04), 0 12px 28px rgba(43,45,42,0.06)",
             display: "flex",
             flexDirection: "column",
             gap: "16px",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #E8E2D4", paddingBottom: "14px" }}>
             <div>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#eceaf5", margin: 0 }}>
+              <h3 style={{ fontSize: "20px", fontFamily: "var(--font-playfair), serif", fontWeight: "600", color: "#2B2D2A", margin: 0 }}>
                 User Growth Velocity
               </h3>
-              <p style={{ fontSize: "13px", color: "#a3acc2", margin: "2px 0 0 0" }}>
+              <p style={{ fontSize: "14px", color: "#5A584F", margin: "4px 0 0 0" }}>
                 Talent profiles verified vs recruiter agency signups
               </p>
             </div>
             <span
               style={{
                 fontSize: "11px",
-                color: "var(--gold)",
+                color: "#6E5420",
                 fontWeight: "700",
-                backgroundColor: "rgba(255, 188, 0, 0.14)",
-                padding: "2px 8px",
+                backgroundColor: "rgba(138, 107, 46, 0.12)",
+                padding: "3px 10px",
                 borderRadius: "999px",
-                border: "1px solid rgba(255, 188, 0, 0.30)",
+                border: "1px solid rgba(138, 107, 46, 0.25)",
               }}
             >
               {timeRange.toUpperCase()}
@@ -216,24 +215,22 @@ export default function AdminAnalyticsPage() {
         {/* Category Breakdown */}
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
             borderRadius: "16px",
             padding: "24px",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+            boxShadow: "0 2px 4px rgba(43,45,42,0.04), 0 12px 28px rgba(43,45,42,0.06)",
             display: "flex",
             flexDirection: "column",
             gap: "16px",
           }}
         >
-          <div style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "12px" }}>
-            <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#eceaf5", margin: 0 }}>
+          <div style={{ borderBottom: "1px solid #E8E2D4", paddingBottom: "14px" }}>
+            <h3 style={{ fontSize: "20px", fontFamily: "var(--font-playfair), serif", fontWeight: "600", color: "#2B2D2A", margin: 0 }}>
               Casting Calls by Category
             </h3>
-            <p style={{ fontSize: "13px", color: "#a3acc2", margin: "2px 0 0 0" }}>
-              Distribution across OTT, Films, Commercials & Music
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: "4px 0 0 0" }}>
+              Distribution across OTT, Films, Commercials &amp; Music
             </p>
           </div>
 
@@ -252,23 +249,21 @@ export default function AdminAnalyticsPage() {
         {/* Application Volume Bar Chart */}
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
             borderRadius: "16px",
             padding: "24px",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+            boxShadow: "0 2px 4px rgba(43,45,42,0.04), 0 12px 28px rgba(43,45,42,0.06)",
             display: "flex",
             flexDirection: "column",
             gap: "16px",
           }}
         >
-          <div style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "12px" }}>
-            <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#eceaf5", margin: 0 }}>
+          <div style={{ borderBottom: "1px solid #E8E2D4", paddingBottom: "14px" }}>
+            <h3 style={{ fontSize: "20px", fontFamily: "var(--font-playfair), serif", fontWeight: "600", color: "#2B2D2A", margin: 0 }}>
               Audition Velocity
             </h3>
-            <p style={{ fontSize: "13px", color: "#a3acc2", margin: "2px 0 0 0" }}>
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: "4px 0 0 0" }}>
               Monthly application submissions
             </p>
           </div>
@@ -279,23 +274,21 @@ export default function AdminAnalyticsPage() {
         {/* Application Conversion Funnel */}
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
             borderRadius: "16px",
             padding: "24px",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+            boxShadow: "0 2px 4px rgba(43,45,42,0.04), 0 12px 28px rgba(43,45,42,0.06)",
             display: "flex",
             flexDirection: "column",
             gap: "16px",
           }}
         >
-          <div style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "12px" }}>
-            <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#eceaf5", margin: 0 }}>
+          <div style={{ borderBottom: "1px solid #E8E2D4", paddingBottom: "14px" }}>
+            <h3 style={{ fontSize: "20px", fontFamily: "var(--font-playfair), serif", fontWeight: "600", color: "#2B2D2A", margin: 0 }}>
               Conversion Funnel
             </h3>
-            <p style={{ fontSize: "13px", color: "#a3acc2", margin: "2px 0 0 0" }}>
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: "4px 0 0 0" }}>
               Stage drop-off from Applied to Booked
             </p>
           </div>
@@ -306,23 +299,21 @@ export default function AdminAnalyticsPage() {
         {/* Top Talent Cities Leaderboard */}
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
             borderRadius: "16px",
             padding: "24px",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+            boxShadow: "0 2px 4px rgba(43,45,42,0.04), 0 12px 28px rgba(43,45,42,0.06)",
             display: "flex",
             flexDirection: "column",
             gap: "16px",
           }}
         >
-          <div style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "12px" }}>
-            <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#eceaf5", margin: 0 }}>
+          <div style={{ borderBottom: "1px solid #E8E2D4", paddingBottom: "14px" }}>
+            <h3 style={{ fontSize: "20px", fontFamily: "var(--font-playfair), serif", fontWeight: "600", color: "#2B2D2A", margin: 0 }}>
               Top Talent Geographic Hubs
             </h3>
-            <p style={{ fontSize: "13px", color: "#a3acc2", margin: "2px 0 0 0" }}>
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: "4px 0 0 0" }}>
               Artist concentration across Indian cities
             </p>
           </div>
@@ -334,39 +325,37 @@ export default function AdminAnalyticsPage() {
       {/* Row 3: Broadcast Messaging Center */}
       <div
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.07)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
           borderRadius: "16px",
           padding: "24px",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+          boxShadow: "0 2px 4px rgba(43,45,42,0.04), 0 12px 28px rgba(43,45,42,0.06)",
           display: "flex",
           flexDirection: "column",
           gap: "20px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "14px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", borderBottom: "1px solid #E8E2D4", paddingBottom: "14px" }}>
           <div
             style={{
-              width: "40px",
-              height: "40px",
+              width: "44px",
+              height: "44px",
               borderRadius: "12px",
-              background: "rgba(255, 188, 0, 0.12)",
-              color: "var(--gold)",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
+              color: "#8A6B2E",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              border: "1px solid rgba(255, 188, 0, 0.30)",
             }}
           >
             <Radio size={20} />
           </div>
           <div>
-            <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#eceaf5", margin: 0 }}>
+            <h3 style={{ fontSize: "20px", fontFamily: "var(--font-playfair), serif", fontWeight: "600", color: "#2B2D2A", margin: 0 }}>
               Admin Broadcast Messaging Center
             </h3>
-            <p style={{ fontSize: "13px", color: "#a3acc2", margin: "2px 0 0 0" }}>
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: "4px 0 0 0" }}>
               Dispatch platform-wide alerts, callback notifications, or casting updates to talent and recruiters.
             </p>
           </div>
@@ -376,7 +365,7 @@ export default function AdminAnalyticsPage() {
         <form onSubmit={handleBroadcastSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#eceaf5", marginBottom: "6px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#2B2D2A", marginBottom: "6px" }}>
                 Target Audience
               </label>
               <select
@@ -384,26 +373,26 @@ export default function AdminAnalyticsPage() {
                 onChange={(e) => setBroadcastForm({ ...broadcastForm, audience: e.target.value })}
                 style={{
                   width: "100%",
-                  height: "40px",
+                  height: "44px",
                   padding: "0 12px",
-                  borderRadius: "12px",
-                  backgroundColor: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(255, 255, 255, 0.14)",
-                  color: "#eceaf5",
+                  borderRadius: "10px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #D9D2C0",
+                  color: "#2B2D2A",
                   fontSize: "14px",
                   outline: "none",
                 }}
               >
-                <option value="All Registered Talent" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>All Registered Talent (1,166 artists)</option>
-                <option value="Verified Talent (Mumbai)" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Verified Talent (Mumbai - 693 artists)</option>
-                <option value="Verified Talent (Delhi NCR)" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Verified Talent (Delhi NCR - 270 artists)</option>
-                <option value="All Recruiters" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>All Recruiters & Agencies (118 companies)</option>
-                <option value="All Platform Users" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>All Platform Users (1,284 users)</option>
+                <option value="All Registered Talent">All Registered Talent (1,166 artists)</option>
+                <option value="Verified Talent (Mumbai)">Verified Talent (Mumbai - 693 artists)</option>
+                <option value="Verified Talent (Delhi NCR)">Verified Talent (Delhi NCR - 270 artists)</option>
+                <option value="All Recruiters">All Recruiters &amp; Agencies (118 companies)</option>
+                <option value="All Platform Users">All Platform Users (1,284 users)</option>
               </select>
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#eceaf5", marginBottom: "6px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#2B2D2A", marginBottom: "6px" }}>
                 Channel
               </label>
               <select
@@ -411,24 +400,24 @@ export default function AdminAnalyticsPage() {
                 onChange={(e) => setBroadcastForm({ ...broadcastForm, channel: e.target.value })}
                 style={{
                   width: "100%",
-                  height: "40px",
+                  height: "44px",
                   padding: "0 12px",
-                  borderRadius: "12px",
-                  backgroundColor: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(255, 255, 255, 0.14)",
-                  color: "#eceaf5",
+                  borderRadius: "10px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #D9D2C0",
+                  color: "#2B2D2A",
                   fontSize: "14px",
                   outline: "none",
                 }}
               >
-                <option value="In-app Notification" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>In-app Notification Bell</option>
-                <option value="In-app + Urgent SMS" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>In-app + Urgent SMS (Callbacks)</option>
-                <option value="In-app + WhatsApp Alert" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>In-app + WhatsApp Channel</option>
+                <option value="In-app Notification">In-app Notification Bell</option>
+                <option value="In-app + Urgent SMS">In-app + Urgent SMS (Callbacks)</option>
+                <option value="In-app + WhatsApp Alert">In-app + WhatsApp Channel</option>
               </select>
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#eceaf5", marginBottom: "6px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#2B2D2A", marginBottom: "6px" }}>
                 Priority Level
               </label>
               <select
@@ -436,24 +425,24 @@ export default function AdminAnalyticsPage() {
                 onChange={(e) => setBroadcastForm({ ...broadcastForm, priority: e.target.value })}
                 style={{
                   width: "100%",
-                  height: "40px",
+                  height: "44px",
                   padding: "0 12px",
-                  borderRadius: "12px",
-                  backgroundColor: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(255, 255, 255, 0.14)",
-                  color: "#eceaf5",
+                  borderRadius: "10px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #D9D2C0",
+                  color: "#2B2D2A",
                   fontSize: "14px",
                   outline: "none",
                 }}
               >
-                <option value="Normal" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Normal Notification</option>
-                <option value="Urgent Casting Alert" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Urgent Casting Alert</option>
+                <option value="Normal">Normal Notification</option>
+                <option value="Urgent Casting Alert">Urgent Casting Alert</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#eceaf5", marginBottom: "6px" }}>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#2B2D2A", marginBottom: "6px" }}>
               Broadcast Title *
             </label>
             <input
@@ -464,12 +453,12 @@ export default function AdminAnalyticsPage() {
               onChange={(e) => setBroadcastForm({ ...broadcastForm, title: e.target.value })}
               style={{
                 width: "100%",
-                height: "40px",
+                height: "44px",
                 padding: "0 14px",
-                borderRadius: "12px",
-                backgroundColor: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
-                color: "#eceaf5",
+                borderRadius: "10px",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D2C0",
+                color: "#2B2D2A",
                 fontSize: "14px",
                 outline: "none",
               }}
@@ -477,7 +466,7 @@ export default function AdminAnalyticsPage() {
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#eceaf5", marginBottom: "6px" }}>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#2B2D2A", marginBottom: "6px" }}>
               Message Body *
             </label>
             <textarea
@@ -488,11 +477,11 @@ export default function AdminAnalyticsPage() {
               onChange={(e) => setBroadcastForm({ ...broadcastForm, message: e.target.value })}
               style={{
                 width: "100%",
-                padding: "10px 14px",
-                borderRadius: "12px",
-                backgroundColor: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
-                color: "#eceaf5",
+                padding: "12px 14px",
+                borderRadius: "10px",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D2C0",
+                color: "#2B2D2A",
                 fontSize: "14px",
                 outline: "none",
                 resize: "vertical",
@@ -503,16 +492,23 @@ export default function AdminAnalyticsPage() {
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               type="submit"
-              className="btn-primary"
               style={{
-                height: "40px",
-                padding: "0 20px",
+                height: "44px",
+                padding: "0 22px",
                 fontSize: "14px",
-                borderRadius: "12px",
+                fontWeight: "600",
+                borderRadius: "10px",
                 gap: "8px",
                 display: "inline-flex",
                 alignItems: "center",
+                backgroundColor: "#8A6B2E",
+                color: "#FFFFFF",
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#6E5420")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#8A6B2E")}
             >
               <Send size={15} /> Send Broadcast Alert
             </button>
@@ -520,8 +516,8 @@ export default function AdminAnalyticsPage() {
         </form>
 
         {/* Recent Broadcasts History */}
-        <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "16px" }}>
-          <h4 style={{ fontSize: "14px", fontWeight: "600", color: "#eceaf5", margin: "0 0 12px 0" }}>
+        <div style={{ borderTop: "1px solid #E8E2D4", paddingTop: "16px" }}>
+          <h4 style={{ fontSize: "16px", fontWeight: "600", color: "#2B2D2A", margin: "0 0 12px 0" }}>
             Recent Dispatched Broadcasts
           </h4>
 
@@ -531,10 +527,10 @@ export default function AdminAnalyticsPage() {
                 <div
                   key={bc.id}
                   style={{
-                    padding: "14px 16px",
+                    padding: "16px 18px",
                     borderRadius: "14px",
-                    backgroundColor: "rgba(255, 255, 255, 0.04)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    backgroundColor: "#FAF9F7",
+                    border: "1px solid #E8E2D4",
                     display: "flex",
                     alignItems: "flex-start",
                     justifyContent: "space-between",
@@ -542,8 +538,8 @@ export default function AdminAnalyticsPage() {
                   }}
                 >
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                      <span style={{ fontSize: "14px", fontWeight: "700", color: "#eceaf5" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                      <span style={{ fontSize: "15px", fontWeight: "700", color: "#2B2D2A" }}>
                         {bc.title}
                       </span>
                       <span
@@ -552,29 +548,29 @@ export default function AdminAnalyticsPage() {
                           fontWeight: "700",
                           padding: "2px 8px",
                           borderRadius: "999px",
-                          backgroundColor: bc.priority === "Urgent Casting Alert" ? "rgba(255, 107, 107, 0.14)" : "rgba(255, 188, 0, 0.14)",
-                          color: bc.priority === "Urgent Casting Alert" ? "var(--status-red)" : "var(--gold)",
-                          border: `1px solid ${bc.priority === "Urgent Casting Alert" ? "rgba(255, 107, 107, 0.35)" : "rgba(255, 188, 0, 0.35)"}`,
+                          backgroundColor: bc.priority === "Urgent Casting Alert" ? "rgba(180, 35, 24, 0.08)" : "rgba(138, 107, 46, 0.12)",
+                          color: bc.priority === "Urgent Casting Alert" ? "#B42318" : "#6E5420",
+                          border: `1px solid ${bc.priority === "Urgent Casting Alert" ? "rgba(180, 35, 24, 0.25)" : "rgba(138, 107, 46, 0.25)"}`,
                         }}
                       >
                         {bc.priority}
                       </span>
                     </div>
-                    <p style={{ fontSize: "13px", color: "#a3acc2", lineHeight: 1.4, margin: 0 }}>
+                    <p style={{ fontSize: "14px", color: "#5A584F", lineHeight: 1.5, margin: 0 }}>
                       {bc.message}
                     </p>
-                    <div style={{ fontSize: "12px", color: "#7e89a3", marginTop: "4px" }}>
-                      Audience: <strong style={{ color: "#eceaf5" }}>{bc.audience}</strong> &bull; Channel: <strong style={{ color: "#eceaf5" }}>{bc.channel}</strong> ({bc.recipientsCount} recipients)
+                    <div style={{ fontSize: "13px", color: "#5A584F", marginTop: "6px" }}>
+                      Audience: <strong style={{ color: "#2B2D2A" }}>{bc.audience}</strong> &bull; Channel: <strong style={{ color: "#2B2D2A" }}>{bc.channel}</strong> ({bc.recipientsCount} recipients)
                     </div>
                   </div>
 
-                  <span style={{ fontSize: "12px", color: "#7e89a3", whiteSpace: "nowrap", flexShrink: 0 }}>
+                  <span style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap", flexShrink: 0 }}>
                     {bc.sentAt}
                   </span>
                 </div>
               ))
             ) : (
-              <div style={{ padding: "14px", textAlign: "center", color: "#7e89a3", fontSize: "13px" }}>
+              <div style={{ padding: "16px", textAlign: "center", color: "#5A584F", fontSize: "14px" }}>
                 No recent broadcasts.
               </div>
             )}

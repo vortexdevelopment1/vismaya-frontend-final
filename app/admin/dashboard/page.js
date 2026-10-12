@@ -6,20 +6,14 @@ import {
   Users,
   Megaphone,
   FileText,
-  Clock,
-  ShieldCheck,
   Building2,
   Inbox,
-  Award,
   ArrowRight,
   Sparkles,
   Activity,
-  AlertTriangle,
-  CheckCircle2,
   Video,
   AlertOctagon,
-  FolderKanban,
-  Check,
+  ShieldCheck,
   ChevronRight,
 } from "lucide-react";
 import { useAdmin } from "@/lib/admin/AdminContext";
@@ -31,7 +25,6 @@ export default function AdminDashboardPage() {
   const { talents = [], recruiters = [] } = useAdmin();
   const {
     opportunities = [],
-    projects = [],
     applications = [],
     auditions = [],
     cancellationRequests = [],
@@ -74,7 +67,7 @@ export default function AdminDashboardPage() {
 
   const totalApplicationsCount = applications.length;
 
-  // "Needs Attention" Queue
+  // "Needs Attention" Queue: uniform styling per spec
   const attentionItems = [
     {
       id: "att-opps",
@@ -83,11 +76,6 @@ export default function AdminDashboardPage() {
       description: "Organization casting submissions awaiting verification and publishing",
       link: "/admin/opportunity-review",
       icon: Inbox,
-      tint: {
-        bg: "rgba(255, 188, 0, 0.12)",
-        border: "rgba(255, 188, 0, 0.35)",
-        color: "var(--gold)",
-      },
     },
     {
       id: "att-aud-relay",
@@ -96,11 +84,6 @@ export default function AdminDashboardPage() {
       description: "Organization audition & interview requests queued to relay to talent",
       link: "/admin/auditions",
       icon: Video,
-      tint: {
-        bg: "rgba(138, 180, 255, 0.12)",
-        border: "rgba(138, 180, 255, 0.35)",
-        color: "#8ab4ff",
-      },
     },
     {
       id: "att-selftapes",
@@ -109,11 +92,6 @@ export default function AdminDashboardPage() {
       description: "Artist self-tape submissions ready for moderation & forwarding to organization",
       link: "/admin/auditions",
       icon: Sparkles,
-      tint: {
-        bg: "rgba(255, 188, 0, 0.14)",
-        border: "rgba(255, 188, 0, 0.4)",
-        color: "var(--gold)",
-      },
     },
     {
       id: "att-cancel",
@@ -122,11 +100,6 @@ export default function AdminDashboardPage() {
       description: "Opportunity withdrawal requests requiring review and active applicant notices",
       link: "/admin/cancellation-requests",
       icon: AlertOctagon,
-      tint: {
-        bg: "rgba(255, 107, 107, 0.14)",
-        border: "rgba(255, 107, 107, 0.35)",
-        color: "var(--status-red)",
-      },
     },
     {
       id: "att-talents",
@@ -135,11 +108,6 @@ export default function AdminDashboardPage() {
       description: "New artist registrations requiring photo, age & background verification",
       link: "/admin/talent-management",
       icon: Users,
-      tint: {
-        bg: "rgba(52, 211, 153, 0.14)",
-        border: "rgba(52, 211, 153, 0.32)",
-        color: "var(--status-green)",
-      },
     },
     {
       id: "att-orgs",
@@ -148,25 +116,20 @@ export default function AdminDashboardPage() {
       description: "Production houses & agencies awaiting corporate CIN / GST check",
       link: "/admin/recruiter-management",
       icon: Building2,
-      tint: {
-        bg: "rgba(255, 188, 0, 0.12)",
-        border: "rgba(255, 188, 0, 0.32)",
-        color: "var(--gold)",
-      },
     },
   ];
 
   if (!isHydrated) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        <div style={{ height: "48px", background: "rgba(255, 255, 255, 0.05)", borderRadius: "12px", width: "40%" }} />
-        <div style={{ height: "350px", background: "rgba(255, 255, 255, 0.05)", borderRadius: "16px" }} />
+        <div style={{ height: "48px", background: "#F3EFE6", borderRadius: "12px", width: "40%" }} />
+        <div style={{ height: "350px", background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "16px" }} />
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
       {/* Top Page Header */}
       <PageHeader
         title="Admin Operations Console"
@@ -178,8 +141,9 @@ export default function AdminDashboardPage() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
           gap: "16px",
+          alignItems: "stretch",
         }}
       >
         <StatCard
@@ -220,12 +184,15 @@ export default function AdminDashboardPage() {
       <div className="admin-dash-grid">
         {/* Left Column (2fr): Needs Attention Queue */}
         <div
-          className="card-surface"
           style={{
-            padding: "24px",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            borderRadius: "18px",
+            padding: "26px",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
             display: "flex",
             flexDirection: "column",
-            gap: "18px",
+            gap: "20px",
           }}
         >
           <div
@@ -234,40 +201,43 @@ export default function AdminDashboardPage() {
               alignItems: "center",
               justifyContent: "space-between",
               flexWrap: "wrap",
-              gap: "10px",
+              gap: "12px",
             }}
           >
             <div>
               <h2
                 style={{
-                  fontSize: "18px",
-                  fontWeight: "600",
-                  color: "#eceaf5",
+                  fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                  fontSize: "22px",
+                  fontWeight: 600,
+                  color: "#2B2D2A",
                   margin: "0 0 4px 0",
                 }}
               >
                 Needs attention queue
               </h2>
-              <p style={{ fontSize: "13px", color: "#a3acc2", margin: 0 }}>
+              <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Actionable tasks requiring Vismaya team verification and moderation.
               </p>
             </div>
 
+            {/* Live store sync neutral pill */}
             <div
               style={{
                 fontSize: "12px",
                 fontWeight: "600",
-                color: "var(--status-green)",
-                backgroundColor: "rgba(52, 211, 153, 0.12)",
-                border: "1px solid rgba(52, 211, 153, 0.30)",
+                color: "#2B2D2A",
+                backgroundColor: "#F3EFE6",
+                border: "1px solid #E8E2D4",
                 padding: "4px 12px",
                 borderRadius: "999px",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "6px",
+                gap: "7px",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
               }}
             >
-              <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "var(--status-green)" }} />
+              <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#8A6B2E" }} />
               <span>Live store sync</span>
             </div>
           </div>
@@ -275,8 +245,9 @@ export default function AdminDashboardPage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: "12px",
+              gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))",
+              gap: "14px",
+              alignItems: "stretch",
             }}
           >
             {attentionItems.map((item) => {
@@ -291,54 +262,59 @@ export default function AdminDashboardPage() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: "14px",
-                    borderRadius: "12px",
-                    backgroundColor: "rgba(255, 255, 255, 0.04)",
-                    border: `1px solid ${hasItems ? item.tint.border : "rgba(255, 255, 255, 0.08)"}`,
+                    padding: "16px",
+                    borderRadius: "14px",
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #E8E2D4",
+                    borderLeft: hasItems ? "3px solid #8A6B2E" : "1px solid #E8E2D4",
                     textDecoration: "none",
-                    transition: "all 0.15s ease",
+                    transition: "all 0.16s ease",
+                    boxShadow: "0 1px 3px rgba(43, 45, 42, 0.03)",
+                    opacity: hasItems ? 1 : 0.75,
                   }}
                   className="admin-attention-item"
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
                     <div
                       style={{
-                        width: "38px",
-                        height: "38px",
+                        width: "42px",
+                        height: "42px",
                         borderRadius: "10px",
-                        background: item.tint.bg,
-                        color: item.tint.color,
-                        border: `1px solid ${item.tint.border}`,
+                        background: "#F3EFE6",
+                        color: "#8A6B2E",
+                        border: "1px solid #E8E2D4",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         flexShrink: 0,
                       }}
                     >
-                      <Icon size={18} />
+                      <Icon size={19} />
                     </div>
 
                     <div style={{ minWidth: 0 }}>
                       <div
                         style={{
                           fontWeight: "600",
-                          fontSize: "13px",
-                          color: "#eceaf5",
+                          fontSize: "15px",
+                          color: "#2B2D2A",
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
+                          fontFamily: "var(--font-body), 'Inter', sans-serif",
                         }}
                       >
                         {item.title}
                       </div>
                       <div
                         style={{
-                          fontSize: "11px",
-                          color: "#a3acc2",
+                          fontSize: "13px",
+                          color: "#5A584F",
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           marginTop: "2px",
+                          fontFamily: "var(--font-body), 'Inter', sans-serif",
                         }}
                       >
                         {item.description}
@@ -346,21 +322,21 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "8px", flexShrink: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "10px", flexShrink: 0 }}>
                     <span
                       style={{
-                        fontSize: "11px",
+                        fontSize: "12px",
                         fontWeight: "700",
-                        padding: "2px 8px",
+                        padding: "3px 9px",
                         borderRadius: "999px",
-                        backgroundColor: hasItems ? item.tint.bg : "rgba(255, 255, 255, 0.06)",
-                        color: hasItems ? item.tint.color : "#7e89a3",
-                        border: `1px solid ${hasItems ? item.tint.border : "rgba(255, 255, 255, 0.10)"}`,
+                        backgroundColor: hasItems ? "rgba(138, 107, 46, 0.12)" : "#F3EFE6",
+                        color: hasItems ? "#6E5420" : "#5A584F",
+                        border: `1px solid ${hasItems ? "rgba(138, 107, 46, 0.22)" : "#E8E2D4"}`,
                       }}
                     >
                       {item.count}
                     </span>
-                    <ArrowRight size={14} style={{ color: "#7e89a3" }} />
+                    <ChevronRight size={16} style={{ color: "#8A6B2E" }} />
                   </div>
                 </Link>
               );
@@ -370,30 +346,61 @@ export default function AdminDashboardPage() {
 
         {/* Right Column (1fr): Recent Activity & Desk Pulse */}
         <div
-          className="card-surface"
           style={{
-            padding: "24px",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            borderRadius: "18px",
+            padding: "26px",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
             display: "flex",
             flexDirection: "column",
-            gap: "16px",
+            gap: "18px",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Activity size={16} style={{ color: "var(--gold)" }} />
-              <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#eceaf5", margin: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  backgroundColor: "#F3EFE6",
+                  border: "1px solid #E8E2D4",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#8A6B2E",
+                }}
+              >
+                <Activity size={16} />
+              </div>
+              <h3
+                style={{
+                  fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                  fontSize: "18px",
+                  fontWeight: 600,
+                  color: "#2B2D2A",
+                  margin: 0,
+                }}
+              >
                 Operations activity
               </h3>
             </div>
             <Link
               href="/admin/notifications"
-              style={{ fontSize: "12px", color: "var(--gold)", fontWeight: "600", textDecoration: "none" }}
+              style={{
+                fontSize: "13px",
+                color: "#8A6B2E",
+                fontWeight: "600",
+                textDecoration: "none",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
+              }}
             >
               View all
             </Link>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {[
               {
                 id: "act-1",
@@ -419,7 +426,7 @@ export default function AdminDashboardPage() {
                 time: "2h ago",
                 link: "/admin/media-moderation",
               },
-            ].map((act) => (
+            ].map((act, aIdx) => (
               <Link
                 key={act.id}
                 href={act.link}
@@ -427,31 +434,32 @@ export default function AdminDashboardPage() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "10px 12px",
-                  borderRadius: "10px",
-                  backgroundColor: "rgba(255, 255, 255, 0.03)",
-                  border: "1px solid rgba(255, 255, 255, 0.06)",
+                  padding: "12px 6px",
+                  borderBottom: aIdx === 3 ? "none" : "1px solid #E8E2D4",
                   textDecoration: "none",
                   transition: "background 0.15s ease",
                 }}
-                className="admin-attention-item"
+                className="admin-activity-item"
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
                   <span
                     style={{
-                      fontSize: "12px",
-                      fontWeight: "600",
-                      color: "#eceaf5",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "#2B2D2A",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
+                      fontFamily: "var(--font-body), 'Inter', sans-serif",
                     }}
                   >
                     {act.text}
                   </span>
-                  <span style={{ fontSize: "11px", color: "#7e89a3" }}>{act.time}</span>
+                  <span style={{ fontSize: "12px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                    {act.time}
+                  </span>
                 </div>
-                <ChevronRight size={14} style={{ color: "#7e89a3", flexShrink: 0, marginLeft: "6px" }} />
+                <ChevronRight size={15} style={{ color: "#8A6B2E", flexShrink: 0, marginLeft: "8px" }} />
               </Link>
             ))}
           </div>
@@ -460,39 +468,60 @@ export default function AdminDashboardPage() {
 
       {/* Workflow Role Architecture Note Card (Full-width) */}
       <div
-        className="card-surface"
         style={{
-          padding: "24px",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
+          borderRadius: "18px",
+          padding: "26px",
+          boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
-          gap: "16px",
+          gap: "18px",
           width: "100%",
+          boxSizing: "border-box",
         }}
       >
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
           <div
             style={{
-              width: "42px",
-              height: "42px",
+              width: "44px",
+              height: "44px",
               borderRadius: "12px",
-              backgroundColor: "rgba(255, 188, 0, 0.12)",
-              border: "1px solid rgba(255, 188, 0, 0.30)",
-              color: "var(--gold)",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
+              color: "#8A6B2E",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
             }}
           >
-            <ShieldCheck size={20} />
+            <ShieldCheck size={22} />
           </div>
           <div>
-            <h3 style={{ fontSize: "15px", fontWeight: "600", color: "#eceaf5", margin: "0 0 4px 0" }}>
+            <h3
+              style={{
+                fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                fontSize: "18px",
+                fontWeight: 600,
+                color: "#2B2D2A",
+                margin: "0 0 6px 0",
+              }}
+            >
               Vismaya Operating Workflow Model
             </h3>
-            <p style={{ fontSize: "13px", color: "#a3acc2", margin: 0, maxWidth: "700px", lineHeight: 1.5 }}>
+            <p
+              style={{
+                fontSize: "14px",
+                color: "#5A584F",
+                margin: 0,
+                maxWidth: "760px",
+                lineHeight: 1.6,
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
+              }}
+            >
               Organizations screen, shortlist candidates, and make final selections directly. The Vismaya team verifies and approves opportunities before publishing, relays audition invitations, moderates self-tapes, and manages compliance.
             </p>
           </div>
@@ -500,21 +529,27 @@ export default function AdminDashboardPage() {
 
         <Link
           href="/admin/opportunity-review"
-          className="btn-primary"
           style={{
             display: "inline-flex",
             alignItems: "center",
             gap: "8px",
-            fontSize: "13px",
+            fontSize: "14px",
             fontWeight: "600",
-            padding: "0 18px",
-            height: "36px",
+            padding: "0 20px",
+            height: "42px",
+            backgroundColor: "#8A6B2E",
+            color: "#FFFFFF",
             textDecoration: "none",
             borderRadius: "10px",
+            boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
+            transition: "all 0.16s ease",
+            whiteSpace: "nowrap",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
           }}
+          className="admin-review-cta"
         >
           <span>Review opportunities</span>
-          <ArrowRight size={14} />
+          <ArrowRight size={15} />
         </Link>
       </div>
 
@@ -523,7 +558,7 @@ export default function AdminDashboardPage() {
           display: grid;
           grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
           gap: 24px;
-          align-items: flex-start;
+          align-items: stretch;
           width: 100%;
         }
         @media (max-width: 1024px) {
@@ -532,9 +567,15 @@ export default function AdminDashboardPage() {
           }
         }
         .admin-attention-item:hover {
-          background-color: rgba(255, 255, 255, 0.08) !important;
+          background-color: #FAF9F7 !important;
+          border-color: #8A6B2E !important;
           transform: translateY(-1px);
-          border-color: rgba(255, 188, 0, 0.4) !important;
+        }
+        .admin-activity-item:hover {
+          background-color: #FAF9F7;
+        }
+        .admin-review-cta:hover {
+          background-color: #6E5420 !important;
         }
       `}</style>
     </div>

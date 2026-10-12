@@ -7,10 +7,10 @@ export default function ToastContainer({ toasts = [], onDismiss }) {
   if (!toasts || toasts.length === 0) return null;
 
   const iconMap = {
-    success: { icon: CheckCircle2, color: "#34d399" },
-    danger: { icon: AlertCircle, color: "#ff6b6b" },
-    warning: { icon: AlertTriangle, color: "#ffbc00" },
-    info: { icon: Info, color: "#eceaf5" },
+    success: { icon: CheckCircle2, color: "var(--gold, #9B7A3F)" },
+    danger: { icon: AlertCircle, color: "var(--status-red, #B84A39)" },
+    warning: { icon: AlertTriangle, color: "var(--gold, #9B7A3F)" },
+    info: { icon: Info, color: "var(--text-primary, #292C29)" },
   };
 
   return (
@@ -44,10 +44,10 @@ export default function ToastContainer({ toasts = [], onDismiss }) {
               animation: "toastSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
               position: "relative",
               overflow: "hidden",
-              backgroundColor: "#0f1626",
-              border: "1px solid rgba(255, 255, 255, 0.16)",
-              borderRadius: "16px",
-              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.60)",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid var(--border-color, #E4E1D9)",
+              borderRadius: "8px",
+              boxShadow: "0 8px 24px rgba(41, 44, 41, 0.12)",
             }}
           >
             {/* Left accent bar */}
@@ -78,7 +78,7 @@ export default function ToastContainer({ toasts = [], onDismiss }) {
                   style={{
                     fontSize: "14px",
                     fontWeight: "700",
-                    color: "#eceaf5",
+                    color: "var(--text-primary, #292C29)",
                   }}
                 >
                   {toast.title}
@@ -88,7 +88,7 @@ export default function ToastContainer({ toasts = [], onDismiss }) {
                 <span
                   style={{
                     fontSize: "13px",
-                    color: "#a3acc2",
+                    color: "var(--text-secondary, #5A5C53)",
                     lineHeight: 1.4,
                   }}
                 >
@@ -102,7 +102,7 @@ export default function ToastContainer({ toasts = [], onDismiss }) {
                 onClick={() => onDismiss(toast.id)}
                 aria-label="Dismiss toast"
                 style={{
-                  color: "#a3acc2",
+                  color: "var(--text-muted, #777970)",
                   width: "24px",
                   height: "24px",
                   borderRadius: "50%",

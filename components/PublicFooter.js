@@ -1,146 +1,144 @@
+"use client";
+
 import Link from "next/link";
-import Logo from "./Logo";
+import { usePathname } from "next/navigation";
+import { ShieldCheck } from "lucide-react";
+import PublicFooterOld from "./PublicFooter.old";
+import "./PublicFooter.css";
+
+// Switch between new light footer trial and backup old design
+const USE_NEW_FOOTER = true;
 
 export default function PublicFooter() {
+  const pathname = usePathname();
+
+  // Switch to backup old footer if toggle is false
+  if (!USE_NEW_FOOTER) {
+    return <PublicFooterOld />;
+  }
+
+  const platformLinks = [
+    { label: "Talent Portal", href: "/talent/dashboard", isHighlight: true },
+    { label: "Organization Portal", href: "/recruiter/dashboard" },
+    { label: "Vismaya Desk", href: "/admin/dashboard" },
+    { label: "Active Casting Calls", href: "/opportunities" },
+  ];
+
+  const companyLinks = [
+    { label: "Home", href: "/" },
+    { label: "About Us", href: "/about" },
+    { label: "Contact Support", href: "/contact" },
+    { label: "Join Network", href: "/register" },
+  ];
+
+  const legalLinks = [
+    { label: "KYC Verification", href: "/about" },
+    { label: "Privacy Policy", href: "/about" },
+    { label: "Terms of Service", href: "/about" },
+    { label: "Account Sign In", href: "/login" },
+  ];
+
   return (
-    <footer
-      style={{
-        backgroundColor: "var(--bg-deep, #292C29)",
-        borderTop: "1px solid rgba(255, 255, 255, 0.12)",
-        paddingTop: "clamp(56px, 8vw, 84px)",
-        paddingBottom: "36px",
-        marginTop: "auto",
-        width: "100%",
-        color: "var(--text-dark-primary, #FAF9F6)",
-      }}
-    >
-      <div className="public-container">
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "48px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              gap: "40px",
-            }}
-          >
-            {/* Brand column */}
-            <div style={{ maxWidth: "380px", display: "flex", flexDirection: "column", gap: "16px" }}>
-              <Logo href="/" variant="light" showSubtitle={true} />
-              <p style={{ color: "var(--text-dark-muted, #99948A)", fontSize: "14px", lineHeight: "24px", margin: 0 }}>
-                India&apos;s premier verified entertainment casting platform connecting elite artists, casting directors, and top production houses with guaranteed authenticity.
-              </p>
+    <footer className="public-footer-light">
+      {/* Decorative top gold hairline accent */}
+      <div className="public-footer-accent-line" aria-hidden="true" />
+
+      <div className="public-footer-container">
+        {/* Top Row: Brand Info + 3 Columns */}
+        <div className="public-footer-top-row">
+          {/* Left: Brand Column */}
+          <div className="public-footer-brand-col">
+            <Link href="/" className="public-footer-logo-link">
+              <div className="public-footer-logo-badge">V</div>
+              <div className="public-footer-logo-text">
+                <span className="public-footer-logo-title">VISMAYA</span>
+                <span className="public-footer-logo-sub">CASTING PLATFORM</span>
+              </div>
+            </Link>
+
+            <p className="public-footer-description">
+              India&apos;s premier verified entertainment casting platform connecting elite artists,
+              casting directors, and top production houses with guaranteed authenticity.
+            </p>
+          </div>
+
+          {/* Right: 3 Navigation Link Columns */}
+          <div className="public-footer-nav-grid">
+            {/* 1. Platform Column */}
+            <div className="public-footer-col">
+              <span className="public-footer-col-title">Platform</span>
+              <span className="public-footer-col-line" aria-hidden="true" />
+              <div className="public-footer-col-links">
+                {platformLinks.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className={`public-footer-link ${isActive ? "active" : ""} ${
+                        item.isHighlight ? "highlight" : ""
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Link Columns */}
-            <div
-              className="footer-columns"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "clamp(24px, 4vw, 48px)",
-              }}
-            >
-              {/* Platform */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <span style={{ fontSize: "11px", fontWeight: "800", color: "var(--gold)", letterSpacing: "0.16em", textTransform: "uppercase" }}>
-                  Platform
-                </span>
-                <Link href="/talent/dashboard" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Talent Portal
-                </Link>
-                <Link href="/recruiter/dashboard" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Organization Portal
-                </Link>
-                <Link href="/admin/dashboard" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Vismaya Desk
-                </Link>
-                <Link href="/opportunities" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Active Casting Calls
-                </Link>
+            {/* 2. Company Column */}
+            <div className="public-footer-col">
+              <span className="public-footer-col-title">Company</span>
+              <span className="public-footer-col-line" aria-hidden="true" />
+              <div className="public-footer-col-links">
+                {companyLinks.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className={`public-footer-link ${isActive ? "active" : ""}`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
               </div>
+            </div>
 
-              {/* Company */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <span style={{ fontSize: "11px", fontWeight: "800", color: "var(--gold)", letterSpacing: "0.16em", textTransform: "uppercase" }}>
-                  Company
-                </span>
-                <Link href="/" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Home
-                </Link>
-                <Link href="/about" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  About Us
-                </Link>
-                <Link href="/contact" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Contact Support
-                </Link>
-                <Link href="/register" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Join Network
-                </Link>
-              </div>
-
-              {/* Legal */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <span style={{ fontSize: "11px", fontWeight: "800", color: "var(--gold)", letterSpacing: "0.16em", textTransform: "uppercase" }}>
-                  Trust &amp; Legal
-                </span>
-                <Link href="/about" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  KYC Verification
-                </Link>
-                <Link href="/about" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Privacy Policy
-                </Link>
-                <Link href="/about" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Terms of Service
-                </Link>
-                <Link href="/login" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Account Sign In
-                </Link>
+            {/* 3. Trust & Legal Column */}
+            <div className="public-footer-col">
+              <span className="public-footer-col-title">Trust &amp; Legal</span>
+              <span className="public-footer-col-line" aria-hidden="true" />
+              <div className="public-footer-col-links">
+                {legalLinks.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className={`public-footer-link ${isActive ? "active" : ""}`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Bottom Copyright Bar */}
-          <div
-            style={{
-              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-              paddingTop: "24px",
-              display: "flex",
-              flexWrap: "wrap",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "16px",
-              fontSize: "13px",
-              color: "var(--text-dark-muted, #99948A)",
-            }}
-          >
-            <span>&copy; {new Date().getFullYear()} Vismaya Casting &amp; Talent Platform. All rights reserved.</span>
-            <span style={{ color: "var(--gold)", fontWeight: "700" }}>Verified Casting Infrastructure</span>
+        {/* Bottom Copyright & Infrastructure Bar */}
+        <div className="public-footer-bottom-bar">
+          <span className="public-footer-copyright">
+            &copy; {new Date().getFullYear()} Vismaya Casting &amp; Talent Platform. All rights reserved.
+          </span>
+          <div className="public-footer-trust-badge">
+            <ShieldCheck size={15} className="public-footer-shield-icon" />
+            <span>Verified Casting Infrastructure</span>
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        :global(.footer-link) {
-          transition: color 0.18s ease;
-        }
-        :global(.footer-link:hover) {
-          color: var(--gold) !important;
-        }
-        @media (max-width: 767px) {
-          .footer-columns {
-            grid-template-columns: 1fr !important;
-            gap: 28px !important;
-          }
-        }
-      `}</style>
     </footer>
   );
 }

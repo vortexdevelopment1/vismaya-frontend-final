@@ -19,7 +19,6 @@ import {
   Trash2,
   Calendar,
 } from "lucide-react";
-import PageHeader from "@/components/shared/PageHeader";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 
 const OPPORTUNITY_TYPES = [
@@ -99,20 +98,26 @@ function SubmitOpportunityForm() {
           title: opp.title || "",
           summary: opp.summary || "",
           opportunityType: opp.opportunityType || "Acting",
-          roles: opp.roles && opp.roles.length > 0 ? opp.roles : [
-            {
-              id: `r-${Date.now()}`,
-              roleName: "Lead Character",
-              count: 1,
-              ageRange: "20 - 28 years",
-              gender: "Any",
-              description: "",
-              skills: "Screen Acting",
-              language: "Hindi",
-            },
-          ],
+          roles:
+            opp.roles && opp.roles.length > 0
+              ? opp.roles
+              : [
+                  {
+                    id: `r-${Date.now()}`,
+                    roleName: "Lead Character",
+                    count: 1,
+                    ageRange: "20 - 28 years",
+                    gender: "Any",
+                    description: "",
+                    skills: "Screen Acting",
+                    language: "Hindi",
+                  },
+                ],
           location: opp.location || "Mumbai",
-          remunerationType: opp.remuneration && opp.remuneration.includes("₹") ? "Paid" : (opp.remuneration || "Paid"),
+          remunerationType:
+            opp.remuneration && opp.remuneration.includes("₹")
+              ? "Paid"
+              : opp.remuneration || "Paid",
           remunerationAmount: opp.remuneration || "₹50,000 / day",
           ageMin: opp.eligibility?.ageMin || 20,
           ageMax: opp.eligibility?.ageMax || 30,
@@ -315,34 +320,39 @@ function SubmitOpportunityForm() {
 
   const selectedProject = projects.find((p) => p.id === formData.projectId);
 
+  // Common Input Style with Light Tokens
   const inputStyle = {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.14)",
-    borderRadius: "12px",
-    padding: "10px 14px",
-    color: "#eceaf5",
-    fontSize: "0.875rem",
+    backgroundColor: "#FFFFFF",
+    border: "1px solid #E8E2D4",
+    borderRadius: "10px",
+    padding: "11px 16px",
+    color: "#2B2D2A",
+    fontSize: "15px",
+    fontFamily: "var(--font-body), 'Inter', sans-serif",
     outline: "none",
-    colorScheme: "dark",
     width: "100%",
-    minHeight: "44px",
+    minHeight: "48px",
     boxSizing: "border-box",
+    transition: "border-color 0.18s ease, box-shadow 0.18s ease",
   };
 
+  // POST-SUBMISSION CONFIRMATION SCREEN
   if (submittedStatus) {
     const isSubmitted = submittedStatus === "submitted";
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "680px", margin: "40px auto" }}>
         <div
-          className="card-surface"
           style={{
-            padding: "40px 32px",
+            padding: "48px 36px",
             textAlign: "center",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: "20px",
+            gap: "22px",
             borderRadius: "20px",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            boxShadow: "0 4px 20px rgba(43, 45, 42, 0.05)",
           }}
         >
           <div
@@ -350,23 +360,39 @@ function SubmitOpportunityForm() {
               width: "64px",
               height: "64px",
               borderRadius: "50%",
-              backgroundColor: "rgba(255, 188, 0, 0.15)",
-              border: "2px solid var(--gold)",
-              color: "var(--gold)",
+              backgroundColor: "rgba(138, 107, 46, 0.12)",
+              border: "2px solid #8A6B2E",
+              color: "#8A6B2E",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 0 24px rgba(255, 188, 0, 0.3)",
+              boxShadow: "0 4px 16px rgba(138, 107, 46, 0.20)",
             }}
           >
             <CheckCircle2 size={36} />
           </div>
 
           <div>
-            <h2 style={{ fontSize: "1.4rem", fontWeight: 700, color: "#eceaf5", margin: "0 0 8px 0" }}>
+            <h2
+              style={{
+                fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                fontSize: "28px",
+                fontWeight: 600,
+                color: "#2B2D2A",
+                margin: "0 0 10px 0",
+              }}
+            >
               {isSubmitted ? "Opportunity Submitted to Vismaya" : "Opportunity Saved as Draft"}
             </h2>
-            <p style={{ fontSize: "0.9rem", color: "#a3acc2", margin: 0, lineHeight: 1.6 }}>
+            <p
+              style={{
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
+                fontSize: "15px",
+                color: "#5A584F",
+                margin: 0,
+                lineHeight: 1.7,
+              }}
+            >
               {isSubmitted
                 ? "Vismaya reviews every opportunity before it is published. Our moderation desk will verify the role specifications, safety protocols, and budget parameters."
                 : "Your opportunity draft has been saved. You can continue editing or submit it for review whenever you are ready."}
@@ -375,29 +401,42 @@ function SubmitOpportunityForm() {
 
           <div
             style={{
-              padding: "14px 18px",
-              borderRadius: "12px",
-              backgroundColor: "rgba(255, 188, 0, 0.08)",
-              border: "1px solid rgba(255, 188, 0, 0.25)",
-              fontSize: "0.825rem",
-              color: "var(--gold)",
+              padding: "16px 20px",
+              borderRadius: "14px",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
+              fontSize: "14px",
+              color: "#2B2D2A",
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              gap: "12px",
               textAlign: "left",
+              width: "100%",
+              boxSizing: "border-box",
             }}
           >
-            <ShieldCheck size={20} style={{ flexShrink: 0 }} />
-            <span>
-              <strong>Opportunity:</strong> "{formData.title || "New Opportunity"}" • Assigned to project: <strong>{selectedProject?.title || inlineProjTitle || "Project"}</strong>
+            <ShieldCheck size={22} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+            <span style={{ lineHeight: 1.5 }}>
+              <strong>Opportunity:</strong> &ldquo;{formData.title || "New Opportunity"}&rdquo; • Assigned to project:{" "}
+              <strong>{selectedProject?.title || inlineProjTitle || "Project"}</strong>
             </span>
           </div>
 
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center", marginTop: "10px" }}>
             <Link
               href="/recruiter/opportunities"
-              className="btn-primary"
-              style={{ padding: "10px 24px", fontSize: "0.9rem", borderRadius: "12px" }}
+              style={{
+                padding: "12px 26px",
+                fontSize: "14px",
+                fontWeight: 600,
+                borderRadius: "10px",
+                backgroundColor: "#8A6B2E",
+                color: "#FFFFFF",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
+              }}
             >
               Go to My Opportunities
             </Link>
@@ -438,8 +477,16 @@ function SubmitOpportunityForm() {
                   fullBrief: "",
                 });
               }}
-              className="btn-secondary"
-              style={{ padding: "10px 20px", fontSize: "0.9rem", borderRadius: "12px" }}
+              style={{
+                padding: "12px 22px",
+                fontSize: "14px",
+                fontWeight: 600,
+                borderRadius: "10px",
+                backgroundColor: "#FFFFFF",
+                color: "#2B2D2A",
+                border: "1px solid #E8E2D4",
+                cursor: "pointer",
+              }}
             >
               Post Another Opportunity
             </button>
@@ -450,33 +497,74 @@ function SubmitOpportunityForm() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      {/* Page Header */}
-      <PageHeader
-        title="Submit New Opportunity"
-        subtitle="Create verified character requirements, define eligibility parameters, and submit to Vismaya team for publishing."
-        breadcrumbs={[
-          { label: "Dashboard", href: "/recruiter/dashboard" },
-          { label: "Opportunities", href: "/recruiter/opportunities" },
-          { label: "New Opportunity" },
-        ]}
-      />
+    <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+      {/* PAGE HEADER */}
+      <div>
+        <nav
+          aria-label="Breadcrumb"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "12px",
+            color: "#5A584F",
+            marginBottom: "12px",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
+          }}
+        >
+          <Link href="/recruiter/dashboard" style={{ color: "#5A584F", textDecoration: "none" }}>
+            Dashboard
+          </Link>
+          <span style={{ color: "#E8E2D4" }}>/</span>
+          <Link href="/recruiter/opportunities" style={{ color: "#5A584F", textDecoration: "none" }}>
+            Opportunities
+          </Link>
+          <span style={{ color: "#E8E2D4" }}>/</span>
+          <span style={{ color: "#2B2D2A", fontWeight: 600 }}>Create Opportunity</span>
+        </nav>
 
-      {/* Stepper Card (Full Width on Top) */}
+        <h1
+          style={{
+            fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+            fontSize: "clamp(30px, 3.5vw, 38px)",
+            fontWeight: 600,
+            color: "#2B2D2A",
+            lineHeight: 1.2,
+            margin: "0 0 8px 0",
+            letterSpacing: "-0.015em",
+          }}
+        >
+          Create Opportunity
+        </h1>
+        <p
+          style={{
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
+            fontSize: "16px",
+            color: "#5A584F",
+            margin: 0,
+            lineHeight: 1.7,
+            maxWidth: "780px",
+          }}
+        >
+          Create verified character requirements, define eligibility parameters, and submit to Vismaya team for publishing.
+        </p>
+      </div>
+
+      {/* STEP INDICATOR CARD (Full Width on Top) */}
       <div
-        className="card-surface"
         style={{
           borderRadius: "16px",
-          overflow: "hidden",
-          border: "1px solid var(--border-glass)",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
+          boxShadow: "0 2px 10px rgba(43, 45, 42, 0.04)",
           width: "100%",
+          boxSizing: "border-box",
         }}
       >
-        {/* Desktop Stepper Indicator */}
+        {/* Desktop Stepper */}
         <div
           style={{
-            padding: "18px 24px",
-            backgroundColor: "rgba(255, 255, 255, 0.04)",
+            padding: "20px 28px",
           }}
           className="desktop-stepper"
         >
@@ -484,10 +572,11 @@ function SubmitOpportunityForm() {
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-              gap: "8px",
+              position: "relative",
+              gap: "16px",
             }}
           >
-            {steps.map((s) => {
+            {steps.map((s, idx) => {
               const isDone = s.num < currentStep;
               const isCurrent = s.num === currentStep;
 
@@ -497,56 +586,58 @@ function SubmitOpportunityForm() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "10px",
-                    cursor: s.num < currentStep ? "pointer" : "default",
+                    gap: "12px",
+                    cursor: isDone ? "pointer" : "default",
+                    position: "relative",
                   }}
                   onClick={() => {
-                    if (s.num < currentStep) setCurrentStep(s.num);
+                    if (isDone) setCurrentStep(s.num);
                   }}
                 >
+                  {/* Step Circle 40px */}
                   <div
                     style={{
-                      width: "32px",
-                      height: "32px",
-                      borderRadius: "10px",
-                      background: isDone
-                        ? "var(--gold-gradient)"
-                        : isCurrent
-                        ? "rgba(255, 188, 0, 0.18)"
-                        : "rgba(255, 255, 255, 0.05)",
-                      color: isDone
-                        ? "var(--gold-text)"
-                        : isCurrent
-                        ? "var(--gold)"
-                        : "#7c869e",
-                      border: `2px solid ${
-                        isDone
-                          ? "#ffd54a"
-                          : isCurrent
-                          ? "var(--gold)"
-                          : "rgba(255, 255, 255, 0.12)"
-                      }`,
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "50%",
+                      backgroundColor: isCurrent ? "#8A6B2E" : isDone ? "#FFFFFF" : "#FFFFFF",
+                      color: isCurrent ? "#FFFFFF" : isDone ? "#8A6B2E" : "#5A584F",
+                      border: isCurrent
+                        ? "none"
+                        : isDone
+                        ? "2px solid #8A6B2E"
+                        : "1.5px solid #E8E2D4",
+                      boxShadow: isCurrent ? "0 0 0 4px rgba(138, 107, 46, 0.16)" : "none",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontWeight: 800,
-                      fontSize: "0.825rem",
+                      fontWeight: 700,
+                      fontSize: "15px",
                       flexShrink: 0,
-                      boxShadow: isCurrent ? "0 0 12px rgba(255, 188, 0, 0.25)" : "none",
+                      transition: "all 0.2s ease",
                     }}
                   >
-                    {isDone ? <Check size={16} strokeWidth={3} /> : s.num}
+                    {isDone ? <Check size={18} strokeWidth={2.5} /> : s.num}
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                    <span style={{ fontSize: "0.68rem", color: "#7c869e", textTransform: "uppercase", fontWeight: 700 }}>
+                  {/* Step Label */}
+                  <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        color: "#5A584F",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        fontWeight: 600,
+                      }}
+                    >
                       Step {s.num}
                     </span>
                     <span
                       style={{
-                        fontSize: "0.825rem",
-                        fontWeight: isCurrent ? 700 : 500,
-                        color: isCurrent ? "var(--gold)" : isDone ? "#eceaf5" : "#a3acc2",
+                        fontSize: "15px",
+                        fontWeight: isCurrent ? 600 : 500,
+                        color: isCurrent ? "#2B2D2A" : isDone ? "#2B2D2A" : "#5A584F",
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -564,27 +655,26 @@ function SubmitOpportunityForm() {
         {/* Compact Mobile Stepper Indicator */}
         <div
           style={{
-            padding: "14px 18px",
-            backgroundColor: "rgba(255, 255, 255, 0.04)",
+            padding: "16px 20px",
             display: "none",
             flexDirection: "column",
-            gap: "8px",
+            gap: "10px",
           }}
           className="mobile-stepper"
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--gold)" }}>
-              {steps[currentStep - 1].label}
+            <span style={{ fontSize: "15px", fontWeight: 600, color: "#2B2D2A" }}>
+              Step {currentStep}: {steps[currentStep - 1].label}
             </span>
-            <span style={{ fontSize: "0.75rem", color: "#a3acc2", fontWeight: 600 }}>
-              Step {currentStep} of 4
+            <span style={{ fontSize: "12px", color: "#5A584F", fontWeight: 600 }}>
+              {currentStep} of 4
             </span>
           </div>
           <div
             style={{
               height: "6px",
               borderRadius: "999px",
-              backgroundColor: "rgba(255, 255, 255, 0.08)",
+              backgroundColor: "#E8E2D4",
               overflow: "hidden",
             }}
           >
@@ -592,7 +682,7 @@ function SubmitOpportunityForm() {
               style={{
                 height: "100%",
                 width: `${(currentStep / 4) * 100}%`,
-                background: "var(--gold-gradient)",
+                backgroundColor: "#8A6B2E",
                 borderRadius: "999px",
                 transition: "width 0.25s ease",
               }}
@@ -601,47 +691,61 @@ function SubmitOpportunityForm() {
         </div>
       </div>
 
-      {/* 2-Column Layout on >= 1200px: Form Card (flex 1) + Sticky Live Summary Card (340px) */}
+      {/* 2-Column Workspace Layout: Main Form Card + Sticky Live Preview */}
       <div className="new-opp-workspace-layout">
-        {/* Form Card */}
+        {/* FORM CARD (LEFT, MAIN) */}
         <div
-          className="card-surface new-opp-form-card"
+          className="new-opp-form-card"
           style={{
             flex: 1,
             minWidth: 0,
             borderRadius: "16px",
-            padding: "clamp(18px, 3vw, 28px)",
-            border: "1px solid var(--border-glass)",
+            padding: "clamp(22px, 3.5vw, 32px)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            boxShadow: "0 2px 12px rgba(43, 45, 42, 0.04)",
+            boxSizing: "border-box",
           }}
         >
           {/* STEP 1: PROJECT LINK */}
           {currentStep === 1 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
               <div>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#eceaf5", marginBottom: "4px" }}>
+                <h2
+                  style={{
+                    fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                    fontSize: "26px",
+                    fontWeight: 600,
+                    color: "#2B2D2A",
+                    margin: "0 0 6px 0",
+                  }}
+                >
                   1. Link to a Casting Project
-                </h3>
-                <p style={{ fontSize: "0.825rem", color: "#a3acc2", margin: 0 }}>
+                </h2>
+                <p style={{ fontSize: "15px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
                   Every opportunity must belong to an active project container.
                 </p>
               </div>
 
-              {/* Mode Toggle */}
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              {/* Segmented Toggle Pair */}
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                 <button
                   type="button"
                   onClick={() => setIsInlineProject(false)}
                   style={{
-                    padding: "8px 18px",
-                    borderRadius: "12px",
-                    background: !isInlineProject ? "var(--gold-gradient)" : "rgba(255, 255, 255, 0.05)",
-                    color: !isInlineProject ? "var(--gold-text)" : "#a3acc2",
-                    border: `1px solid ${!isInlineProject ? "var(--gold)" : "rgba(255, 255, 255, 0.12)"}`,
-                    fontSize: "0.825rem",
-                    fontWeight: !isInlineProject ? 700 : 500,
+                    padding: "0 22px",
+                    height: "48px",
+                    borderRadius: "10px",
+                    backgroundColor: !isInlineProject ? "#8A6B2E" : "#FFFFFF",
+                    color: !isInlineProject ? "#FFFFFF" : "#2B2D2A",
+                    border: `1px solid ${!isInlineProject ? "#8A6B2E" : "#E8E2D4"}`,
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
                     cursor: "pointer",
-                    minHeight: "44px",
+                    transition: "all 0.18s ease",
                   }}
+                  className="seg-toggle-btn"
                 >
                   Select Existing Project ({orgProjects.length})
                 </button>
@@ -649,16 +753,19 @@ function SubmitOpportunityForm() {
                   type="button"
                   onClick={() => setIsInlineProject(true)}
                   style={{
-                    padding: "8px 18px",
-                    borderRadius: "12px",
-                    background: isInlineProject ? "var(--gold-gradient)" : "rgba(255, 255, 255, 0.05)",
-                    color: isInlineProject ? "var(--gold-text)" : "#a3acc2",
-                    border: `1px solid ${isInlineProject ? "var(--gold)" : "rgba(255, 255, 255, 0.12)"}`,
-                    fontSize: "0.825rem",
-                    fontWeight: isInlineProject ? 700 : 500,
+                    padding: "0 22px",
+                    height: "48px",
+                    borderRadius: "10px",
+                    backgroundColor: isInlineProject ? "#8A6B2E" : "#FFFFFF",
+                    color: isInlineProject ? "#FFFFFF" : "#2B2D2A",
+                    border: `1px solid ${isInlineProject ? "#8A6B2E" : "#E8E2D4"}`,
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
                     cursor: "pointer",
-                    minHeight: "44px",
+                    transition: "all 0.18s ease",
                   }}
+                  className="seg-toggle-btn"
                 >
                   + Create New Project Inline
                 </button>
@@ -666,8 +773,17 @@ function SubmitOpportunityForm() {
 
               {!isInlineProject ? (
                 <div>
-                  <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
-                    Select Parent Project *
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#2B2D2A",
+                      marginBottom: "8px",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
+                    Select Parent Project <span style={{ color: "#8A6B2E" }}>*</span>
                   </label>
                   <select
                     value={formData.projectId}
@@ -676,24 +792,44 @@ function SubmitOpportunityForm() {
                       ...inputStyle,
                       cursor: "pointer",
                     }}
+                    className="v-form-select"
                   >
                     {orgProjects.map((p) => (
-                      <option key={p.id} value={p.id} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+                      <option key={p.id} value={p.id}>
                         {p.title} ({p.type})
                       </option>
                     ))}
                   </select>
                   {formErrors.projectId && (
-                    <span style={{ color: "var(--danger)", fontSize: "0.75rem", marginTop: "4px", display: "block" }}>
+                    <span style={{ color: "#B42318", fontSize: "12px", marginTop: "6px", display: "block" }}>
                       {formErrors.projectId}
                     </span>
                   )}
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "14px", backgroundColor: "rgba(255, 255, 255, 0.04)", padding: "18px", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.1)" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                    backgroundColor: "#F3EFE6",
+                    padding: "22px",
+                    borderRadius: "14px",
+                    border: "1px solid #E8E2D4",
+                  }}
+                >
                   <div>
-                    <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
-                      New Project Title *
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#2B2D2A",
+                        marginBottom: "6px",
+                        letterSpacing: "0.02em",
+                      }}
+                    >
+                      New Project Title <span style={{ color: "#8A6B2E" }}>*</span>
                     </label>
                     <input
                       type="text"
@@ -701,16 +837,26 @@ function SubmitOpportunityForm() {
                       value={inlineProjTitle}
                       onChange={(e) => setInlineProjTitle(e.target.value)}
                       style={inputStyle}
+                      className="v-form-input"
                     />
                     {formErrors.inlineProjTitle && (
-                      <span style={{ color: "var(--danger)", fontSize: "0.75rem", marginTop: "4px", display: "block" }}>
+                      <span style={{ color: "#B42318", fontSize: "12px", marginTop: "6px", display: "block" }}>
                         {formErrors.inlineProjTitle}
                       </span>
                     )}
                   </div>
 
                   <div>
-                    <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#2B2D2A",
+                        marginBottom: "6px",
+                        letterSpacing: "0.02em",
+                      }}
+                    >
                       Production Type
                     </label>
                     <select
@@ -720,15 +866,29 @@ function SubmitOpportunityForm() {
                         ...inputStyle,
                         cursor: "pointer",
                       }}
+                      className="v-form-select"
                     >
-                      {["OTT Series", "Feature Film", "Commercial / TVC", "Short Film", "Music Video", "Theater", "Documentary"].map((t) => (
-                        <option key={t} value={t} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>{t}</option>
-                      ))}
+                      {["OTT Series", "Feature Film", "Commercial / TVC", "Short Film", "Music Video", "Theater", "Documentary"].map(
+                        (t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        )
+                      )}
                     </select>
                   </div>
 
                   <div>
-                    <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#2B2D2A",
+                        marginBottom: "6px",
+                        letterSpacing: "0.02em",
+                      }}
+                    >
                       Project Synopsis
                     </label>
                     <textarea
@@ -739,8 +899,9 @@ function SubmitOpportunityForm() {
                       style={{
                         ...inputStyle,
                         resize: "vertical",
-                        minHeight: "70px",
+                        minHeight: "76px",
                       }}
+                      className="v-form-textarea"
                     />
                   </div>
                 </div>
@@ -750,20 +911,37 @@ function SubmitOpportunityForm() {
 
           {/* STEP 2: OPPORTUNITY & CHARACTER ROLES */}
           {currentStep === 2 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
               <div>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#eceaf5", marginBottom: "4px" }}>
+                <h2
+                  style={{
+                    fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                    fontSize: "26px",
+                    fontWeight: 600,
+                    color: "#2B2D2A",
+                    margin: "0 0 6px 0",
+                  }}
+                >
                   2. Opportunity Details & Roles
-                </h3>
-                <p style={{ fontSize: "0.825rem", color: "#a3acc2", margin: 0 }}>
+                </h2>
+                <p style={{ fontSize: "15px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
                   Define public opportunity titles, category, and character roles.
                 </p>
               </div>
 
               <div className="form-responsive-grid-2">
                 <div>
-                  <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
-                    Public Opportunity Title *
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#2B2D2A",
+                      marginBottom: "6px",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
+                    Public Opportunity Title <span style={{ color: "#8A6B2E" }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -771,16 +949,26 @@ function SubmitOpportunityForm() {
                     value={formData.title}
                     onChange={(e) => handleFieldChange("title", e.target.value)}
                     style={inputStyle}
+                    className="v-form-input"
                   />
                   {formErrors.title && (
-                    <span style={{ color: "var(--danger)", fontSize: "0.75rem", marginTop: "4px", display: "block" }}>
+                    <span style={{ color: "#B42318", fontSize: "12px", marginTop: "6px", display: "block" }}>
                       {formErrors.title}
                     </span>
                   )}
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#2B2D2A",
+                      marginBottom: "6px",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
                     Opportunity Type
                   </label>
                   <select
@@ -790,9 +978,12 @@ function SubmitOpportunityForm() {
                       ...inputStyle,
                       cursor: "pointer",
                     }}
+                    className="v-form-select"
                   >
                     {OPPORTUNITY_TYPES.map((t) => (
-                      <option key={t} value={t} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>{t}</option>
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -800,8 +991,17 @@ function SubmitOpportunityForm() {
 
               <div className="form-responsive-grid-3">
                 <div>
-                  <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
-                    Shoot Location *
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#2B2D2A",
+                      marginBottom: "6px",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
+                    Shoot Location <span style={{ color: "#8A6B2E" }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -809,11 +1009,21 @@ function SubmitOpportunityForm() {
                     value={formData.location}
                     onChange={(e) => handleFieldChange("location", e.target.value)}
                     style={inputStyle}
+                    className="v-form-input"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#2B2D2A",
+                      marginBottom: "6px",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
                     Remuneration Type
                   </label>
                   <select
@@ -823,16 +1033,28 @@ function SubmitOpportunityForm() {
                       ...inputStyle,
                       cursor: "pointer",
                     }}
+                    className="v-form-select"
                   >
                     {REMUNERATION_TYPES.map((rt) => (
-                      <option key={rt} value={rt} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>{rt}</option>
+                      <option key={rt} value={rt}>
+                        {rt}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
-                    Remuneration Details / Amount {formData.remunerationType === "Paid" ? "*" : ""}
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#2B2D2A",
+                      marginBottom: "6px",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
+                    Remuneration Details / Amount {formData.remunerationType === "Paid" ? <span style={{ color: "#8A6B2E" }}>*</span> : ""}
                   </label>
                   <input
                     type="text"
@@ -840,9 +1062,10 @@ function SubmitOpportunityForm() {
                     value={formData.remunerationAmount}
                     onChange={(e) => handleFieldChange("remunerationAmount", e.target.value)}
                     style={inputStyle}
+                    className="v-form-input"
                   />
                   {formErrors.remunerationAmount && (
-                    <span style={{ color: "var(--danger)", fontSize: "0.75rem", marginTop: "4px", display: "block" }}>
+                    <span style={{ color: "#B42318", fontSize: "12px", marginTop: "6px", display: "block" }}>
                       {formErrors.remunerationAmount}
                     </span>
                   )}
@@ -850,18 +1073,41 @@ function SubmitOpportunityForm() {
               </div>
 
               {/* Character Roles Builder */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "10px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "12px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
-                  <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      color: "#8A6B2E",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                    }}
+                  >
                     Character Roles ({formData.roles.length})
                   </span>
                   <button
                     type="button"
                     onClick={handleAddRole}
-                    className="btn-secondary"
-                    style={{ padding: "6px 14px", fontSize: "0.785rem", gap: "4px", borderRadius: "10px", minHeight: "36px" }}
+                    style={{
+                      padding: "8px 16px",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      gap: "6px",
+                      borderRadius: "10px",
+                      minHeight: "38px",
+                      backgroundColor: "#FFFFFF",
+                      border: "1px solid #E8E2D4",
+                      color: "#2B2D2A",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      cursor: "pointer",
+                      transition: "all 0.18s ease",
+                    }}
+                    className="add-role-btn"
                   >
-                    <Plus size={14} /> Add Role
+                    <Plus size={15} style={{ color: "#8A6B2E" }} />
+                    <span>Add Role</span>
                   </button>
                 </div>
 
@@ -869,17 +1115,17 @@ function SubmitOpportunityForm() {
                   <div
                     key={role.id || idx}
                     style={{
-                      padding: "16px",
+                      padding: "20px",
                       borderRadius: "14px",
-                      backgroundColor: "rgba(255, 255, 255, 0.04)",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      backgroundColor: "#F3EFE6",
+                      border: "1px solid #E8E2D4",
                       display: "flex",
                       flexDirection: "column",
-                      gap: "12px",
+                      gap: "14px",
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#eceaf5" }}>
+                      <span style={{ fontSize: "14px", fontWeight: 700, color: "#2B2D2A" }}>
                         Role #{idx + 1}
                       </span>
                       {formData.roles.length > 1 && (
@@ -887,60 +1133,62 @@ function SubmitOpportunityForm() {
                           type="button"
                           onClick={() => handleRemoveRole(idx)}
                           style={{
-                            color: "var(--danger)",
-                            fontSize: "0.75rem",
+                            color: "#B42318",
+                            fontSize: "13px",
+                            fontWeight: 600,
                             display: "inline-flex",
                             alignItems: "center",
                             gap: "4px",
                             background: "transparent",
                             border: "none",
                             cursor: "pointer",
-                            padding: "6px",
-                            minHeight: "32px",
+                            padding: "4px 8px",
                           }}
                         >
-                          <Trash2 size={13} /> Remove
+                          <Trash2 size={14} /> Remove
                         </button>
                       )}
                     </div>
 
                     <div className="form-responsive-grid-3">
                       <div>
-                        <label style={{ display: "block", fontSize: "0.75rem", color: "#a3acc2", marginBottom: "4px" }}>
-                          Character Name *
+                        <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "4px" }}>
+                          Character Name <span style={{ color: "#8A6B2E" }}>*</span>
                         </label>
                         <input
                           type="text"
-                          placeholder="e.g. Dr. Tanya Roy (Trauma Surgeon)"
+                          placeholder="e.g. Dr. Tanya Roy"
                           value={role.roleName}
                           onChange={(e) => handleRoleChange(idx, "roleName", e.target.value)}
-                          style={{ ...inputStyle, padding: "8px 12px", fontSize: "0.825rem" }}
+                          style={inputStyle}
+                          className="v-form-input"
                         />
                         {formErrors[`roleName_${idx}`] && (
-                          <span style={{ color: "var(--danger)", fontSize: "0.75rem", marginTop: "2px", display: "block" }}>
+                          <span style={{ color: "#B42318", fontSize: "12px", marginTop: "4px", display: "block" }}>
                             {formErrors[`roleName_${idx}`]}
                           </span>
                         )}
                       </div>
 
                       <div>
-                        <label style={{ display: "block", fontSize: "0.75rem", color: "#a3acc2", marginBottom: "4px" }}>
+                        <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "4px" }}>
                           Gender
                         </label>
                         <select
                           value={role.gender}
                           onChange={(e) => handleRoleChange(idx, "gender", e.target.value)}
-                          style={{ ...inputStyle, padding: "8px 12px", fontSize: "0.825rem", cursor: "pointer" }}
+                          style={{ ...inputStyle, cursor: "pointer" }}
+                          className="v-form-select"
                         >
-                          <option value="Any" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Any Gender</option>
-                          <option value="Female" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Female</option>
-                          <option value="Male" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Male</option>
-                          <option value="Non-Binary" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Non-Binary</option>
+                          <option value="Any">Any Gender</option>
+                          <option value="Female">Female</option>
+                          <option value="Male">Male</option>
+                          <option value="Non-Binary">Non-Binary</option>
                         </select>
                       </div>
 
                       <div>
-                        <label style={{ display: "block", fontSize: "0.75rem", color: "#a3acc2", marginBottom: "4px" }}>
+                        <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "4px" }}>
                           Age Range
                         </label>
                         <input
@@ -948,14 +1196,15 @@ function SubmitOpportunityForm() {
                           placeholder="e.g. 21 - 27 years"
                           value={role.ageRange}
                           onChange={(e) => handleRoleChange(idx, "ageRange", e.target.value)}
-                          style={{ ...inputStyle, padding: "8px 12px", fontSize: "0.825rem" }}
+                          style={inputStyle}
+                          className="v-form-input"
                         />
                       </div>
                     </div>
 
                     <div className="form-responsive-grid-2">
                       <div>
-                        <label style={{ display: "block", fontSize: "0.75rem", color: "#a3acc2", marginBottom: "4px" }}>
+                        <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "4px" }}>
                           Skills & Attributes
                         </label>
                         <input
@@ -963,12 +1212,13 @@ function SubmitOpportunityForm() {
                           placeholder="e.g. Fast Dialogue, Screen Acting"
                           value={role.skills}
                           onChange={(e) => handleRoleChange(idx, "skills", e.target.value)}
-                          style={{ ...inputStyle, padding: "8px 12px", fontSize: "0.825rem" }}
+                          style={inputStyle}
+                          className="v-form-input"
                         />
                       </div>
 
                       <div>
-                        <label style={{ display: "block", fontSize: "0.75rem", color: "#a3acc2", marginBottom: "4px" }}>
+                        <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "4px" }}>
                           Languages Required
                         </label>
                         <input
@@ -976,7 +1226,8 @@ function SubmitOpportunityForm() {
                           placeholder="e.g. Hindi (Fluent), English"
                           value={role.language}
                           onChange={(e) => handleRoleChange(idx, "language", e.target.value)}
-                          style={{ ...inputStyle, padding: "8px 12px", fontSize: "0.825rem" }}
+                          style={inputStyle}
+                          className="v-form-input"
                         />
                       </div>
                     </div>
@@ -988,12 +1239,20 @@ function SubmitOpportunityForm() {
 
           {/* STEP 3: ELIGIBILITY & MANDATORY DEADLINE */}
           {currentStep === 3 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
               <div>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#eceaf5", marginBottom: "4px" }}>
+                <h2
+                  style={{
+                    fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                    fontSize: "26px",
+                    fontWeight: 600,
+                    color: "#2B2D2A",
+                    margin: "0 0 6px 0",
+                  }}
+                >
                   3. Eligibility Criteria & Application Deadline
-                </h3>
-                <p style={{ fontSize: "0.825rem", color: "#a3acc2", margin: 0 }}>
+                </h2>
+                <p style={{ fontSize: "15px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
                   Set artist screening filters and the mandatory automatic expiration deadline.
                 </p>
               </div>
@@ -1001,20 +1260,20 @@ function SubmitOpportunityForm() {
               {/* Mandatory Deadline Card */}
               <div
                 style={{
-                  padding: "18px 20px",
+                  padding: "22px",
                   borderRadius: "14px",
-                  backgroundColor: "rgba(255, 188, 0, 0.08)",
-                  border: "1px solid rgba(255, 188, 0, 0.25)",
+                  backgroundColor: "#F3EFE6",
+                  border: "1px solid #E8E2D4",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "10px",
+                  gap: "12px",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--gold)", fontWeight: 700, fontSize: "0.875rem" }}>
-                  <Calendar size={18} />
-                  <span>Mandatory Application Deadline *</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#2B2D2A", fontWeight: 700, fontSize: "15px" }}>
+                  <Calendar size={18} style={{ color: "#8A6B2E" }} />
+                  <span>Mandatory Application Deadline <span style={{ color: "#8A6B2E" }}>*</span></span>
                 </div>
-                <p style={{ fontSize: "0.785rem", color: "#a3acc2", margin: 0 }}>
+                <p style={{ fontSize: "13.5px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
                   Published opportunities automatically stop accepting talent applications and move to <strong>Closed</strong> once this date passes.
                 </p>
 
@@ -1026,13 +1285,13 @@ function SubmitOpportunityForm() {
                   onChange={(e) => handleFieldChange("deadline", e.target.value)}
                   style={{
                     ...inputStyle,
-                    width: "100%",
-                    maxWidth: "280px",
-                    border: formErrors.deadline ? "1px solid var(--danger)" : "1px solid rgba(255, 188, 0, 0.35)",
+                    maxWidth: "300px",
+                    border: formErrors.deadline ? "1px solid #B42318" : "1px solid #E8E2D4",
                   }}
+                  className="v-form-input"
                 />
                 {formErrors.deadline && (
-                  <span style={{ color: "var(--danger)", fontSize: "0.75rem", fontWeight: 600 }}>
+                  <span style={{ color: "#B42318", fontSize: "12px", fontWeight: 600 }}>
                     {formErrors.deadline}
                   </span>
                 )}
@@ -1041,7 +1300,16 @@ function SubmitOpportunityForm() {
               {/* Screening Eligibility Fields */}
               <div className="form-responsive-grid-3">
                 <div>
-                  <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#2B2D2A",
+                      marginBottom: "6px",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
                     Min Age
                   </label>
                   <input
@@ -1051,11 +1319,21 @@ function SubmitOpportunityForm() {
                     value={formData.ageMin}
                     onChange={(e) => handleFieldChange("ageMin", e.target.value)}
                     style={inputStyle}
+                    className="v-form-input"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#2B2D2A",
+                      marginBottom: "6px",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
                     Max Age
                   </label>
                   <input
@@ -1065,11 +1343,21 @@ function SubmitOpportunityForm() {
                     value={formData.ageMax}
                     onChange={(e) => handleFieldChange("ageMax", e.target.value)}
                     style={inputStyle}
+                    className="v-form-input"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#2B2D2A",
+                      marginBottom: "6px",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
                     Target City / Territory
                   </label>
                   <input
@@ -1078,18 +1366,28 @@ function SubmitOpportunityForm() {
                     onChange={(e) => handleFieldChange("eligibilityLocation", e.target.value)}
                     placeholder="e.g. Mumbai / Pan-India"
                     style={inputStyle}
+                    className="v-form-input"
                   />
                 </div>
               </div>
 
               {formErrors.age && (
-                <div style={{ color: "var(--danger)", fontSize: "0.8rem", fontWeight: 600 }}>
+                <div style={{ color: "#B42318", fontSize: "13px", fontWeight: 600 }}>
                   {formErrors.age}
                 </div>
               )}
 
               <div>
-                <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#2B2D2A",
+                    marginBottom: "6px",
+                    letterSpacing: "0.02em",
+                  }}
+                >
                   Experience Guidelines
                 </label>
                 <input
@@ -1098,6 +1396,7 @@ function SubmitOpportunityForm() {
                   onChange={(e) => handleFieldChange("experience", e.target.value)}
                   placeholder="e.g. 1+ years screen or professional theater experience"
                   style={inputStyle}
+                  className="v-form-input"
                 />
               </div>
             </div>
@@ -1105,18 +1404,35 @@ function SubmitOpportunityForm() {
 
           {/* STEP 4: FULL BRIEF & REVIEW */}
           {currentStep === 4 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
               <div>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#eceaf5", marginBottom: "4px" }}>
+                <h2
+                  style={{
+                    fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                    fontSize: "26px",
+                    fontWeight: 600,
+                    color: "#2B2D2A",
+                    margin: "0 0 6px 0",
+                  }}
+                >
                   4. Full Casting Brief & Final Review
-                </h3>
-                <p style={{ fontSize: "0.825rem", color: "#a3acc2", margin: 0 }}>
+                </h2>
+                <p style={{ fontSize: "15px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
                   Review your opportunity before sending it to the Vismaya moderation desk.
                 </p>
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "0.825rem", fontWeight: 600, color: "#eceaf5", marginBottom: "6px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#2B2D2A",
+                    marginBottom: "6px",
+                    letterSpacing: "0.02em",
+                  }}
+                >
                   Full Casting Brief & Director Notes
                 </label>
                 <textarea
@@ -1127,65 +1443,75 @@ function SubmitOpportunityForm() {
                   style={{
                     ...inputStyle,
                     resize: "vertical",
-                    minHeight: "100px",
+                    minHeight: "110px",
                   }}
+                  className="v-form-textarea"
                 />
               </div>
 
               {/* Review Summary Card */}
               <div
                 style={{
-                  padding: "18px 20px",
+                  padding: "20px 24px",
                   borderRadius: "14px",
-                  backgroundColor: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  backgroundColor: "#F3EFE6",
+                  border: "1px solid #E8E2D4",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "10px",
-                  fontSize: "0.85rem",
+                  gap: "12px",
+                  fontSize: "14px",
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ color: "#a3acc2" }}>Project:</span>
-                  <strong style={{ color: "#eceaf5" }}>{selectedProject?.title || inlineProjTitle || "Assigned Project"}</strong>
+                  <span style={{ color: "#5A584F" }}>Project:</span>
+                  <strong style={{ color: "#2B2D2A" }}>
+                    {selectedProject?.title || inlineProjTitle || "Assigned Project"}
+                  </strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ color: "#a3acc2" }}>Opportunity Title:</span>
-                  <strong style={{ color: "#eceaf5" }}>{formData.title}</strong>
+                  <span style={{ color: "#5A584F" }}>Opportunity Title:</span>
+                  <strong style={{ color: "#2B2D2A" }}>{formData.title || "Untitled Opportunity"}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ color: "#a3acc2" }}>Category:</span>
-                  <strong style={{ color: "#eceaf5" }}>{formData.opportunityType}</strong>
+                  <span style={{ color: "#5A584F" }}>Category:</span>
+                  <strong style={{ color: "#2B2D2A" }}>{formData.opportunityType}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ color: "#a3acc2" }}>Remuneration:</span>
-                  <strong style={{ color: "#eceaf5" }}>{formData.remunerationType === "Paid" ? formData.remunerationAmount : formData.remunerationType}</strong>
+                  <span style={{ color: "#5A584F" }}>Remuneration:</span>
+                  <strong style={{ color: "#2B2D2A" }}>
+                    {formData.remunerationType === "Paid"
+                      ? formData.remunerationAmount
+                      : formData.remunerationType}
+                  </strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ color: "#a3acc2" }}>Application Deadline:</span>
-                  <strong style={{ color: "var(--gold)" }}>{formData.deadline} (Mandatory Future Date)</strong>
+                  <span style={{ color: "#5A584F" }}>Application Deadline:</span>
+                  <strong style={{ color: "#8A6B2E" }}>
+                    {formData.deadline || "Pending"} (Mandatory Future Date)
+                  </strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ color: "#a3acc2" }}>Character Roles:</span>
-                  <strong style={{ color: "#eceaf5" }}>{formData.roles.length} Roles</strong>
+                  <span style={{ color: "#5A584F" }}>Character Roles:</span>
+                  <strong style={{ color: "#2B2D2A" }}>{formData.roles.length} Roles</strong>
                 </div>
               </div>
 
               {/* Vismaya Moderation Notice Banner */}
               <div
                 style={{
-                  padding: "14px 18px",
+                  padding: "16px 20px",
                   borderRadius: "12px",
-                  backgroundColor: "rgba(255, 188, 0, 0.12)",
-                  border: "1px solid rgba(255, 188, 0, 0.3)",
+                  backgroundColor: "rgba(138, 107, 46, 0.08)",
+                  border: "1px solid rgba(138, 107, 46, 0.22)",
                   display: "flex",
                   alignItems: "center",
-                  gap: "12px",
-                  fontSize: "0.825rem",
-                  color: "var(--gold)",
+                  gap: "14px",
+                  fontSize: "13.5px",
+                  color: "#2B2D2A",
+                  lineHeight: 1.5,
                 }}
               >
-                <ShieldCheck size={20} style={{ flexShrink: 0 }} />
+                <ShieldCheck size={22} style={{ color: "#8A6B2E", flexShrink: 0 }} />
                 <span>
                   <strong>Vismaya reviews every opportunity before it is published.</strong> Once submitted, the Vismaya team verifies budget escrow, character specs, and safety guidelines before making it live to verified talent.
                 </span>
@@ -1193,73 +1519,134 @@ function SubmitOpportunityForm() {
             </div>
           )}
 
-          {/* Sticky Stepper Navigation Footer */}
+          {/* ACTION BAR (Cancel / Save Draft / Continue) */}
           <div
             style={{
-              position: "sticky",
-              bottom: 0,
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginTop: "28px",
-              borderTop: "1px solid rgba(255, 255, 255, 0.12)",
-              padding: "16px 0 8px 0",
-              paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))",
-              backgroundColor: "rgba(10, 15, 25, 0.95)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              zIndex: 20,
-              gap: "10px",
+              marginTop: "32px",
+              borderTop: "1px solid #E8E2D4",
+              paddingTop: "24px",
+              gap: "12px",
               flexWrap: "wrap",
             }}
+            className="new-opp-action-bar"
           >
             {currentStep > 1 ? (
               <button
                 type="button"
                 onClick={handlePrev}
-                className="btn-secondary"
-                style={{ padding: "8px 18px", fontSize: "0.85rem", gap: "6px", borderRadius: "12px", minHeight: "44px" }}
+                style={{
+                  padding: "0 22px",
+                  height: "46px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  gap: "8px",
+                  borderRadius: "10px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #E8E2D4",
+                  color: "#2B2D2A",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  transition: "all 0.18s ease",
+                }}
+                className="v-btn-secondary"
               >
-                <ArrowLeft size={15} /> Back
+                <ArrowLeft size={16} />
+                <span>Back</span>
               </button>
             ) : (
               <Link
                 href="/recruiter/opportunities"
-                className="btn-ghost"
-                style={{ fontSize: "0.85rem", color: "#a3acc2", borderRadius: "12px", padding: "8px 14px", minHeight: "44px", display: "inline-flex", alignItems: "center" }}
+                style={{
+                  fontSize: "14px",
+                  color: "#5A584F",
+                  padding: "0 8px",
+                  textDecoration: "none",
+                  fontWeight: 500,
+                  transition: "color 0.16s ease",
+                }}
+                className="v-btn-cancel"
               >
                 Cancel
               </Link>
             )}
 
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               <button
                 type="button"
                 onClick={() => handleFormSubmit(true)}
-                className="btn-secondary"
-                style={{ padding: "8px 18px", fontSize: "0.85rem", gap: "6px", borderRadius: "12px", minHeight: "44px" }}
+                style={{
+                  padding: "0 20px",
+                  height: "46px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  gap: "8px",
+                  borderRadius: "10px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #8A6B2E",
+                  color: "#8A6B2E",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  transition: "all 0.18s ease",
+                }}
+                className="v-btn-outline-gold"
               >
-                <Save size={15} /> Save Draft
+                <Save size={16} />
+                <span>Save Draft</span>
               </button>
 
               {currentStep < 4 ? (
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="btn-primary"
-                  style={{ padding: "8px 22px", fontSize: "0.85rem", gap: "6px", borderRadius: "12px", minHeight: "44px" }}
+                  style={{
+                    padding: "0 24px",
+                    height: "46px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    gap: "8px",
+                    borderRadius: "10px",
+                    backgroundColor: "#8A6B2E",
+                    border: "none",
+                    color: "#FFFFFF",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
+                    transition: "all 0.18s ease",
+                  }}
+                  className="v-btn-primary"
                 >
                   <span>Continue</span>
-                  <ArrowRight size={15} />
+                  <ArrowRight size={16} className="continue-arrow-icon" />
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={() => handleFormSubmit(false)}
-                  className="btn-primary"
-                  style={{ padding: "8px 24px", fontSize: "0.85rem", gap: "6px", borderRadius: "12px", minHeight: "44px" }}
+                  style={{
+                    padding: "0 28px",
+                    height: "46px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    gap: "8px",
+                    borderRadius: "10px",
+                    backgroundColor: "#8A6B2E",
+                    border: "none",
+                    color: "#FFFFFF",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
+                    transition: "all 0.18s ease",
+                  }}
+                  className="v-btn-primary"
                 >
-                  <Check size={16} strokeWidth={2.5} />
+                  <Check size={17} strokeWidth={2.5} />
                   <span>Submit to Vismaya</span>
                 </button>
               )}
@@ -1267,115 +1654,206 @@ function SubmitOpportunityForm() {
           </div>
         </div>
 
-        {/* Live Sticky Summary Card (340px, top 96px on >= 1200px) */}
+        {/* LIVE STICKY PREVIEW CARD (RIGHT) */}
         <div className="new-opp-summary-container">
           <div
-            className="card-surface"
             style={{
-              padding: "24px",
+              padding: "28px",
               borderRadius: "16px",
               display: "flex",
               flexDirection: "column",
-              gap: "16px",
+              gap: "20px",
               position: "sticky",
               top: "96px",
-              border: "1px solid var(--border-glass)",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E8E2D4",
+              boxShadow: "0 2px 12px rgba(43, 45, 42, 0.04)",
+              boxSizing: "border-box",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+              <h3
+                style={{
+                  fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                  fontSize: "22px",
+                  fontWeight: 600,
+                  color: "#2B2D2A",
+                  margin: 0,
+                }}
+              >
                 Opportunity overview
               </h3>
               <span
                 style={{
                   fontSize: "11px",
-                  fontWeight: "700",
-                  color: "var(--gold)",
-                  backgroundColor: "rgba(255, 188, 0, 0.12)",
-                  padding: "3px 8px",
-                  borderRadius: "6px",
+                  fontWeight: 700,
+                  color: "#8A6B2E",
+                  backgroundColor: "rgba(138, 107, 46, 0.10)",
+                  border: "1px solid rgba(138, 107, 46, 0.20)",
+                  padding: "3px 9px",
+                  borderRadius: "999px",
                   textTransform: "uppercase",
+                  letterSpacing: "0.12em",
                 }}
               >
                 Live preview
               </span>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontSize: "14px" }}>
               <div>
-                <span style={{ color: "#a3acc2", display: "block", fontSize: "11px", textTransform: "uppercase", fontWeight: "700" }}>
+                <span
+                  style={{
+                    color: "#5A584F",
+                    display: "block",
+                    fontSize: "11px",
+                    textTransform: "uppercase",
+                    fontWeight: 600,
+                    letterSpacing: "0.14em",
+                    marginBottom: "4px",
+                  }}
+                >
                   Project container
                 </span>
-                <strong style={{ color: "#eceaf5" }}>
+                <strong style={{ color: "#2B2D2A", fontSize: "15px", fontWeight: 600 }}>
                   {selectedProject?.title || inlineProjTitle || "Untitled Project"}
                 </strong>
               </div>
 
               <div>
-                <span style={{ color: "#a3acc2", display: "block", fontSize: "11px", textTransform: "uppercase", fontWeight: "700" }}>
+                <span
+                  style={{
+                    color: "#5A584F",
+                    display: "block",
+                    fontSize: "11px",
+                    textTransform: "uppercase",
+                    fontWeight: 600,
+                    letterSpacing: "0.14em",
+                    marginBottom: "4px",
+                  }}
+                >
                   Opportunity title
                 </span>
-                <strong style={{ color: "var(--gold)" }}>
+                <strong
+                  style={{
+                    color: formData.title ? "#2B2D2A" : "#6B6A63",
+                    fontSize: "16px",
+                    fontWeight: formData.title ? 600 : 400,
+                  }}
+                >
                   {formData.title || "Untitled Opportunity"}
                 </strong>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
-                  <span style={{ color: "#a3acc2", display: "block", fontSize: "11px", textTransform: "uppercase", fontWeight: "700" }}>
+                  <span
+                    style={{
+                      color: "#5A584F",
+                      display: "block",
+                      fontSize: "11px",
+                      textTransform: "uppercase",
+                      fontWeight: 600,
+                      letterSpacing: "0.14em",
+                      marginBottom: "4px",
+                    }}
+                  >
                     Category
                   </span>
-                  <span style={{ color: "#eceaf5" }}>{formData.opportunityType}</span>
+                  <span style={{ color: "#2B2D2A", fontWeight: 500 }}>{formData.opportunityType}</span>
                 </div>
                 <div>
-                  <span style={{ color: "#a3acc2", display: "block", fontSize: "11px", textTransform: "uppercase", fontWeight: "700" }}>
+                  <span
+                    style={{
+                      color: "#5A584F",
+                      display: "block",
+                      fontSize: "11px",
+                      textTransform: "uppercase",
+                      fontWeight: 600,
+                      letterSpacing: "0.14em",
+                      marginBottom: "4px",
+                    }}
+                  >
                     Location
                   </span>
-                  <span style={{ color: "#eceaf5" }}>{formData.location || "Mumbai"}</span>
+                  <span style={{ color: "#2B2D2A", fontWeight: 500 }}>{formData.location || "Mumbai"}</span>
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
-                  <span style={{ color: "#a3acc2", display: "block", fontSize: "11px", textTransform: "uppercase", fontWeight: "700" }}>
+                  <span
+                    style={{
+                      color: "#5A584F",
+                      display: "block",
+                      fontSize: "11px",
+                      textTransform: "uppercase",
+                      fontWeight: 600,
+                      letterSpacing: "0.14em",
+                      marginBottom: "4px",
+                    }}
+                  >
                     Roles count
                   </span>
-                  <strong style={{ color: "#34d399" }}>
+                  {/* Gold-Brown Roles Count (No Green) */}
+                  <strong style={{ color: "#8A6B2E", fontWeight: 700 }}>
                     {formData.roles.length} Role{formData.roles.length > 1 ? "s" : ""}
                   </strong>
                 </div>
                 <div>
-                  <span style={{ color: "#a3acc2", display: "block", fontSize: "11px", textTransform: "uppercase", fontWeight: "700" }}>
+                  <span
+                    style={{
+                      color: "#5A584F",
+                      display: "block",
+                      fontSize: "11px",
+                      textTransform: "uppercase",
+                      fontWeight: 600,
+                      letterSpacing: "0.14em",
+                      marginBottom: "4px",
+                    }}
+                  >
                     Deadline
                   </span>
-                  <span style={{ color: "#eceaf5" }}>
-                    {formData.deadline ? new Date(formData.deadline).toLocaleDateString() : "Pending"}
+                  <span style={{ color: formData.deadline ? "#2B2D2A" : "#6B6A63", fontWeight: 500 }}>
+                    {formData.deadline ? new Date(formData.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "Pending"}
                   </span>
                 </div>
               </div>
 
               <div>
-                <span style={{ color: "#a3acc2", display: "block", fontSize: "11px", textTransform: "uppercase", fontWeight: "700" }}>
+                <span
+                  style={{
+                    color: "#5A584F",
+                    display: "block",
+                    fontSize: "11px",
+                    textTransform: "uppercase",
+                    fontWeight: 600,
+                    letterSpacing: "0.14em",
+                    marginBottom: "4px",
+                  }}
+                >
                   Remuneration
                 </span>
-                <span style={{ color: "#eceaf5" }}>
-                  {formData.remunerationType === "Paid" ? formData.remunerationAmount || "Paid Role" : formData.remunerationType}
+                <span style={{ color: "#2B2D2A", fontWeight: 500 }}>
+                  {formData.remunerationType === "Paid"
+                    ? formData.remunerationAmount || "Paid Role"
+                    : formData.remunerationType}
                 </span>
               </div>
             </div>
 
             <div
               style={{
-                backgroundColor: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "10px",
-                padding: "12px",
-                fontSize: "12px",
-                color: "#a3acc2",
-                lineHeight: 1.4,
+                backgroundColor: "#F3EFE6",
+                border: "1px solid #E8E2D4",
+                borderRadius: "12px",
+                padding: "16px",
+                fontSize: "13px",
+                color: "#5A584F",
+                lineHeight: 1.5,
               }}
             >
-              <span style={{ color: "var(--gold)", fontWeight: "600", display: "block", marginBottom: "2px" }}>
+              <span style={{ color: "#2B2D2A", fontWeight: 600, display: "block", marginBottom: "4px" }}>
                 Step {currentStep} of 4: {steps[currentStep - 1]?.label}
               </span>
               Fill out all required details before submitting to Vismaya Casting Desk.
@@ -1389,11 +1867,22 @@ function SubmitOpportunityForm() {
         {currentStep > 1 && (
           <button
             type="button"
-            onClick={handleBack}
-            className="btn-secondary"
-            style={{ height: "40px", padding: "0 14px", fontSize: "13px" }}
+            onClick={handlePrev}
+            style={{
+              height: "44px",
+              padding: "0 16px",
+              fontSize: "13.5px",
+              fontWeight: 600,
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E8E2D4",
+              borderRadius: "10px",
+              color: "#2B2D2A",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
           >
-            <ArrowLeft size={15} />
+            <ArrowLeft size={16} />
             <span>Back</span>
           </button>
         )}
@@ -1401,10 +1890,23 @@ function SubmitOpportunityForm() {
         <button
           type="button"
           onClick={() => handleFormSubmit(true)}
-          className="btn-secondary"
-          style={{ flex: 1, height: "40px", padding: "0 12px", fontSize: "13px" }}
+          style={{
+            flex: 1,
+            height: "44px",
+            padding: "0 14px",
+            fontSize: "13.5px",
+            fontWeight: 600,
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #8A6B2E",
+            borderRadius: "10px",
+            color: "#8A6B2E",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
+          }}
         >
-          <Save size={15} />
+          <Save size={16} />
           <span>Save draft</span>
         </button>
 
@@ -1412,20 +1914,46 @@ function SubmitOpportunityForm() {
           <button
             type="button"
             onClick={handleNext}
-            className="btn-primary"
-            style={{ flex: 1.2, height: "40px", padding: "0 14px", fontSize: "13px" }}
+            style={{
+              flex: 1.2,
+              height: "44px",
+              padding: "0 16px",
+              fontSize: "13.5px",
+              fontWeight: 600,
+              backgroundColor: "#8A6B2E",
+              border: "none",
+              borderRadius: "10px",
+              color: "#FFFFFF",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+            }}
           >
             <span>Continue</span>
-            <ArrowRight size={15} />
+            <ArrowRight size={16} />
           </button>
         ) : (
           <button
             type="button"
             onClick={() => handleFormSubmit(false)}
-            className="btn-primary"
-            style={{ flex: 1.4, height: "40px", padding: "0 14px", fontSize: "13px" }}
+            style={{
+              flex: 1.4,
+              height: "44px",
+              padding: "0 16px",
+              fontSize: "13.5px",
+              fontWeight: 600,
+              backgroundColor: "#8A6B2E",
+              border: "none",
+              borderRadius: "10px",
+              color: "#FFFFFF",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+            }}
           >
-            <Check size={15} />
+            <Check size={16} strokeWidth={2.5} />
             <span>Submit</span>
           </button>
         )}
@@ -1435,13 +1963,13 @@ function SubmitOpportunityForm() {
         .new-opp-workspace-layout {
           display: flex;
           align-items: flex-start;
-          gap: 24px;
+          gap: 32px;
           width: 100%;
           min-width: 0;
         }
 
         .new-opp-summary-container {
-          width: 340px;
+          width: 360px;
           flex-shrink: 0;
         }
 
@@ -1452,18 +1980,62 @@ function SubmitOpportunityForm() {
         .form-responsive-grid-2 {
           display: grid;
           grid-template-columns: 2fr 1fr;
-          gap: 16px;
+          gap: 20px;
         }
 
         .form-responsive-grid-3 {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 16px;
+          gap: 20px;
         }
 
-        @media (max-width: 1199.98px) {
+        .v-form-input:focus,
+        .v-form-select:focus,
+        .v-form-textarea:focus {
+          border-color: #8A6B2E !important;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.16) !important;
+        }
+
+        .seg-toggle-btn:hover {
+          border-color: #8A6B2E !important;
+          background-color: #F3EFE6 !important;
+        }
+
+        .add-role-btn:hover {
+          background-color: #F3EFE6 !important;
+          border-color: #8A6B2E !important;
+        }
+
+        .v-btn-secondary:hover {
+          background-color: #F3EFE6 !important;
+          border-color: #8A6B2E !important;
+        }
+
+        .v-btn-outline-gold:hover {
+          background-color: #F3EFE6 !important;
+        }
+
+        .v-btn-primary:hover {
+          background-color: #6E5420 !important;
+        }
+
+        .v-btn-primary:hover .continue-arrow-icon {
+          transform: translateX(3px);
+        }
+
+        .continue-arrow-icon {
+          transition: transform 0.18s ease;
+        }
+
+        .v-btn-cancel:hover {
+          color: #2B2D2A !important;
+          text-decoration: underline !important;
+        }
+
+        @media (max-width: 1099.98px) {
           .new-opp-workspace-layout {
             flex-direction: column;
+            gap: 28px;
           }
 
           .new-opp-summary-container {
@@ -1481,10 +2053,13 @@ function SubmitOpportunityForm() {
           .form-responsive-grid-2,
           .form-responsive-grid-3 {
             grid-template-columns: 1fr !important;
-            gap: 12px !important;
+            gap: 16px !important;
           }
           .new-opp-workspace-layout {
-            margin-bottom: 70px;
+            margin-bottom: 76px;
+          }
+          .new-opp-action-bar {
+            display: none !important;
           }
           .new-opp-mobile-action-bar {
             display: flex;
@@ -1492,15 +2067,15 @@ function SubmitOpportunityForm() {
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(10, 15, 25, 0.95);
+            background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            border-top: 1px solid #E8E2D4;
             padding: 12px 16px;
             padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
             z-index: 45;
             gap: 10px;
-            box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 -4px 16px rgba(43, 45, 42, 0.08);
           }
         }
       `}</style>
@@ -1510,7 +2085,7 @@ function SubmitOpportunityForm() {
 
 export default function NewOpportunityPage() {
   return (
-    <Suspense fallback={<div style={{ padding: "24px", color: "#a3acc2" }}>Loading opportunity form...</div>}>
+    <Suspense fallback={<div style={{ padding: "24px", color: "#5A584F" }}>Loading opportunity form...</div>}>
       <SubmitOpportunityForm />
     </Suspense>
   );

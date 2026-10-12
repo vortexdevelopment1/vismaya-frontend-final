@@ -10,241 +10,96 @@ export default function StatusBadge({
 }) {
   const normalized = (status || "").toLowerCase().trim().replace(/\s+/g, "-");
 
+  // Approved / Active / Published / Verified / Completed
+  const approvedConfig = {
+    bg: "#F3EFE6",
+    text: "#2B2D2A",
+    border: "#E8E2D4",
+    dot: "#8A6B2E",
+  };
+
+  // Pending / Awaiting / Needs action / Shortlisted / Under Review
+  const pendingConfig = {
+    bg: "rgba(138, 107, 46, 0.12)",
+    text: "#6E5420",
+    border: "rgba(138, 107, 46, 0.25)",
+    dot: "#8A6B2E",
+  };
+
+  // Relayed / Submitted / Draft / Info / Inactive
+  const neutralConfig = {
+    bg: "#F3EFE6",
+    text: "#5A584F",
+    border: "#E8E2D4",
+    dot: "#C9A55C",
+  };
+
+  // Rejected / Cancelled / Declined / Suspended
+  const redConfig = {
+    bg: "rgba(180, 35, 24, 0.08)",
+    text: "#B42318",
+    border: "rgba(180, 35, 24, 0.25)",
+    dot: "#B42318",
+  };
+
   const badgeConfig = {
-    approved: {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Approved",
-    },
-    active: {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Active",
-    },
-    selected: {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Selected",
-    },
-    available: {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Available",
-    },
-    published: {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Published",
-    },
-    verified: {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Verified",
-    },
-    paid: {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Paid",
-    },
-    successful: {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Paid",
-    },
-    completed: {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Completed",
-    },
-    shortlisted: {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Shortlisted",
-    },
-    featured: {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Featured",
-    },
-    "audition-scheduled": {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Audition Scheduled",
-    },
-    scheduled: {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Audition Scheduled",
-    },
-    "under-review": {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Under Review",
-    },
-    "under-vismaya-review": {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Under Review",
-    },
-    "corrections-requested": {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Corrections Requested",
-    },
-    "cancellation-requested": {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Cancellation Requested",
-    },
-    pending: {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Pending Review",
-    },
-    submitted: {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Submitted",
-    },
-    "audition-requested": {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Audition Requested",
-    },
-    requested: {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Audition Requested",
-    },
-    "relayed-to-talent": {
-      bg: "rgba(255, 188, 0, 0.14)",
-      text: "#ffbc00",
-      border: "rgba(255, 188, 0, 0.35)",
-      label: "Relayed to Talent",
-    },
-    "self-tape-received": {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Self-Tape Received",
-    },
-    "forwarded-to-org": {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Forwarded to Org",
-    },
-    reviewed: {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Reviewed",
-    },
-    applied: {
-      bg: "rgba(255, 255, 255, 0.08)",
-      text: "#eceaf5",
-      border: "rgba(255, 255, 255, 0.20)",
-      label: "Applied",
-    },
-    draft: {
-      bg: "rgba(255, 255, 255, 0.06)",
-      text: "#a3acc2",
-      border: "rgba(255, 255, 255, 0.14)",
-      label: "Draft",
-    },
-    rejected: {
-      bg: "rgba(255, 107, 107, 0.14)",
-      text: "#ff6b6b",
-      border: "rgba(255, 107, 107, 0.35)",
-      label: "Rejected",
-    },
-    cancelled: {
-      bg: "rgba(255, 107, 107, 0.14)",
-      text: "#ff6b6b",
-      border: "rgba(255, 107, 107, 0.35)",
-      label: "Cancelled",
-    },
-    closed: {
-      bg: "rgba(255, 255, 255, 0.06)",
-      text: "#a3acc2",
-      border: "rgba(255, 255, 255, 0.14)",
-      label: "Closed",
-    },
-    "not-selected": {
-      bg: "rgba(255, 107, 107, 0.14)",
-      text: "#ff6b6b",
-      border: "rgba(255, 107, 107, 0.35)",
-      label: "Not Selected",
-    },
-    urgent: {
-      bg: "rgba(255, 107, 107, 0.14)",
-      text: "#ff6b6b",
-      border: "rgba(255, 107, 107, 0.35)",
-      label: "Urgent",
-    },
-    "closing-soon": {
-      bg: "rgba(255, 107, 107, 0.14)",
-      text: "#ff6b6b",
-      border: "rgba(255, 107, 107, 0.35)",
-      label: "Closing Soon",
-    },
-    unpaid: {
-      bg: "rgba(255, 255, 255, 0.06)",
-      text: "#a3acc2",
-      border: "rgba(255, 255, 255, 0.14)",
-      label: "Unpaid / Credit",
-    },
-    withdrawn: {
-      bg: "rgba(255, 255, 255, 0.06)",
-      text: "#a3acc2",
-      border: "rgba(255, 255, 255, 0.14)",
-      label: "Withdrawn",
-    },
-    restricted: {
-      bg: "rgba(255, 107, 107, 0.14)",
-      text: "#ff6b6b",
-      border: "rgba(255, 107, 107, 0.35)",
-      label: "Restricted",
-    },
-    banned: {
-      bg: "rgba(255, 107, 107, 0.14)",
-      text: "#ff6b6b",
-      border: "rgba(255, 107, 107, 0.35)",
-      label: "Banned",
-    },
-    live: {
-      bg: "rgba(52, 211, 153, 0.14)",
-      text: "#34d399",
-      border: "rgba(52, 211, 153, 0.35)",
-      label: "Live",
-    },
+    // Approved family
+    approved: { ...approvedConfig, label: "Approved" },
+    active: { ...approvedConfig, label: "Active" },
+    selected: { ...approvedConfig, label: "Selected" },
+    available: { ...approvedConfig, label: "Available" },
+    published: { ...approvedConfig, label: "Published" },
+    verified: { ...approvedConfig, label: "Verified" },
+    paid: { ...approvedConfig, label: "Paid" },
+    successful: { ...approvedConfig, label: "Successful" },
+    completed: { ...approvedConfig, label: "Completed" },
+    live: { ...approvedConfig, label: "Live" },
+    "self-tape-received": { ...approvedConfig, label: "Self-Tape Received" },
+    "forwarded-to-org": { ...approvedConfig, label: "Forwarded to Org" },
+    "forwarded-&-verified": { ...approvedConfig, label: "Forwarded & Verified" },
+    reviewed: { ...approvedConfig, label: "Reviewed" },
+
+    // Pending family
+    pending: { ...pendingConfig, label: "Pending" },
+    "pending-review": { ...pendingConfig, label: "Pending Review" },
+    awaiting: { ...pendingConfig, label: "Awaiting" },
+    "needs-action": { ...pendingConfig, label: "Needs Action" },
+    shortlisted: { ...pendingConfig, label: "Shortlisted" },
+    featured: { ...pendingConfig, label: "Featured" },
+    "audition-scheduled": { ...pendingConfig, label: "Audition Scheduled" },
+    scheduled: { ...pendingConfig, label: "Scheduled" },
+    "under-review": { ...pendingConfig, label: "Under Review" },
+    "under-vismaya-review": { ...pendingConfig, label: "Under Review" },
+    "corrections-requested": { ...pendingConfig, label: "Corrections Requested" },
+    "cancellation-requested": { ...pendingConfig, label: "Cancellation Requested" },
+    "audition-requested": { ...pendingConfig, label: "Audition Requested" },
+    requested: { ...pendingConfig, label: "Audition Requested" },
+
+    // Neutral family
+    submitted: { ...neutralConfig, label: "Submitted" },
+    "relayed-to-talent": { ...neutralConfig, label: "Relayed to Talent" },
+    applied: { ...neutralConfig, label: "Applied" },
+    draft: { ...neutralConfig, label: "Draft" },
+    closed: { ...neutralConfig, label: "Closed" },
+    unpaid: { ...neutralConfig, label: "Unpaid / Credit" },
+    withdrawn: { ...neutralConfig, label: "Withdrawn" },
+    inactive: { ...neutralConfig, label: "Inactive" },
+    info: { ...neutralConfig, label: "Info" },
+
+    // Rejected family
+    rejected: { ...redConfig, label: "Rejected" },
+    declined: { ...redConfig, label: "Declined" },
+    cancelled: { ...redConfig, label: "Cancelled" },
+    suspended: { ...redConfig, label: "Suspended" },
+    "not-selected": { ...redConfig, label: "Not Selected" },
+    urgent: { ...redConfig, label: "Urgent" },
+    "closing-soon": { ...redConfig, label: "Closing Soon" },
+    restricted: { ...redConfig, label: "Restricted" },
+    banned: { ...redConfig, label: "Banned" },
   };
 
   const current = badgeConfig[normalized] || {
-    bg: "rgba(255, 255, 255, 0.08)",
-    text: "#eceaf5",
-    border: "rgba(255, 255, 255, 0.18)",
+    ...neutralConfig,
     label: label || status,
   };
 
@@ -257,8 +112,8 @@ export default function StatusBadge({
         display: "inline-flex",
         alignItems: "center",
         gap: "6px",
-        height: size === "xs" ? "20px" : "24px",
-        minHeight: size === "xs" ? "20px" : "24px",
+        height: size === "xs" ? "22px" : "26px",
+        minHeight: size === "xs" ? "22px" : "26px",
         padding: size === "xs" ? "0 8px" : "0 10px",
         fontSize: size === "xs" ? "10px" : "11px",
         fontWeight: "700",
@@ -270,6 +125,7 @@ export default function StatusBadge({
         lineHeight: 1,
         textTransform: "uppercase",
         letterSpacing: "0.06em",
+        fontFamily: "var(--font-body), 'Inter', sans-serif",
         ...style,
       }}
     >
@@ -279,7 +135,7 @@ export default function StatusBadge({
             width: "5px",
             height: "5px",
             borderRadius: "50%",
-            backgroundColor: current.text,
+            backgroundColor: current.dot || current.text,
             flexShrink: 0,
           }}
         />

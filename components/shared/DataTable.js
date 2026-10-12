@@ -16,7 +16,7 @@ export default function DataTable({
   emptyTitle = "No records found",
   emptyDescription = "There are no entries matching your query.",
   renderMobileCard,
-  minWidth = "1100px",
+  minWidth = "960px",
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -37,16 +37,15 @@ export default function DataTable({
   return (
     <div
       style={{
-        backgroundColor: "rgba(255, 255, 255, 0.07)",
-        border: "1px solid rgba(255, 255, 255, 0.12)",
+        backgroundColor: "#FFFFFF",
+        border: "1px solid #E8E2D4",
         borderRadius: "16px",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+        boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         width: "100%",
+        boxSizing: "border-box",
       }}
     >
       {/* Table Toolbar Header */}
@@ -54,24 +53,24 @@ export default function DataTable({
         <div
           className="data-table-toolbar"
           style={{
-            padding: "16px 20px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            padding: "18px 24px",
+            borderBottom: "1px solid #E8E2D4",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             flexWrap: "wrap",
-            gap: "12px",
-            backgroundColor: "rgba(255, 255, 255, 0.02)",
+            gap: "14px",
+            backgroundColor: "#FFFFFF",
           }}
         >
           {title && (
             <h3
               style={{
-                fontFamily: "var(--font-heading), 'Playfair Display', serif",
-                fontSize: "18px",
-                lineHeight: "24px",
-                fontWeight: "700",
-                color: "#eceaf5",
+                fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                fontSize: "20px",
+                lineHeight: "26px",
+                fontWeight: "600",
+                color: "#2B2D2A",
                 margin: 0,
               }}
             >
@@ -84,7 +83,7 @@ export default function DataTable({
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              gap: "12px",
               flexWrap: "wrap",
               marginLeft: "auto",
             }}
@@ -99,11 +98,11 @@ export default function DataTable({
                 }}
               >
                 <Search
-                  size={15}
+                  size={16}
                   style={{
                     position: "absolute",
-                    left: "12px",
-                    color: "#a3acc2",
+                    left: "14px",
+                    color: "#5A584F",
                     pointerEvents: "none",
                   }}
                 />
@@ -117,17 +116,19 @@ export default function DataTable({
                   }}
                   className="data-table-search-input"
                   style={{
-                    backgroundColor: "rgba(255, 255, 255, 0.055)",
-                    border: "1px solid rgba(255, 255, 255, 0.16)",
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #D9D2C0",
                     borderRadius: "10px",
-                    padding: "0 12px 0 34px",
-                    fontSize: "13px",
-                    color: "#eceaf5",
+                    padding: "0 14px 0 38px",
+                    fontSize: "14px",
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
+                    color: "#2B2D2A",
                     outline: "none",
-                    width: "240px",
-                    height: "38px",
-                    minHeight: "38px",
+                    width: "260px",
+                    height: "44px",
+                    minHeight: "44px",
                     boxSizing: "border-box",
+                    transition: "border-color 0.16s ease, box-shadow 0.16s ease",
                   }}
                 />
               </div>
@@ -139,7 +140,7 @@ export default function DataTable({
 
       {/* Table Content */}
       {filteredData.length === 0 ? (
-        <div style={{ padding: "32px 20px" }}>
+        <div style={{ padding: "40px 24px" }}>
           <EmptyState
             title={emptyTitle}
             description={searchTerm ? `No results for "${searchTerm}"` : emptyDescription}
@@ -147,7 +148,7 @@ export default function DataTable({
         </div>
       ) : (
         <>
-          {/* Desktop & Tablet Table (>= 768px) */}
+          {/* Desktop & Tablet Table (>= 768px) with horizontal scroll wrapper */}
           <div
             className="dt-desktop-view"
             style={{
@@ -169,8 +170,8 @@ export default function DataTable({
               <thead>
                 <tr
                   style={{
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.10)",
-                    backgroundColor: "#0f1626",
+                    borderBottom: "1px solid #E8E2D4",
+                    backgroundColor: "#F3EFE6",
                   }}
                 >
                   {columns.map((col) => (
@@ -180,18 +181,19 @@ export default function DataTable({
                         position: "sticky",
                         top: 0,
                         zIndex: 2,
-                        backgroundColor: "#0f1626",
-                        padding: "12px 18px",
+                        backgroundColor: "#F3EFE6",
+                        padding: "14px 20px",
                         fontWeight: "700",
-                        color: "var(--gold)",
-                        fontSize: "11px",
+                        color: "#5A584F",
+                        fontSize: "12px",
                         textTransform: "uppercase",
-                        letterSpacing: "0.10em",
-                        borderBottom: "1px solid rgba(255, 255, 255, 0.10)",
+                        letterSpacing: "0.14em",
+                        borderBottom: "1px solid #E8E2D4",
                         whiteSpace: "nowrap",
                         minWidth: col.minWidth || "auto",
                         width: col.width || "auto",
                         verticalAlign: "middle",
+                        fontFamily: "var(--font-body), 'Inter', sans-serif",
                       }}
                     >
                       {col.label}
@@ -204,9 +206,10 @@ export default function DataTable({
                   <tr
                     key={row.id || idx}
                     style={{
-                      height: "52px",
-                      borderBottom: idx === currentRows.length - 1 ? "none" : "1px solid rgba(255, 255, 255, 0.06)",
-                      transition: "background-color var(--transition)",
+                      height: "56px",
+                      borderBottom: idx === currentRows.length - 1 ? "none" : "1px solid #E8E2D4",
+                      transition: "background-color 0.16s ease",
+                      backgroundColor: "#FFFFFF",
                     }}
                     className="table-row-hover"
                   >
@@ -218,9 +221,9 @@ export default function DataTable({
                           <td
                             key={col.key}
                             style={{
-                              padding: "10px 18px",
+                              padding: "14px 20px",
                               fontSize: "14px",
-                              color: "#eceaf5",
+                              color: "#2B2D2A",
                               verticalAlign: "middle",
                               minWidth: minW,
                             }}
@@ -237,7 +240,7 @@ export default function DataTable({
                           <td
                             key={col.key}
                             style={{
-                              padding: "10px 18px",
+                              padding: "14px 20px",
                               fontSize: "14px",
                               verticalAlign: "middle",
                               minWidth: minW,
@@ -253,9 +256,9 @@ export default function DataTable({
                         <td
                           key={col.key}
                           style={{
-                            padding: "10px 18px",
-                            color: "#eceaf5",
-                            fontSize: "14px",
+                            padding: "14px 20px",
+                            color: col.primary ? "#2B2D2A" : "#5A584F",
+                            fontSize: col.primary ? "15px" : "14px",
                             fontWeight: col.primary ? "600" : "normal",
                             whiteSpace: "nowrap",
                             verticalAlign: "middle",
@@ -279,7 +282,7 @@ export default function DataTable({
               display: "none",
               flexDirection: "column",
               gap: "12px",
-              padding: "14px",
+              padding: "16px",
               width: "100%",
               boxSizing: "border-box",
             }}
@@ -297,21 +300,22 @@ export default function DataTable({
                 <div
                   key={row.id || idx}
                   style={{
-                    backgroundColor: "rgba(255, 255, 255, 0.04)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #E8E2D4",
                     borderRadius: "14px",
-                    padding: "14px",
+                    padding: "16px",
                     display: "flex",
                     flexDirection: "column",
                     gap: "10px",
                     width: "100%",
                     boxSizing: "border-box",
+                    boxShadow: "0 2px 6px rgba(43, 45, 42, 0.04)",
                   }}
                 >
                   {columns.map((col) => {
                     if (col.key === "actions") {
                       return (
-                        <div key={col.key} style={{ marginTop: "4px" }}>
+                        <div key={col.key} style={{ marginTop: "6px" }}>
                           {col.render ? col.render(row[col.key], row) : null}
                         </div>
                       );
@@ -327,12 +331,12 @@ export default function DataTable({
                           gap: "8px",
                         }}
                       >
-                        <span style={{ color: "#7e89a3", fontSize: "11px", fontWeight: "700", textTransform: "uppercase" }}>
+                        <span style={{ color: "#5A584F", fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                           {col.label}
                         </span>
                         <div style={{ textAlign: "right" }}>
                           {col.render ? col.render(row[col.key], row) : (
-                            <span style={{ color: "#eceaf5" }}>{String(row[col.key] ?? "—")}</span>
+                            <span style={{ color: "#2B2D2A", fontWeight: col.primary ? "600" : "normal" }}>{String(row[col.key] ?? "—")}</span>
                           )}
                         </div>
                       </div>
@@ -350,60 +354,60 @@ export default function DataTable({
         <div
           className="data-table-pagination"
           style={{
-            padding: "12px 20px",
-            borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+            padding: "14px 24px",
+            borderTop: "1px solid #E8E2D4",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             fontSize: "13px",
-            color: "#a3acc2",
-            backgroundColor: "rgba(255, 255, 255, 0.02)",
+            color: "#5A584F",
+            backgroundColor: "#FAF9F7",
             flexWrap: "wrap",
-            gap: "10px",
+            gap: "12px",
           }}
         >
           <span>
             Showing {startIndex + 1} to {Math.min(startIndex + pageSize, filteredData.length)} of {filteredData.length} entries
           </span>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <button
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
               style={{
-                width: "32px",
-                height: "32px",
+                width: "36px",
+                height: "36px",
                 borderRadius: "8px",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
-                color: currentPage === 1 ? "#7e89a3" : "#eceaf5",
-                backgroundColor: "rgba(255, 255, 255, 0.06)",
+                border: "1px solid #E8E2D4",
+                color: currentPage === 1 ? "#A39E93" : "#2B2D2A",
+                backgroundColor: "#FFFFFF",
                 cursor: currentPage === 1 ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "all var(--transition)",
+                transition: "all 0.16s ease",
               }}
             >
               <ChevronLeft size={16} />
             </button>
-            <span style={{ fontWeight: "600", fontSize: "13px", color: "#eceaf5" }}>
+            <span style={{ fontWeight: "600", fontSize: "13px", color: "#2B2D2A" }}>
               Page {currentPage} of {totalPages}
             </span>
             <button
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
               disabled={currentPage === totalPages}
               style={{
-                width: "32px",
-                height: "32px",
+                width: "36px",
+                height: "36px",
                 borderRadius: "8px",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
-                color: currentPage === totalPages ? "#7e89a3" : "#eceaf5",
-                backgroundColor: "rgba(255, 255, 255, 0.06)",
+                border: "1px solid #E8E2D4",
+                color: currentPage === totalPages ? "#A39E93" : "#2B2D2A",
+                backgroundColor: "#FFFFFF",
                 cursor: currentPage === totalPages ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "all var(--transition)",
+                transition: "all 0.16s ease",
               }}
             >
               <ChevronRight size={16} />
@@ -414,7 +418,11 @@ export default function DataTable({
 
       <style jsx global>{`
         .table-row-hover:hover {
-          background-color: rgba(255, 255, 255, 0.04) !important;
+          background-color: #FAF9F7 !important;
+        }
+        .data-table-search-input:focus {
+          border-color: #8A6B2E !important;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
         }
         @media (max-width: 768px) {
           .dt-desktop-view {

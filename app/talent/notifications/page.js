@@ -88,7 +88,7 @@ export default function TalentNotificationsPage() {
             <button
               onClick={handleMarkAllRead}
               className="btn-secondary"
-              style={{ fontSize: "0.85rem", padding: "8px 18px", borderRadius: "12px" }}
+              style={{ fontSize: "0.85rem", padding: "8px 18px", borderRadius: "4px" }}
             >
               <CheckCheck size={16} />
               <span>Mark All as Read</span>

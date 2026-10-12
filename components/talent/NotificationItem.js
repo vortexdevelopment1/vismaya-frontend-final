@@ -23,21 +23,21 @@ export default function NotificationItem({ notification }) {
 
   const getIconConfig = () => {
     if (typeKey.includes("audition")) {
-      return { icon: Video, color: "var(--gold)", bg: "rgba(255, 188, 0, 0.12)", border: "rgba(255, 188, 0, 0.28)", label: "Auditions" };
+      return { icon: Video, color: "var(--gold, #9B7A3F)", bg: "var(--bg-alt, #F0EEE7)", border: "var(--border-color, #E4E1D9)", label: "Auditions" };
     }
     if (typeKey.includes("app")) {
-      return { icon: FileText, color: "var(--gold)", bg: "rgba(255, 188, 0, 0.12)", border: "rgba(255, 188, 0, 0.28)", label: "Applications" };
+      return { icon: FileText, color: "var(--gold, #9B7A3F)", bg: "var(--bg-alt, #F0EEE7)", border: "var(--border-color, #E4E1D9)", label: "Applications" };
     }
     if (typeKey.includes("opp") || typeKey.includes("call")) {
-      return { icon: Megaphone, color: "var(--gold)", bg: "rgba(255, 188, 0, 0.12)", border: "rgba(255, 188, 0, 0.28)", label: "Opportunities" };
+      return { icon: Megaphone, color: "var(--gold, #9B7A3F)", bg: "var(--bg-alt, #F0EEE7)", border: "var(--border-color, #E4E1D9)", label: "Opportunities" };
     }
     if (typeKey.includes("shortlist") || typeKey.includes("select")) {
-      return { icon: Sparkles, color: "var(--gold)", bg: "rgba(255, 188, 0, 0.12)", border: "rgba(255, 188, 0, 0.28)", label: "Applications" };
+      return { icon: Sparkles, color: "var(--gold, #9B7A3F)", bg: "var(--bg-alt, #F0EEE7)", border: "var(--border-color, #E4E1D9)", label: "Applications" };
     }
     if (typeKey.includes("vismaya") || typeKey.includes("admin") || typeKey.includes("message")) {
-      return { icon: ShieldCheck, color: "var(--gold)", bg: "rgba(255, 188, 0, 0.12)", border: "rgba(255, 188, 0, 0.28)", label: "Vismaya messages" };
+      return { icon: ShieldCheck, color: "var(--gold, #9B7A3F)", bg: "var(--bg-alt, #F0EEE7)", border: "var(--border-color, #E4E1D9)", label: "Vismaya messages" };
     }
-    return { icon: Bell, color: "var(--gold)", bg: "rgba(255, 188, 0, 0.12)", border: "rgba(255, 188, 0, 0.28)", label: "Vismaya messages" };
+    return { icon: Bell, color: "var(--gold, #9B7A3F)", bg: "var(--bg-alt, #F0EEE7)", border: "var(--border-color, #E4E1D9)", label: "Vismaya messages" };
   };
 
   const conf = getIconConfig();
@@ -68,18 +68,17 @@ export default function NotificationItem({ notification }) {
       onClick={handleClick}
       className="card-surface"
       style={{
-        backgroundColor: notification.read ? "var(--bg-glass)" : "rgba(255, 188, 0, 0.08)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        border: `1px solid ${notification.read ? "var(--border-glass)" : "rgba(255, 188, 0, 0.35)"}`,
-        padding: "18px 20px",
+        backgroundColor: notification.read ? "#FFFFFF" : "#F3EFE6",
+        border: notification.read ? "1px solid #E8E2D4" : "1px solid #8A6B2E",
+        padding: "16px 20px",
         display: "flex",
         alignItems: "flex-start",
-        gap: "16px",
+        gap: "14px",
         cursor: "pointer",
         position: "relative",
-        borderRadius: "16px",
-        transition: "all var(--transition)",
+        borderRadius: "14px",
+        boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04)",
+        transition: "all 0.16s ease",
       }}
     >
       {/* Category Icon */}
@@ -87,17 +86,17 @@ export default function NotificationItem({ notification }) {
         style={{
           width: "42px",
           height: "42px",
-          borderRadius: "12px",
-          backgroundColor: conf.bg,
-          border: `1px solid ${conf.border}`,
+          borderRadius: "10px",
+          backgroundColor: "#F3EFE6",
+          border: "1px solid #E8E2D4",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: conf.color,
+          color: "#8A6B2E",
           flexShrink: 0,
         }}
       >
-        <Icon size={20} />
+        <Icon size={18} />
       </div>
 
       {/* Body */}
@@ -106,29 +105,28 @@ export default function NotificationItem({ notification }) {
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span
               style={{
-                fontSize: "0.925rem",
+                fontSize: "0.9rem",
                 fontWeight: notification.read ? "600" : "700",
-                color: "var(--text-primary)",
+                color: "var(--text-primary, #292C29)",
               }}
             >
               {notification.title || conf.label}
             </span>
 
-            {/* Unread Glowing Dot */}
+            {/* Unread Dot */}
             {!notification.read && (
               <span
                 style={{
                   width: "8px",
                   height: "8px",
                   borderRadius: "50%",
-                  backgroundColor: "var(--gold)",
-                  boxShadow: "0 0 8px rgba(255, 188, 0, 0.6)",
+                  backgroundColor: "var(--gold, #9B7A3F)",
                 }}
               />
             )}
           </div>
 
-          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+          <span style={{ fontSize: "0.75rem", color: "var(--text-muted, #777970)" }}>
             {timeDisplay}
           </span>
         </div>
@@ -136,7 +134,7 @@ export default function NotificationItem({ notification }) {
         <p
           style={{
             fontSize: "0.85rem",
-            color: "var(--text-secondary)",
+            color: "var(--text-secondary, #5A5C53)",
             lineHeight: 1.5,
             margin: 0,
           }}
@@ -149,11 +147,11 @@ export default function NotificationItem({ notification }) {
             style={{
               fontSize: "0.7rem",
               fontWeight: "600",
-              padding: "2px 10px",
-              borderRadius: "8px",
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
-              color: "var(--gold)",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
+              padding: "2px 8px",
+              borderRadius: "4px",
+              backgroundColor: "var(--bg-alt, #F0EEE7)",
+              color: "var(--gold, #9B7A3F)",
+              border: "1px solid var(--border-color, #E4E1D9)",
             }}
           >
             {conf.label}
@@ -163,7 +161,7 @@ export default function NotificationItem({ notification }) {
             <span
               style={{
                 fontSize: "0.75rem",
-                color: "var(--gold)",
+                color: "var(--gold, #9B7A3F)",
                 fontWeight: "700",
                 display: "inline-flex",
                 alignItems: "center",

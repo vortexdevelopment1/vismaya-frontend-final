@@ -34,9 +34,9 @@ export default function HistoryTable({
 
   const getStatusColor = (status) => {
     const s = (status || "").toLowerCase();
-    if (s === "sent" || s === "delivered") return "var(--ok, #34d399)";
-    if (s === "scheduled") return "var(--gold, #ffbc00)";
-    return "var(--mu, #a3acc2)";
+    if (s === "sent" || s === "delivered") return "#6E5420";
+    if (s === "scheduled") return "#8A6B2E";
+    return "#5A584F";
   };
 
   const filteredHistory = useMemo(() => {
@@ -265,10 +265,10 @@ export default function HistoryTable({
             alignItems: "center",
             marginTop: "20px",
             paddingTop: "16px",
-            borderTop: "1px solid var(--bd, rgba(255, 255, 255, 0.12))",
+            borderTop: "1px solid #E8E2D4",
           }}
         >
-          <span style={{ fontSize: "13px", color: "var(--mu, #a3acc2)" }}>
+          <span style={{ fontSize: "13px", color: "#5A584F" }}>
             Showing page {page} of {totalPages} ({filteredHistory.length} total)
           </span>
           <div style={{ display: "flex", gap: "8px" }}>

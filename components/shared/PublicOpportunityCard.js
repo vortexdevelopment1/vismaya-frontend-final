@@ -22,10 +22,10 @@ import {
 } from "@/lib/shared/dateUtils";
 
 const BRAND_GRADIENTS = [
-  "linear-gradient(135deg, #070b12 0%, #0f1626 50%, rgba(255, 188, 0, 0.15) 100%)",
-  "linear-gradient(155deg, #0a0f19 0%, #141c2e 50%, rgba(255, 188, 0, 0.18) 100%)",
-  "linear-gradient(175deg, #070b12 0%, #10192b 50%, rgba(255, 213, 74, 0.15) 100%)",
-  "linear-gradient(120deg, #0a0f19 0%, #151e33 50%, rgba(255, 188, 0, 0.16) 100%)",
+  "linear-gradient(135deg, #1a1c1a 0%, #292c29 60%, #3d413d 100%)",
+  "linear-gradient(155deg, #161816 0%, #242724 60%, #383c38 100%)",
+  "linear-gradient(175deg, #1e201e 0%, #2b2e2b 60%, #3f433f 100%)",
+  "linear-gradient(120deg, #181a18 0%, #262926 60%, #3a3e3a 100%)",
 ];
 
 function getOpportunityTypeIcon(type) {
@@ -55,7 +55,6 @@ export default function PublicOpportunityCard({
   index = 0,
 }) {
   const [isHovered, setIsHovered] = useState(false);
-  const [isBtnHovered, setIsBtnHovered] = useState(false);
 
   if (!opportunity) return null;
 
@@ -77,31 +76,29 @@ export default function PublicOpportunityCard({
 
   return (
     <div
-      className="public-opp-card"
+      className="public-opp-card card-surface"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        backgroundColor: "rgba(255, 255, 255, 0.055)",
-        border: `1px solid ${isHovered ? "rgba(255, 188, 0, 0.45)" : "rgba(255, 255, 255, 0.14)"}`,
+        backgroundColor: "var(--bg-surface)",
+        border: `1px solid ${isHovered ? "var(--text-primary)" : "var(--border-color)"}`,
         borderRadius: "20px",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         height: "100%",
         boxShadow: isHovered
-          ? "0 20px 45px rgba(0, 0, 0, 0.55), 0 0 24px rgba(255, 188, 0, 0.15)"
-          : "0 10px 30px rgba(0, 0, 0, 0.35)",
+          ? "var(--shadow-lg)"
+          : "var(--shadow-md)",
         transform: isHovered ? "translateY(-4px)" : "translateY(0)",
         transition: "transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease",
       }}
     >
-      {/* 1. MEDIA HEADER */}
+      {/* 1. MEDIA HEADER (DARK STUDIO BANNER) */}
       <div
         style={{
           position: "relative",
-          height: "120px",
+          height: "115px",
           background: gradient,
           padding: "14px 16px",
           display: "flex",
@@ -109,7 +106,7 @@ export default function PublicOpportunityCard({
           alignItems: "flex-start",
           overflow: "hidden",
           flexShrink: 0,
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.10)",
         }}
       >
         {/* Subtle grid texture overlay */}
@@ -132,7 +129,7 @@ export default function PublicOpportunityCard({
             position: "absolute",
             right: "10px",
             bottom: "-10px",
-            color: "rgba(255, 255, 255, 0.12)",
+            color: "rgba(255, 255, 255, 0.16)",
             pointerEvents: "none",
             transform: "rotate(-6deg)",
             display: "flex",
@@ -149,11 +146,11 @@ export default function PublicOpportunityCard({
           style={{
             position: "relative",
             zIndex: 2,
-            backgroundColor: "rgba(255, 255, 255, 0.10)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            border: "1px solid rgba(255, 255, 255, 0.20)",
-            color: "#eceaf5",
+            backgroundColor: "rgba(255, 255, 255, 0.12)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            border: "1px solid rgba(255, 255, 255, 0.22)",
+            color: "#FAF9F6",
             fontSize: "11px",
             fontWeight: 700,
             lineHeight: 1,
@@ -170,21 +167,21 @@ export default function PublicOpportunityCard({
           {typeShort}
         </span>
 
-        {/* Top-Right Chip: Deadline (Red-tinted when urgent, else glass chip) */}
+        {/* Top-Right Chip: Deadline */}
         <span
           title={`Deadline: ${formatDate(opportunity.deadline)}`}
           style={{
             position: "relative",
             zIndex: 2,
             backgroundColor: deadlineInfo.isUrgent
-              ? "rgba(255, 107, 107, 0.22)"
-              : "rgba(255, 255, 255, 0.10)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
+              ? "rgba(255, 107, 107, 0.25)"
+              : "rgba(255, 255, 255, 0.12)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
             border: deadlineInfo.isUrgent
               ? "1px solid rgba(255, 107, 107, 0.50)"
-              : "1px solid rgba(255, 255, 255, 0.20)",
-            color: deadlineInfo.isUrgent ? "#ff6b6b" : "#eceaf5",
+              : "1px solid rgba(255, 255, 255, 0.22)",
+            color: deadlineInfo.isUrgent ? "#ff8a8a" : "#FAF9F6",
             fontSize: "11px",
             fontWeight: 700,
             lineHeight: 1,
@@ -197,7 +194,7 @@ export default function PublicOpportunityCard({
             letterSpacing: "0.04em",
           }}
         >
-          {deadlineInfo.isUrgent && <AlertCircle size={12} style={{ color: "#ff6b6b" }} />}
+          {deadlineInfo.isUrgent && <AlertCircle size={12} style={{ color: "#ff8a8a" }} />}
           <span>{deadlineInfo.label}</span>
         </span>
       </div>
@@ -205,32 +202,34 @@ export default function PublicOpportunityCard({
       {/* 2. BODY */}
       <div
         style={{
-          padding: "24px",
+          padding: "20px",
           display: "flex",
           flexDirection: "column",
-          gap: "16px",
+          gap: "12px",
           flex: 1,
         }}
       >
-        {/* Title: Playfair Display */}
-        <div>
+        {/* Title */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <Link
             href={`/opportunities/${opportunity.id}`}
             style={{ textDecoration: "none", color: "inherit" }}
           >
             <h3
               style={{
-                fontFamily: "var(--font-heading), 'Playfair Display', serif",
-                fontSize: "20px",
-                lineHeight: "28px",
+                fontFamily: "Georgia, serif",
+                fontSize: "18px",
+                lineHeight: "1.35",
                 fontWeight: 700,
-                color: isHovered ? "var(--gold)" : "#eceaf5",
+                color: "var(--text-primary)",
                 margin: 0,
-                minHeight: "56px",
+                minHeight: "2.7em",
                 display: "-webkit-box",
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: "vertical",
                 overflow: "hidden",
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
                 cursor: "pointer",
                 transition: "color 180ms ease",
               }}
@@ -238,33 +237,33 @@ export default function PublicOpportunityCard({
               {opportunity.title}
             </h3>
           </Link>
-        </div>
 
-        {/* Project Line */}
-        <div
-          title={`Project: ${projectName}`}
-          style={{
-            fontSize: "13px",
-            color: "#a3acc2",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            lineHeight: "18px",
-            marginTop: "-6px",
-          }}
-        >
-          <span style={{ color: "#7e89a3", fontWeight: 400 }}>Project: </span>
-          <span style={{ fontWeight: 600, color: "#eceaf5" }}>{projectName}</span>
+          {/* Project Line */}
+          <div
+            title={`Project: ${projectName}`}
+            style={{
+              fontSize: "12px",
+              color: "var(--text-secondary)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              lineHeight: "1.4",
+              minHeight: "1.4em",
+            }}
+          >
+            <span>Project: </span>
+            <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{projectName}</span>
+          </div>
         </div>
 
         {/* Role Box */}
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.04)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "12px",
-            padding: "12px 14px",
-            minHeight: "64px",
+            backgroundColor: "var(--bg-alt)",
+            border: "1px solid var(--border-color)",
+            borderRadius: "4px",
+            padding: "10px 12px",
+            minHeight: "60px",
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
@@ -273,12 +272,12 @@ export default function PublicOpportunityCard({
           <span
             style={{
               fontSize: "10px",
-              letterSpacing: "0.14em",
-              fontWeight: 800,
+              letterSpacing: "0.1em",
+              fontWeight: 700,
               color: "var(--gold)",
               textTransform: "uppercase",
               display: "block",
-              marginBottom: "3px",
+              marginBottom: "2px",
               lineHeight: 1.2,
             }}
           >
@@ -287,9 +286,9 @@ export default function PublicOpportunityCard({
           <span
             title={roleTitle}
             style={{
-              fontSize: "13px",
+              fontSize: "12px",
               fontWeight: 600,
-              color: "#eceaf5",
+              color: "var(--text-primary)",
               lineHeight: 1.35,
               display: "-webkit-box",
               WebkitLineClamp: 2,
@@ -301,13 +300,14 @@ export default function PublicOpportunityCard({
           </span>
         </div>
 
-        {/* Meta List */}
+        {/* Meta List (Location & Deadline) */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "10px",
-            marginTop: "2px",
+            gap: "6px",
+            minHeight: "44px",
+            justifyContent: "center",
           }}
         >
           {/* Location */}
@@ -317,18 +317,18 @@ export default function PublicOpportunityCard({
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              fontSize: "13px",
-              color: "#a3acc2",
+              fontSize: "12px",
+              color: "var(--text-secondary)",
               minWidth: 0,
             }}
           >
-            <MapPin size={15} style={{ color: "var(--gold)", flexShrink: 0 }} />
+            <MapPin size={14} style={{ color: "var(--gold)", flexShrink: 0 }} />
             <span
               style={{
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                lineHeight: "18px",
+                lineHeight: "1.3",
               }}
             >
               {opportunity.location || "Mumbai, India"}
@@ -341,29 +341,29 @@ export default function PublicOpportunityCard({
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              fontSize: "13px",
-              color: "#a3acc2",
+              fontSize: "12px",
+              color: "var(--text-secondary)",
               whiteSpace: "nowrap",
             }}
           >
-            <Calendar size={15} style={{ color: "var(--gold)", flexShrink: 0 }} />
-            <span style={{ whiteSpace: "nowrap", lineHeight: "18px" }}>
+            <Calendar size={14} style={{ color: "var(--gold)", flexShrink: 0 }} />
+            <span style={{ whiteSpace: "nowrap", lineHeight: "1.3" }}>
               Closes {formatDate(opportunity.deadline)}
             </span>
           </div>
         </div>
 
-        {/* 3. FOOTER */}
+        {/* 3. FOOTER PINNED TO BOTTOM */}
         <div
           className="opp-card-footer"
           style={{
             marginTop: "auto",
-            borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-            paddingTop: "16px",
+            borderTop: "1px solid var(--border-color)",
+            paddingTop: "12px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: "12px",
+            gap: "10px",
           }}
         >
           {/* Remuneration */}
@@ -379,8 +379,8 @@ export default function PublicOpportunityCard({
           >
             <span
               style={{
-                fontSize: "11px",
-                color: "#a3acc2",
+                fontSize: "10px",
+                color: "var(--text-secondary)",
                 fontWeight: 600,
                 lineHeight: 1.2,
                 textTransform: "uppercase",
@@ -391,10 +391,10 @@ export default function PublicOpportunityCard({
             </span>
             <span
               style={{
-                fontFamily: "var(--font-heading), 'Playfair Display', serif",
-                fontSize: "17px",
+                fontFamily: "Georgia, serif",
+                fontSize: "15px",
                 fontWeight: 700,
-                color: "var(--gold)",
+                color: "var(--text-primary)",
                 lineHeight: 1.3,
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -409,40 +409,17 @@ export default function PublicOpportunityCard({
           {/* View Details Button */}
           <Link
             href={`/opportunities/${opportunity.id}`}
-            onMouseEnter={() => setIsBtnHovered(true)}
-            onMouseLeave={() => setIsBtnHovered(false)}
-            className="opp-view-btn"
+            className="btn-primary opp-view-btn"
             style={{
-              height: "42px",
-              minHeight: "42px",
-              borderRadius: "10px",
-              backgroundColor: isBtnHovered ? "var(--gold)" : "rgba(255, 255, 255, 0.08)",
-              border: `1px solid ${isBtnHovered ? "var(--gold)" : "rgba(255, 255, 255, 0.18)"}`,
-              color: isBtnHovered ? "#1a1300" : "#eceaf5",
+              height: "36px",
+              padding: "0 16px",
               fontSize: "11px",
-              fontWeight: 800,
-              padding: "0 18px",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6px",
-              textDecoration: "none",
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              transition: "all 180ms ease",
+              borderRadius: "4px",
               flexShrink: 0,
-              cursor: "pointer",
-              boxShadow: isBtnHovered ? "0 4px 14px rgba(255, 188, 0, 0.35)" : "none",
             }}
           >
             <span>View</span>
-            <ArrowRight
-              size={14}
-              style={{
-                transform: isBtnHovered ? "translateX(2px)" : "translateX(0)",
-                transition: "transform 180ms ease",
-              }}
-            />
+            <ArrowRight size={13} />
           </Link>
         </div>
       </div>

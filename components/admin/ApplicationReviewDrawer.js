@@ -41,9 +41,9 @@ export default function ApplicationReviewDrawer({
         style={{
           position: "fixed",
           inset: 0,
-          backgroundColor: "rgba(7, 11, 18, 0.75)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          backgroundColor: "rgba(43, 45, 42, 0.55)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
           zIndex: 90,
         }}
       />
@@ -57,27 +57,25 @@ export default function ApplicationReviewDrawer({
           bottom: 0,
           width: "640px",
           maxWidth: "100vw",
-          backgroundColor: "var(--bg-alt)",
-          borderLeft: "1px solid var(--glass-border-elevated)",
-          boxShadow: "var(--shadow-lg)",
+          backgroundColor: "#FFFFFF",
+          borderLeft: "1px solid #E8E2D4",
+          boxShadow: "0 20px 48px rgba(43, 45, 42, 0.16)",
           zIndex: 100,
           display: "flex",
           flexDirection: "column",
           animation: "slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-          backdropFilter: "var(--glass-blur)",
-          WebkitBackdropFilter: "var(--glass-blur)",
         }}
       >
         {/* Header */}
         <div
           style={{
             padding: "18px 22px",
-            borderBottom: "1px solid var(--border-color)",
+            borderBottom: "1px solid #E8E2D4",
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "space-between",
             gap: "14px",
-            backgroundColor: "var(--bg-surface-elevated)",
+            backgroundColor: "#F3EFE6",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>

@@ -9,9 +9,12 @@ import { toFrontendRole, toBackendRole } from "@/lib/api/roles";
 export default function RequireRole({ allowedRoles = [], children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, role, isLoading, isAuthenticated, getDashboardPath } = useAuth();
+  const { user, role, isLoading, isAuthenticated, getDashboardPath, isLoggingOut } = useAuth();
 
   useEffect(() => {
+    // If user explicitly initiated logout, bail out so router.replace("/") is not overridden
+    if (isLoggingOut) return;
+
     // In mock mode, route guards do not block navigation to maintain demo parity
     if (USE_MOCK) return;
 
@@ -36,11 +39,16 @@ export default function RequireRole({ allowedRoles = [], children }) {
         }
       }
     }
-  }, [isLoading, isAuthenticated, user, role, allowedRoles, pathname, router, getDashboardPath]);
+  }, [isLoading, isAuthenticated, user, role, allowedRoles, pathname, router, getDashboardPath, isLoggingOut]);
 
   // In mock mode, always render children directly
   if (USE_MOCK) {
     return <>{children}</>;
+  }
+
+  // If user is currently logging out, render null until landed on home
+  if (isLoggingOut) {
+    return null;
   }
 
   // Real mode: show sleek glass loading screen while verifying session
@@ -66,22 +74,22 @@ export default function RequireRole({ allowedRoles = [], children }) {
             flexDirection: "column",
             alignItems: "center",
             gap: "16px",
-            background: "rgba(15, 22, 38, 0.75)",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
-            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.5)",
+            background: "var(--bg-surface, #FFFFFF)",
+            border: "1px solid var(--border-color, #E8E2D4)",
+            boxShadow: "0 10px 30px rgba(43, 45, 42, 0.08)",
           }}
         >
           <div
             style={{
               width: "36px",
               height: "36px",
-              border: "3px solid rgba(255, 188, 0, 0.2)",
-              borderTopColor: "var(--gold, #ffbc00)",
+              border: "3px solid rgba(138, 107, 46, 0.2)",
+              borderTopColor: "var(--gold, #8A6B2E)",
               borderRadius: "50%",
               animation: "spin 0.8s linear infinite",
             }}
           />
-          <span style={{ fontSize: "14px", color: "#a3acc2", fontWeight: "600" }}>
+          <span style={{ fontSize: "14px", color: "var(--text-secondary, #5A584F)", fontWeight: "600" }}>
             Verifying Session Access...
           </span>
           <style jsx>{`

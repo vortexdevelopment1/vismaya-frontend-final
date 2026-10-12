@@ -63,9 +63,9 @@ export default function CandidateProfileModal({
         style={{
           position: "fixed",
           inset: 0,
-          backgroundColor: "rgba(7, 11, 18, 0.75)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          backgroundColor: "rgba(43, 45, 42, 0.55)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
           zIndex: 100,
         }}
       />
@@ -90,16 +90,14 @@ export default function CandidateProfileModal({
             width: "100%",
             maxWidth: "760px",
             maxHeight: "90vh",
-            backgroundColor: "var(--bg-alt)",
-            border: "1px solid var(--glass-border-elevated)",
-            borderRadius: "20px",
-            boxShadow: "var(--shadow-lg)",
+            backgroundColor: "var(--bg-surface, #FFFFFF)",
+            border: "1px solid var(--border-color, #E4E1D9)",
+            borderRadius: "8px",
+            boxShadow: "0 20px 48px rgba(41, 44, 41, 0.16)",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
             animation: "modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-            backdropFilter: "var(--glass-blur)",
-            WebkitBackdropFilter: "var(--glass-blur)",
           }}
         >
           {/* Modal Header */}

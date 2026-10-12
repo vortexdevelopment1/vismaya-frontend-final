@@ -4,14 +4,6 @@ import React, { useState, useEffect } from "react";
 import {
   X,
   CreditCard,
-  DollarSign,
-  Building2,
-  User,
-  Calendar,
-  FileText,
-  CheckCircle,
-  Plus,
-  Sparkles,
 } from "lucide-react";
 
 export default function PaymentEntryModal({
@@ -86,9 +78,9 @@ export default function PaymentEntryModal({
         style={{
           position: "fixed",
           inset: 0,
-          backgroundColor: "rgba(7, 11, 18, 0.75)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          backgroundColor: "rgba(43, 45, 42, 0.45)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
           zIndex: 90,
         }}
       />
@@ -100,31 +92,29 @@ export default function PaymentEntryModal({
           top: "50%",
           left: "50%",
           transform: "translate(-50%, -50%)",
-          width: "640px",
+          width: "660px",
           maxWidth: "95vw",
           maxHeight: "90vh",
-          backgroundColor: "#121a2b",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
           borderRadius: "20px",
-          boxShadow: "0 24px 60px rgba(0, 0, 0, 0.7)",
+          boxShadow: "0 20px 48px rgba(43, 45, 42, 0.16)",
           zIndex: 100,
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          animation: "modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
+          boxSizing: "border-box",
         }}
       >
         {/* Header */}
         <div
           style={{
-            padding: "18px 24px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            padding: "20px 26px",
+            borderBottom: "1px solid #E8E2D4",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            backgroundColor: "rgba(15, 22, 38, 0.8)",
+            backgroundColor: "#FFFFFF",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -132,22 +122,22 @@ export default function PaymentEntryModal({
               style={{
                 width: "40px",
                 height: "40px",
-                borderRadius: "12px",
-                background: "rgba(255, 188, 0, 0.12)",
-                color: "var(--gold)",
+                borderRadius: "10px",
+                background: "#F3EFE6",
+                color: "#8A6B2E",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                border: "1px solid rgba(255, 188, 0, 0.30)",
+                border: "1px solid #E8E2D4",
               }}
             >
               <CreditCard size={20} />
             </div>
             <div>
-              <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#eceaf5", margin: 0 }}>
+              <h2 style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "22px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
                 {initialData ? "Edit Payment Entry" : "Log Offline Payment / Retainer"}
               </h2>
-              <p style={{ fontSize: "0.75rem", color: "#a3acc2", margin: "2px 0 0 0" }}>
+              <p style={{ fontSize: "13px", color: "#5A584F", margin: "2px 0 0 0", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Manual accounting ledger for client invoices and artist payouts.
               </p>
             </div>
@@ -157,18 +147,18 @@ export default function PaymentEntryModal({
             onClick={onClose}
             aria-label="Close"
             style={{
-              padding: "8px",
-              borderRadius: "10px",
-              color: "#a3acc2",
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
+              padding: "6px",
+              borderRadius: "8px",
+              color: "#5A584F",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
 
@@ -178,7 +168,7 @@ export default function PaymentEntryModal({
           style={{
             flex: 1,
             overflowY: "auto",
-            padding: "20px 24px",
+            padding: "22px 26px",
             display: "flex",
             flexDirection: "column",
             gap: "16px",
@@ -186,7 +176,7 @@ export default function PaymentEntryModal({
         >
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#eceaf5", marginBottom: "4px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Project / Casting Call Title *
               </label>
               <input
@@ -197,19 +187,21 @@ export default function PaymentEntryModal({
                 onChange={(e) => setFormData({ ...formData, projectTitle: e.target.value })}
                 style={{
                   width: "100%",
-                  padding: "10px 14px",
-                  borderRadius: "12px",
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  color: "#eceaf5",
-                  fontSize: "0.85rem",
+                  height: "44px",
+                  padding: "0 14px",
+                  borderRadius: "10px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #D9D2C0",
+                  color: "#2B2D2A",
+                  fontSize: "14px",
                   outline: "none",
+                  boxSizing: "border-box",
                 }}
               />
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#eceaf5", marginBottom: "4px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Payer Entity
               </label>
               <select
@@ -217,24 +209,26 @@ export default function PaymentEntryModal({
                 onChange={(e) => setFormData({ ...formData, payer: e.target.value })}
                 style={{
                   width: "100%",
-                  padding: "10px 14px",
-                  borderRadius: "12px",
-                  backgroundColor: "#0f1626",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  color: "#eceaf5",
-                  fontSize: "0.85rem",
+                  height: "44px",
+                  padding: "0 14px",
+                  borderRadius: "10px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #D9D2C0",
+                  color: "#2B2D2A",
+                  fontSize: "14px",
                   outline: "none",
+                  boxSizing: "border-box",
                 }}
               >
-                <option value="Recruiter" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Recruiter / Client</option>
-                <option value="Talent" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Talent / Artist</option>
+                <option value="Recruiter">Recruiter / Client</option>
+                <option value="Talent">Talent / Artist</option>
               </select>
             </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#eceaf5", marginBottom: "4px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Payer Name / Company *
               </label>
               <input
@@ -245,19 +239,21 @@ export default function PaymentEntryModal({
                 onChange={(e) => setFormData({ ...formData, payerName: e.target.value })}
                 style={{
                   width: "100%",
-                  padding: "10px 14px",
-                  borderRadius: "12px",
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  color: "#eceaf5",
-                  fontSize: "0.85rem",
+                  height: "44px",
+                  padding: "0 14px",
+                  borderRadius: "10px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #D9D2C0",
+                  color: "#2B2D2A",
+                  fontSize: "14px",
                   outline: "none",
+                  boxSizing: "border-box",
                 }}
               />
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#eceaf5", marginBottom: "4px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Target Talent / Artist Name
               </label>
               <input
@@ -267,13 +263,15 @@ export default function PaymentEntryModal({
                 onChange={(e) => setFormData({ ...formData, talentName: e.target.value })}
                 style={{
                   width: "100%",
-                  padding: "10px 14px",
-                  borderRadius: "12px",
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  color: "#eceaf5",
-                  fontSize: "0.85rem",
+                  height: "44px",
+                  padding: "0 14px",
+                  borderRadius: "10px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #D9D2C0",
+                  color: "#2B2D2A",
+                  fontSize: "14px",
                   outline: "none",
+                  boxSizing: "border-box",
                 }}
               />
             </div>
@@ -282,22 +280,22 @@ export default function PaymentEntryModal({
           {/* Financial Breakdown Card */}
           <div
             style={{
-              padding: "16px",
-              borderRadius: "16px",
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.10)",
+              padding: "16px 18px",
+              borderRadius: "14px",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
               display: "flex",
               flexDirection: "column",
               gap: "12px",
             }}
           >
-            <div style={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--gold)" }}>
+            <div style={{ fontSize: "13px", fontWeight: 700, color: "#6E5420", textTransform: "uppercase", letterSpacing: "0.08em" }}>
               Financial Calculations
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "12px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "0.75rem", color: "#a3acc2", marginBottom: "4px" }}>
+                <label style={{ display: "block", fontSize: "12px", color: "#5A584F", marginBottom: "4px" }}>
                   Gross Invoice Amount (₹) *
                 </label>
                 <input
@@ -309,21 +307,23 @@ export default function PaymentEntryModal({
                   onChange={(e) => setFormData({ ...formData, grossAmount: e.target.value })}
                   style={{
                     width: "100%",
-                    padding: "10px 14px",
-                    borderRadius: "12px",
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.12)",
-                    color: "#eceaf5",
-                    fontSize: "0.95rem",
-                    fontWeight: 700,
+                    height: "44px",
+                    padding: "0 14px",
+                    borderRadius: "10px",
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #D9D2C0",
+                    color: "#2B2D2A",
+                    fontSize: "15px",
+                    fontWeight: 600,
                     outline: "none",
+                    boxSizing: "border-box",
                   }}
                 />
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "0.75rem", color: "#a3acc2", marginBottom: "4px" }}>
-                  Commission (%)
+                <label style={{ display: "block", fontSize: "12px", color: "#5A584F", marginBottom: "4px" }}>
+                  Commission Rate (%)
                 </label>
                 <input
                   type="number"
@@ -333,45 +333,32 @@ export default function PaymentEntryModal({
                   onChange={(e) => setFormData({ ...formData, commissionPercent: e.target.value })}
                   style={{
                     width: "100%",
-                    padding: "10px 14px",
-                    borderRadius: "12px",
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.12)",
-                    color: "#eceaf5",
-                    fontSize: "0.95rem",
-                    fontWeight: 700,
+                    height: "44px",
+                    padding: "0 14px",
+                    borderRadius: "10px",
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #D9D2C0",
+                    color: "#2B2D2A",
+                    fontSize: "15px",
+                    fontWeight: 600,
                     outline: "none",
+                    boxSizing: "border-box",
                   }}
                 />
               </div>
             </div>
 
-            {/* Live Auto-Calculated Output Chips */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "2px" }}>
-              <div
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: "12px",
-                  backgroundColor: "rgba(10, 15, 25, 0.6)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                }}
-              >
-                <div style={{ fontSize: "0.7rem", color: "#a3acc2" }}>Platform Commission:</div>
-                <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--gold)", marginTop: "2px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", paddingTop: "4px" }}>
+              <div style={{ padding: "10px 14px", backgroundColor: "#FFFFFF", borderRadius: "10px", border: "1px solid #E8E2D4" }}>
+                <span style={{ fontSize: "11px", color: "#5A584F", fontWeight: 700, textTransform: "uppercase" }}>Vismaya Retained (Platform):</span>
+                <div style={{ fontSize: "18px", fontWeight: 700, color: "#8A6B2E", marginTop: "2px" }}>
                   ₹{commAmt.toLocaleString()}
                 </div>
               </div>
 
-              <div
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: "12px",
-                  backgroundColor: "rgba(10, 15, 25, 0.6)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                }}
-              >
-                <div style={{ fontSize: "0.7rem", color: "#a3acc2" }}>Talent Net Payout:</div>
-                <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--status-green)", marginTop: "2px" }}>
+              <div style={{ padding: "10px 14px", backgroundColor: "#FFFFFF", borderRadius: "10px", border: "1px solid #E8E2D4" }}>
+                <span style={{ fontSize: "11px", color: "#5A584F", fontWeight: 700, textTransform: "uppercase" }}>Talent Bank Disbursed Payout:</span>
+                <div style={{ fontSize: "18px", fontWeight: 700, color: "#2B2D2A", marginTop: "2px" }}>
                   ₹{netPayout.toLocaleString()}
                 </div>
               </div>
@@ -380,7 +367,7 @@ export default function PaymentEntryModal({
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#eceaf5", marginBottom: "4px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
                 Payment Date
               </label>
               <input
@@ -389,113 +376,132 @@ export default function PaymentEntryModal({
                 onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
                 style={{
                   width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: "12px",
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  color: "#eceaf5",
-                  fontSize: "0.85rem",
+                  height: "44px",
+                  padding: "0 14px",
+                  borderRadius: "10px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #D9D2C0",
+                  color: "#2B2D2A",
+                  fontSize: "13px",
                   outline: "none",
+                  boxSizing: "border-box",
                 }}
               />
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#eceaf5", marginBottom: "4px" }}>
-                Payment Mode
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
+                Payment Channel
               </label>
               <select
                 value={formData.paymentMode}
                 onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value })}
                 style={{
                   width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: "12px",
-                  backgroundColor: "#0f1626",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  color: "#eceaf5",
-                  fontSize: "0.85rem",
+                  height: "44px",
+                  padding: "0 14px",
+                  borderRadius: "10px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #D9D2C0",
+                  color: "#2B2D2A",
+                  fontSize: "13px",
                   outline: "none",
+                  boxSizing: "border-box",
                 }}
               >
-                <option value="Bank Transfer" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Bank Transfer (NEFT/RTGS)</option>
-                <option value="UPI" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>UPI</option>
-                <option value="Cash" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Cash</option>
-                <option value="Cheque" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Cheque</option>
+                <option value="Bank Transfer">Bank Transfer (NEFT/RTGS)</option>
+                <option value="UPI">UPI / Digital</option>
+                <option value="Cheque">Corporate Cheque</option>
+                <option value="Cash / Escrow Slip">Manual Escrow Slip</option>
               </select>
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#eceaf5", marginBottom: "4px" }}>
-                Status
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
+                Ledger Status
               </label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 style={{
                   width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: "12px",
-                  backgroundColor: "#0f1626",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  color: "#eceaf5",
-                  fontSize: "0.85rem",
+                  height: "44px",
+                  padding: "0 14px",
+                  borderRadius: "10px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #D9D2C0",
+                  color: "#2B2D2A",
+                  fontSize: "13px",
                   outline: "none",
+                  boxSizing: "border-box",
                 }}
               >
-                <option value="Received" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Received</option>
-                <option value="Payout Pending" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Payout Pending</option>
-                <option value="Paid Out" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Paid Out</option>
+                <option value="Received">Received / Cleared</option>
+                <option value="Payout Pending">Payout Pending</option>
+                <option value="Paid Out">Paid Out (Disbursed)</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#eceaf5", marginBottom: "4px" }}>
-              Reference / UTR Note
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
+              Reference # / Transaction UTR Note
             </label>
             <input
               type="text"
-              placeholder="e.g. UTR: HDFC882910392, Advance Retainer for Lead Medical Roles"
+              placeholder="e.g. HDFC-NEFT-9021849182"
               value={formData.referenceNote}
               onChange={(e) => setFormData({ ...formData, referenceNote: e.target.value })}
               style={{
                 width: "100%",
-                padding: "10px 14px",
-                borderRadius: "12px",
-                backgroundColor: "rgba(255, 255, 255, 0.05)",
-                border: "1px solid rgba(255, 255, 255, 0.12)",
-                color: "#eceaf5",
-                fontSize: "0.85rem",
+                height: "44px",
+                padding: "0 14px",
+                borderRadius: "10px",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D2C0",
+                color: "#2B2D2A",
+                fontSize: "14px",
                 outline: "none",
+                boxSizing: "border-box",
               }}
             />
           </div>
 
-          {/* Footer Submit */}
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+          {/* Footer Actions */}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
             <button
               type="button"
               onClick={onClose}
-              className="btn-secondary"
               style={{
-                padding: "8px 18px",
-                fontSize: "0.85rem",
-                borderRadius: "12px",
+                padding: "0 18px",
+                height: "42px",
+                borderRadius: "10px",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #E8E2D4",
+                color: "#5A584F",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor: "pointer",
               }}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn-primary"
               style={{
-                padding: "8px 20px",
-                fontSize: "0.85rem",
-                borderRadius: "12px",
+                padding: "0 22px",
+                height: "42px",
+                borderRadius: "10px",
+                backgroundColor: "#8A6B2E",
+                color: "#FFFFFF",
+                border: "1px solid #8A6B2E",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(138, 107, 46, 0.2)",
               }}
             >
-              {initialData ? "Update Payment Entry" : "Save Payment Entry"}
+              {initialData ? "Save Changes" : "Log Ledger Entry"}
             </button>
           </div>
         </form>

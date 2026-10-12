@@ -1,541 +1,507 @@
 /* ==========================================================================
-   Elite Talent Roster Section Styles
+   Elite Talent Roster Section - New Light Editorial Design
+   Tokens:
+     Cream: #FAF9F7
+     White: #FFFFFF
+     Gold-Brown: #8A6B2E
+     Light Gold: #C9A55C
+     Charcoal: #2B2D2A
+     Muted: #5A584F
+     Border: #E8E2D4
+     Pill Track: #F3EFE6
    ========================================================================== */
 
-.talent-roster-section {
-  background-color: var(--bg-deep);
-  color: var(--text-inverse);
+/* --------------------------------------------------------------------------
+   Section Shell & Background Glow
+   -------------------------------------------------------------------------- */
+.talent-roster-section-light {
   position: relative;
+  width: 100%;
+  background-color: #FAF9F7;
+  color: #2B2D2A;
+  padding: 96px 32px 104px;
   overflow: hidden;
 }
 
+/* Subtle gold radial glow at top-left */
+.talent-roster-bg-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(
+    circle at 20% 20%,
+    rgba(201, 165, 92, 0.14) 0%,
+    rgba(250, 249, 247, 0) 70%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.talent-roster-container {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
 /* --------------------------------------------------------------------------
-   1. Header Row (2-Column Grid on Desktop)
+   Header Row
    -------------------------------------------------------------------------- */
-.talent-header-grid {
-  display: grid;
-  grid-template-columns: 1fr minmax(320px, 440px);
-  gap: clamp(24px, 4vw, 56px);
-  align-items: start;
+.talent-roster-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+  flex-wrap: wrap;
 }
 
 /* Left Column */
-.talent-header-left {
+.talent-roster-header-left {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: flex-start;
+  max-width: 600px;
+  flex: 1 1 480px;
 }
 
-.talent-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.talent-eyebrow-line {
-  height: 2px;
-  width: 36px;
-  background-color: var(--gold);
-  display: inline-block;
-}
-
-.talent-eyebrow-text {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--gold);
-}
-
-.talent-section-title {
-  font-family: var(--font-heading), Georgia, serif;
-  font-size: clamp(32px, 4.4vw, 52px);
-  line-height: 1.1;
-  font-weight: 400;
-  color: var(--text-dark-primary);
-  margin: 0 0 16px 0;
-}
-
-.talent-section-desc {
-  font-size: 15px;
-  color: var(--text-dark-muted);
-  line-height: 26px;
-  max-width: 560px;
-  margin: 0 0 28px 0;
-}
-
-/* Join as Talent Button (Fixed sizing & no stretching) */
-.talent-join-btn {
+/* Eyebrow: 44px gold-brown line + VERIFIED SPOTLIGHT */
+.talent-roster-eyebrow {
   display: inline-flex;
-  align-self: flex-start;
-  justify-self: start;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.talent-roster-eyebrow-line {
+  display: inline-block;
+  width: 44px;
+  height: 1.5px;
+  background-color: #8A6B2E;
+}
+
+.talent-roster-eyebrow-text {
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  color: #8A6B2E;
+  text-transform: uppercase;
+}
+
+/* Title: Playfair 600, 60px, line-height 1.05, charcoal with gold dot */
+.talent-roster-title {
+  font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+  font-size: clamp(38px, 4.8vw, 60px);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: #2B2D2A;
+  margin: 0 0 18px 0;
+}
+
+.talent-roster-title-dot {
+  color: #8A6B2E;
+}
+
+/* Subtext: 18px, line-height 1.7, #5A584F, max-width 520px */
+.talent-roster-subtext {
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 18px;
+  line-height: 1.7;
+  color: #5A584F;
+  max-width: 520px;
+  margin: 0 0 32px 0;
+}
+
+/* CTA Button: JOIN AS TALENT → */
+.talent-roster-cta-btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: auto;
-  height: 48px;
-  padding: 0 28px;
-  border-radius: var(--radius-btn);
-  font-family: var(--font-body), Arial, sans-serif;
+  background-color: #8A6B2E;
+  color: #FFFFFF;
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 13px;
   font-weight: 600;
-  font-size: 12px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  background: var(--gold);
-  color: var(--text-dark-primary);
+  border-radius: 6px;
+  padding: 16px 28px;
   text-decoration: none;
-  box-shadow: var(--gold-glow);
-  transition: transform 0.2s ease, background-color 0.2s ease;
-  flex-shrink: 0;
-  box-sizing: border-box;
+  box-shadow: 0 4px 14px rgba(138, 107, 46, 0.22);
+  transition: all 220ms ease;
 }
 
-.talent-join-btn:hover {
+.talent-roster-cta-btn:hover {
+  background-color: #6E531F;
   transform: translateY(-2px);
-  background-color: var(--primary-hover);
+  box-shadow: 0 6px 18px rgba(138, 107, 46, 0.32);
 }
 
-/* --------------------------------------------------------------------------
-   Right Column: Info Box & Segmented Filter Pills
-   -------------------------------------------------------------------------- */
-.talent-info-box {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-card);
-  padding: 20px;
+/* Right Column: White Info Card (~440px) */
+.talent-roster-info-card {
+  width: 100%;
+  max-width: 440px;
+  flex: 0 1 440px;
+  background-color: #FFFFFF;
+  border: 1px solid #E8E2D4;
+  border-radius: 16px;
+  padding: 26px 28px;
+  box-shadow: 0 12px 32px rgba(43, 45, 42, 0.06);
   display: flex;
   flex-direction: column;
 }
 
-.talent-info-header {
+.talent-roster-info-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
-.talent-shield-icon {
-  color: #ffc928;
+.talent-roster-shield-icon {
+  color: #8A6B2E;
   flex-shrink: 0;
 }
 
-.talent-info-title {
+.talent-roster-info-title {
   font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: #ffffff;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2B2D2A;
   margin: 0;
+  line-height: 1.2;
 }
 
-.talent-info-desc {
-  font-size: 13px;
-  color: #94a3b8;
-  line-height: 20px;
-  margin: 0 0 16px 0;
+.talent-roster-info-body {
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #5A584F;
+  margin: 0 0 20px 0;
 }
 
-/* Segmented Control */
-.talent-filter-segmented {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 14px;
-  padding: 5px;
+/* Filter Pills Track */
+.talent-roster-filter-track {
+  background-color: #F3EFE6;
+  border: 1px solid #E8E2D4;
+  border-radius: 12px;
+  padding: 6px;
   display: flex;
+  align-items: center;
   gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
 }
 
-.talent-filter-segmented::-webkit-scrollbar {
-  display: none;
-}
-
-.talent-filter-pill {
-  font-family: var(--font-sans), 'Inter', sans-serif;
-  font-weight: 800;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  height: 40px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  padding: 0 14px;
+.talent-roster-filter-pill {
   flex: 1;
-  min-width: max-content;
+  border: none;
+  background: transparent;
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5A584F;
+  border-radius: 8px;
+  padding: 11px 16px;
+  cursor: pointer;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  white-space: nowrap;
-  background: transparent;
-  color: #94a3b8;
-  transition: all 0.2s ease;
+  transition: all 180ms ease;
 }
 
-.talent-filter-pill:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
+.talent-roster-filter-pill:hover {
+  background-color: rgba(201, 165, 92, 0.18);
+  color: #2B2D2A;
 }
 
-.talent-filter-pill-active {
-  background: linear-gradient(135deg, #ffd54a 0%, #ffbc00 100%) !important;
-  color: #1a1300 !important;
-  box-shadow: 0 2px 10px rgba(255, 188, 0, 0.30);
-}
-
-/* --------------------------------------------------------------------------
-   Divider
-   -------------------------------------------------------------------------- */
-.talent-header-divider {
-  width: 100%;
-  height: 1px;
-  background-color: rgba(255, 255, 255, 0.12);
-  margin-top: 32px;
-  margin-bottom: 40px;
+.talent-roster-filter-pill.active {
+  background-color: #8A6B2E;
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(138, 107, 46, 0.25);
 }
 
 /* --------------------------------------------------------------------------
-   2. 4-Column Cards Grid
+   Cards Grid
    -------------------------------------------------------------------------- */
-.talent-cards-grid {
+.talent-roster-cards-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px;
-  justify-items: start;
-  justify-content: start;
-  align-items: stretch;
-  min-height: 520px;
+  margin-top: 56px;
   width: 100%;
-  box-sizing: border-box;
+  align-items: stretch;
+  transition: opacity 120ms ease;
 }
 
-/* Card Enter Animation */
+.talent-roster-cards-grid.is-fading {
+  opacity: 0.3;
+}
+
+/* Single Talent Card */
 .talent-card {
-  width: 100%;
-  background: #0d1424;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 24px;
+  background-color: #FFFFFF;
+  border: 1px solid #E8E2D4;
+  border-radius: 20px;
   overflow: hidden;
+  box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04), 0 14px 30px rgba(43, 45, 42, 0.07);
   display: flex;
   flex-direction: column;
-  height: 100%;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.40);
-  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-  animation: talentCardEnter 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  box-sizing: border-box;
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 300ms ease;
+  animation: talentCardFadeUp 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@keyframes talentCardEnter {
-  from {
+.talent-card:hover {
+  transform: translateY(-4px);
+  border-color: #C9A55C;
+  box-shadow: 0 20px 38px rgba(43, 45, 42, 0.12);
+}
+
+/* Highlighted / Featured Card */
+.talent-card-highlighted {
+  border: 1px solid #C9A55C;
+  box-shadow: 0 18px 36px rgba(138, 107, 46, 0.16);
+}
+
+.talent-card-highlighted:hover {
+  border-color: #8A6B2E;
+  box-shadow: 0 22px 42px rgba(138, 107, 46, 0.22);
+}
+
+/* Real Photo Area (4:5 Aspect Ratio, NO dark overlay) */
+.talent-card-photo-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  background-color: #EFECE6;
+  overflow: hidden;
+}
+
+.talent-card-photo {
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.talent-card:hover .talent-card-photo {
+  transform: scale(1.04);
+}
+
+/* Fallback Silhouette */
+.talent-card-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #B5B2A9;
+}
+
+/* Rating Badge: Top-Right, White Pill, Gold Star, Charcoal Rating */
+.talent-card-rating-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+  background-color: #FFFFFF;
+  border-radius: 999px;
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 2px 8px rgba(43, 45, 42, 0.1);
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2B2D2A;
+}
+
+/* Bottom Info Area */
+.talent-card-info {
+  background-color: #FFFFFF;
+  padding: 20px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+/* Name: Playfair 600, 22px, Charcoal */
+.talent-card-name {
+  font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #2B2D2A;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Role: Inter 14px, weight 600, Gold-Brown, Text WRAPS */
+.talent-card-role {
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #8A6B2E;
+  margin: 0;
+  line-height: 1.45;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+/* City: 13px, #5A584F, map pin icon */
+.talent-card-city {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 13px;
+  color: #5A584F;
+  margin-top: auto;
+  padding-top: 4px;
+  white-space: normal;
+}
+
+.talent-city-icon {
+  color: #8A6B2E;
+  flex-shrink: 0;
+}
+
+/* Empty State */
+.talent-roster-empty {
+  grid-column: 1 / -1;
+  padding: 60px 24px;
+  text-align: center;
+  background-color: #FFFFFF;
+  border: 1px dashed #E8E2D4;
+  border-radius: 16px;
+  color: #5A584F;
+  font-size: 15px;
+}
+
+/* --------------------------------------------------------------------------
+   Entrance Animations
+   -------------------------------------------------------------------------- */
+@keyframes talentCardFadeUp {
+  0% {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(20px);
   }
-  to {
+  100% {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-.talent-grid-fade .talent-card {
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 150ms ease, transform 150ms ease;
-}
-
-.talent-card:hover {
-  transform: translateY(-6px);
-  border-color: rgba(255, 188, 0, 0.40);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.65), 0 0 24px rgba(255, 188, 0, 0.12);
-}
-
-/* --------------------------------------------------------------------------
-   Photo Area (4:5 Aspect Ratio Full Bleed)
-   -------------------------------------------------------------------------- */
-.talent-photo-wrap {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 5;
-  overflow: hidden;
-  background-color: #090e1a;
-}
-
-.talent-photo {
-  object-fit: cover;
-  object-position: center top;
-  transition: transform 0.4s ease;
-}
-
-.talent-card:hover .talent-photo {
-  transform: scale(1.05);
-}
-
-/* Fallback Silhouette */
-.talent-fallback-silhouette {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(145deg, #131d33 0%, #0d1424 50%, #171d2b 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.15);
-}
-
-.talent-silhouette-icon {
-  filter: drop-shadow(0 0 20px rgba(255, 199, 44, 0.15));
-}
-
-/* Dark Gradient Vignette Overlay */
-.talent-photo-gradient {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 0.15) 0%,
-    transparent 35%,
-    rgba(7, 10, 18, 0.65) 65%,
-    rgba(7, 10, 18, 0.96) 100%
-  );
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* Top-Right Clean Rating Chip */
-.talent-rating-chip {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 3;
-  height: 28px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: rgba(7, 10, 18, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #ffc928;
-  font-size: 12px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  box-sizing: border-box;
-  pointer-events: none;
-}
-
-/* Bottom Text Overlaid on Photo */
-.talent-photo-info {
-  position: absolute;
-  bottom: 14px;
-  left: 18px;
-  right: 18px;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.talent-photo-name {
-  font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
-  font-size: clamp(22px, 1.8vw, 25px);
-  font-weight: 700;
-  color: #ffd54a;
-  margin: 0;
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.talent-photo-subline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.talent-photo-role {
-  font-weight: 700;
-  color: #ffd54a;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.talent-photo-dot {
-  color: rgba(255, 255, 255, 0.4);
-  flex-shrink: 0;
-}
-
-.talent-photo-city {
-  color: rgba(255, 255, 255, 0.80);
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* --------------------------------------------------------------------------
-   Card Body Details
-   -------------------------------------------------------------------------- */
-.talent-card-body {
-  padding: 16px 20px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  flex: 1;
-  background: #0d1424;
-  box-sizing: border-box;
-}
-
-.talent-card-exp {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #94a3b8;
-  font-weight: 500;
-}
-
-.talent-check-icon {
-  color: #34d399;
-  flex-shrink: 0;
-}
-
-.talent-card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.talent-tag-pill {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: 4px 10px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #cbd5e1;
-}
-
-/* Login to View Portfolio Action Button (Pinned to Bottom) */
-.talent-card-btn {
-  margin-top: auto;
-  width: 100%;
-  height: 46px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #eceaf5;
-  font-family: var(--font-sans), 'Inter', sans-serif;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  text-decoration: none;
-  box-sizing: border-box;
-  transition: all 0.2s ease;
-}
-
-.talent-card-btn:hover {
-  border-color: rgba(255, 188, 0, 0.60);
-  color: #ffd54a;
-  background: rgba(255, 188, 0, 0.08);
-}
-
-/* Empty State */
-.talent-empty-state {
-  grid-column: 1 / -1;
-  width: 100%;
-  padding: 64px 20px;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-}
-
-.talent-empty-text {
-  font-size: 15px;
-  color: #94a3b8;
-  margin: 0;
-}
-
-/* --------------------------------------------------------------------------
-   Responsive Layout Rules
-   -------------------------------------------------------------------------- */
-
-/* Header Stack on Tablet/Mobile */
-@media (max-width: 960px) {
-  .talent-header-grid {
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
-
-  .talent-join-btn {
-    width: 100%;
-    align-self: stretch;
-    justify-self: stretch;
-  }
-
-  .talent-header-divider {
-    margin-top: 24px;
-    margin-bottom: 32px;
-  }
-}
-
-/* 600px to 959px: 2 Equal Columns */
-@media (max-width: 959px) {
-  .talent-cards-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
-    min-height: 480px;
-  }
-}
-
-/* Below 600px: 1 Column Centered with Max Width 380px */
-@media (max-width: 599px) {
-  .talent-cards-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    justify-items: center;
-    min-height: 480px;
-  }
-
-  .talent-card {
-    max-width: 380px;
-  }
-
-  .talent-section-title {
-    font-size: 30px;
-  }
-}
-
-/* Accessibility: Respect prefers-reduced-motion */
+/* Disable animations for prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   .talent-card {
     animation: none !important;
-    transition: none !important;
-  }
-
-  .talent-grid-fade .talent-card {
-    transition: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+
+  .talent-card:hover,
+  .talent-card:hover .talent-card-photo,
+  .talent-roster-cta-btn:hover {
+    transform: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Rules
+   -------------------------------------------------------------------------- */
+
+/* Tablet & Smaller Desktops */
+@media (max-width: 1050px) {
+  .talent-roster-section-light {
+    padding: 72px 24px 80px;
+  }
+
+  .talent-roster-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-top: 44px;
+  }
+
+  .talent-roster-header {
+    gap: 32px;
+  }
+
+  .talent-roster-info-card {
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+}
+
+/* Mobile Screens (390px and down) */
+@media (max-width: 580px) {
+  .talent-roster-section-light {
+    padding: 56px 16px 64px;
+  }
+
+  .talent-roster-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 28px;
+  }
+
+  .talent-roster-header-left {
+    max-width: 100%;
+    align-items: flex-start;
+  }
+
+  .talent-roster-title {
+    font-size: clamp(32px, 8.5vw, 42px);
+    line-height: 1.1;
+  }
+
+  .talent-roster-subtext {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  .talent-roster-cta-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 15px 24px;
+  }
+
+  .talent-roster-info-card {
+    padding: 20px;
+  }
+
+  .talent-roster-filter-track {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .talent-roster-filter-pill {
+    flex: 1 1 calc(50% - 6px);
+    padding: 10px 12px;
+    font-size: 11px;
+  }
+
+  .talent-roster-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-top: 36px;
+  }
+
+  .talent-card-info {
+    padding: 18px 18px 20px;
+  }
+
+  .talent-card-name {
+    font-size: 20px;
   }
 }

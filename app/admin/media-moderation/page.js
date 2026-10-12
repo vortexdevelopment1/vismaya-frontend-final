@@ -101,13 +101,11 @@ export default function MediaModerationPage() {
       ) : (
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.04)",
-            border: "1px solid rgba(255, 255, 255, 0.10)",
-            borderRadius: "16px",
-            padding: "48px 24px",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            borderRadius: "18px",
+            padding: "56px 24px",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04)",
             textAlign: "center",
           }}
         >

@@ -26,9 +26,8 @@ function RecruiterLayoutContent({ children }) {
       style={{
         display: "flex",
         minHeight: "100vh",
-        background: "var(--bg-gradient)",
-        backgroundAttachment: "fixed",
-        color: "var(--text-primary)",
+        backgroundColor: "#FAF9F7",
+        color: "#2B2D2A",
         position: "relative",
       }}
     >
@@ -46,9 +45,11 @@ function RecruiterLayoutContent({ children }) {
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          marginLeft: "var(--sidebar-width)",
+          marginLeft: "var(--sidebar-width, 280px)",
+          width: "calc(100% - var(--sidebar-width, 280px))",
           minWidth: 0,
           minHeight: "100vh",
+          backgroundColor: "#FAF9F7",
         }}
         className="recruiter-main-container"
       >
@@ -62,8 +63,8 @@ function RecruiterLayoutContent({ children }) {
             width: "100%",
             maxWidth: "1440px",
             marginInline: "auto",
-            paddingInline: "clamp(16px, 2.5vw, 32px)",
-            paddingBlock: "24px",
+            paddingInline: "clamp(16px, 2.5vw, 40px)",
+            paddingBlock: "clamp(24px, 3vw, 36px)",
             minWidth: 0,
             boxSizing: "border-box",
           }}
@@ -78,15 +79,13 @@ function RecruiterLayoutContent({ children }) {
 
       <style jsx global>{`
         :root {
-          --sidebar-width: 260px;
+          --sidebar-width: 280px;
           --topbar-height: 72px;
         }
         @media (max-width: 1023.98px) {
-          :root {
-            --topbar-height: 64px;
-          }
           .recruiter-main-container {
             margin-left: 0 !important;
+            width: 100% !important;
           }
         }
 

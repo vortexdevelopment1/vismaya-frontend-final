@@ -3,16 +3,16 @@ import { ArrowRight } from "lucide-react";
 
 export default function CtaBannerSection() {
   return (
-    <section className="public-section" style={{ backgroundColor: "#070b12", paddingTop: "20px" }}>
+    <section className="public-section" style={{ backgroundColor: "var(--bg-primary)", paddingTop: "40px", paddingBottom: "80px" }}>
       <div className="public-container">
         <div
           className="glass"
           style={{
-            borderRadius: "24px",
+            borderRadius: "var(--radius-card, 6px)",
             padding: "clamp(36px, 6vw, 64px) clamp(24px, 5vw, 56px)",
-            background: "radial-gradient(70% 70% at 85% 20%, rgba(255, 188, 0, 0.16), transparent 70%), linear-gradient(135deg, #0f1626 0%, #0a0f19 100%)",
-            border: "1px solid rgba(255, 188, 0, 0.30)",
-            boxShadow: "0 24px 60px rgba(0, 0, 0, 0.60)",
+            backgroundColor: "var(--bg-surface, #FFFFFF)",
+            border: "1px solid var(--border-color, #E4E1D9)",
+            boxShadow: "var(--shadow-sm, 0 1px 4px rgba(41, 44, 41, 0.04))",
             display: "flex",
             flexWrap: "wrap",
             alignItems: "center",
@@ -26,17 +26,17 @@ export default function CtaBannerSection() {
             </div>
             <h2
               style={{
-                fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                fontFamily: "var(--font-heading), Georgia, 'Times New Roman', serif",
                 fontSize: "clamp(28px, 4vw, 42px)",
                 lineHeight: 1.18,
-                fontWeight: 700,
-                color: "#eceaf5",
+                fontWeight: 400,
+                color: "var(--text-primary, #292C29)",
                 margin: "0 0 12px 0",
               }}
             >
               Join India&apos;s Most Trusted Entertainment Platform
             </h2>
-            <p style={{ fontSize: "15px", color: "#a3acc2", lineHeight: "26px", margin: 0 }}>
+            <p style={{ fontSize: "15px", color: "var(--text-secondary, #777970)", lineHeight: "26px", margin: 0 }}>
               Whether you are an artist seeking your milestone role or a studio looking for vetted performers, Vismaya provides the infrastructure you need.
             </p>
           </div>

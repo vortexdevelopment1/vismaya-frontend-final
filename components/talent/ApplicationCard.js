@@ -90,18 +90,10 @@ export default function ApplicationCard({ application }) {
           gap: "20px",
           position: "relative",
           overflow: "hidden",
-          backgroundColor: "rgba(255, 255, 255, 0.07)",
-          borderRadius: "16px",
-          border: `1px solid ${
-            isSelected
-              ? "rgba(52, 211, 153, 0.45)"
-              : isShortlisted
-              ? "rgba(255, 188, 0, 0.45)"
-              : "rgba(255, 255, 255, 0.12)"
-          }`,
-          boxShadow: isSelected
-            ? "0 6px 24px rgba(52, 211, 153, 0.15)"
-            : "0 10px 30px rgba(0, 0, 0, 0.35)",
+          backgroundColor: "#FFFFFF",
+          borderRadius: "18px",
+          border: "1px solid #E8E2D4",
+          boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
         }}
       >
         {/* Highlight Strip for Shortlisted / Selected */}
@@ -113,9 +105,7 @@ export default function ApplicationCard({ application }) {
               left: 0,
               right: 0,
               height: "4px",
-              background: isSelected
-                ? "linear-gradient(90deg, #34d399 0%, #10b981 100%)"
-                : "linear-gradient(90deg, #ffd54a 0%, #ffbc00 100%)",
+              background: "var(--gold, #9B7A3F)",
             }}
           />
         )}
@@ -135,29 +125,29 @@ export default function ApplicationCard({ application }) {
               <span
                 style={{
                   fontSize: "11px",
-                  fontWeight: "800",
+                  fontWeight: "700",
                   padding: "3px 10px",
-                  borderRadius: "999px",
-                  backgroundColor: "rgba(255, 188, 0, 0.12)",
-                  color: "var(--gold)",
-                  border: "1px solid rgba(255, 188, 0, 0.28)",
+                  borderRadius: "4px",
+                  backgroundColor: "var(--bg-alt, #F0EEE7)",
+                  color: "var(--gold, #9B7A3F)",
+                  border: "1px solid var(--border-color, #E4E1D9)",
                   textTransform: "uppercase",
-                  letterSpacing: "0.06em",
+                  letterSpacing: "0.08em",
                 }}
               >
                 {opportunity?.opportunityType || "Opportunity"}
               </span>
-              <span style={{ fontSize: "12px", color: "#7e89a3" }}>
+              <span style={{ fontSize: "12px", color: "var(--text-muted, #777970)" }}>
                 Ref: #{application.id}
               </span>
             </div>
 
             <h3
               style={{
-                fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                fontFamily: "var(--font-heading), Georgia, serif",
                 fontSize: "clamp(18px, 3.5vw, 20px)",
-                fontWeight: "700",
-                color: "#eceaf5",
+                fontWeight: "400",
+                color: "var(--text-primary, #292C29)",
                 margin: "4px 0 0 0",
                 overflowWrap: "anywhere",
               }}
@@ -165,13 +155,13 @@ export default function ApplicationCard({ application }) {
               {opportunity?.title || application.roleApplied}
             </h3>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", fontSize: "13px", color: "#a3acc2" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", fontSize: "13px", color: "var(--text-secondary, #5A5C53)" }}>
               <span>
-                Role: <strong style={{ color: "#eceaf5" }}>{application.roleApplied}</strong>
+                Role: <strong style={{ color: "var(--text-primary, #292C29)" }}>{application.roleApplied}</strong>
               </span>
               {project && (
                 <span>
-                  &bull; Project: <strong style={{ color: "var(--gold)" }}>{project.title}</strong>
+                  &bull; Project: <strong style={{ color: "var(--gold, #9B7A3F)" }}>{project.title}</strong>
                 </span>
               )}
             </div>
@@ -179,7 +169,7 @@ export default function ApplicationCard({ application }) {
 
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px" }} className="app-header-badge">
             <StatusBadge status={application.status} size="md" />
-            <span style={{ fontSize: "12px", color: "#7e89a3" }}>
+            <span style={{ fontSize: "12px", color: "var(--text-muted, #777970)" }}>
               Applied {new Date(application.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
             </span>
           </div>
@@ -189,21 +179,21 @@ export default function ApplicationCard({ application }) {
         {isSelected && (
           <div
             style={{
-              backgroundColor: "rgba(52, 211, 153, 0.14)",
-              border: "1px solid rgba(52, 211, 153, 0.35)",
-              borderRadius: "14px",
+              backgroundColor: "var(--bg-alt, #F0EEE7)",
+              border: "1px solid var(--border-color, #E4E1D9)",
+              borderRadius: "4px",
               padding: "16px 20px",
               display: "flex",
               alignItems: "center",
               gap: "14px",
             }}
           >
-            <Trophy size={26} style={{ color: "var(--status-green)", flexShrink: 0 }} />
+            <Trophy size={24} style={{ color: "var(--gold, #9B7A3F)", flexShrink: 0 }} />
             <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-              <span style={{ fontSize: "14px", fontWeight: "800", color: "var(--status-green)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              <span style={{ fontSize: "13px", fontWeight: "700", color: "var(--text-primary, #292C29)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                 Congratulations! You are Selected
               </span>
-              <span style={{ fontSize: "13px", color: "#eceaf5", lineHeight: 1.4, overflowWrap: "anywhere" }}>
+              <span style={{ fontSize: "13px", color: "var(--text-secondary, #5A5C53)", lineHeight: 1.4, overflowWrap: "anywhere" }}>
                 The organization has officially confirmed your selection for <strong>{application.roleApplied}</strong>. Vismaya casting desk will assist with production onboarding.
               </span>
             </div>
@@ -214,30 +204,30 @@ export default function ApplicationCard({ application }) {
         {isShortlisted && (
           <div
             style={{
-              backgroundColor: "rgba(255, 188, 0, 0.12)",
-              border: "1px solid rgba(255, 188, 0, 0.30)",
-              borderRadius: "14px",
+              backgroundColor: "var(--bg-alt, #F0EEE7)",
+              border: "1px solid var(--border-color, #E4E1D9)",
+              borderRadius: "4px",
               padding: "14px 18px",
               display: "flex",
               alignItems: "center",
               gap: "12px",
             }}
           >
-            <Sparkles size={20} style={{ color: "var(--gold)", flexShrink: 0 }} />
-            <span style={{ fontSize: "13px", color: "#eceaf5", fontWeight: "600", lineHeight: 1.4, overflowWrap: "anywhere" }}>
+            <Sparkles size={20} style={{ color: "var(--gold, #9B7A3F)", flexShrink: 0 }} />
+            <span style={{ fontSize: "13px", color: "var(--text-primary, #292C29)", fontWeight: "500", lineHeight: 1.4, overflowWrap: "anywhere" }}>
               Your profile has been shortlisted! Look out for audition and self-tape instructions in your Auditions tab.
             </span>
           </div>
         )}
 
-        {/* 4-Stage Visual Progress Tracker (Responsive Desktop & Mobile) */}
+        {/* 4-Stage Visual Progress Tracker */}
         {!isNotSelected && !isWithdrawn ? (
           <div
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
+              backgroundColor: "var(--bg-alt, #F0EEE7)",
               padding: "clamp(12px, 2.5vw, 18px) clamp(12px, 3vw, 22px)",
-              borderRadius: "14px",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "4px",
+              border: "1px solid var(--border-color, #E4E1D9)",
             }}
           >
             {/* Desktop / Tablet Stepper (>= 580px) */}
@@ -258,7 +248,7 @@ export default function ApplicationCard({ application }) {
                     left: "24px",
                     right: "24px",
                     height: "2px",
-                    backgroundColor: "rgba(255, 255, 255, 0.10)",
+                    backgroundColor: "var(--border-color, #E4E1D9)",
                     zIndex: 1,
                   }}
                 />
@@ -270,12 +260,9 @@ export default function ApplicationCard({ application }) {
                     left: "24px",
                     width: `${((Math.min(currentStage, 4) - 1) / 3) * 100}%`,
                     height: "2px",
-                    background: isSelected
-                      ? "linear-gradient(90deg, #ffd54a, #34d399)"
-                      : "linear-gradient(90deg, #ffd54a, #ffbc00)",
+                    background: "var(--gold, #9B7A3F)",
                     zIndex: 2,
                     transition: "width 0.4s ease",
-                    boxShadow: "0 0 8px rgba(255, 188, 0, 0.5)",
                   }}
                 />
 
@@ -302,16 +289,15 @@ export default function ApplicationCard({ application }) {
                           height: "32px",
                           borderRadius: "50%",
                           backgroundColor: isPassed
-                            ? (isSelected && st.number === 4 ? "#34d399" : "#ffbc00")
-                            : "#0f1626",
-                          border: `2px solid ${isPassed ? (isSelected && st.number === 4 ? "#34d399" : "#ffd54a") : "rgba(255, 255, 255, 0.16)"}`,
+                            ? "var(--gold, #9B7A3F)"
+                            : "var(--bg-alt, #F0EEE7)",
+                          border: `2px solid ${isPassed ? "var(--gold, #9B7A3F)" : "var(--border-color, #E4E1D9)"}`,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: isPassed ? "#1a1300" : "#a3acc2",
+                          color: isPassed ? "#FAF9F6" : "var(--text-muted, #777970)",
                           fontSize: "12px",
-                          fontWeight: "800",
-                          boxShadow: isCurrent ? "0 0 12px rgba(255, 188, 0, 0.5)" : "none",
+                          fontWeight: "700",
                           transition: "all var(--transition)",
                         }}
                       >
@@ -322,7 +308,7 @@ export default function ApplicationCard({ application }) {
                         style={{
                           fontSize: "11px",
                           fontWeight: isCurrent ? "700" : isPassed ? "600" : "500",
-                          color: isCurrent ? "var(--gold)" : isPassed ? "#eceaf5" : "#7e89a3",
+                          color: isCurrent ? "var(--gold, #9B7A3F)" : isPassed ? "var(--text-primary, #292C29)" : "var(--text-muted, #777970)",
                           textAlign: "center",
                           whiteSpace: "nowrap",
                           textTransform: "uppercase",
@@ -337,27 +323,25 @@ export default function ApplicationCard({ application }) {
               </div>
             </div>
 
-            {/* Mobile Stepper (< 580px): Compact, Clean Horizontal Chain with Legible Labels */}
+            {/* Mobile Stepper (< 580px) */}
             <div className="talent-stepper-mobile">
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: "700", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: "var(--gold, #9B7A3F)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     Stage {currentStage} of 4: {stages[currentStage - 1]?.label}
                   </span>
-                  <span style={{ fontSize: "11px", color: "#7e89a3" }}>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted, #777970)" }}>
                     {Math.round((currentStage / 4) * 100)}% Complete
                   </span>
                 </div>
 
                 {/* Progress bar */}
-                <div style={{ width: "100%", height: "6px", backgroundColor: "rgba(255, 255, 255, 0.10)", borderRadius: "999px", overflow: "hidden" }}>
+                <div style={{ width: "100%", height: "6px", backgroundColor: "var(--border-color, #E4E1D9)", borderRadius: "999px", overflow: "hidden" }}>
                   <div
                     style={{
                       width: `${(currentStage / 4) * 100}%`,
                       height: "100%",
-                      background: isSelected
-                        ? "linear-gradient(90deg, #ffd54a, #34d399)"
-                        : "linear-gradient(90deg, #ffd54a, #ffbc00)",
+                      background: "var(--gold, #9B7A3F)",
                       borderRadius: "999px",
                       transition: "width 0.3s ease",
                     }}
@@ -386,11 +370,11 @@ export default function ApplicationCard({ application }) {
                             height: "22px",
                             borderRadius: "50%",
                             backgroundColor: isPassed
-                              ? (isSelected && st.number === 4 ? "#34d399" : "#ffbc00")
-                              : "rgba(255, 255, 255, 0.08)",
-                            color: isPassed ? "#1a1300" : "#7e89a3",
+                              ? "var(--gold, #9B7A3F)"
+                              : "var(--bg-alt, #F0EEE7)",
+                            color: isPassed ? "#FAF9F6" : "var(--text-muted, #777970)",
                             fontSize: "10px",
-                            fontWeight: "800",
+                            fontWeight: "700",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -402,7 +386,7 @@ export default function ApplicationCard({ application }) {
                           style={{
                             fontSize: "10px",
                             fontWeight: isCurrent ? "700" : "500",
-                            color: isCurrent ? "var(--gold)" : isPassed ? "#eceaf5" : "#7e89a3",
+                            color: isCurrent ? "var(--gold, #9B7A3F)" : isPassed ? "var(--text-primary, #292C29)" : "var(--text-muted, #777970)",
                             lineHeight: 1.2,
                           }}
                         >
@@ -418,9 +402,9 @@ export default function ApplicationCard({ application }) {
         ) : isWithdrawn ? (
           <div
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "14px",
+              backgroundColor: "var(--bg-alt, #F0EEE7)",
+              border: "1px solid var(--border-color, #E4E1D9)",
+              borderRadius: "4px",
               padding: "14px 18px",
               display: "flex",
               alignItems: "center",
@@ -430,8 +414,8 @@ export default function ApplicationCard({ application }) {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <RotateCcw size={18} style={{ color: "#a3acc2" }} />
-              <span style={{ fontSize: "13px", color: "#a3acc2" }}>
+              <RotateCcw size={18} style={{ color: "var(--text-muted, #777970)" }} />
+              <span style={{ fontSize: "13px", color: "var(--text-secondary, #5A5C53)" }}>
                 Application was withdrawn by artist.
               </span>
             </div>
@@ -439,7 +423,7 @@ export default function ApplicationCard({ application }) {
               href="/talent/opportunities"
               style={{
                 fontSize: "12px",
-                color: "var(--gold)",
+                color: "var(--gold, #9B7A3F)",
                 fontWeight: "700",
                 display: "inline-flex",
                 alignItems: "center",
@@ -454,9 +438,9 @@ export default function ApplicationCard({ application }) {
         ) : (
           <div
             style={{
-              backgroundColor: "rgba(255, 107, 107, 0.08)",
-              border: "1px solid rgba(255, 107, 107, 0.25)",
-              borderRadius: "14px",
+              backgroundColor: "var(--bg-alt, #F0EEE7)",
+              border: "1px solid var(--border-color, #E4E1D9)",
+              borderRadius: "4px",
               padding: "14px 18px",
               display: "flex",
               alignItems: "center",
@@ -466,8 +450,8 @@ export default function ApplicationCard({ application }) {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <XCircle size={18} style={{ color: "#ff6b6b" }} />
-              <span style={{ fontSize: "13px", color: "#eceaf5" }}>
+              <XCircle size={18} style={{ color: "var(--text-muted, #777970)" }} />
+              <span style={{ fontSize: "13px", color: "var(--text-primary, #292C29)" }}>
                 Application not selected for this cycle.
               </span>
             </div>
@@ -475,7 +459,7 @@ export default function ApplicationCard({ application }) {
               href="/talent/opportunities"
               style={{
                 fontSize: "12px",
-                color: "var(--gold)",
+                color: "var(--gold, #9B7A3F)",
                 fontWeight: "700",
                 display: "inline-flex",
                 alignItems: "center",
@@ -493,16 +477,16 @@ export default function ApplicationCard({ application }) {
         {application.history && application.history.length > 0 && (
           <div
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
+              backgroundColor: "var(--bg-alt, #F0EEE7)",
               padding: "12px 16px",
-              borderRadius: "12px",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "4px",
+              border: "1px solid var(--border-color, #E4E1D9)",
               fontSize: "12px",
-              color: "#a3acc2",
+              color: "var(--text-secondary, #5A5C53)",
               lineHeight: 1.5,
             }}
           >
-            <span style={{ color: "var(--gold)", fontWeight: "700" }}>Latest Note: </span>
+            <span style={{ color: "var(--gold, #9B7A3F)", fontWeight: "700" }}>Latest Note: </span>
             {application.history[application.history.length - 1].note || "Status updated."}
           </div>
         )}
@@ -519,7 +503,7 @@ export default function ApplicationCard({ application }) {
           <button
             onClick={() => setShowDetails(true)}
             className="btn-secondary btn-dash"
-            style={{ borderRadius: "10px" }}
+            style={{ borderRadius: "4px" }}
           >
             <Eye size={14} />
             <span>View Timeline</span>
@@ -530,12 +514,12 @@ export default function ApplicationCard({ application }) {
               onClick={() => setShowWithdrawConfirm(true)}
               style={{
                 fontSize: "12px",
-                color: "#a3acc2",
+                color: "var(--text-muted, #777970)",
                 backgroundColor: "transparent",
                 border: "none",
                 cursor: "pointer",
                 padding: "6px 14px",
-                borderRadius: "10px",
+                borderRadius: "4px",
                 transition: "all var(--transition)",
               }}
               className="withdraw-btn-hover"
@@ -563,10 +547,10 @@ export default function ApplicationCard({ application }) {
           {/* Submission Info Box */}
           <div
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
+              backgroundColor: "var(--bg-alt, #F0EEE7)",
               padding: "16px",
-              borderRadius: "14px",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "4px",
+              border: "1px solid var(--border-color, #E4E1D9)",
               display: "flex",
               flexDirection: "column",
               gap: "10px",
@@ -574,13 +558,13 @@ export default function ApplicationCard({ application }) {
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#a3acc2" }}>Current Status:</span>
+              <span style={{ color: "var(--text-secondary, #5A5C53)" }}>Current Status:</span>
               <StatusBadge status={application.status} size="sm" />
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#a3acc2" }}>Submission Date:</span>
-              <span style={{ color: "#eceaf5", fontWeight: "600" }}>
+              <span style={{ color: "var(--text-secondary, #5A5C53)" }}>Submission Date:</span>
+              <span style={{ color: "var(--text-primary, #292C29)", fontWeight: "600" }}>
                 {new Date(application.appliedAt).toLocaleString("en-IN", {
                   month: "short",
                   day: "numeric",
@@ -592,8 +576,8 @@ export default function ApplicationCard({ application }) {
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#a3acc2" }}>Candidate Name:</span>
-              <span style={{ color: "#eceaf5", fontWeight: "600" }}>
+              <span style={{ color: "var(--text-secondary, #5A5C53)" }}>Candidate Name:</span>
+              <span style={{ color: "var(--text-primary, #292C29)", fontWeight: "600" }}>
                 {application.talentName}
               </span>
             </div>
@@ -602,8 +586,8 @@ export default function ApplicationCard({ application }) {
           {/* Status History Timeline */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
-              <History size={16} style={{ color: "var(--gold)" }} />
-              <h4 style={{ fontFamily: "var(--font-heading), 'Playfair Display', serif", fontSize: "16px", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+              <History size={16} style={{ color: "var(--gold, #9B7A3F)" }} />
+              <h4 style={{ fontFamily: "var(--font-heading), Georgia, serif", fontSize: "16px", fontWeight: "400", color: "var(--text-primary, #292C29)", margin: 0 }}>
                 Status History Timeline
               </h4>
             </div>
@@ -615,9 +599,9 @@ export default function ApplicationCard({ application }) {
                 <div
                   key={idx}
                   style={{
-                    backgroundColor: "rgba(255, 255, 255, 0.03)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                    borderRadius: "12px",
+                    backgroundColor: "var(--bg-alt, #F0EEE7)",
+                    border: "1px solid var(--border-color, #E4E1D9)",
+                    borderRadius: "4px",
                     padding: "12px 14px",
                     display: "flex",
                     flexDirection: "column",
@@ -627,12 +611,12 @@ export default function ApplicationCard({ application }) {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <StatusBadge status={hist.status} size="xs" />
-                      <span style={{ fontSize: "12px", color: "#a3acc2" }}>
+                      <span style={{ fontSize: "12px", color: "var(--text-secondary, #5A5C53)" }}>
                         Updated by <strong>{hist.changedBy || "Vismaya"}</strong>
                       </span>
                     </div>
 
-                    <span style={{ fontSize: "11px", color: "#7e89a3" }}>
+                    <span style={{ fontSize: "11px", color: "var(--text-muted, #777970)" }}>
                       {hist.timestamp
                         ? new Date(hist.timestamp).toLocaleString("en-IN", {
                             month: "short",
@@ -644,7 +628,7 @@ export default function ApplicationCard({ application }) {
                     </span>
                   </div>
 
-                  <p style={{ margin: 0, fontSize: "13px", color: "#a3acc2", lineHeight: 1.45 }}>
+                  <p style={{ margin: 0, fontSize: "13px", color: "var(--text-secondary, #5A5C53)", lineHeight: 1.45 }}>
                     {hist.note}
                   </p>
                 </div>
@@ -680,13 +664,13 @@ export default function ApplicationCard({ application }) {
         }
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          <p style={{ color: "#a3acc2", fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
-            Are you sure you want to withdraw your application for <strong style={{ color: "#eceaf5" }}>{opportunity?.title || application.roleApplied}</strong>?
+          <p style={{ color: "var(--text-secondary, #5A5C53)", fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
+            Are you sure you want to withdraw your application for <strong style={{ color: "var(--text-primary, #292C29)" }}>{opportunity?.title || application.roleApplied}</strong>?
             The organization will be notified that you have withdrawn from candidate consideration.
           </p>
 
           <div>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#a3acc2", marginBottom: "6px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px" }}>
               Reason for Withdrawal (Optional)
             </label>
             <textarea
@@ -694,6 +678,16 @@ export default function ApplicationCard({ application }) {
               placeholder="e.g., Scheduling conflict, accepted another project..."
               value={withdrawReason}
               onChange={(e) => setWithdrawReason(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: "4px",
+                backgroundColor: "var(--bg-surface, #FFFFFF)",
+                border: "1px solid var(--border-color, #E4E1D9)",
+                color: "var(--text-primary, #292C29)",
+                fontSize: "13px",
+                outline: "none",
+              }}
             />
           </div>
         </div>

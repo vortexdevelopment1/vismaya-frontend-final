@@ -25,17 +25,17 @@ export default function Logo({
         style={{
           width: isSmall ? "30px" : "36px",
           height: isSmall ? "30px" : "36px",
-          borderRadius: "10px",
-          background: "linear-gradient(135deg, #ffd54a 0%, #ffbc00 100%)",
-          color: "#1a1300",
+          borderRadius: "6px",
+          background: "#8A6B2E",
+          color: "#FFFFFF",
           display: "grid",
           placeItems: "center",
           fontFamily: "var(--font-heading), 'Playfair Display', serif",
           fontSize: isSmall ? "16px" : "19px",
-          fontWeight: "900",
+          fontWeight: "700",
           lineHeight: 1,
           flexShrink: 0,
-          boxShadow: "0 4px 14px rgba(255, 188, 0, 0.35)",
+          boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
         }}
       >
         V
@@ -76,7 +76,7 @@ export default function Logo({
 
   if (href) {
     return (
-      <Link href={href} style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+      <Link href={href} style={{ textDecoration: "none", color: "inherit", display: "inline-flex", alignItems: "center" }}>
         {content}
       </Link>
     );

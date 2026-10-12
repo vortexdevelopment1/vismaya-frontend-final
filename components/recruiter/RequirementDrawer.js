@@ -17,9 +17,9 @@ export default function RequirementDrawer({ requirement, isOpen, onClose }) {
         style={{
           position: "fixed",
           inset: 0,
-          backgroundColor: "rgba(7, 11, 18, 0.75)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          backgroundColor: "rgba(43, 45, 42, 0.55)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
           zIndex: 90,
           transition: "opacity 0.2s ease",
         }}

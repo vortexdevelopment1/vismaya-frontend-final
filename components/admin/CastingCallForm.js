@@ -203,9 +203,9 @@ export default function CastingCallForm({
         style={{
           position: "fixed",
           inset: 0,
-          backgroundColor: "rgba(7, 11, 18, 0.75)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          backgroundColor: "rgba(43, 45, 42, 0.55)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
           zIndex: 90,
         }}
       />
@@ -220,17 +220,15 @@ export default function CastingCallForm({
           width: "900px",
           maxWidth: "95vw",
           maxHeight: "92vh",
-          backgroundColor: "#121a2b",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
-          borderRadius: "20px",
-          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
+          backgroundColor: "var(--bg-surface, #FFFFFF)",
+          border: "1px solid var(--border-color, #E4E1D9)",
+          borderRadius: "8px",
+          boxShadow: "0 20px 48px rgba(41, 44, 41, 0.16)",
           zIndex: 100,
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
           animation: "modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
         }}
       >
         {/* Header */}

@@ -24,9 +24,9 @@ export default function SendConfirmModal({
       style={{
         position: "fixed",
         inset: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.75)",
-        backdropFilter: "blur(6px)",
-        WebkitBackdropFilter: "blur(6px)",
+        backgroundColor: "rgba(43, 45, 42, 0.55)",
+        backdropFilter: "blur(4px)",
+        WebkitBackdropFilter: "blur(4px)",
         zIndex: 9999,
         display: "flex",
         alignItems: "center",
@@ -37,17 +37,17 @@ export default function SendConfirmModal({
     >
       <div
         style={{
-          background: "#0d1424",
-          border: "1px solid rgba(255, 255, 255, 0.15)",
-          borderRadius: "16px",
+          backgroundColor: "var(--bg-surface, #FFFFFF)",
+          border: "1px solid var(--border-color, #E4E1D9)",
+          borderRadius: "8px",
           width: "100%",
           maxWidth: "520px",
           padding: "24px",
           display: "flex",
           flexDirection: "column",
           gap: "16px",
-          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.8)",
-          color: "var(--tx, #eceaf5)",
+          boxShadow: "0 20px 48px rgba(41, 44, 41, 0.16)",
+          color: "var(--text-primary, #292C29)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -58,21 +58,21 @@ export default function SendConfirmModal({
               style={{
                 width: "36px",
                 height: "36px",
-                borderRadius: "10px",
-                backgroundColor: "rgba(255, 188, 0, 0.15)",
+                borderRadius: "50%",
+                backgroundColor: "rgba(155, 122, 63, 0.14)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "var(--gold, #ffbc00)",
+                color: "var(--gold, #9B7A3F)",
               }}
             >
               <Megaphone size={18} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#eceaf5" }}>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "700", fontFamily: "Georgia, serif", color: "var(--text-primary, #292C29)" }}>
                 Confirm Broadcast Dispatch
               </h3>
-              <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--mu, #a3acc2)" }}>
+              <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--text-secondary, #5A5C53)" }}>
                 Please review the broadcast details before sending.
               </p>
             </div>
@@ -83,7 +83,7 @@ export default function SendConfirmModal({
             style={{
               background: "none",
               border: "none",
-              color: "var(--mu, #a3acc2)",
+              color: "var(--text-muted, #777970)",
               cursor: "pointer",
               padding: "4px",
             }}
@@ -95,9 +95,9 @@ export default function SendConfirmModal({
         {/* Summary Details */}
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.04)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "12px",
+            backgroundColor: "var(--bg-alt, #F0EEE7)",
+            border: "1px solid var(--border-color, #E4E1D9)",
+            borderRadius: "4px",
             padding: "14px",
             display: "grid",
             gap: "10px",
@@ -105,43 +105,43 @@ export default function SendConfirmModal({
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "var(--mu, #a3acc2)" }}>Target Audience:</span>
-            <b style={{ color: "#eceaf5" }}>{audience}</b>
+            <span style={{ color: "var(--text-secondary, #5A5C53)" }}>Target Audience:</span>
+            <b style={{ color: "var(--text-primary, #292C29)" }}>{audience}</b>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "var(--mu, #a3acc2)" }}>Estimated Reach:</span>
-            <b style={{ color: "var(--gold, #ffbc00)" }}>{estimatedRecipients}</b>
+            <span style={{ color: "var(--text-secondary, #5A5C53)" }}>Estimated Reach:</span>
+            <b style={{ color: "var(--gold, #9B7A3F)" }}>{estimatedRecipients}</b>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "var(--mu, #a3acc2)" }}>Category:</span>
-            <b style={{ color: "#eceaf5" }}>{category}</b>
+            <span style={{ color: "var(--text-secondary, #5A5C53)" }}>Category:</span>
+            <b style={{ color: "var(--text-primary, #292C29)" }}>{category}</b>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "var(--mu, #a3acc2)" }}>Channels:</span>
-            <b style={{ color: "#eceaf5" }}>{channelsSummary}</b>
+            <span style={{ color: "var(--text-secondary, #5A5C53)" }}>Channels:</span>
+            <b style={{ color: "var(--text-primary, #292C29)" }}>{channelsSummary}</b>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "var(--mu, #a3acc2)" }}>Delivery:</span>
-            <b style={{ color: "#eceaf5" }}>{deliverySummary}</b>
+            <span style={{ color: "var(--text-secondary, #5A5C53)" }}>Delivery:</span>
+            <b style={{ color: "var(--text-primary, #292C29)" }}>{deliverySummary}</b>
           </div>
         </div>
 
         {/* Message preview snippet */}
         <div
           style={{
-            backgroundColor: "#111a2c",
-            border: "1px solid rgba(255, 188, 0, 0.25)",
-            borderRadius: "10px",
+            backgroundColor: "#FAF9F6",
+            border: "1px solid var(--border-color, #E4E1D9)",
+            borderRadius: "4px",
             padding: "12px 14px",
             fontSize: "13px",
           }}
         >
           {title?.trim() && (
-            <div style={{ fontWeight: "600", marginBottom: "4px", color: "#eceaf5" }}>
+            <div style={{ fontWeight: "700", marginBottom: "4px", color: "var(--text-primary, #292C29)" }}>
               {title.trim()}
             </div>
           )}
-          <div style={{ color: "#eceaf5", lineHeight: "1.5", fontSize: "12px" }}>
+          <div style={{ color: "var(--text-secondary, #5A5C53)", lineHeight: "1.5", fontSize: "12px" }}>
             {message}
           </div>
         </div>

@@ -25,16 +25,16 @@ export default function VideoPlayer({
         style={{
           width: "100%",
           minHeight: height,
-          backgroundColor: "rgba(255, 255, 255, 0.04)",
+          backgroundColor: "var(--bg-alt, #F0EEE7)",
           borderRadius: "14px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          color: "#eceaf5",
+          color: "var(--text-primary, #2B2D2A)",
           textAlign: "center",
           padding: "24px 20px",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
+          border: "1px solid var(--border-color, #E4E1D9)",
           gap: "10px",
           ...style,
         }}
@@ -44,12 +44,12 @@ export default function VideoPlayer({
             width: "48px",
             height: "48px",
             borderRadius: "50%",
-            backgroundColor: "rgba(255, 188, 0, 0.12)",
-            border: "1px solid rgba(255, 188, 0, 0.28)",
+            backgroundColor: "rgba(138, 107, 46, 0.12)",
+            border: "1px solid rgba(138, 107, 46, 0.28)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "var(--gold)",
+            color: "var(--gold, #8A6B2E)",
           }}
         >
           <Film size={24} />
@@ -59,7 +59,7 @@ export default function VideoPlayer({
             style={{
               display: "block",
               fontSize: "0.925rem",
-              color: "#eceaf5",
+              color: "var(--text-primary, #2B2D2A)",
               marginBottom: "4px",
             }}
           >
@@ -68,7 +68,7 @@ export default function VideoPlayer({
           <p
             style={{
               fontSize: "0.785rem",
-              color: "#a3acc2",
+              color: "var(--text-secondary, #5A584F)",
               margin: 0,
               maxWidth: "380px",
               lineHeight: 1.4,

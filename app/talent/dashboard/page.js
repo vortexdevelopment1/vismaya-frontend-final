@@ -100,44 +100,106 @@ export default function TalentDashboardPage() {
           gap: "16px",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-            <h1
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0 }}>
+          {profile?.avatar ? (
+            <div
               style={{
-                fontSize: "1.9rem",
-                fontWeight: "800",
-                color: "var(--text-primary)",
-                letterSpacing: "-0.02em",
-                margin: 0,
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                backgroundImage: `url(${profile.avatar})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                border: "2px solid #E8E2D4",
+                backgroundColor: "#F3EFE6",
+                flexShrink: 0,
+                boxShadow: "0 2px 8px rgba(43, 45, 42, 0.06)",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                backgroundColor: "#F3EFE6",
+                border: "2px solid #E8E2D4",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#8A6B2E",
+                fontWeight: 700,
+                fontSize: "18px",
+                flexShrink: 0,
               }}
             >
-              Welcome back, {profile.personal.fullName.split(" ")[0]}!
-            </h1>
-            <StatusBadge status={profile.status} size="md" />
+              {profile?.personal?.fullName ? profile.personal.fullName.slice(0, 2).toUpperCase() : "TR"}
+            </div>
+          )}
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+              <h1
+                style={{
+                  fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                  fontSize: "clamp(24px, 3.2vw, 34px)",
+                  fontWeight: 600,
+                  color: "#2B2D2A",
+                  letterSpacing: "-0.015em",
+                  margin: 0,
+                }}
+              >
+                Welcome back, {profile.personal.fullName.split(" ")[0]}!
+              </h1>
+              <StatusBadge status={profile.status} size="md" />
+            </div>
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              Here is your casting pipeline summary, upcoming auditions, and published opportunities.
+            </p>
           </div>
-          <p style={{ fontSize: "0.95rem", color: "var(--text-secondary)", margin: 0 }}>
-            Here is your casting pipeline summary, upcoming auditions, and published opportunities.
-          </p>
         </div>
 
         <Link
           href="/talent/opportunities"
-          className="btn-primary"
-          style={{ padding: "10px 22px", fontSize: "0.9rem", borderRadius: "12px" }}
+          style={{
+            height: "44px",
+            padding: "0 22px",
+            fontSize: "14px",
+            fontWeight: 600,
+            borderRadius: "10px",
+            backgroundColor: "#8A6B2E",
+            color: "#FFFFFF",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            textDecoration: "none",
+            transition: "all 0.16s ease",
+            boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
+          }}
+          className="talent-browse-btn"
         >
           <Megaphone size={16} />
           <span>Browse Opportunities</span>
         </Link>
       </div>
 
-      {/* Top 4 Stat Cards: Applications, Shortlisted, Selected, Audition requests pending */}
-      <div className="talent-stat-grid">
+      {/* Top 4 Stat Cards */}
+      <div
+        className="talent-stat-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: "24px",
+          alignItems: "stretch",
+        }}
+      >
         <StatCard
           title="Applications"
           value={totalAppsCount}
           change={totalAppsCount > 0 ? "Active in review" : "None"}
           isPositive={true}
-          description="Submitted candidate profiles"
+          description="Submitted candidate profiles across casting calls"
           iconName="FileText"
         />
 
@@ -146,7 +208,7 @@ export default function TalentDashboardPage() {
           value={shortlistedCount}
           change={shortlistedCount > 0 ? "Under consideration" : "None"}
           isPositive={true}
-          description="Shortlisted by organizations"
+          description="Shortlisted by production studios and casting directors"
           iconName="UserCheck"
         />
 
@@ -155,7 +217,7 @@ export default function TalentDashboardPage() {
           value={selectedCount}
           change={selectedCount > 0 ? "Roles confirmed" : "None"}
           isPositive={true}
-          description="Confirmed character selections"
+          description="Confirmed character selections and agreements"
           iconName="Trophy"
         />
 
@@ -164,23 +226,23 @@ export default function TalentDashboardPage() {
           value={pendingAuditionsCount}
           change={pendingAuditionsCount > 0 ? "Self-tape required" : "All clear"}
           isPositive={pendingAuditionsCount > 0}
-          description="Audition &amp; interview requests"
+          description="Audition invitations &amp; video self-tape requests"
           iconName="Video"
         />
       </div>
 
-      {/* Profile Completion Card with Gradient Ring & Checklist */}
+      {/* Profile Completion Card: "Artist Profile Strength" */}
       <div
         className="card-surface"
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.07)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
-          borderRadius: "16px",
-          padding: "clamp(16px, 3vw, 28px)",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
+          borderRadius: "18px",
+          padding: "clamp(20px, 3vw, 28px)",
           display: "flex",
           flexDirection: "column",
           gap: "24px",
-          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+          boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
           position: "relative",
           overflow: "hidden",
         }}
@@ -189,7 +251,7 @@ export default function TalentDashboardPage() {
           style={{
             display: "grid",
             gridTemplateColumns: "auto 1fr",
-            gap: "24px",
+            gap: "28px",
             alignItems: "center",
           }}
           className="profile-ring-grid"
@@ -198,27 +260,21 @@ export default function TalentDashboardPage() {
           <div
             style={{
               position: "relative",
-              width: "120px",
-              height: "120px",
+              width: "124px",
+              height: "124px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
             }}
           >
-            <svg width="120" height="120" viewBox="0 0 120 120" style={{ transform: "rotate(-90deg)" }}>
-              <defs>
-                <linearGradient id="profileRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ffd54a" />
-                  <stop offset="100%" stopColor="#ffbc00" />
-                </linearGradient>
-              </defs>
+            <svg width="124" height="124" viewBox="0 0 120 120" style={{ transform: "rotate(-90deg)" }}>
               <circle
                 cx="60"
                 cy="60"
                 r={ringRadius}
                 fill="none"
-                stroke="rgba(255, 255, 255, 0.08)"
+                stroke="#E8E2D4"
                 strokeWidth="10"
               />
               <circle
@@ -226,7 +282,7 @@ export default function TalentDashboardPage() {
                 cy="60"
                 r={ringRadius}
                 fill="none"
-                stroke="url(#profileRingGrad)"
+                stroke="#8A6B2E"
                 strokeWidth="10"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
@@ -248,9 +304,10 @@ export default function TalentDashboardPage() {
             >
               <span
                 style={{
-                  fontSize: "1.45rem",
-                  fontWeight: 800,
-                  color: "#eceaf5",
+                  fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                  fontSize: "1.75rem",
+                  fontWeight: 600,
+                  color: "#2B2D2A",
                   lineHeight: 1,
                 }}
               >
@@ -258,12 +315,13 @@ export default function TalentDashboardPage() {
               </span>
               <span
                 style={{
-                  fontSize: "0.68rem",
+                  fontSize: "10px",
                   fontWeight: 700,
-                  color: "var(--gold)",
+                  color: "#8A6B2E",
                   textTransform: "uppercase",
                   marginTop: "3px",
-                  letterSpacing: "0.06em",
+                  letterSpacing: "0.10em",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
                 Score
@@ -276,20 +334,35 @@ export default function TalentDashboardPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Sparkles size={18} style={{ color: "var(--gold)", flexShrink: 0 }} />
-                  <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+                  <Sparkles size={18} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                  <h2 style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "22px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
                     Artist Profile Strength
                   </h2>
                 </div>
-                <span style={{ fontSize: "0.85rem", color: "#a3acc2", marginTop: "4px", display: "block" }}>
+                <span style={{ fontSize: "14px", color: "#5A584F", marginTop: "4px", display: "block", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                   Keep your portfolio clips and looks up to date to increase shortlist rankings with casting teams.
                 </span>
               </div>
 
               <Link
                 href="/talent/profile"
-                className="btn-secondary"
-                style={{ fontSize: "0.85rem", padding: "8px 18px", borderRadius: "12px", minHeight: "38px" }}
+                style={{
+                  height: "40px",
+                  padding: "0 18px",
+                  borderRadius: "10px",
+                  border: "1px solid #8A6B2E",
+                  backgroundColor: "#FFFFFF",
+                  color: "#8A6B2E",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  textDecoration: "none",
+                  transition: "all 0.16s ease",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
+                }}
+                className="talent-edit-profile-btn"
               >
                 <span>Edit Profile</span>
                 <ChevronRight size={14} />
@@ -306,26 +379,28 @@ export default function TalentDashboardPage() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: "10px 14px",
-                    borderRadius: "12px",
-                    backgroundColor: "rgba(255, 255, 255, 0.04)",
-                    border: `1px solid ${item.done ? "rgba(52, 211, 153, 0.35)" : "rgba(255, 188, 0, 0.35)"}`,
+                    padding: "12px 16px",
+                    borderRadius: "10px",
+                    backgroundColor: "#F3EFE6",
+                    border: "1px solid #E8E2D4",
                     textDecoration: "none",
-                    transition: "all var(--transition)",
+                    transition: "all 0.16s ease",
                     minHeight: "44px",
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
                   }}
+                  className="profile-checklist-item"
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
                     {item.done ? (
-                      <CheckCircle2 size={16} style={{ color: "var(--success)", flexShrink: 0 }} />
+                      <CheckCircle2 size={16} style={{ color: "#8A6B2E", flexShrink: 0 }} />
                     ) : (
-                      <AlertCircle size={16} style={{ color: "var(--warning)", flexShrink: 0 }} />
+                      <AlertCircle size={16} style={{ color: "#5A584F", flexShrink: 0 }} />
                     )}
                     <span
                       style={{
-                        fontSize: "0.825rem",
-                        color: item.done ? "#a3acc2" : "#eceaf5",
-                        fontWeight: item.done ? "500" : "700",
+                        fontSize: "13.5px",
+                        color: "#2B2D2A",
+                        fontWeight: item.done ? "600" : "500",
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -336,7 +411,7 @@ export default function TalentDashboardPage() {
                   </div>
 
                   {!item.done && (
-                    <span style={{ fontSize: "0.75rem", color: "var(--gold)", fontWeight: "700", flexShrink: 0, marginLeft: "6px" }}>
+                    <span style={{ fontSize: "12px", color: "#8A6B2E", fontWeight: 700, flexShrink: 0, marginLeft: "6px" }}>
                       Add &rarr;
                     </span>
                   )}
@@ -348,27 +423,27 @@ export default function TalentDashboardPage() {
       </div>
 
       {/* Main Split: Recent Applications (Left) & Recent Notifications (Right) */}
-      <div className="talent-split-grid">
+      <div className="talent-split-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "24px" }}>
         {/* Recent Applications Card */}
         <div
           className="card-surface"
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
-            borderRadius: "16px",
-            padding: "clamp(16px, 3vw, 24px)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            borderRadius: "18px",
+            padding: "clamp(20px, 3vw, 26px)",
             display: "flex",
             flexDirection: "column",
             gap: "16px",
-            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
             <div>
-              <h2 style={{ fontSize: "1.15rem", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+              <h2 style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "20px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
                 Recent Application Updates
               </h2>
-              <span style={{ fontSize: "0.8rem", color: "#a3acc2" }}>
+              <span style={{ fontSize: "13px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Latest status in your casting pipeline
               </span>
             </div>
@@ -376,13 +451,14 @@ export default function TalentDashboardPage() {
             <Link
               href="/talent/applications"
               style={{
-                fontSize: "0.825rem",
-                color: "var(--gold)",
-                fontWeight: "700",
+                fontSize: "13px",
+                color: "#8A6B2E",
+                fontWeight: 600,
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
                 textDecoration: "none",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
               }}
             >
               <span>View all ({totalAppsCount})</span>
@@ -392,7 +468,7 @@ export default function TalentDashboardPage() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {recentApplications.length === 0 ? (
-              <div style={{ padding: "20px 0", textAlign: "center", color: "#7e89a3", fontSize: "0.85rem" }}>
+              <div style={{ padding: "24px 0", textAlign: "center", color: "#5A584F", fontSize: "14px" }}>
                 No applications submitted yet.
               </div>
             ) : (
@@ -402,10 +478,10 @@ export default function TalentDashboardPage() {
                   <div
                     key={app.id}
                     style={{
-                      backgroundColor: "rgba(255, 255, 255, 0.04)",
-                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      backgroundColor: "#F3EFE6",
+                      border: "1px solid #E8E2D4",
                       borderRadius: "12px",
-                      padding: "14px 16px",
+                      padding: "12px 16px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
@@ -415,18 +491,19 @@ export default function TalentDashboardPage() {
                     <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
                       <span
                         style={{
-                          fontSize: "0.9rem",
-                          fontWeight: "700",
-                          color: "#eceaf5",
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: "#2B2D2A",
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
+                          fontFamily: "var(--font-body), 'Inter', sans-serif",
                         }}
                       >
                         {opp?.title || app.roleApplied}
                       </span>
-                      <span style={{ fontSize: "0.785rem", color: "#a3acc2", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        Role: <strong style={{ color: "var(--gold)" }}>{app.roleApplied}</strong> &bull; {new Date(app.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
+                      <span style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                        Role: <strong style={{ color: "#6E5420" }}>{app.roleApplied}</strong> &bull; {new Date(app.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
                       </span>
                     </div>
 
@@ -442,22 +519,22 @@ export default function TalentDashboardPage() {
         <div
           className="card-surface"
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
-            borderRadius: "16px",
-            padding: "clamp(16px, 3vw, 24px)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            borderRadius: "18px",
+            padding: "clamp(20px, 3vw, 26px)",
             display: "flex",
             flexDirection: "column",
             gap: "16px",
-            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
             <div>
-              <h2 style={{ fontSize: "1.15rem", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+              <h2 style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "20px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
                 Recent Alerts &amp; Announcements
               </h2>
-              <span style={{ fontSize: "0.8rem", color: "#a3acc2" }}>
+              <span style={{ fontSize: "13px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Audition callbacks and Vismaya notices
               </span>
             </div>
@@ -465,13 +542,14 @@ export default function TalentDashboardPage() {
             <Link
               href="/talent/notifications"
               style={{
-                fontSize: "0.825rem",
-                color: "var(--gold)",
-                fontWeight: "700",
+                fontSize: "13px",
+                color: "#8A6B2E",
+                fontWeight: 600,
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
                 textDecoration: "none",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
               }}
             >
               <span>View all</span>
@@ -481,7 +559,7 @@ export default function TalentDashboardPage() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {recentNotifications.length === 0 ? (
-              <div style={{ padding: "20px 0", textAlign: "center", color: "#7e89a3", fontSize: "0.85rem" }}>
+              <div style={{ padding: "24px 0", textAlign: "center", color: "#5A584F", fontSize: "14px" }}>
                 No notifications right now.
               </div>
             ) : (
@@ -497,25 +575,47 @@ export default function TalentDashboardPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
           <div>
-            <h2 style={{ fontSize: "1.35rem", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+            <h2 style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "24px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
               Live Casting Opportunities
             </h2>
-            <span style={{ fontSize: "0.875rem", color: "#a3acc2" }}>
+            <span style={{ fontSize: "14px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
               Verified requirements currently accepting talent submissions
             </span>
           </div>
 
           <Link
             href="/talent/opportunities"
-            className="btn-secondary"
-            style={{ fontSize: "0.85rem", padding: "8px 18px", borderRadius: "12px", minHeight: "38px" }}
+            style={{
+              height: "40px",
+              padding: "0 18px",
+              borderRadius: "10px",
+              border: "1px solid #8A6B2E",
+              backgroundColor: "#FFFFFF",
+              color: "#8A6B2E",
+              fontSize: "13px",
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              textDecoration: "none",
+              transition: "all 0.16s ease",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+            }}
+            className="talent-view-all-opps-btn"
           >
             <span>View All {publishedOpportunities.length} Live Opportunities</span>
             <ArrowRight size={14} />
           </Link>
         </div>
 
-        <div className="talent-cards-grid">
+        <div
+          className="talent-cards-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
+            gap: "24px",
+          }}
+        >
           {featuredOpportunities.map((opp) => (
             <OpportunityCard
               key={opp.id}
@@ -541,7 +641,19 @@ export default function TalentDashboardPage() {
         .profile-checklist-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 10px;
+          gap: 12px;
+        }
+
+        .talent-browse-btn:hover {
+          background-color: #6E5420 !important;
+        }
+        .talent-edit-profile-btn:hover,
+        .talent-view-all-opps-btn:hover {
+          background-color: #F3EFE6 !important;
+        }
+        .profile-checklist-item:hover {
+          background-color: #FAF9F7 !important;
+          border-color: #8A6B2E !important;
         }
 
         @media (max-width: 767.98px) {
@@ -551,6 +663,12 @@ export default function TalentDashboardPage() {
             text-align: center;
           }
           .profile-checklist-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .talent-split-grid,
+          .talent-cards-grid {
             grid-template-columns: 1fr !important;
           }
         }

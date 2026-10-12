@@ -1,6 +1,4 @@
-"use client";
-
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   User,
   Activity,
@@ -15,15 +13,27 @@ import {
   Save,
   X,
   AlertCircle,
+  Camera,
+  Upload,
 } from "lucide-react";
 import StatusBadge from "@/components/shared/StatusBadge";
 import ProgressBar from "@/components/shared/ProgressBar";
 import { useTalent } from "@/lib/talent/TalentContext";
+import { validateMediaFile, optimizeCloudinaryUrl } from "@/lib/api/uploadMedia";
+
+function getInitials(name) {
+  if (!name) return "TR";
+  const parts = name.trim().split(" ").filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 export default function ProfileSections() {
   const {
     profile,
     updateProfile,
+    updateProfilePhoto,
+    removeProfilePhoto,
     profileCompletionScore,
     profileChecklist
   } = useTalent();
@@ -31,6 +41,75 @@ export default function ProfileSections() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(profile);
   const [errors, setErrors] = useState({});
+
+  // Sync formData with profile
+  useEffect(() => {
+    setFormData(profile);
+  }, [profile]);
+
+  // Profile Photo Upload State
+  const photoInputRef = useRef(null);
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+
+  const handlePhotoSelect = (e) => {
+    setPhotoError("");
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    try {
+      validateMediaFile(file, "profilePhoto");
+      setSelectedPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    } catch (err) {
+      setPhotoError(err.message || "Invalid image file. Max 3MB (JPG, PNG, WebP).");
+    }
+  };
+
+  const handleSavePhoto = async () => {
+    if (!selectedPhotoFile) return;
+    setIsUploadingPhoto(true);
+    setPhotoError("");
+    try {
+      await updateProfilePhoto(selectedPhotoFile);
+      setSelectedPhotoFile(null);
+      if (photoPreview) {
+        URL.revokeObjectURL(photoPreview);
+        setPhotoPreview(null);
+      }
+    } catch (err) {
+      setPhotoError(err.message || "Failed to update profile photo.");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleCancelPhoto = () => {
+    setSelectedPhotoFile(null);
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+      setPhotoPreview(null);
+    }
+    setPhotoError("");
+    if (photoInputRef.current) photoInputRef.current.value = "";
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!window.confirm("Are you sure you want to remove your profile photo?")) return;
+    setIsUploadingPhoto(true);
+    setPhotoError("");
+    try {
+      await removeProfilePhoto();
+      setSelectedPhotoFile(null);
+      setPhotoPreview(null);
+    } catch (err) {
+      setPhotoError(err.message || "Failed to remove photo.");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   // Local state for adding new tag inputs
   const [newSkill, setNewSkill] = useState("");
@@ -250,28 +329,49 @@ export default function ProfileSections() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
-          <div
-            style={{
-              width: "56px",
-              height: "56px",
-              borderRadius: "50%",
-              backgroundImage: `url(${formData.avatar})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              border: "2px solid var(--border-color)",
-              boxShadow: "var(--shadow-sm)",
-              flexShrink: 0,
-            }}
-          />
+          {profile?.avatar || formData?.avatar ? (
+            <img
+              src={optimizeCloudinaryUrl(profile.avatar || formData.avatar, { width: 120, quality: "auto" })}
+              alt={formData.personal.fullName}
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                objectFit: "cover",
+                border: "2px solid #E8E2D4",
+                boxShadow: "0 2px 6px rgba(43, 45, 42, 0.04)",
+                flexShrink: 0,
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                backgroundColor: "#F3EFE6",
+                border: "2px solid #E8E2D4",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#8A6B2E",
+                fontWeight: 700,
+                fontSize: "18px",
+                flexShrink: 0,
+              }}
+            >
+              {getInitials(formData.personal.fullName)}
+            </div>
+          )}
 
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-              <h2 style={{ fontSize: "1.35rem", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
+              <h2 style={{ fontSize: "1.35rem", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
                 {formData.personal.fullName}
               </h2>
               <StatusBadge status={profile.status} size="sm" />
             </div>
-            <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+            <span style={{ fontSize: "0.85rem", color: "#5A584F" }}>
               {profile.statusNote}
             </span>
           </div>
@@ -349,6 +449,162 @@ export default function ProfileSections() {
               <span>{item.label}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* SECTION: 120px Dedicated Profile Photo Block */}
+      <div
+        className="card-surface"
+        style={{
+          padding: "24px 28px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "24px",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
+          borderRadius: "16px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap" }}>
+          {/* Round 120px Avatar */}
+          <div
+            style={{
+              width: "120px",
+              height: "120px",
+              borderRadius: "50%",
+              overflow: "hidden",
+              border: "3px solid #E8E2D4",
+              boxShadow: "0 4px 14px rgba(43, 45, 42, 0.08)",
+              backgroundColor: "#F3EFE6",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              position: "relative",
+              flexShrink: 0,
+            }}
+          >
+            {photoPreview || profile.avatar || formData.avatar ? (
+              <img
+                src={photoPreview || optimizeCloudinaryUrl(profile.avatar || formData.avatar, { width: 240, quality: "auto" })}
+                alt={formData.personal?.fullName || "Profile Photo"}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              <span
+                style={{
+                  fontSize: "36px",
+                  fontWeight: 700,
+                  color: "#8A6B2E",
+                  fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                }}
+              >
+                {getInitials(formData.personal?.fullName)}
+              </span>
+            )}
+          </div>
+
+          {/* Details & Actions */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <h3
+              style={{
+                fontSize: "1.15rem",
+                fontWeight: "700",
+                color: "#2B2D2A",
+                margin: 0,
+                fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+              }}
+            >
+              Artist Profile Photo
+            </h3>
+            <p style={{ fontSize: "0.85rem", color: "#5A584F", margin: 0, lineHeight: 1.4, maxWidth: "420px" }}>
+              Displayed across casting director searches, roster comp cards, top bar, and talent sidebar.
+              Upload JPG, PNG, or WebP up to 3 MB.
+            </p>
+
+            {photoError && (
+              <span style={{ fontSize: "0.8rem", color: "#B42318", fontWeight: "600", marginTop: "4px" }}>
+                {photoError}
+              </span>
+            )}
+
+            {/* Hidden Input */}
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/jpg"
+              style={{ display: "none" }}
+              onChange={handlePhotoSelect}
+            />
+
+            {/* Photo Action Buttons */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "8px", flexWrap: "wrap" }}>
+              {selectedPhotoFile ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleSavePhoto}
+                    disabled={isUploadingPhoto}
+                    className="btn-primary"
+                    style={{ padding: "8px 18px", fontSize: "0.85rem", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                  >
+                    <Save size={15} />
+                    <span>{isUploadingPhoto ? "Uploading to Cloudinary..." : "Save Photo"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelPhoto}
+                    disabled={isUploadingPhoto}
+                    className="btn-secondary"
+                    style={{ padding: "8px 16px", fontSize: "0.85rem", borderRadius: "6px" }}
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (photoInputRef.current) photoInputRef.current.click();
+                    }}
+                    className="btn-primary"
+                    style={{ padding: "8px 18px", fontSize: "0.85rem", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                  >
+                    <Upload size={15} />
+                    <span>{profile.avatar || formData.avatar ? "Change Photo" : "Upload Photo"}</span>
+                  </button>
+
+                  {(profile.avatar || formData.avatar) && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      disabled={isUploadingPhoto}
+                      className="btn-secondary"
+                      style={{
+                        padding: "8px 16px",
+                        fontSize: "0.85rem",
+                        borderRadius: "6px",
+                        color: "#B42318",
+                        borderColor: "#FECDCA",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <Trash2 size={14} />
+                      <span>Remove</span>
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

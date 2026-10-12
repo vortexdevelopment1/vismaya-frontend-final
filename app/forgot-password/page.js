@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
+import PasswordInput from "@/components/PasswordInput";
 import { authService } from "@/lib/api/services/authService";
 import { ArrowRight, Mail, KeyRound, Lock, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
 
@@ -109,8 +110,8 @@ export default function ForgotPasswordPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          paddingTop: "clamp(120px, 16vh, 160px)",
-          paddingBottom: "clamp(56px, 8vw, 96px)",
+          paddingTop: "clamp(36px, 5vh, 64px)",
+          paddingBottom: "clamp(48px, 6vw, 80px)",
           overflow: "hidden",
         }}
       >
@@ -119,7 +120,7 @@ export default function ForgotPasswordPage() {
           style={{
             position: "absolute",
             inset: 0,
-            background: "radial-gradient(60% 60% at 50% 40%, rgba(255, 188, 0, 0.12), transparent 70%), linear-gradient(180deg, #070b12 0%, #0a0f19 100%)",
+            background: "radial-gradient(60% 60% at 50% 40%, rgba(201, 165, 92, 0.08), transparent 70%)",
             pointerEvents: "none",
           }}
         />
@@ -146,17 +147,17 @@ export default function ForgotPasswordPage() {
 
               <h1
                 style={{
-                  fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                  fontFamily: "var(--font-heading), Georgia, serif",
                   fontSize: "26px",
-                  fontWeight: 700,
-                  color: "#eceaf5",
+                  fontWeight: 400,
+                  color: "var(--text-primary, #292C29)",
                   marginBottom: "6px",
                   lineHeight: 1.25,
                 }}
               >
                 {step === 4 ? "Password Reset Complete" : "Reset Password"}
               </h1>
-              <p style={{ fontSize: "14px", color: "#a3acc2", margin: 0, lineHeight: "22px" }}>
+              <p style={{ fontSize: "14px", color: "var(--text-secondary, #777970)", margin: 0, lineHeight: "22px" }}>
                 {step === 1 && "Enter your registered email address to receive a verification OTP."}
                 {step === 2 && `Enter the 6-digit OTP code sent to ${email}.`}
                 {step === 3 && "Create a secure new password for your account."}
@@ -171,10 +172,10 @@ export default function ForgotPasswordPage() {
                   alignItems: "center",
                   gap: "8px",
                   padding: "12px 14px",
-                  backgroundColor: "rgba(239, 68, 68, 0.15)",
-                  border: "1px solid rgba(239, 68, 68, 0.35)",
-                  borderRadius: "10px",
-                  color: "#fca5a5",
+                  backgroundColor: "var(--danger-bg)",
+                  border: "1px solid var(--danger-border)",
+                  borderRadius: "var(--radius-card, 6px)",
+                  color: "var(--danger)",
                   fontSize: "13px",
                   marginBottom: "16px",
                 }}
@@ -187,11 +188,11 @@ export default function ForgotPasswordPage() {
             {step === 1 && (
               <form onSubmit={handleSendOtp} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#a3acc2", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                     Registered Email Address
                   </label>
                   <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                    <Mail size={16} style={{ position: "absolute", left: "14px", color: "#7e89a3", pointerEvents: "none" }} />
+                    <Mail size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
                     <input
                       type="email"
                       placeholder="name@example.com"
@@ -218,11 +219,11 @@ export default function ForgotPasswordPage() {
             {step === 2 && (
               <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#a3acc2", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                     6-Digit OTP Code
                   </label>
                   <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                    <KeyRound size={16} style={{ position: "absolute", left: "14px", color: "#7e89a3", pointerEvents: "none" }} />
+                    <KeyRound size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
                     <input
                       type="text"
                       placeholder="e.g. 123456"
@@ -251,7 +252,7 @@ export default function ForgotPasswordPage() {
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#a3acc2",
+                    color: "var(--text-secondary, #777970)",
                     fontSize: "12px",
                     cursor: "pointer",
                     display: "flex",
@@ -269,37 +270,31 @@ export default function ForgotPasswordPage() {
             {step === 3 && (
               <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#a3acc2", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                     New Password
                   </label>
-                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                    <Lock size={16} style={{ position: "absolute", left: "14px", color: "#7e89a3", pointerEvents: "none" }} />
-                    <input
-                      type="password"
-                      placeholder="Minimum 8 characters"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                      style={{ paddingLeft: "42px", width: "100%" }}
-                    />
-                  </div>
+                  <PasswordInput
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimum 8 characters"
+                    required
+                    autoComplete="new-password"
+                    leftIcon={<Lock size={16} />}
+                  />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#a3acc2", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                     Confirm Password
                   </label>
-                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                    <Lock size={16} style={{ position: "absolute", left: "14px", color: "#7e89a3", pointerEvents: "none" }} />
-                    <input
-                      type="password"
-                      placeholder="Re-enter password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                      style={{ paddingLeft: "42px", width: "100%" }}
-                    />
-                  </div>
+                  <PasswordInput
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter password"
+                    required
+                    autoComplete="new-password"
+                    leftIcon={<Lock size={16} />}
+                  />
                 </div>
 
                 <button
@@ -316,8 +311,8 @@ export default function ForgotPasswordPage() {
 
             {step === 4 && (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", textAlign: "center" }}>
-                <CheckCircle2 size={48} style={{ color: "#10b981" }} />
-                <p style={{ color: "#eceaf5", fontSize: "14px", margin: 0 }}>
+                <CheckCircle2 size={48} style={{ color: "var(--success)" }} />
+                <p style={{ color: "var(--text-primary, #292C29)", fontSize: "14px", margin: 0 }}>
                   You can now log in to your account with your new credentials.
                 </p>
                 <Link
@@ -331,9 +326,9 @@ export default function ForgotPasswordPage() {
               </div>
             )}
 
-            <div style={{ textAlign: "center", marginTop: "24px", fontSize: "13px", color: "#a3acc2" }}>
+            <div style={{ textAlign: "center", marginTop: "24px", fontSize: "13px", color: "var(--text-secondary, #777970)" }}>
               Remember your password?{" "}
-              <Link href="/login" style={{ color: "var(--gold)", fontWeight: "700", textDecoration: "none" }}>
+              <Link href="/login" style={{ color: "var(--gold)", fontWeight: "600", textDecoration: "none" }}>
                 Back to Sign In
               </Link>
             </div>

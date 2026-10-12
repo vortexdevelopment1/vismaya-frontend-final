@@ -21,7 +21,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
-import PageHeader from "@/components/shared/PageHeader";
 import Modal from "@/components/shared/Modal";
 import VideoPlayer from "@/components/shared/VideoPlayer";
 
@@ -142,16 +141,6 @@ export default function ShortlistAuditionsPage() {
     return "short";
   };
 
-  // Helper metadata per stage
-  const STAGE_META = {
-    short: { name: "Shortlisted", colorKey: "g", color: "#ffbc00" },
-    req: { name: "Audition requested", colorKey: "b", color: "#8ab4ff" },
-    tal: { name: "With talent", colorKey: "b", color: "#8ab4ff" },
-    rev: { name: "Self-tape ready", colorKey: "g", color: "#ffbc00" },
-    sel: { name: "Selected", colorKey: "o", color: "#34d399" },
-    no: { name: "Not selected", colorKey: "x", color: "#8b94ab" },
-  };
-
   const STAGE_PRIORITY = ["rev", "short", "req", "tal", "sel", "no"];
 
   // Helpers
@@ -204,14 +193,24 @@ export default function ShortlistAuditionsPage() {
   }, [relevantApplications, selectedOppId, searchQuery, opportunities, projects]);
 
   // Tab definitions with dynamic filter functions
-  const TABS = useMemo(() => [
-    { key: "all", label: "All", filter: () => true, color: "#ffbc00" },
-    { key: "short", label: "Shortlisted", filter: (app) => getAppStage(app) === "short", color: "#ffbc00" },
-    { key: "aud", label: "Audition / Interview", filter: (app) => { const s = getAppStage(app); return s === "req" || s === "tal"; }, color: "#8ab4ff" },
-    { key: "rev", label: "Self-tape ready", filter: (app) => getAppStage(app) === "rev", color: "#ffbc00" },
-    { key: "sel", label: "Selected", filter: (app) => getAppStage(app) === "sel", color: "#34d399" },
-    { key: "no", label: "Not selected", filter: (app) => getAppStage(app) === "no", color: "#8b94ab" },
-  ], [auditions]);
+  const TABS = useMemo(
+    () => [
+      { key: "all", label: "All", filter: () => true },
+      { key: "short", label: "Shortlisted", filter: (app) => getAppStage(app) === "short" },
+      {
+        key: "aud",
+        label: "Audition / Interview",
+        filter: (app) => {
+          const s = getAppStage(app);
+          return s === "req" || s === "tal";
+        },
+      },
+      { key: "rev", label: "Self-tape ready", filter: (app) => getAppStage(app) === "rev" },
+      { key: "sel", label: "Selected", filter: (app) => getAppStage(app) === "sel" },
+      { key: "no", label: "Not selected", filter: (app) => getAppStage(app) === "no" },
+    ],
+    [auditions]
+  );
 
   // Tab counts
   const tabCounts = useMemo(() => {
@@ -311,37 +310,6 @@ export default function ShortlistAuditionsPage() {
     setReviewVideoModalApp(app);
   };
 
-  // Status message generator for card
-  const getStatusMessage = (stage, app, aud) => {
-    if (stage === "rev") {
-      return "Self-tape ready · 01:24";
-    }
-    if (stage === "short") {
-      return "Needs your action";
-    }
-    if (stage === "req") {
-      return "Audition requested · waiting for Vismaya";
-    }
-    if (stage === "tal") {
-      return "Relayed to talent";
-    }
-    if (stage === "sel") {
-      const dateStr = new Date(app.appliedDate || Date.now()).toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-      });
-      return `Selected · ${dateStr}`;
-    }
-    if (stage === "no") {
-      const dateStr = new Date(app.appliedDate || Date.now()).toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-      });
-      return `Not selected · ${dateStr}`;
-    }
-    return "Under Review";
-  };
-
   // Initials generator
   const getInitials = (name) => {
     if (!name) return "T";
@@ -353,15 +321,201 @@ export default function ShortlistAuditionsPage() {
       .toUpperCase();
   };
 
+  // Render Status Pill for Candidate Card (Strictly light theme tokens)
+  const renderStatusPill = (stage, app) => {
+    if (stage === "rev") {
+      return (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "12px",
+            fontWeight: 700,
+            borderRadius: "999px",
+            padding: "6px 12px",
+            backgroundColor: "#F3EFE6",
+            color: "#2B2D2A",
+            width: "fit-content",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span
+            style={{
+              width: "7px",
+              height: "7px",
+              borderRadius: "50%",
+              backgroundColor: "#8A6B2E",
+              flexShrink: 0,
+            }}
+          />
+          <span>Self-tape ready</span>
+          <span
+            style={{
+              color: "#5A584F",
+              fontVariantNumeric: "tabular-nums",
+              fontWeight: 600,
+              fontSize: "11.5px",
+            }}
+          >
+            01:24
+          </span>
+        </span>
+      );
+    }
+
+    if (stage === "short") {
+      return (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "12px",
+            fontWeight: 700,
+            borderRadius: "999px",
+            padding: "6px 12px",
+            backgroundColor: "rgba(138, 107, 46, 0.12)",
+            color: "#6E5420",
+            width: "fit-content",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span
+            style={{
+              width: "7px",
+              height: "7px",
+              borderRadius: "50%",
+              backgroundColor: "#8A6B2E",
+              flexShrink: 0,
+            }}
+          />
+          <span>Needs your action</span>
+        </span>
+      );
+    }
+
+    if (stage === "req" || stage === "tal") {
+      return (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "12px",
+            fontWeight: 700,
+            borderRadius: "999px",
+            padding: "6px 12px",
+            backgroundColor: "rgba(201, 165, 92, 0.18)",
+            color: "#6E5420",
+            width: "fit-content",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span
+            style={{
+              width: "7px",
+              height: "7px",
+              borderRadius: "50%",
+              backgroundColor: "#8A6B2E",
+              flexShrink: 0,
+            }}
+          />
+          <span>Audition / Interview</span>
+        </span>
+      );
+    }
+
+    if (stage === "sel") {
+      return (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            fontSize: "12px",
+            fontWeight: 700,
+            borderRadius: "999px",
+            padding: "6px 12px",
+            backgroundColor: "rgba(138, 107, 46, 0.14)",
+            color: "#6E5420",
+            width: "fit-content",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <CheckCircle2 size={13} style={{ color: "#8A6B2E" }} />
+          <span>Selected</span>
+        </span>
+      );
+    }
+
+    if (stage === "no") {
+      return (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "12px",
+            fontWeight: 700,
+            borderRadius: "999px",
+            padding: "6px 12px",
+            backgroundColor: "#F3EFE6",
+            color: "#5A584F",
+            width: "fit-content",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span
+            style={{
+              width: "7px",
+              height: "7px",
+              borderRadius: "50%",
+              backgroundColor: "#5A584F",
+              flexShrink: 0,
+            }}
+          />
+          <span>Not selected</span>
+        </span>
+      );
+    }
+
+    return (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "8px",
+          fontSize: "12px",
+          fontWeight: 700,
+          borderRadius: "999px",
+          padding: "6px 12px",
+          backgroundColor: "#F3EFE6",
+          color: "#5A584F",
+          width: "fit-content",
+          lineHeight: 1,
+          whiteSpace: "nowrap",
+        }}
+      >
+        <span>Under Review</span>
+      </span>
+    );
+  };
+
   // Loading skeleton
   if (!isHydrated) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        <div style={{ height: "48px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "12px", width: "40%" }} />
-        <div style={{ height: "40px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "10px" }} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        <div style={{ height: "48px", background: "#F3EFE6", borderRadius: "12px", width: "40%" }} />
+        <div style={{ height: "120px", background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "16px" }} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px" }}>
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} style={{ height: "220px", background: "rgba(255, 255, 255, 0.055)", borderRadius: "14px" }} />
+            <div key={i} style={{ height: "300px", background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "20px" }} />
           ))}
         </div>
       </div>
@@ -369,7 +523,7 @@ export default function ShortlistAuditionsPage() {
   }
 
   return (
-    <div className="page-wrapper">
+    <div className="v-shortlist-page-wrapper">
       {/* Toast Notification */}
       {toastMessage && (
         <div
@@ -380,97 +534,333 @@ export default function ShortlistAuditionsPage() {
             bottom: "24px",
             right: "24px",
             zIndex: 150,
-            backgroundColor: "#0f1626",
-            border: "1px solid var(--gold)",
-            boxShadow: "0 12px 36px rgba(0, 0, 0, 0.6)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            boxShadow: "0 8px 24px rgba(43, 45, 42, 0.12)",
             borderRadius: "12px",
-            padding: "12px 18px",
+            padding: "14px 20px",
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            color: "var(--tx)",
-            fontSize: "13px",
-            fontWeight: "600",
+            color: "#2B2D2A",
+            fontSize: "13.5px",
+            fontWeight: 600,
             animation: "toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
-          <CheckCircle2 size={18} style={{ color: "var(--gold)", flexShrink: 0 }} />
+          <CheckCircle2 size={18} style={{ color: "#8A6B2E", flexShrink: 0 }} />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Page Header */}
-      <PageHeader
-        title="Shortlist & Auditions"
-        subtitle="Move shortlisted talent through audition and review self-tapes before making the final selection."
-        breadcrumbs={[
-          { label: "Dashboard", href: "/recruiter/dashboard" },
-          { label: "Shortlist & Auditions" },
-        ]}
-      />
-
-      {/* Toolbar: Opportunity Select + Search */}
-      <div className="tool">
-        <select
-          className="sel"
-          value={selectedOppId}
-          onChange={(e) => setSelectedOppId(e.target.value)}
-          aria-label="Filter Opportunity"
+      {/* Breadcrumb & Main Page Header */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "24px" }}>
+        <nav
+          aria-label="Breadcrumb"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "13px",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
+          }}
         >
-          <option value="ALL">All opportunities ({orgOpportunities.length})</option>
-          {orgOpportunities.map((opp) => (
-            <option key={opp.id} value={opp.id}>
-              {opp.title}
-            </option>
-          ))}
-        </select>
+          <Link
+            href="/recruiter/dashboard"
+            style={{ color: "#5A584F", textDecoration: "none", transition: "color 0.15s ease" }}
+            className="v-breadcrumb-link"
+          >
+            Dashboard
+          </Link>
+          <span style={{ color: "#E8E2D4" }}>&gt;</span>
+          <span style={{ color: "#8A6B2E", fontWeight: 600 }}>Shortlist & Auditions</span>
+        </nav>
 
-        <input
-          className="in"
-          type="text"
-          placeholder="Search candidate, role or project"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          aria-label="Search"
-        />
+        <div>
+          <h1
+            style={{
+              fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+              fontSize: "clamp(28px, 4vw, 40px)",
+              lineHeight: 1.2,
+              fontWeight: 600,
+              color: "#2B2D2A",
+              margin: "0 0 8px 0",
+              letterSpacing: "-0.015em",
+            }}
+          >
+            Shortlist & Auditions
+          </h1>
+          <p
+            style={{
+              fontSize: "16px",
+              lineHeight: 1.5,
+              color: "#5A584F",
+              margin: 0,
+              maxWidth: "760px",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+            }}
+          >
+            Move shortlisted talent through audition and review self-tapes before making the final selection.
+          </p>
+        </div>
       </div>
 
-      {/* Stage Tabs (Horizontally scrolling on small screens) */}
-      <div className="tabs" role="tablist">
-        {TABS.map((tab) => {
-          const isActive = currentTab === tab.key;
-          const count = tabCounts[tab.key] || 0;
+      {/* Filter Toolbar Card (Single White Card) */}
+      <div
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
+          borderRadius: "16px",
+          padding: "20px 24px",
+          boxShadow: "0 2px 12px rgba(43, 45, 42, 0.03)",
+          marginBottom: "28px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+        }}
+        className="v-toolbar-card"
+      >
+        {/* Top Row: Opportunity Select + Search */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            flexWrap: "wrap",
+            width: "100%",
+          }}
+          className="v-toolbar-top"
+        >
+          <select
+            className="v-opp-select"
+            value={selectedOppId}
+            onChange={(e) => setSelectedOppId(e.target.value)}
+            aria-label="Filter Opportunity"
+            style={{
+              width: "280px",
+              height: "44px",
+              borderRadius: "10px",
+              border: "1px solid #E8E2D4",
+              backgroundColor: "#FFFFFF",
+              color: "#2B2D2A",
+              fontSize: "15px",
+              fontWeight: 500,
+              padding: "0 14px",
+              outline: "none",
+              cursor: "pointer",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+              transition: "border-color 0.18s ease, box-shadow 0.18s ease",
+            }}
+          >
+            <option value="ALL">All opportunities ({orgOpportunities.length})</option>
+            {orgOpportunities.map((opp) => (
+              <option key={opp.id} value={opp.id}>
+                {opp.title}
+              </option>
+            ))}
+          </select>
 
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setCurrentTab(tab.key)}
-              className={`tab ${isActive ? "on" : ""}`}
-              style={{ "--c": tab.color }}
-            >
-              <span>{tab.label}</span>
-              <b>{count}</b>
-            </button>
-          );
-        })}
-      </div>
+          <div
+            style={{
+              flex: "1 1 320px",
+              maxWidth: "460px",
+              marginLeft: "auto",
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+            }}
+            className="v-search-box"
+          >
+            <Search
+              size={16}
+              style={{
+                position: "absolute",
+                left: "14px",
+                color: "#5A584F",
+                pointerEvents: "none",
+              }}
+            />
+            <input
+              className="v-search-input"
+              type="text"
+              placeholder="Search candidate, role or project"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search"
+              style={{
+                width: "100%",
+                height: "44px",
+                borderRadius: "10px",
+                border: "1px solid #E8E2D4",
+                backgroundColor: "#FFFFFF",
+                color: "#2B2D2A",
+                fontSize: "14px",
+                padding: "0 14px 0 40px",
+                outline: "none",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
+                transition: "border-color 0.18s ease, box-shadow 0.18s ease",
+              }}
+            />
+          </div>
+        </div>
 
-      {/* Summary Pill: "N need your action" */}
-      <div className="need">
-        <span className="sc g" style={{ display: "inline-flex" }}>
-          <i />
-          <b>{needActionCount}</b> need your action
-        </span>
+        {/* Bottom Row: Pill Tabs + Action Counter */}
+        <div
+          style={{
+            borderTop: "1px solid #E8E2D4",
+            paddingTop: "16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "16px",
+            flexWrap: "wrap",
+            width: "100%",
+          }}
+          className="v-tabs-row"
+        >
+          <div
+            className="v-tabs-scroll-container"
+            role="tablist"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              flexWrap: "wrap",
+            }}
+          >
+            {TABS.map((tab) => {
+              const isActive = currentTab === tab.key;
+              const count = tabCounts[tab.key] || 0;
+
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setCurrentTab(tab.key)}
+                  style={{
+                    height: "40px",
+                    padding: "0 16px",
+                    borderRadius: "999px",
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    border: "1px solid transparent",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    whiteSpace: "nowrap",
+                    transition: "all 0.18s ease",
+                    backgroundColor: isActive ? "#8A6B2E" : "transparent",
+                    color: isActive ? "#FFFFFF" : "#5A584F",
+                    boxShadow: isActive ? "0 2px 6px rgba(138, 107, 46, 0.25)" : "none",
+                  }}
+                  className={`v-tab-btn ${isActive ? "active" : ""}`}
+                >
+                  <span>{tab.label}</span>
+                  <span
+                    style={{
+                      height: "22px",
+                      minWidth: "22px",
+                      padding: "0 7px",
+                      borderRadius: "999px",
+                      backgroundColor: isActive ? "rgba(255, 255, 255, 0.22)" : "#F3EFE6",
+                      color: isActive ? "#FFFFFF" : "#2B2D2A",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.18s ease",
+                    }}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Need Action Indicator */}
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "13px",
+              fontWeight: 600,
+              color: "#6E5420",
+              whiteSpace: "nowrap",
+              marginLeft: "auto",
+            }}
+            className="v-need-action-tag"
+          >
+            <span
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: "#8A6B2E",
+                flexShrink: 0,
+              }}
+            />
+            <span>
+              <strong style={{ color: "#2B2D2A", fontWeight: 700 }}>{needActionCount}</strong> need your action
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Candidate Standalone Grid */}
-      <div className="grid">
+      <div className="v-candidate-grid">
         {displayApplications.length === 0 ? (
-          <div className="empty" style={{ gridColumn: "1 / -1" }}>
-            No candidates here yet
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E8E2D4",
+              borderRadius: "20px",
+              padding: "56px 24px",
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "12px",
+              boxShadow: "0 2px 8px rgba(43, 45, 42, 0.03)",
+            }}
+          >
+            <div
+              style={{
+                width: "64px",
+                height: "64px",
+                borderRadius: "50%",
+                backgroundColor: "#F3EFE6",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#8A6B2E",
+                marginBottom: "4px",
+              }}
+            >
+              <Users size={32} />
+            </div>
+            <h3
+              style={{
+                fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                fontSize: "22px",
+                fontWeight: 600,
+                color: "#2B2D2A",
+                margin: 0,
+              }}
+            >
+              No candidates found
+            </h3>
+            <p style={{ color: "#5A584F", fontSize: "14px", margin: 0, maxWidth: "420px", lineHeight: 1.5 }}>
+              Try selecting another stage filter or search term to view candidates.
+            </p>
           </div>
         ) : (
           displayApplications.map((app) => {
@@ -479,9 +869,7 @@ export default function ShortlistAuditionsPage() {
             const opp = getOpportunityForApp(app.opportunityId);
             const proj = getProjectForOpp(opp);
             const stage = getAppStage(app);
-            const meta = STAGE_META[stage] || STAGE_META.short;
             const isClosed = stage === "no";
-            const statusMsg = getStatusMessage(stage, app, aud);
             const profileUrl = `/recruiter/applications/${app.id}?from=shortlist&opp=${app.opportunityId}`;
 
             const isActionShort = stage === "short";
@@ -490,17 +878,30 @@ export default function ShortlistAuditionsPage() {
             return (
               <article
                 key={`candidate-card-${app.id}`}
-                className={`cd ${isClosed ? "dim" : ""}`}
-                style={{ "--c": meta.color }}
+                className={`v-candidate-card ${isClosed ? "closed-card" : ""}`}
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #E8E2D4",
+                  borderRadius: "20px",
+                  padding: "22px",
+                  boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  boxSizing: "border-box",
+                  transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
+                  gap: "14px",
+                }}
               >
                 {/* 1. Candidate Info: Avatar + Name + Age/City */}
-                <div className="p">
+                <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                   <Link
                     href={profileUrl}
                     style={{
                       display: "flex",
                       textDecoration: "none",
                       color: "inherit",
+                      flexShrink: 0,
                     }}
                   >
                     {prof.avatar ? (
@@ -508,20 +909,30 @@ export default function ShortlistAuditionsPage() {
                         src={prof.avatar}
                         alt={app.talentName}
                         style={{
-                          width: "38px",
-                          height: "38px",
+                          width: "52px",
+                          height: "52px",
                           borderRadius: "50%",
                           objectFit: "cover",
-                          border: "1px solid rgba(255, 255, 255, 0.16)",
+                          border: "1px solid #E8E2D4",
                           flexShrink: 0,
                         }}
                       />
                     ) : (
                       <div
-                        className="av"
                         style={{
-                          "--a": "linear-gradient(145deg, #16243e, #0a0f19)",
-                          border: "1px solid rgba(255, 188, 0, 0.3)",
+                          width: "52px",
+                          height: "52px",
+                          borderRadius: "50%",
+                          backgroundColor: "#F3EFE6",
+                          border: "1px solid #E8E2D4",
+                          color: "#8A6B2E",
+                          fontSize: "16px",
+                          fontWeight: 700,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
                         }}
                       >
                         {getInitials(app.talentName)}
@@ -529,118 +940,257 @@ export default function ShortlistAuditionsPage() {
                     )}
                   </Link>
 
-                  <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
                     <Link
                       href={profileUrl}
-                      className="candidate-name-link"
+                      className="v-candidate-name-link"
                       style={{
                         textDecoration: "none",
-                        color: "var(--tx)",
+                        color: "#2B2D2A",
                         display: "inline-flex",
                         alignItems: "center",
-                        gap: "4px",
+                        gap: "6px",
                         maxWidth: "100%",
                       }}
+                      title={app.talentName}
                     >
-                      <b style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                          fontSize: "20px",
+                          fontWeight: 600,
+                          color: "#2B2D2A",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          lineHeight: 1.25,
+                        }}
+                        className="v-candidate-name-text"
+                      >
                         {app.talentName}
-                      </b>
-                      <ExternalLink size={12} className="link-hover-icon" style={{ color: "var(--gold)", flexShrink: 0 }} />
+                      </span>
+                      <ExternalLink
+                        size={13}
+                        style={{ color: "#5A584F", flexShrink: 0, transition: "color 0.15s ease" }}
+                        className="v-link-icon"
+                      />
                     </Link>
-                    <span>
+                    <span
+                      style={{
+                        fontSize: "13px",
+                        color: "#5A584F",
+                        lineHeight: 1.3,
+                        fontFamily: "var(--font-body), 'Inter', sans-serif",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {prof.age ? `${prof.age} yrs` : "—"} · {prof.city || "Mumbai"}
                     </span>
                   </div>
                 </div>
 
                 {/* 2. Role & Project */}
-                <div className="role">
-                  {app.roleApplied}
-                  <small title={getProjectRoleSubtitle(proj, opp)}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-body), 'Inter', sans-serif",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      color: "#2B2D2A",
+                      lineHeight: 1.35,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                    title={app.roleApplied}
+                  >
+                    {app.roleApplied}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      color: "#5A584F",
+                      lineHeight: 1.35,
+                      fontFamily: "var(--font-body), 'Inter', sans-serif",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                    title={getProjectRoleSubtitle(proj, opp)}
+                  >
                     {getProjectRoleSubtitle(proj, opp)}
-                  </small>
+                  </div>
                 </div>
 
-                {/* 3. Status Line with Colored Dot */}
-                <div className="st" style={{ "--c": meta.color }}>
-                  {statusMsg}
+                {/* 3. Status Line with Colored Pill */}
+                <div style={{ paddingTop: "2px" }}>
+                  {renderStatusPill(stage, app)}
                 </div>
 
                 {/* 4. Action Row (Pinned to bottom with margin-top: auto) */}
-                <div className="row mt" style={{ position: "relative" }}>
-                  {isActionShort && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenAuditionModal(app)}
-                        className="btn pr"
-                      >
-                        Request audition
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMenuAppId(activeMenuAppId === app.id ? null : app.id);
-                        }}
-                        className="btn"
-                        style={{ flex: "0 0 36px", padding: 0 }}
-                        aria-label="More options"
-                      >
-                        <MoreHorizontal size={16} />
-                      </button>
-                    </>
-                  )}
-
-                  {isActionRev && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenReviewModal(app)}
-                        className="btn pr"
-                      >
-                        Review self-tape
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMenuAppId(activeMenuAppId === app.id ? null : app.id);
-                        }}
-                        className="btn"
-                        style={{ flex: "0 0 36px", padding: 0 }}
-                        aria-label="More options"
-                      >
-                        <MoreHorizontal size={16} />
-                      </button>
-                    </>
-                  )}
-
-                  {!isActionShort && !isActionRev && (
+                <div
+                  style={{
+                    marginTop: "auto",
+                    paddingTop: "18px",
+                    display: "flex",
+                    gap: "10px",
+                    alignItems: "center",
+                    position: "relative",
+                  }}
+                  className="v-card-actions-row"
+                >
+                  {isActionShort ? (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAuditionModal(app)}
+                      style={{
+                        flex: 1,
+                        height: "44px",
+                        backgroundColor: "#8A6B2E",
+                        color: "#FFFFFF",
+                        borderRadius: "10px",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        border: "none",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        fontFamily: "var(--font-body), 'Inter', sans-serif",
+                        boxShadow: "0 2px 6px rgba(138, 107, 46, 0.20)",
+                        transition: "all 0.18s ease",
+                        whiteSpace: "nowrap",
+                      }}
+                      className="v-card-primary-btn"
+                    >
+                      Request audition
+                    </button>
+                  ) : isActionRev ? (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenReviewModal(app)}
+                      style={{
+                        flex: 1,
+                        height: "44px",
+                        backgroundColor: "#8A6B2E",
+                        color: "#FFFFFF",
+                        borderRadius: "10px",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        border: "none",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        fontFamily: "var(--font-body), 'Inter', sans-serif",
+                        boxShadow: "0 2px 6px rgba(138, 107, 46, 0.20)",
+                        transition: "all 0.18s ease",
+                        whiteSpace: "nowrap",
+                      }}
+                      className="v-card-primary-btn"
+                    >
+                      Review self-tape
+                    </button>
+                  ) : stage === "req" || stage === "tal" ? (
                     <Link
                       href={profileUrl}
-                      className="btn"
-                      style={{ textDecoration: "none" }}
+                      style={{
+                        flex: 1,
+                        height: "44px",
+                        backgroundColor: "#8A6B2E",
+                        color: "#FFFFFF",
+                        borderRadius: "10px",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        border: "none",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        textDecoration: "none",
+                        fontFamily: "var(--font-body), 'Inter', sans-serif",
+                        boxShadow: "0 2px 6px rgba(138, 107, 46, 0.20)",
+                        transition: "all 0.18s ease",
+                        whiteSpace: "nowrap",
+                      }}
+                      className="v-card-primary-btn"
+                    >
+                      View audition
+                    </Link>
+                  ) : (
+                    <Link
+                      href={profileUrl}
+                      style={{
+                        flex: 1,
+                        height: "44px",
+                        backgroundColor: "#8A6B2E",
+                        color: "#FFFFFF",
+                        borderRadius: "10px",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        border: "none",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        textDecoration: "none",
+                        fontFamily: "var(--font-body), 'Inter', sans-serif",
+                        boxShadow: "0 2px 6px rgba(138, 107, 46, 0.20)",
+                        transition: "all 0.18s ease",
+                        whiteSpace: "nowrap",
+                      }}
+                      className="v-card-primary-btn"
                     >
                       View profile
                     </Link>
                   )}
 
-                  {/* Dropdown Menu for Shortlisted / Self-Tape Ready */}
+                  {/* Overflow "..." Menu Button on all cards */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMenuAppId(activeMenuAppId === app.id ? null : app.id);
+                    }}
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      flex: "0 0 44px",
+                      borderRadius: "10px",
+                      border: "1px solid #E8E2D4",
+                      backgroundColor: "#FFFFFF",
+                      color: "#5A584F",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      transition: "all 0.18s ease",
+                    }}
+                    className="v-card-menu-btn"
+                    aria-label="More options"
+                  >
+                    <MoreHorizontal size={18} />
+                  </button>
+
+                  {/* Dropdown Menu */}
                   {activeMenuAppId === app.id && (
                     <div
                       ref={menuRef}
                       style={{
                         position: "absolute",
-                        bottom: "44px",
+                        bottom: "52px",
                         right: 0,
-                        width: "180px",
-                        backgroundColor: "#0f1626",
-                        border: "1px solid rgba(255, 255, 255, 0.16)",
+                        width: "190px",
+                        backgroundColor: "#FFFFFF",
+                        border: "1px solid #E8E2D4",
                         borderRadius: "12px",
-                        boxShadow: "0 16px 36px rgba(0, 0, 0, 0.75)",
+                        boxShadow: "0 12px 32px rgba(43, 45, 42, 0.14)",
                         padding: "6px",
                         zIndex: 40,
                         display: "flex",
@@ -664,15 +1214,17 @@ export default function ShortlistAuditionsPage() {
                           borderRadius: "8px",
                           background: "transparent",
                           border: "none",
-                          color: "var(--ok)",
+                          color: "#6E5420",
                           fontSize: "13px",
-                          fontWeight: "600",
-                          fontFamily: "var(--font-sans), Inter, sans-serif",
+                          fontWeight: 600,
+                          fontFamily: "var(--font-body), 'Inter', sans-serif",
                           cursor: "pointer",
                           textAlign: "left",
+                          transition: "background-color 0.15s ease",
                         }}
+                        className="v-menu-item-ok"
                       >
-                        <CheckCircle2 size={14} />
+                        <CheckCircle2 size={14} style={{ color: "#8A6B2E" }} />
                         <span>Select for role</span>
                       </button>
 
@@ -691,19 +1243,21 @@ export default function ShortlistAuditionsPage() {
                           borderRadius: "8px",
                           background: "transparent",
                           border: "none",
-                          color: "#ff6b6b",
+                          color: "#B42318",
                           fontSize: "13px",
-                          fontWeight: "600",
-                          fontFamily: "var(--font-sans), Inter, sans-serif",
+                          fontWeight: 600,
+                          fontFamily: "var(--font-body), 'Inter', sans-serif",
                           cursor: "pointer",
                           textAlign: "left",
+                          transition: "background-color 0.15s ease",
                         }}
+                        className="v-menu-item-danger"
                       >
-                        <XCircle size={14} />
+                        <XCircle size={14} style={{ color: "#B42318" }} />
                         <span>Not selected</span>
                       </button>
 
-                      <div style={{ height: "1px", backgroundColor: "rgba(255, 255, 255, 0.08)", margin: "4px 0" }} />
+                      <div style={{ height: "1px", backgroundColor: "#E8E2D4", margin: "4px 0" }} />
 
                       <Link
                         href={profileUrl}
@@ -714,14 +1268,16 @@ export default function ShortlistAuditionsPage() {
                           gap: "8px",
                           padding: "8px 10px",
                           borderRadius: "8px",
-                          color: "var(--tx)",
+                          color: "#2B2D2A",
                           fontSize: "13px",
-                          fontWeight: "600",
-                          fontFamily: "var(--font-sans), Inter, sans-serif",
+                          fontWeight: 600,
+                          fontFamily: "var(--font-body), 'Inter', sans-serif",
                           textDecoration: "none",
+                          transition: "background-color 0.15s ease",
                         }}
+                        className="v-menu-item-ghost"
                       >
-                        <Eye size={14} style={{ color: "var(--mu)" }} />
+                        <Eye size={14} style={{ color: "#5A584F" }} />
                         <span>View profile</span>
                       </Link>
                     </div>
@@ -733,7 +1289,7 @@ export default function ShortlistAuditionsPage() {
         )}
       </div>
 
-      {/* MODAL 1: Review Self-Tape Modal */}
+      {/* MODAL 1: Review Self-Tape Modal (Light Theme) */}
       {reviewVideoModalApp && (() => {
         const app = reviewVideoModalApp;
         const aud = getAuditionForApp(app.id);
@@ -748,23 +1304,33 @@ export default function ShortlistAuditionsPage() {
             subtitle={`Audition for ${app.roleApplied} • ${opp?.title || "Opportunity"}`}
             maxWidth="640px"
             footer={
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: "10px", flexWrap: "wrap" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  width: "100%",
+                  gap: "10px",
+                  flexWrap: "wrap",
+                }}
+              >
                 <Link
                   href={profileUrl}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "6px",
-                    height: "36px",
+                    height: "40px",
                     padding: "0 14px",
                     borderRadius: "10px",
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.15)",
-                    color: "var(--tx)",
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #E8E2D4",
+                    color: "#5A584F",
                     fontSize: "13px",
-                    fontWeight: "600",
+                    fontWeight: 600,
                     textDecoration: "none",
                   }}
+                  className="v-modal-ghost-btn"
                 >
                   <Eye size={15} />
                   <span>View profile</span>
@@ -778,19 +1344,20 @@ export default function ShortlistAuditionsPage() {
                       setNotSelectedReason("");
                     }}
                     style={{
-                      height: "36px",
+                      height: "40px",
                       padding: "0 14px",
                       borderRadius: "10px",
                       background: "transparent",
-                      border: "1px solid rgba(255, 107, 107, 0.35)",
-                      color: "#ff6b6b",
+                      border: "1px solid rgba(180, 35, 24, 0.3)",
+                      color: "#B42318",
                       fontSize: "13px",
-                      fontWeight: "600",
+                      fontWeight: 600,
                       cursor: "pointer",
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "6px",
                     }}
+                    className="v-modal-danger-btn"
                   >
                     <XCircle size={15} />
                     <span>Not selected</span>
@@ -803,20 +1370,21 @@ export default function ShortlistAuditionsPage() {
                       setSelectedNote("");
                     }}
                     style={{
-                      height: "36px",
-                      padding: "0 16px",
+                      height: "40px",
+                      padding: "0 18px",
                       borderRadius: "10px",
-                      background: "linear-gradient(180deg, var(--gold2), var(--gold))",
-                      color: "#1a1300",
+                      backgroundColor: "#8A6B2E",
+                      color: "#FFFFFF",
                       fontSize: "13px",
-                      fontWeight: "600",
+                      fontWeight: 600,
                       border: "none",
-                      boxShadow: "0 2px 8px rgba(255, 188, 0, 0.25)",
+                      boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
                       cursor: "pointer",
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "6px",
                     }}
+                    className="v-modal-primary-btn"
                   >
                     <CheckCircle2 size={15} />
                     <span>Select for role</span>
@@ -826,25 +1394,27 @@ export default function ShortlistAuditionsPage() {
             }
           >
             <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-              <VideoPlayer
-                src={aud?.selfTapeUrl}
-                fileName={`${app.talentName}-SelfTape.mp4`}
-                height="320px"
-              />
+              <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #E8E2D4" }}>
+                <VideoPlayer
+                  src={aud?.selfTapeUrl}
+                  fileName={`${app.talentName}-SelfTape.mp4`}
+                  height="320px"
+                />
+              </div>
 
               <div
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  backgroundColor: "#F3EFE6",
+                  border: "1px solid #E8E2D4",
                   borderRadius: "12px",
                   padding: "16px",
                   fontSize: "13px",
                 }}
               >
-                <div style={{ fontWeight: "600", color: "var(--tx)", marginBottom: "4px" }}>
+                <div style={{ fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
                   Audition Instructions Relayed by Vismaya:
                 </div>
-                <p style={{ color: "var(--mu)", margin: 0, lineHeight: 1.5 }}>
+                <p style={{ color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
                   {aud?.note || "Record a monologue focusing on natural dialogue delivery and camera presence."}
                 </p>
               </div>
@@ -853,7 +1423,7 @@ export default function ShortlistAuditionsPage() {
         );
       })()}
 
-      {/* MODAL 2: Request Audition Modal */}
+      {/* MODAL 2: Request Audition Modal (Light Theme) */}
       {auditionModalApp && (
         <Modal
           isOpen={!!auditionModalApp}
@@ -863,42 +1433,41 @@ export default function ShortlistAuditionsPage() {
           maxWidth="560px"
         >
           <form onSubmit={handleSubmitAudition} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <p style={{ fontSize: "13px", color: "var(--mu)", margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: "13.5px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
               The Vismaya Casting Desk coordinates with the talent and relays instructions directly.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: "600", color: "var(--tx)" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
                 Audition Type *
               </label>
               <select
                 value={auditionType}
                 onChange={(e) => setAuditionType(e.target.value)}
                 style={{
-                  height: "40px",
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  height: "42px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #E8E2D4",
                   borderRadius: "10px",
                   padding: "0 14px",
-                  color: "var(--tx)",
-                  fontSize: "13px",
-                  fontWeight: "600",
+                  color: "#2B2D2A",
+                  fontSize: "13.5px",
+                  fontWeight: 500,
                   outline: "none",
                   cursor: "pointer",
-                  colorScheme: "dark",
                 }}
               >
-                <option value="Audition" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+                <option value="Audition">
                   Self-Tape Audition (Video Submission)
                 </option>
-                <option value="Interview" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+                <option value="Interview">
                   1-on-1 Virtual Interview
                 </option>
               </select>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: "600", color: "var(--tx)" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
                 Preferred Date (Optional)
               </label>
               <input
@@ -906,21 +1475,20 @@ export default function ShortlistAuditionsPage() {
                 value={auditionDate}
                 onChange={(e) => setAuditionDate(e.target.value)}
                 style={{
-                  height: "40px",
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  height: "42px",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #E8E2D4",
                   borderRadius: "10px",
                   padding: "0 14px",
-                  color: "var(--tx)",
-                  fontSize: "13px",
+                  color: "#2B2D2A",
+                  fontSize: "13.5px",
                   outline: "none",
-                  colorScheme: "dark",
                 }}
               />
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: "600", color: "var(--tx)" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
                 Directions Note for Talent *
               </label>
               <textarea
@@ -930,15 +1498,16 @@ export default function ShortlistAuditionsPage() {
                 onChange={(e) => setAuditionNote(e.target.value)}
                 placeholder="Specify monologue, scenes, or dialogue directions..."
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #E8E2D4",
                   borderRadius: "10px",
                   padding: "12px 14px",
-                  color: "var(--tx)",
-                  fontSize: "13px",
+                  color: "#2B2D2A",
+                  fontSize: "13.5px",
                   outline: "none",
                   resize: "vertical",
                   lineHeight: 1.5,
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               />
             </div>
@@ -948,14 +1517,14 @@ export default function ShortlistAuditionsPage() {
                 type="button"
                 onClick={() => setAuditionModalApp(null)}
                 style={{
-                  height: "40px",
-                  padding: "0 14px",
+                  height: "42px",
+                  padding: "0 16px",
                   borderRadius: "10px",
-                  background: "transparent",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  color: "var(--tx)",
-                  fontSize: "13px",
-                  fontWeight: "600",
+                  background: "#FFFFFF",
+                  border: "1px solid #E8E2D4",
+                  color: "#2B2D2A",
+                  fontSize: "13.5px",
+                  fontWeight: 600,
                   cursor: "pointer",
                 }}
               >
@@ -964,17 +1533,18 @@ export default function ShortlistAuditionsPage() {
               <button
                 type="submit"
                 style={{
-                  height: "40px",
-                  padding: "0 18px",
+                  height: "42px",
+                  padding: "0 20px",
                   borderRadius: "10px",
-                  background: "linear-gradient(180deg, var(--gold2), var(--gold))",
-                  color: "#1a1300",
-                  fontSize: "13px",
-                  fontWeight: "600",
+                  backgroundColor: "#8A6B2E",
+                  color: "#FFFFFF",
+                  fontSize: "13.5px",
+                  fontWeight: 600,
                   border: "none",
-                  boxShadow: "0 2px 8px rgba(255, 188, 0, 0.25)",
+                  boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
                   cursor: "pointer",
                 }}
+                className="v-modal-primary-btn"
               >
                 Send Request via Vismaya
               </button>
@@ -983,7 +1553,7 @@ export default function ShortlistAuditionsPage() {
         </Modal>
       )}
 
-      {/* MODAL 3: Confirm Role Selection Modal */}
+      {/* MODAL 3: Confirm Role Selection Modal (Light Theme) */}
       {selectedModalApp && (
         <Modal
           isOpen={!!selectedModalApp}
@@ -994,8 +1564,8 @@ export default function ShortlistAuditionsPage() {
           <form onSubmit={handleConfirmSelect} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div
               style={{
-                backgroundColor: "rgba(52, 211, 153, 0.12)",
-                border: "1px solid rgba(52, 211, 153, 0.3)",
+                backgroundColor: "rgba(138, 107, 46, 0.08)",
+                border: "1px solid rgba(138, 107, 46, 0.22)",
                 borderRadius: "12px",
                 padding: "16px",
                 display: "flex",
@@ -1003,19 +1573,19 @@ export default function ShortlistAuditionsPage() {
                 gap: "12px",
               }}
             >
-              <CheckCircle2 size={22} style={{ color: "var(--ok)", flexShrink: 0, marginTop: "2px" }} />
+              <CheckCircle2 size={22} style={{ color: "#8A6B2E", flexShrink: 0, marginTop: "2px" }} />
               <div>
-                <strong style={{ fontSize: "14px", color: "var(--tx)", display: "block" }}>
+                <strong style={{ fontSize: "14px", color: "#2B2D2A", display: "block" }}>
                   Select {selectedModalApp.talentName} for {selectedModalApp.roleApplied}
                 </strong>
-                <p style={{ fontSize: "12px", color: "var(--mu)", margin: "4px 0 0 0", lineHeight: 1.4 }}>
+                <p style={{ fontSize: "12px", color: "#5A584F", margin: "4px 0 0 0", lineHeight: 1.4 }}>
                   This decision is final and recorded in the audit trail.
                 </p>
               </div>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: "600", color: "var(--tx)" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
                 Selection Note (Optional)
               </label>
               <textarea
@@ -1024,14 +1594,15 @@ export default function ShortlistAuditionsPage() {
                 onChange={(e) => setSelectedNote(e.target.value)}
                 placeholder="E.g. Approved by Director for production contracting."
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #E8E2D4",
                   borderRadius: "10px",
                   padding: "12px 14px",
-                  color: "var(--tx)",
-                  fontSize: "13px",
+                  color: "#2B2D2A",
+                  fontSize: "13.5px",
                   outline: "none",
                   resize: "vertical",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               />
             </div>
@@ -1041,14 +1612,14 @@ export default function ShortlistAuditionsPage() {
                 type="button"
                 onClick={() => setSelectedModalApp(null)}
                 style={{
-                  height: "40px",
-                  padding: "0 14px",
+                  height: "42px",
+                  padding: "0 16px",
                   borderRadius: "10px",
-                  background: "transparent",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  color: "var(--tx)",
-                  fontSize: "13px",
-                  fontWeight: "600",
+                  background: "#FFFFFF",
+                  border: "1px solid #E8E2D4",
+                  color: "#2B2D2A",
+                  fontSize: "13.5px",
+                  fontWeight: 600,
                   cursor: "pointer",
                 }}
               >
@@ -1057,17 +1628,18 @@ export default function ShortlistAuditionsPage() {
               <button
                 type="submit"
                 style={{
-                  height: "40px",
-                  padding: "0 18px",
+                  height: "42px",
+                  padding: "0 20px",
                   borderRadius: "10px",
-                  background: "linear-gradient(180deg, var(--gold2), var(--gold))",
-                  color: "#1a1300",
-                  fontSize: "13px",
-                  fontWeight: "600",
+                  backgroundColor: "#8A6B2E",
+                  color: "#FFFFFF",
+                  fontSize: "13.5px",
+                  fontWeight: 600,
                   border: "none",
-                  boxShadow: "0 2px 8px rgba(255, 188, 0, 0.25)",
+                  boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
                   cursor: "pointer",
                 }}
+                className="v-modal-primary-btn"
               >
                 Confirm Selection
               </button>
@@ -1076,7 +1648,7 @@ export default function ShortlistAuditionsPage() {
         </Modal>
       )}
 
-      {/* MODAL 4: Confirm Candidate Not Selected Modal */}
+      {/* MODAL 4: Confirm Candidate Not Selected Modal (Light Theme) */}
       {notSelectedModalApp && (
         <Modal
           isOpen={!!notSelectedModalApp}
@@ -1085,12 +1657,12 @@ export default function ShortlistAuditionsPage() {
           maxWidth="520px"
         >
           <form onSubmit={handleConfirmNotSelected} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <p style={{ fontSize: "13px", color: "var(--mu)", margin: 0, lineHeight: 1.5 }}>
-              Are you sure you want to mark <strong style={{ color: "var(--tx)" }}>{notSelectedModalApp.talentName}</strong> as Not Selected? This decision is final.
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
+              Are you sure you want to mark <strong style={{ color: "#2B2D2A" }}>{notSelectedModalApp.talentName}</strong> as Not Selected? This decision is final.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: "600", color: "var(--tx)" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
                 Reason / Feedback (Optional)
               </label>
               <textarea
@@ -1099,14 +1671,15 @@ export default function ShortlistAuditionsPage() {
                 onChange={(e) => setNotSelectedReason(e.target.value)}
                 placeholder="E.g. Role cast with alternative character reference."
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #E8E2D4",
                   borderRadius: "10px",
                   padding: "12px 14px",
-                  color: "var(--tx)",
-                  fontSize: "13px",
+                  color: "#2B2D2A",
+                  fontSize: "13.5px",
                   outline: "none",
                   resize: "vertical",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               />
             </div>
@@ -1116,14 +1689,14 @@ export default function ShortlistAuditionsPage() {
                 type="button"
                 onClick={() => setNotSelectedModalApp(null)}
                 style={{
-                  height: "40px",
-                  padding: "0 14px",
+                  height: "42px",
+                  padding: "0 16px",
                   borderRadius: "10px",
-                  background: "transparent",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  color: "var(--tx)",
-                  fontSize: "13px",
-                  fontWeight: "600",
+                  background: "#FFFFFF",
+                  border: "1px solid #E8E2D4",
+                  color: "#2B2D2A",
+                  fontSize: "13.5px",
+                  fontWeight: 600,
                   cursor: "pointer",
                 }}
               >
@@ -1132,14 +1705,15 @@ export default function ShortlistAuditionsPage() {
               <button
                 type="submit"
                 style={{
-                  height: "40px",
-                  padding: "0 18px",
+                  height: "42px",
+                  padding: "0 20px",
                   borderRadius: "10px",
-                  backgroundColor: "transparent",
-                  border: "1px solid rgba(255, 107, 107, 0.5)",
-                  color: "#ff6b6b",
-                  fontSize: "13px",
-                  fontWeight: "600",
+                  backgroundColor: "#B42318",
+                  color: "#FFFFFF",
+                  fontSize: "13.5px",
+                  fontWeight: 600,
+                  border: "none",
+                  boxShadow: "0 2px 8px rgba(180, 35, 24, 0.22)",
                   cursor: "pointer",
                 }}
               >
@@ -1150,21 +1724,8 @@ export default function ShortlistAuditionsPage() {
         </Modal>
       )}
 
-      {/* Scoped CSS Styles strictly implementing vismaya-shortlist-v3.html */}
+      {/* Embedded CSS */}
       <style jsx>{`
-        :root {
-          --bg: #0a0f19;
-          --card: rgba(255, 255, 255, 0.055);
-          --bd: rgba(255, 255, 255, 0.12);
-          --tx: #eceaf5;
-          --mu: #a3acc2;
-          --gold: #ffbc00;
-          --gold2: #ffd54a;
-          --blue: #8ab4ff;
-          --ok: #34d399;
-          --gray: #8b94ab;
-        }
-
         @keyframes toastIn {
           from {
             opacity: 0;
@@ -1176,334 +1737,157 @@ export default function ShortlistAuditionsPage() {
           }
         }
 
-        .page-wrapper {
+        .v-shortlist-page-wrapper {
           display: flex;
           flex-direction: column;
           gap: 0;
-          color: var(--tx, #eceaf5);
-          font-family: var(--font-sans), Inter, system-ui, sans-serif;
+          color: #2B2D2A;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
-        .link-hover-icon {
-          opacity: 0;
-          transition: opacity 0.15s ease;
+        .v-breadcrumb-link:hover {
+          color: #8A6B2E !important;
         }
 
-        .candidate-name-link:hover .link-hover-icon {
-          opacity: 1;
+        .v-opp-select:focus,
+        .v-search-input:focus {
+          border-color: #8A6B2E !important;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
         }
 
-        .candidate-name-link:hover b {
-          color: var(--gold, #ffbc00);
+        .v-tab-btn:not(.active):hover {
+          background-color: #F3EFE6 !important;
+          color: #2B2D2A !important;
         }
 
-        /* TOOLBAR */
-        .tool {
-          display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
-          align-items: center;
-          margin: 22px 0 14px;
+        .v-candidate-card:hover {
+          transform: translateY(-3px) !important;
+          border-color: #C9A55C !important;
+          box-shadow: 0 4px 8px rgba(43, 45, 42, 0.06), 0 16px 32px rgba(43, 45, 42, 0.08) !important;
         }
 
-        .in,
-        .sel {
-          height: 40px;
-          border-radius: 10px;
-          border: 1px solid var(--bd, rgba(255, 255, 255, 0.12));
-          background: rgba(255, 255, 255, 0.06);
-          color: var(--tx, #eceaf5);
-          font: 500 14px var(--font-sans), Inter, sans-serif;
-          padding: 0 14px;
-          min-width: 0;
-          outline: none;
-          color-scheme: dark;
+        .v-candidate-card.closed-card {
+          opacity: 0.78;
         }
 
-        .sel {
-          width: 260px;
-          cursor: pointer;
+        .v-candidate-name-link:hover .v-candidate-name-text {
+          color: #8A6B2E !important;
+        }
+        .v-candidate-name-link:hover .v-link-icon {
+          color: #8A6B2E !important;
         }
 
-        .in {
-          flex: 1;
-          min-width: 200px;
+        .v-card-primary-btn:hover {
+          background-color: #6E5420 !important;
+          transform: translateY(-1px);
+        }
+        .v-card-primary-btn:active {
+          transform: scale(0.98);
         }
 
-        /* TABS */
-        .tabs {
-          display: flex;
-          gap: 8px;
-          flex-wrap: nowrap;
-          overflow-x: auto;
-          scrollbar-width: none;
-          margin: 6px 0 20px;
-          padding-bottom: 2px;
+        .v-card-menu-btn:hover {
+          border-color: #8A6B2E !important;
+          background-color: #F3EFE6 !important;
+          color: #8A6B2E !important;
         }
 
-        .tabs::-webkit-scrollbar {
-          display: none;
+        .v-menu-item-ok:hover {
+          background-color: #F3EFE6 !important;
+        }
+        .v-menu-item-danger:hover {
+          background-color: rgba(180, 35, 24, 0.08) !important;
+        }
+        .v-menu-item-ghost:hover {
+          background-color: #F3EFE6 !important;
         }
 
-        .tab {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          height: 44px;
-          padding: 0 18px;
-          border-radius: 12px;
-          border: 1px solid var(--bd, rgba(255, 255, 255, 0.12));
-          background: var(--card, rgba(255, 255, 255, 0.055));
-          color: var(--mu, #a3acc2);
-          font: 600 14px var(--font-sans), Inter, sans-serif;
-          cursor: pointer;
-          flex: 0 0 auto;
-          white-space: nowrap;
-          transition: all 0.15s ease;
+        .v-modal-ghost-btn:hover {
+          border-color: #8A6B2E !important;
+          background-color: #F3EFE6 !important;
+          color: #2B2D2A !important;
+        }
+        .v-modal-danger-btn:hover {
+          background-color: rgba(180, 35, 24, 0.08) !important;
+        }
+        .v-modal-primary-btn:hover {
+          background-color: #6E5420 !important;
         }
 
-        .tab b {
-          font-weight: 700;
-          font-size: 12px;
-          background: rgba(255, 255, 255, 0.1);
-          color: var(--tx, #eceaf5);
-          border-radius: 999px;
-          padding: 1px 9px;
-        }
-
-        .tab.on {
-          background: var(--c, var(--gold));
-          border-color: transparent;
-          color: #0a0f19;
-        }
-
-        .tab.on b {
-          background: rgba(0, 0, 0, 0.18);
-          color: #0a0f19;
-        }
-
-        /* NEED PILL */
-        .need {
-          margin-bottom: 16px;
-        }
-
-        .sc {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 10px 14px;
-          border-radius: 12px;
-          border: 1px solid var(--bd, rgba(255, 255, 255, 0.12));
-          background: var(--card, rgba(255, 255, 255, 0.055));
-          font-size: 13px;
-          color: var(--mu, #a3acc2);
-        }
-
-        .sc b {
-          font: 700 18px var(--font-sans), Inter, sans-serif;
-          color: var(--tx, #eceaf5);
-        }
-
-        .sc i {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: var(--gold, #ffbc00);
-        }
-
-        /* STANDALONE CANDIDATE GRID */
-        .grid {
+        /* GRID RESPONSIVE BREAKPOINTS */
+        .v-candidate-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 16px;
+          gap: 24px;
           align-items: stretch;
+          margin-bottom: 32px;
         }
 
-        .cd {
-          background: #111a2c;
-          border: 1px solid var(--bd, rgba(255, 255, 255, 0.12));
-          border-top: 3px solid var(--c, var(--gold));
-          border-radius: 14px;
-          padding: 14px;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          height: 100%;
-          transition: transform 0.18s, border-color 0.18s;
-        }
-
-        .cd:hover {
-          transform: translateY(-2px);
-          border-color: rgba(255, 188, 0, 0.35);
-        }
-
-        .cd.dim {
-          opacity: 0.75;
-        }
-
-        .p {
-          display: flex;
-          gap: 10px;
-          align-items: center;
-          min-width: 0;
-        }
-
-        .av {
-          width: 38px;
-          height: 38px;
-          border-radius: 50%;
-          flex: none;
-          display: grid;
-          place-items: center;
-          font: 700 13px var(--font-sans), Inter, sans-serif;
-          color: #fff;
-          background: var(--a, #16243e);
-        }
-
-        .p b {
-          display: block;
-          font-weight: 600;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .p span {
-          display: block;
-          font-size: 12px;
-          color: var(--mu, #a3acc2);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .role {
-          font-size: 13px;
-          font-weight: 600;
-          line-height: 1.35;
-          overflow-wrap: break-word;
-          word-break: normal;
-        }
-
-        .role small {
-          display: block;
-          font-weight: 400;
-          font-size: 12px;
-          color: var(--mu, #a3acc2);
-          margin-top: 2px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .st {
-          display: flex;
-          align-items: center;
-          gap: 7px;
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--c, var(--gold));
-        }
-
-        .st:before {
-          content: "";
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: var(--c, var(--gold));
-          flex-shrink: 0;
-        }
-
-        .row {
-          display: flex;
-          gap: 8px;
-        }
-
-        .row .btn {
-          flex: 1;
-        }
-
-        .mt {
-          margin-top: auto;
-        }
-
-        .btn {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          height: 36px;
-          padding: 0 14px;
-          border-radius: 10px;
-          font: 600 13px var(--font-sans), Inter, sans-serif;
-          border: 1px solid var(--bd, rgba(255, 255, 255, 0.12));
-          background: rgba(255, 255, 255, 0.06);
-          color: var(--tx, #eceaf5);
-          cursor: pointer;
-          white-space: nowrap;
-          flex-shrink: 0;
-          transition: border-color 0.15s ease;
-        }
-
-        .btn:hover {
-          border-color: rgba(255, 188, 0, 0.5);
-        }
-
-        .btn.pr {
-          background: linear-gradient(180deg, var(--gold2, #ffd54a), var(--gold, #ffbc00));
-          border-color: transparent;
-          color: #1a1300;
-          box-shadow: 0 2px 8px rgba(255, 188, 0, 0.25);
-        }
-
-        .empty {
-          border: 1px dashed var(--bd, rgba(255, 255, 255, 0.12));
-          border-radius: 12px;
-          padding: 28px 12px;
-          text-align: center;
-          color: var(--mu, #a3acc2);
-          font-size: 13px;
-        }
-
-        /* RESPONSIVE BREAKPOINTS EXACTLY AS SPECIFIED */
-        @media (max-width: 1199.98px) {
-          .grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+        @media (max-width: 1280px) {
+          .v-candidate-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 16px !important;
+          }
+          .v-candidate-card {
+            padding: 18px 16px !important;
+          }
+          .v-candidate-name-text {
+            font-size: 18px !important;
+          }
+          .v-card-primary-btn {
+            font-size: 13px !important;
+            padding: 0 8px !important;
           }
         }
 
         @media (max-width: 899.98px) {
-          .grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+          .v-candidate-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 20px !important;
+          }
+          .v-candidate-card {
+            padding: 22px !important;
+          }
+          .v-candidate-name-text {
+            font-size: 20px !important;
           }
         }
 
-        @media (max-width: 767.98px) {
-          .sel,
-          .in {
+        @media (max-width: 640px) {
+          .v-candidate-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .v-toolbar-card {
+            padding: 16px !important;
+          }
+          .v-toolbar-top {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+          }
+          .v-opp-select {
             width: 100% !important;
-            flex: 1 1 100% !important;
           }
-          .btn {
-            height: 40px;
+          .v-search-box {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-left: 0 !important;
           }
-        }
-
-        @media (max-width: 599.98px) {
-          .grid {
-            grid-template-columns: 1fr;
+          .v-tabs-row {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
           }
-          .tab {
-            padding: 0 14px;
+          .v-tabs-scroll-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            flex-wrap: nowrap !important;
+            padding-bottom: 4px !important;
+            -webkit-overflow-scrolling: touch;
           }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          * {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-            scroll-behavior: auto !important;
+          .v-need-action-tag {
+            margin-left: 0 !important;
           }
         }
       `}</style>

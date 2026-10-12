@@ -30,19 +30,19 @@ export default function PageHeader({
             alignItems: "center",
             gap: "8px",
             fontSize: "12px",
-            color: "#7e89a3",
+            color: "var(--text-secondary, #5A584F)",
           }}
         >
           {breadcrumbs.map((crumb, idx) => {
             const isLast = idx === breadcrumbs.length - 1;
             return (
               <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                {idx > 0 && <ChevronRight size={13} style={{ color: "#7e89a3" }} />}
+                {idx > 0 && <ChevronRight size={13} style={{ color: "var(--text-secondary, #5A584F)" }} />}
                 {crumb.href && !isLast ? (
                   <Link
                     href={crumb.href}
                     style={{
-                      color: "#a3acc2",
+                      color: "var(--text-secondary, #5A584F)",
                       textDecoration: "none",
                       transition: "color var(--transition)",
                     }}
@@ -83,7 +83,7 @@ export default function PageHeader({
                 fontSize: "26px",
                 lineHeight: 1.25,
                 fontWeight: "700",
-                color: "#eceaf5",
+                color: "var(--text-primary, #2B2D2A)",
                 letterSpacing: "-0.015em",
                 margin: 0,
               }}
@@ -98,9 +98,9 @@ export default function PageHeader({
                   fontWeight: "700",
                   padding: "3px 10px",
                   borderRadius: "999px",
-                  backgroundColor: "rgba(255, 188, 0, 0.12)",
-                  color: "var(--gold)",
-                  border: "1px solid rgba(255, 188, 0, 0.28)",
+                  backgroundColor: "rgba(138, 107, 46, 0.12)",
+                  color: "var(--gold, #8A6B2E)",
+                  border: "1px solid rgba(138, 107, 46, 0.28)",
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
                 }}
@@ -115,7 +115,7 @@ export default function PageHeader({
               style={{
                 fontSize: "14px",
                 lineHeight: "22px",
-                color: "#a3acc2",
+                color: "var(--text-secondary, #5A584F)",
                 margin: 0,
                 maxWidth: "740px",
               }}

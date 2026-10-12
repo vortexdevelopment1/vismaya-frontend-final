@@ -1032,7 +1032,7 @@ export default function OpportunityReviewPage() {
           justify-content: space-between;
           gap: 14px;
           padding-bottom: 16px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          border-bottom: 1px solid #E8E2D4;
           width: 100%;
         }
 
@@ -1057,43 +1057,49 @@ export default function OpportunityReviewPage() {
           height: 40px;
           min-height: 40px;
           border-radius: 999px;
-          font-size: 0.8rem;
+          font-size: 14px;
           font-weight: 600;
-          color: #a3acc2;
-          background-color: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          font-family: var(--font-body), 'Inter', sans-serif;
+          color: #5A584F;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
           cursor: pointer;
           white-space: nowrap;
-          transition: all 0.15s ease;
+          transition: all 0.16s ease;
           flex-shrink: 0;
           box-sizing: border-box;
         }
         .opp-tab-btn:hover:not(.opp-tab-active) {
-          background-color: rgba(255, 255, 255, 0.08);
-          color: #eceaf5;
-          border-color: rgba(255, 255, 255, 0.2);
+          background-color: #F3EFE6;
+          color: #2B2D2A;
+          border-color: #8A6B2E;
         }
         .opp-tab-active {
-          background: linear-gradient(135deg, #ffd54a 0%, #ffbc00 100%) !important;
-          color: #1a1300 !important;
-          border-color: #ffd54a !important;
-          box-shadow: 0 4px 12px rgba(255, 188, 0, 0.25);
+          background-color: #8A6B2E !important;
+          color: #FFFFFF !important;
+          border-color: #8A6B2E !important;
+          box-shadow: 0 2px 8px rgba(138, 107, 46, 0.22);
         }
 
         .opp-tab-badge {
-          padding: 1px 7px;
+          height: 22px;
+          min-width: 22px;
+          padding: 0 6px;
           border-radius: 999px;
-          font-size: 0.7rem;
+          font-size: 12px;
           font-weight: 700;
-          background-color: rgba(255, 255, 255, 0.1);
-          color: #eceaf5;
+          background-color: #F3EFE6;
+          color: #2B2D2A;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
         }
         .opp-tab-badge-active {
-          background-color: rgba(26, 19, 0, 0.25) !important;
-          color: #1a1300 !important;
+          background-color: rgba(255, 255, 255, 0.22) !important;
+          color: #FFFFFF !important;
         }
 
-        /* 1-4. Search input wrapper & input */
+        /* Search input wrapper & input */
         .opp-review-search-wrap {
           position: relative;
           display: flex;
@@ -1113,45 +1119,40 @@ export default function OpportunityReviewPage() {
           left: 14px;
           top: 50%;
           transform: translateY(-50%);
-          color: #7e89a3;
+          color: #5A584F;
           pointer-events: none;
           z-index: 2;
         }
 
         .opp-review-search-input {
           width: 100%;
-          height: 40px;
-          min-height: 40px;
+          height: 44px;
+          min-height: 44px;
           padding-left: 42px !important;
           padding-right: 14px !important;
-          border: 1px solid rgba(255, 255, 255, 0.14);
-          background-color: rgba(255, 255, 255, 0.055);
-          border-radius: 12px;
-          color: #eceaf5;
-          font-size: 0.825rem;
-          font-family: inherit;
+          border: 1px solid #D9D2C0;
+          background-color: #FFFFFF;
+          border-radius: 10px;
+          color: #2B2D2A;
+          font-size: 14px;
+          font-family: var(--font-body), 'Inter', sans-serif;
           outline: none;
           appearance: none;
           -webkit-appearance: none;
           box-sizing: border-box;
-          transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease;
           box-shadow: none;
         }
         .opp-review-search-input.has-value {
           padding-right: 36px !important;
         }
-        .opp-review-search-input:hover {
-          background-color: rgba(255, 255, 255, 0.075);
-          border-color: rgba(255, 255, 255, 0.22);
-        }
         .opp-review-search-input:focus {
-          border-color: #ffbc00 !important;
-          box-shadow: 0 0 0 3px rgba(255, 188, 0, 0.15) !important;
-          background-color: rgba(255, 255, 255, 0.075);
+          border-color: #8A6B2E !important;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
         }
         .opp-review-search-input::placeholder {
-          color: #7e89a3;
-          font-size: 0.825rem;
+          color: #6B6A63;
+          font-size: 14px;
           opacity: 1;
         }
 
@@ -1166,34 +1167,36 @@ export default function OpportunityReviewPage() {
           background: transparent;
           border: none;
           cursor: pointer;
-          color: #7e89a3;
+          color: #5A584F;
           padding: 4px;
           border-radius: 50%;
           z-index: 2;
           transition: color 0.15s ease, background-color 0.15s ease;
         }
         .opp-search-clear-btn:hover {
-          color: #eceaf5;
-          background-color: rgba(255, 255, 255, 0.1);
+          color: #2B2D2A;
+          background-color: #F3EFE6;
         }
 
         /* Empty State */
         .opp-empty-state-card {
-          border-radius: 16px;
+          border-radius: 18px;
           padding: 56px 24px;
           text-align: center;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04);
         }
         .opp-empty-icon-wrap {
-          width: 64px;
-          height: 64px;
-          border-radius: 50%;
-          background-color: rgba(255, 188, 0, 0.12);
-          border: 1px solid rgba(255, 188, 0, 0.3);
+          width: 60px;
+          height: 60px;
+          border-radius: 16px;
+          background-color: #F3EFE6;
+          border: 1px solid #E8E2D4;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1220,41 +1223,41 @@ export default function OpportunityReviewPage() {
           overflow-y: auto;
           padding-right: 4px;
           scrollbar-width: thin;
-          scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
         }
         .opp-review-list-col::-webkit-scrollbar {
           width: 4px;
         }
         .opp-review-list-col::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.18);
+          background: #E8E2D4;
           border-radius: 999px;
         }
 
         /* Left List Item */
         .opp-list-item {
-          border-radius: 12px;
-          padding: 14px;
+          border-radius: 14px;
+          padding: 16px;
           cursor: pointer;
-          transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+          transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.1s ease;
           display: flex;
           flex-direction: column;
-          gap: 6px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          gap: 8px;
+          border: 1px solid #E8E2D4;
           border-left: 3px solid transparent;
-          background-color: rgba(255, 255, 255, 0.03);
+          background-color: #FFFFFF;
           outline: none;
+          box-shadow: 0 1px 3px rgba(43, 45, 42, 0.03);
         }
         .opp-list-item:hover:not(.opp-list-item-selected) {
-          background-color: rgba(255, 255, 255, 0.06);
-          border-color: rgba(255, 255, 255, 0.14);
+          background-color: #FAF9F7;
+          border-color: #E8E2D4;
         }
         .opp-list-item-selected {
-          border-left: 3px solid var(--gold) !important;
-          background-color: rgba(255, 255, 255, 0.08) !important;
-          border-color: rgba(255, 255, 255, 0.14) !important;
+          border-left: 3px solid #8A6B2E !important;
+          background-color: #FAF9F7 !important;
+          border-color: #8A6B2E !important;
         }
         .opp-list-item:focus-visible {
-          outline: 2px solid var(--gold) !important;
+          outline: 2px solid #8A6B2E !important;
           outline-offset: 2px !important;
         }
 
@@ -1266,20 +1269,22 @@ export default function OpportunityReviewPage() {
         }
 
         .opp-category-chip {
-          font-size: 0.7rem;
-          font-weight: 700;
-          color: var(--gold);
-          background-color: rgba(255, 188, 0, 0.12);
-          border: 1px solid rgba(255, 188, 0, 0.3);
-          padding: 2px 7px;
-          borderRadius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #6E5420;
+          background-color: rgba(201, 165, 92, 0.16);
+          border: 1px solid rgba(201, 165, 92, 0.25);
+          padding: 2px 8px;
+          border-radius: 6px;
           white-space: nowrap;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         .opp-item-title {
-          font-size: 0.875rem;
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: 16px;
           font-weight: 600;
-          color: #eceaf5;
+          color: #2B2D2A;
           margin: 0;
           line-height: 1.35;
           display: -webkit-box;
@@ -1293,9 +1298,10 @@ export default function OpportunityReviewPage() {
           display: flex;
           align-items: center;
           gap: 6px;
-          font-size: 0.775rem;
-          color: #a3acc2;
+          font-size: 13px;
+          color: #5A584F;
           min-width: 0;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         .opp-truncate-text {
@@ -1310,9 +1316,10 @@ export default function OpportunityReviewPage() {
           align-items: center;
           justify-content: space-between;
           gap: 8px;
-          font-size: 0.725rem;
-          color: #7c869e;
+          font-size: 12px;
+          color: #5A584F;
           padding-top: 2px;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         .opp-item-proj {
@@ -1326,17 +1333,19 @@ export default function OpportunityReviewPage() {
         .opp-item-closes {
           white-space: nowrap;
           flex-shrink: 0;
-          font-weight: 500;
+          font-weight: 600;
+          color: #2B2D2A;
         }
 
         /* Detail Column */
         .opp-review-detail-col {
-          border-radius: 16px;
+          border-radius: 18px;
           overflow: hidden;
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          border: 1px solid #E8E2D4;
+          background-color: #FFFFFF;
           display: flex;
           flex-direction: column;
-          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+          box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06);
           width: 100%;
           min-width: 0;
         }
@@ -1345,16 +1354,16 @@ export default function OpportunityReviewPage() {
         .mobile-back-bar {
           display: none;
           padding: 12px 16px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          background-color: rgba(15, 22, 38, 0.9);
+          border-bottom: 1px solid #E8E2D4;
+          background-color: #F3EFE6;
         }
         .mobile-back-btn {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          font-size: 0.8rem;
+          font-size: 13px;
           font-weight: 600;
-          color: var(--gold);
+          color: #8A6B2E;
           background: transparent;
           border: none;
           cursor: pointer;
@@ -1366,11 +1375,9 @@ export default function OpportunityReviewPage() {
           position: sticky;
           top: 0;
           z-index: 10;
-          background: rgba(15, 22, 38, 0.95);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          padding: 18px 24px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          background: #F3EFE6;
+          padding: 20px 26px;
+          border-bottom: 1px solid #E8E2D4;
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
@@ -1381,7 +1388,7 @@ export default function OpportunityReviewPage() {
         .opp-header-info {
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 6px;
           min-width: 0;
           flex: 1 1 280px;
         }
@@ -1393,25 +1400,27 @@ export default function OpportunityReviewPage() {
         }
 
         .opp-header-title {
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: "#eceaf5";
-          margin: 2px 0 0 0;
-          line-height: 1.3;
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: 28px;
+          font-weight: 600;
+          color: #2B2D2A;
+          margin: 4px 0 0 0;
+          line-height: 1.25;
           word-break: break-word;
         }
 
         .opp-header-subline {
           display: flex;
           align-items: center;
-          gap: 6px;
-          font-size: 0.8rem;
-          color: #a3acc2;
+          gap: 8px;
+          font-size: 14px;
+          color: #5A584F;
           margin-top: 2px;
           flex-wrap: wrap;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
         .subline-dot {
-          color: #7c869e;
+          color: #C9A55C;
         }
 
         .opp-header-actions {
@@ -1425,59 +1434,61 @@ export default function OpportunityReviewPage() {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          padding: 0 14px;
-          height: 36px;
-          min-height: 36px;
-          font-size: 0.775rem;
-          font-weight: 700;
+          padding: 0 16px;
+          height: 40px;
+          min-height: 40px;
+          font-size: 13px;
+          font-weight: 600;
           border-radius: 10px;
           cursor: pointer;
           white-space: nowrap;
           min-width: 0;
-          transition: all 0.15s ease;
+          transition: all 0.16s ease;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         .opp-btn-changes {
-          background-color: rgba(251, 191, 36, 0.12) !important;
-          border: 1px solid rgba(251, 191, 36, 0.35) !important;
-          color: #fbbf24 !important;
+          background-color: #FFFFFF !important;
+          border: 1px solid #8A6B2E !important;
+          color: #8A6B2E !important;
         }
         .opp-btn-changes:hover {
-          background-color: rgba(251, 191, 36, 0.2) !important;
+          background-color: #F3EFE6 !important;
         }
 
         .opp-btn-reject {
-          background-color: rgba(255, 107, 107, 0.12) !important;
-          border: 1px solid rgba(255, 107, 107, 0.35) !important;
-          color: #ff6b6b !important;
+          background-color: #FFFFFF !important;
+          border: 1px solid rgba(180, 35, 24, 0.35) !important;
+          color: #B42318 !important;
         }
         .opp-btn-reject:hover {
-          background-color: rgba(255, 107, 107, 0.2) !important;
+          background-color: rgba(180, 35, 24, 0.08) !important;
         }
 
         /* Detail Content Body */
         .opp-detail-content-body {
-          padding: 24px;
+          padding: 26px;
           display: flex;
           flex-direction: column;
-          gap: 24px;
+          gap: 26px;
         }
 
         .opp-section-block {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
         }
 
         .opp-divider-top {
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          border-top: 1px solid #E8E2D4;
           padding-top: 24px;
         }
 
         .opp-section-heading {
-          font-size: 0.95rem;
-          font-weight: 700;
-          color: #eceaf5;
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: 22px;
+          font-weight: 600;
+          color: #2B2D2A;
           margin: 0;
         }
 
@@ -1486,47 +1497,52 @@ export default function OpportunityReviewPage() {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 18px 20px;
-          background-color: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
           border-radius: 14px;
-          padding: 18px 20px;
+          padding: 20px 22px;
+          box-shadow: 0 1px 3px rgba(43, 45, 42, 0.03);
         }
 
         .opp-fact-cell {
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 4px;
           min-width: 0;
         }
 
         .opp-fact-label {
-          font-size: 0.7rem;
-          color: #7c869e;
+          font-size: 11px;
+          color: #5A584F;
           font-weight: 700;
           text-transform: uppercase;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.12em;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         .opp-fact-val {
-          font-size: 0.9rem;
-          color: #eceaf5;
-          font-weight: 700;
+          font-size: 18px;
+          color: #2B2D2A;
+          font-weight: 600;
           word-break: break-word;
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
         }
 
         .opp-fact-sub {
-          font-size: 0.75rem;
-          color: #a3acc2;
+          font-size: 13px;
+          color: #5A584F;
           margin-top: 1px;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         /* Description */
         .opp-description-text {
-          font-size: 0.875rem;
-          line-height: 1.6;
-          color: #a3acc2;
+          font-size: 15px;
+          line-height: 1.7;
+          color: #2B2D2A;
           margin: 0;
-          max-width: 70ch;
+          max-width: 75ch;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         /* Visibility Preview */
@@ -1540,8 +1556,8 @@ export default function OpportunityReviewPage() {
 
         .opp-segmented-control {
           display: inline-flex;
-          background-color: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          background-color: #F3EFE6;
+          border: 1px solid #E8E2D4;
           border-radius: 10px;
           padding: 3px;
           gap: 3px;
@@ -1550,28 +1566,30 @@ export default function OpportunityReviewPage() {
         .opp-segment-btn {
           display: inline-flex;
           align-items: center;
-          gap: 5px;
-          padding: 5px 12px;
-          border-radius: 7px;
-          font-size: 0.75rem;
+          gap: 6px;
+          padding: 6px 14px;
+          border-radius: 8px;
+          font-size: 13px;
           font-weight: 600;
-          color: #a3acc2;
+          color: #5A584F;
           background: transparent;
           border: none;
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: all 0.16s ease;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
         .opp-segment-active {
-          background-color: rgba(255, 188, 0, 0.15) !important;
-          color: var(--gold) !important;
-          font-weight: 700 !important;
+          background-color: #FFFFFF !important;
+          color: #8A6B2E !important;
+          border: 1px solid #E8E2D4 !important;
+          box-shadow: 0 1px 3px rgba(43, 45, 42, 0.05);
         }
 
         .opp-preview-container {
-          background-color: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 12px;
-          padding: 16px 18px;
+          background-color: #FAF9F7;
+          border: 1px solid #E8E2D4;
+          border-radius: 14px;
+          padding: 18px 20px;
           display: flex;
           flex-direction: column;
           gap: 14px;
@@ -1581,13 +1599,13 @@ export default function OpportunityReviewPage() {
           display: flex;
           align-items: flex-start;
           gap: 8px;
-          font-size: 0.775rem;
-          color: #fbbf24;
-          background-color: rgba(251, 191, 36, 0.08);
-          border: 1px solid rgba(251, 191, 36, 0.2);
-          padding: 8px 12px;
-          border-radius: 8px;
-          line-height: 1.45;
+          font-size: 13px;
+          color: #6E5420;
+          background-color: rgba(138, 107, 46, 0.10);
+          border: 1px solid rgba(138, 107, 46, 0.22);
+          padding: 10px 14px;
+          border-radius: 10px;
+          line-height: 1.5;
         }
 
         .opp-preview-public-details {
@@ -1606,14 +1624,14 @@ export default function OpportunityReviewPage() {
         .opp-preview-tag {
           display: inline-flex;
           align-items: center;
-          gap: 5px;
-          font-size: 0.75rem;
+          gap: 6px;
+          font-size: 13px;
           font-weight: 600;
-          color: #eceaf5;
-          background-color: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          padding: 3px 10px;
-          border-radius: 6px;
+          color: #2B2D2A;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          padding: 4px 12px;
+          border-radius: 8px;
         }
 
         .opp-loggedin-brief-box {
@@ -1626,23 +1644,23 @@ export default function OpportunityReviewPage() {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          font-size: 0.8rem;
+          font-size: 14px;
           font-weight: 700;
-          color: var(--gold);
+          color: #8A6B2E;
         }
 
         .opp-loggedin-text {
-          font-size: 0.85rem;
-          color: #eceaf5;
+          font-size: 14px;
+          color: #2B2D2A;
           margin: 0;
-          line-height: 1.55;
+          line-height: 1.6;
         }
 
         .opp-eligibility-strip {
-          font-size: 0.775rem;
-          color: #a3acc2;
-          padding-top: 6px;
-          border-top: 1px dashed rgba(255, 255, 255, 0.08);
+          font-size: 13px;
+          color: #5A584F;
+          padding-top: 8px;
+          border-top: 1px dashed #E8E2D4;
         }
 
         /* Casting Roles */
@@ -1656,22 +1674,23 @@ export default function OpportunityReviewPage() {
         .opp-roles-stack {
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 12px;
         }
 
         .opp-role-card {
-          background-color: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 12px;
-          padding: 14px 16px;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          border-radius: 14px;
+          padding: 16px 18px;
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          transition: border-color 0.15s ease, background-color 0.15s ease;
+          gap: 10px;
+          transition: border-color 0.16s ease, background-color 0.16s ease;
+          box-shadow: 0 1px 3px rgba(43, 45, 42, 0.03);
         }
         .opp-role-card:hover {
-          border-color: rgba(255, 255, 255, 0.14);
-          background-color: rgba(255, 255, 255, 0.04);
+          border-color: #8A6B2E;
+          background-color: #FAF9F7;
         }
 
         .opp-role-top-row {
@@ -1682,18 +1701,19 @@ export default function OpportunityReviewPage() {
         }
 
         .opp-role-name {
-          font-size: 0.9rem;
-          font-weight: 700;
-          color: #eceaf5;
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: 17px;
+          font-weight: 600;
+          color: #2B2D2A;
         }
 
         .opp-openings-chip {
-          font-size: 0.725rem;
+          font-size: 12px;
           font-weight: 700;
-          color: var(--gold);
-          background-color: rgba(255, 188, 0, 0.12);
-          border: 1px solid rgba(255, 188, 0, 0.3);
-          padding: 2px 8px;
+          color: #6E5420;
+          background-color: rgba(138, 107, 46, 0.12);
+          border: 1px solid rgba(138, 107, 46, 0.22);
+          padding: 2px 9px;
           border-radius: 999px;
           white-space: nowrap;
         }
@@ -1701,65 +1721,66 @@ export default function OpportunityReviewPage() {
         .opp-role-body {
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 10px;
           padding-top: 2px;
         }
 
         .opp-role-chips-row {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
           flex-wrap: wrap;
         }
 
         .opp-role-meta-chip {
-          font-size: 0.725rem;
-          color: #a3acc2;
-          background-color: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          padding: 2px 8px;
+          font-size: 12px;
+          color: #5A584F;
+          background-color: #F3EFE6;
+          border: 1px solid #E8E2D4;
+          padding: 3px 10px;
           border-radius: 6px;
         }
         .opp-role-meta-chip strong {
-          color: #eceaf5;
+          color: #2B2D2A;
         }
 
         .opp-role-desc {
-          font-size: 0.8rem;
-          color: #a3acc2;
+          font-size: 14px;
+          color: #5A584F;
           margin: 0;
-          line-height: 1.45;
+          line-height: 1.5;
         }
 
         /* Modal Textarea */
         .opp-modal-textarea {
-          background-color: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.14);
+          background-color: #FFFFFF;
+          border: 1px solid #D9D2C0;
           border-radius: 10px;
-          padding: 10px 12px;
-          font-size: 0.85rem;
-          color: #eceaf5;
+          padding: 12px 14px;
+          font-size: 14px;
+          color: #2B2D2A;
           outline: none;
           resize: vertical;
           width: 100%;
           box-sizing: border-box;
-          font-family: inherit;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease;
         }
         .opp-modal-textarea:focus {
-          border-color: rgba(255, 188, 0, 0.5);
+          border-color: #8A6B2E;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18);
         }
 
         .mobile-fixed-action-bar {
           display: none;
         }
 
-        /* 6. RESPONSIVE BREAKPOINTS */
-
+        /* RESPONSIVE BREAKPOINTS */
         @media (max-width: 1023.98px) {
           .opp-review-toolbar {
             flex-direction: column;
             align-items: stretch;
-            gap: 10px;
+            gap: 12px;
           }
           .opp-review-search-wrap {
             max-width: 100%;
@@ -1769,7 +1790,6 @@ export default function OpportunityReviewPage() {
             grid-template-columns: 1fr;
           }
 
-          /* In mobile/tablet mode, show list OR detail */
           .opp-review-layout:not(.mobile-detail-open) .opp-review-detail-col {
             display: none !important;
           }
@@ -1797,7 +1817,7 @@ export default function OpportunityReviewPage() {
           }
 
           .opp-header-actions {
-            display: none; /* Hide header actions, use mobile bottom bar instead */
+            display: none;
           }
 
           .mobile-fixed-action-bar {
@@ -1809,10 +1829,9 @@ export default function OpportunityReviewPage() {
             left: 0;
             right: 0;
             padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) 16px;
-            background: rgba(15, 22, 38, 0.98);
-            border-top: 1px solid rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: #FFFFFF;
+            border-top: 1px solid #E8E2D4;
+            box-shadow: 0 -4px 16px rgba(43, 45, 42, 0.08);
             z-index: 20;
           }
         }

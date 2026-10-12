@@ -127,8 +127,8 @@ export default function AdminApplicationsOverviewPage() {
   if (!isHydrated) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        <div style={{ height: "48px", background: "rgba(255, 255, 255, 0.05)", borderRadius: "12px", width: "40%" }} />
-        <div style={{ height: "400px", background: "rgba(255, 255, 255, 0.05)", borderRadius: "16px" }} />
+        <div style={{ height: "48px", background: "#F3EFE6", borderRadius: "12px", width: "40%" }} />
+        <div style={{ height: "400px", background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "16px" }} />
       </div>
     );
   }
@@ -139,6 +139,7 @@ export default function AdminApplicationsOverviewPage() {
       <PageHeader
         title="Application Pipeline Overview"
         subtitle="Read-only platform pipeline of talent applications across all studio casting opportunities."
+        badge={`${applications.length} Total Applications`}
         breadcrumbs={[
           { label: "Dashboard", href: "/admin/dashboard" },
           { label: "Applications" },
@@ -146,7 +147,7 @@ export default function AdminApplicationsOverviewPage() {
       />
 
       {/* Status Tabs */}
-      <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         {[
           { key: "ALL", label: "All Applications", count: statusCounts.ALL },
           { key: "Applied", label: "Applied", count: statusCounts.Applied },
@@ -165,29 +166,34 @@ export default function AdminApplicationsOverviewPage() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
-                padding: "8px 16px",
+                height: "40px",
+                padding: "0 16px",
                 borderRadius: "999px",
-                fontSize: "12px",
-                fontWeight: "700",
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                backgroundColor: isActive ? "var(--gold)" : "rgba(255, 255, 255, 0.06)",
-                color: isActive ? "#1a1300" : "#eceaf5",
-                border: `1px solid ${isActive ? "var(--gold)" : "rgba(255, 255, 255, 0.14)"}`,
+                fontSize: "14px",
+                fontWeight: 600,
+                fontFamily: "Inter, sans-serif",
+                backgroundColor: isActive ? "#8A6B2E" : "#FFFFFF",
+                color: isActive ? "#FFFFFF" : "#5A584F",
+                border: `1px solid ${isActive ? "#8A6B2E" : "#E8E2D4"}`,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
-                transition: "all 0.18s ease",
+                transition: "all 0.15s ease",
               }}
             >
               <span>{tab.label}</span>
               <span
                 style={{
-                  padding: "1px 7px",
+                  minWidth: "22px",
+                  height: "22px",
+                  padding: "0 6px",
                   borderRadius: "999px",
-                  fontSize: "10px",
-                  fontWeight: "800",
-                  backgroundColor: isActive ? "rgba(26, 19, 0, 0.20)" : "rgba(255, 255, 255, 0.12)",
-                  color: isActive ? "#1a1300" : "#eceaf5",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: isActive ? "rgba(255, 255, 255, 0.22)" : "#F3EFE6",
+                  color: isActive ? "#FFFFFF" : "#2B2D2A",
                 }}
               >
                 {tab.count}
@@ -197,36 +203,35 @@ export default function AdminApplicationsOverviewPage() {
         })}
       </div>
 
-      {/* Search & Filter Selectors */}
+      {/* Search & Filter Selectors Card */}
       <div
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.07)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
           borderRadius: "16px",
           padding: "16px 20px",
           display: "flex",
           flexWrap: "wrap",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: "14px",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
+          gap: "16px",
+          boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
         }}
       >
         <div
           style={{
-            flex: "1 1 240px",
+            flex: "1 1 260px",
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            backgroundColor: "rgba(255, 255, 255, 0.06)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
-            borderRadius: "12px",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D9D2C0",
+            borderRadius: "10px",
             padding: "0 14px",
-            height: "40px",
+            height: "44px",
           }}
         >
-          <Search size={16} style={{ color: "#a3acc2" }} />
+          <Search size={16} style={{ color: "#5A584F" }} />
           <input
             type="text"
             placeholder="Search candidate name, role, city..."
@@ -237,35 +242,37 @@ export default function AdminApplicationsOverviewPage() {
               background: "transparent",
               outline: "none",
               fontSize: "14px",
-              color: "#eceaf5",
+              color: "#2B2D2A",
               width: "100%",
+              fontFamily: "Inter, sans-serif",
             }}
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
           {/* Opportunity Dropdown */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "13px", fontWeight: "600", color: "#a3acc2" }}>Opportunity:</span>
+            <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", whiteSpace: "nowrap" }}>Opportunity:</span>
             <select
               value={oppFilter}
               onChange={(e) => setOppFilter(e.target.value)}
               style={{
-                height: "40px",
-                backgroundColor: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
-                borderRadius: "12px",
-                padding: "0 12px",
-                fontSize: "13px",
-                color: "#eceaf5",
+                height: "44px",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D2C0",
+                borderRadius: "10px",
+                padding: "0 14px",
+                fontSize: "14px",
+                color: "#2B2D2A",
                 outline: "none",
                 cursor: "pointer",
-                maxWidth: "200px",
+                maxWidth: "220px",
+                fontFamily: "Inter, sans-serif",
               }}
             >
-              <option value="ALL" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>All Opportunities</option>
+              <option value="ALL">All Opportunities</option>
               {opportunities.map((o) => (
-                <option key={o.id} value={o.id} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+                <option key={o.id} value={o.id}>
                   {o.title}
                 </option>
               ))}
@@ -274,25 +281,26 @@ export default function AdminApplicationsOverviewPage() {
 
           {/* Organization Dropdown */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "13px", fontWeight: "600", color: "#a3acc2" }}>Organization:</span>
+            <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", whiteSpace: "nowrap" }}>Organization:</span>
             <select
               value={orgFilter}
               onChange={(e) => setOrgFilter(e.target.value)}
               style={{
-                height: "40px",
-                backgroundColor: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
-                borderRadius: "12px",
-                padding: "0 12px",
-                fontSize: "13px",
-                color: "#eceaf5",
+                height: "44px",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D2C0",
+                borderRadius: "10px",
+                padding: "0 14px",
+                fontSize: "14px",
+                color: "#2B2D2A",
                 outline: "none",
                 cursor: "pointer",
+                fontFamily: "Inter, sans-serif",
               }}
             >
-              <option value="ALL" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>All Organizations</option>
+              <option value="ALL">All Organizations</option>
               {organizations.map((org) => (
-                <option key={org.id} value={org.id} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+                <option key={org.id} value={org.id}>
                   {org.name}
                 </option>
               ))}
@@ -305,55 +313,52 @@ export default function AdminApplicationsOverviewPage() {
       {filteredApplications.length === 0 ? (
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
             borderRadius: "16px",
             padding: "48px 20px",
             textAlign: "center",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
           }}
         >
-          <FileText size={40} style={{ color: "#7e89a3", marginBottom: "12px" }} />
-          <h3 style={{ fontSize: "18px", color: "#eceaf5", marginBottom: "6px" }}>
+          <FileText size={40} style={{ color: "#8A6B2E", marginBottom: "12px" }} />
+          <h3 style={{ fontSize: "18px", fontFamily: "var(--font-playfair), serif", color: "#2B2D2A", marginBottom: "6px" }}>
             No Applications Found
           </h3>
-          <p style={{ color: "#a3acc2", fontSize: "14px", margin: 0 }}>
+          <p style={{ color: "#5A584F", fontSize: "14px", margin: 0 }}>
             No talent applications match your filter selection.
           </p>
         </div>
       ) : (
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
             borderRadius: "16px",
             overflow: "hidden",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
           }}
         >
           <div className="admin-app-table-wrap" style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px", minWidth: "960px" }}>
               <thead>
                 <tr
                   style={{
-                    backgroundColor: "#0f1626",
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.10)",
-                    color: "var(--gold)",
+                    backgroundColor: "#F3EFE6",
+                    borderBottom: "1px solid #E8E2D4",
+                    color: "#5A584F",
                     fontWeight: "700",
-                    fontSize: "11px",
+                    fontSize: "12px",
                     textTransform: "uppercase",
-                    letterSpacing: "0.10em",
+                    letterSpacing: "0.14em",
                   }}
                 >
-                  <th style={{ padding: "14px 20px", position: "sticky", top: 0, backgroundColor: "#0f1626" }}>Candidate / Talent</th>
-                  <th style={{ padding: "14px 20px", position: "sticky", top: 0, backgroundColor: "#0f1626" }}>Applied Role</th>
-                  <th style={{ padding: "14px 20px", position: "sticky", top: 0, backgroundColor: "#0f1626" }}>Opportunity &amp; Studio</th>
-                  <th style={{ padding: "14px 20px", position: "sticky", top: 0, backgroundColor: "#0f1626" }}>Applied Date</th>
-                  <th style={{ padding: "14px 20px", position: "sticky", top: 0, backgroundColor: "#0f1626" }}>Status</th>
-                  <th style={{ padding: "14px 20px", position: "sticky", top: 0, backgroundColor: "#0f1626", textAlign: "right" }}>Action</th>
+                  <th style={{ padding: "16px 20px" }}>Candidate / Talent</th>
+                  <th style={{ padding: "16px 20px" }}>Applied Role</th>
+                  <th style={{ padding: "16px 20px" }}>Opportunity &amp; Studio</th>
+                  <th style={{ padding: "16px 20px" }}>Applied Date</th>
+                  <th style={{ padding: "16px 20px" }}>Status</th>
+                  <th style={{ padding: "16px 20px", textAlign: "right" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -366,14 +371,13 @@ export default function AdminApplicationsOverviewPage() {
                     <tr
                       key={app.id}
                       style={{
-                        height: "48px",
-                        borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+                        borderBottom: "1px solid #E8E2D4",
                         transition: "background-color 0.15s ease",
                       }}
                       className="admin-row-hover"
                     >
                       {/* Candidate */}
-                      <td style={{ padding: "12px 20px" }}>
+                      <td style={{ padding: "16px 20px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                           {prof.avatar ? (
                             <img
@@ -382,9 +386,9 @@ export default function AdminApplicationsOverviewPage() {
                               style={{
                                 width: "40px",
                                 height: "40px",
-                                borderRadius: "10px",
+                                borderRadius: "50%",
                                 objectFit: "cover",
-                                border: "1px solid rgba(255, 188, 0, 0.3)",
+                                border: "1px solid #E8E2D4",
                               }}
                             />
                           ) : (
@@ -392,10 +396,10 @@ export default function AdminApplicationsOverviewPage() {
                               style={{
                                 width: "40px",
                                 height: "40px",
-                                borderRadius: "10px",
-                                background: "linear-gradient(135deg, #0f1626 0%, #070b12 100%)",
-                                color: "var(--gold)",
-                                border: "1px solid rgba(255, 188, 0, 0.3)",
+                                borderRadius: "50%",
+                                backgroundColor: "#F3EFE6",
+                                color: "#8A6B2E",
+                                border: "1px solid #E8E2D4",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
@@ -407,10 +411,10 @@ export default function AdminApplicationsOverviewPage() {
                             </div>
                           )}
                           <div>
-                            <div style={{ fontWeight: "600", color: "#eceaf5" }}>
+                            <div style={{ fontWeight: 600, color: "#2B2D2A" }}>
                               {app.talentName}
                             </div>
-                            <div style={{ fontSize: "12px", color: "#a3acc2" }}>
+                            <div style={{ fontSize: "12px", color: "#5A584F", marginTop: "2px" }}>
                               {prof.age ? `${prof.age} yrs` : "—"} &bull; {prof.city || "Mumbai"}
                             </div>
                           </div>
@@ -418,49 +422,54 @@ export default function AdminApplicationsOverviewPage() {
                       </td>
 
                       {/* Applied Role */}
-                      <td style={{ padding: "12px 20px" }}>
-                        <div style={{ fontWeight: "600", color: "var(--gold)" }}>
+                      <td style={{ padding: "16px 20px" }}>
+                        <div style={{ fontWeight: 600, color: "#6E5420" }}>
                           {app.roleApplied}
                         </div>
                       </td>
 
                       {/* Opportunity & Studio */}
-                      <td style={{ padding: "12px 20px" }}>
-                        <div style={{ fontWeight: "600", color: "#eceaf5" }}>
+                      <td style={{ padding: "16px 20px" }}>
+                        <div style={{ fontWeight: 600, color: "#2B2D2A" }}>
                           {opp?.title || "Opportunity"}
                         </div>
-                        <div style={{ fontSize: "12px", color: "#a3acc2", display: "flex", alignItems: "center", gap: "4px" }}>
-                          <Building2 size={12} style={{ color: "#7e89a3" }} />
+                        <div style={{ fontSize: "12px", color: "#5A584F", display: "flex", alignItems: "center", gap: "4px", marginTop: "2px" }}>
+                          <Building2 size={12} style={{ color: "#5A584F" }} />
                           <span>{org?.name || "Organization"}</span>
                         </div>
                       </td>
 
                       {/* Applied Date */}
-                      <td style={{ padding: "12px 20px", color: "#a3acc2", fontSize: "13px" }}>
+                      <td style={{ padding: "16px 20px", color: "#5A584F", fontSize: "13px" }}>
                         {formatDate(app.appliedAt)}
                       </td>
 
                       {/* Status */}
-                      <td style={{ padding: "12px 20px" }}>
+                      <td style={{ padding: "16px 20px" }}>
                         <StatusBadge status={app.status} size="sm" />
                       </td>
 
                       {/* Action */}
-                      <td style={{ padding: "12px 20px", textAlign: "right" }}>
+                      <td style={{ padding: "16px 20px", textAlign: "right" }}>
                         <button
                           type="button"
                           onClick={() => setTimelineApp(app)}
-                          className="btn-secondary"
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
                             gap: "6px",
                             fontSize: "13px",
                             padding: "6px 14px",
-                            borderRadius: "12px",
-                            color: "var(--gold)",
-                            borderColor: "rgba(255, 188, 0, 0.3)",
+                            borderRadius: "8px",
+                            color: "#8A6B2E",
+                            backgroundColor: "#FFFFFF",
+                            border: "1px solid #8A6B2E",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            transition: "all 0.15s ease",
                           }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F3EFE6")}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#FFFFFF")}
                         >
                           <Eye size={14} />
                           <span>Timeline</span>
@@ -484,13 +493,14 @@ export default function AdminApplicationsOverviewPage() {
                 <div
                   key={app.id}
                   style={{
-                    backgroundColor: "rgba(255, 255, 255, 0.04)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #E8E2D4",
                     borderRadius: "14px",
-                    padding: "14px",
+                    padding: "16px",
                     display: "flex",
                     flexDirection: "column",
                     gap: "10px",
+                    boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04)",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
@@ -499,53 +509,57 @@ export default function AdminApplicationsOverviewPage() {
                         <img
                           src={prof.avatar}
                           alt={app.talentName}
-                          style={{ width: "36px", height: "36px", borderRadius: "10px", objectFit: "cover" }}
+                          style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", border: "1px solid #E8E2D4" }}
                         />
                       ) : (
                         <div
                           style={{
                             width: "36px",
                             height: "36px",
-                            borderRadius: "10px",
-                            background: "#0f1626",
-                            color: "var(--gold)",
+                            borderRadius: "50%",
+                            background: "#F3EFE6",
+                            color: "#8A6B2E",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontWeight: "700",
+                            fontWeight: 700,
                             fontSize: "13px",
+                            border: "1px solid #E8E2D4",
                           }}
                         >
                           {(app.talentName || "T")[0]}
                         </div>
                       )}
                       <div>
-                        <div style={{ fontWeight: "600", color: "#eceaf5", fontSize: "14px" }}>{app.talentName}</div>
-                        <div style={{ fontSize: "11px", color: "#a3acc2" }}>{prof.city || "Mumbai"}</div>
+                        <div style={{ fontWeight: 600, color: "#2B2D2A", fontSize: "14px" }}>{app.talentName}</div>
+                        <div style={{ fontSize: "12px", color: "#5A584F" }}>{prof.city || "Mumbai"}</div>
                       </div>
                     </div>
                     <StatusBadge status={app.status} size="xs" />
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "13px" }}>
-                    <span style={{ color: "var(--gold)", fontWeight: "600" }}>{app.roleApplied}</span>
-                    <span style={{ color: "#eceaf5" }}>{opp?.title || "Opportunity"}</span>
-                    <span style={{ color: "#7e89a3", fontSize: "11px" }}>{org?.name || "Organization"} &bull; {formatDate(app.appliedAt)}</span>
+                    <span style={{ color: "#6E5420", fontWeight: 600 }}>{app.roleApplied}</span>
+                    <span style={{ color: "#2B2D2A" }}>{opp?.title || "Opportunity"}</span>
+                    <span style={{ color: "#5A584F", fontSize: "12px" }}>{org?.name || "Organization"} &bull; {formatDate(app.appliedAt)}</span>
                   </div>
 
                   <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "4px" }}>
                     <button
                       type="button"
                       onClick={() => setTimelineApp(app)}
-                      className="btn-secondary"
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "6px",
                         fontSize: "12px",
                         padding: "6px 14px",
-                        borderRadius: "10px",
-                        color: "var(--gold)",
+                        borderRadius: "8px",
+                        color: "#8A6B2E",
+                        backgroundColor: "#FFFFFF",
+                        border: "1px solid #8A6B2E",
+                        fontWeight: 600,
+                        cursor: "pointer",
                       }}
                     >
                       <Eye size={13} />
@@ -569,37 +583,37 @@ export default function AdminApplicationsOverviewPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div
               style={{
-                backgroundColor: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid rgba(255, 255, 255, 0.12)",
+                backgroundColor: "#FAF9F7",
+                border: "1px solid #E8E2D4",
                 borderRadius: "14px",
                 padding: "16px",
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: "12px",
+                gap: "14px",
               }}
             >
               <div>
-                <span style={{ fontSize: "12px", color: "#a3acc2", display: "block" }}>Applied Role</span>
-                <strong style={{ fontSize: "14px", color: "#eceaf5" }}>{timelineApp.roleApplied}</strong>
+                <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Applied Role</span>
+                <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>{timelineApp.roleApplied}</strong>
               </div>
               <div>
-                <span style={{ fontSize: "12px", color: "#a3acc2", display: "block" }}>Current Status</span>
+                <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Current Status</span>
                 <StatusBadge status={timelineApp.status} size="xs" />
               </div>
               <div>
-                <span style={{ fontSize: "12px", color: "#a3acc2", display: "block" }}>Opportunity</span>
-                <strong style={{ fontSize: "14px", color: "#eceaf5" }}>
+                <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Opportunity</span>
+                <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
                   {getOpportunityForApp(timelineApp.opportunityId)?.title || "Opportunity"}
                 </strong>
               </div>
               <div>
-                <span style={{ fontSize: "12px", color: "#a3acc2", display: "block" }}>Applied On</span>
-                <strong style={{ fontSize: "14px", color: "#eceaf5" }}>{formatDate(timelineApp.appliedAt)}</strong>
+                <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Applied On</span>
+                <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>{formatDate(timelineApp.appliedAt)}</strong>
               </div>
             </div>
 
             <div>
-              <h4 style={{ fontSize: "14px", fontWeight: "700", color: "#eceaf5", marginBottom: "12px" }}>
+              <h4 style={{ fontSize: "15px", fontWeight: 700, color: "#2B2D2A", marginBottom: "12px" }}>
                 Status History Timeline
               </h4>
 
@@ -611,22 +625,22 @@ export default function AdminApplicationsOverviewPage() {
                         width: "10px",
                         height: "10px",
                         borderRadius: "50%",
-                        backgroundColor: idx === timelineApp.history.length - 1 ? "var(--gold)" : "rgba(255, 255, 255, 0.3)",
-                        boxShadow: idx === timelineApp.history.length - 1 ? "0 0 8px rgba(255, 188, 0, 0.6)" : "none",
+                        backgroundColor: idx === timelineApp.history.length - 1 ? "#8A6B2E" : "#D9D2C0",
+                        boxShadow: idx === timelineApp.history.length - 1 ? "0 0 8px rgba(138, 107, 46, 0.4)" : "none",
                         marginTop: "5px",
                         flexShrink: 0,
                       }}
                     />
                     <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <strong style={{ fontSize: "14px", color: "#eceaf5" }}>{h.status}</strong>
-                        <span style={{ fontSize: "12px", color: "#7e89a3" }}>{formatDate(h.timestamp)}</span>
+                        <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>{h.status}</strong>
+                        <span style={{ fontSize: "12px", color: "#5A584F" }}>{formatDate(h.timestamp)}</span>
                       </div>
-                      <p style={{ fontSize: "13px", color: "#a3acc2", margin: 0 }}>
+                      <p style={{ fontSize: "13px", color: "#5A584F", margin: 0 }}>
                         {h.note}
                       </p>
                       {h.changedBy && (
-                        <span style={{ fontSize: "11px", color: "#7e89a3" }}>
+                        <span style={{ fontSize: "11px", color: "#5A584F" }}>
                           Updated By: {h.changedBy}
                         </span>
                       )}
@@ -638,12 +652,12 @@ export default function AdminApplicationsOverviewPage() {
 
             <div
               style={{
-                backgroundColor: "rgba(255, 188, 0, 0.08)",
-                border: "1px solid rgba(255, 188, 0, 0.25)",
+                backgroundColor: "#F3EFE6",
+                border: "1px solid #E8E2D4",
                 borderRadius: "12px",
                 padding: "12px",
                 fontSize: "12px",
-                color: "var(--gold)",
+                color: "#6E5420",
               }}
             >
               Note: Screening, shortlisting, and final selections are handled directly by the hiring organization.
@@ -653,8 +667,17 @@ export default function AdminApplicationsOverviewPage() {
               <button
                 type="button"
                 onClick={() => setTimelineApp(null)}
-                className="btn-primary"
-                style={{ padding: "0 20px", height: "40px", borderRadius: "12px", fontSize: "14px" }}
+                style={{
+                  padding: "0 22px",
+                  height: "40px",
+                  borderRadius: "10px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  backgroundColor: "#8A6B2E",
+                  color: "#FFFFFF",
+                  border: "none",
+                  cursor: "pointer",
+                }}
               >
                 Close Timeline
               </button>
@@ -665,7 +688,7 @@ export default function AdminApplicationsOverviewPage() {
 
       <style jsx global>{`
         .admin-row-hover:hover {
-          background-color: rgba(255, 255, 255, 0.04) !important;
+          background-color: #FAF9F7 !important;
         }
       `}</style>
     </div>

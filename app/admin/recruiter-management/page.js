@@ -84,20 +84,20 @@ export default function RecruiterManagementPage() {
               src={row.avatar || "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=300&auto=format&fit=crop&q=80"}
               alt={compName}
               style={{
-                width: "36px",
-                height: "36px",
-                borderRadius: "10px",
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
                 objectFit: "cover",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
+                border: "1px solid #E8E2D4",
                 flexShrink: 0,
               }}
             />
             <div style={{ minWidth: 0, flex: 1 }}>
               <div
                 style={{
-                  fontSize: "0.85rem",
-                  fontWeight: 700,
-                  color: "var(--text-primary)",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#2B2D2A",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -108,8 +108,8 @@ export default function RecruiterManagementPage() {
               </div>
               <div
                 style={{
-                  fontSize: "0.725rem",
-                  color: "var(--text-secondary)",
+                  fontSize: "12px",
+                  color: "#5A584F",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -134,9 +134,9 @@ export default function RecruiterManagementPage() {
           <div style={{ minWidth: 0, maxWidth: "220px" }}>
             <div
               style={{
-                fontSize: "0.825rem",
+                fontSize: "14px",
                 fontWeight: 600,
-                color: "var(--text-primary)",
+                color: "#2B2D2A",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -147,8 +147,8 @@ export default function RecruiterManagementPage() {
             </div>
             <div
               style={{
-                fontSize: "0.725rem",
-                color: "var(--text-secondary)",
+                fontSize: "12px",
+                color: "#5A584F",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -169,13 +169,13 @@ export default function RecruiterManagementPage() {
       render: (val, row) => (
         <span
           style={{
-            fontSize: "0.75rem",
-            fontWeight: 700,
+            fontSize: "12px",
+            fontWeight: 600,
             padding: "3px 10px",
             borderRadius: "999px",
-            backgroundColor: "rgba(255, 188, 0, 0.14)",
-            color: "#ffbc00",
-            border: "1px solid rgba(255, 188, 0, 0.3)",
+            backgroundColor: "rgba(201, 165, 92, 0.16)",
+            color: "#6E5420",
+            border: "1px solid rgba(201, 165, 92, 0.3)",
             display: "inline-flex",
             alignItems: "center",
             width: "fit-content",
@@ -191,7 +191,7 @@ export default function RecruiterManagementPage() {
       label: "City",
       minWidth: "110px",
       render: (val, row) => (
-        <span style={{ fontSize: "0.825rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+        <span style={{ fontSize: "13px", color: "#5A584F", whiteSpace: "nowrap" }}>
           {val || row.location || "Mumbai"}
         </span>
       ),
@@ -202,8 +202,8 @@ export default function RecruiterManagementPage() {
       minWidth: "90px",
       render: (val) => (
         <div style={{ display: "inline-flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap" }}>
-          <FolderKanban size={13} color="var(--accent)" />
-          <span style={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--text-primary)" }}>
+          <FolderKanban size={13} color="#8A6B2E" />
+          <span style={{ fontSize: "13px", fontWeight: 700, color: "#2B2D2A" }}>
             {val ?? 0}
           </span>
         </div>
@@ -214,7 +214,7 @@ export default function RecruiterManagementPage() {
       label: "Joined Date",
       minWidth: "120px",
       render: (val) => (
-        <span style={{ fontSize: "0.825rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+        <span style={{ fontSize: "13px", color: "#5A584F", whiteSpace: "nowrap" }}>
           {val}
         </span>
       ),
@@ -232,20 +232,26 @@ export default function RecruiterManagementPage() {
       render: (_, row) => (
         <button
           onClick={() => handleOpenReview(row)}
-          className="btn-primary"
           style={{
-            padding: "4px 10px",
-            fontSize: "0.725rem",
-            gap: "4px",
+            padding: "6px 14px",
+            fontSize: "13px",
+            fontWeight: "600",
+            gap: "6px",
             borderRadius: "8px",
-            minHeight: "28px",
-            height: "28px",
+            height: "36px",
             display: "inline-flex",
             alignItems: "center",
             whiteSpace: "nowrap",
+            backgroundColor: "#8A6B2E",
+            color: "#FFFFFF",
+            border: "none",
+            cursor: "pointer",
+            transition: "background-color 0.15s ease",
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#6E5420")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#8A6B2E")}
         >
-          <Eye size={12} /> Review
+          <Eye size={13} /> Review
         </button>
       ),
     },
@@ -260,15 +266,16 @@ export default function RecruiterManagementPage() {
     return (
       <div
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.04)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-          borderRadius: "14px",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
+          borderRadius: "16px",
           padding: "16px",
           display: "flex",
           flexDirection: "column",
           gap: "12px",
           width: "100%",
           boxSizing: "border-box",
+          boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
         }}
       >
         {/* Card Header: Logo, Name, ID & Status */}
@@ -280,18 +287,18 @@ export default function RecruiterManagementPage() {
               style={{
                 width: "40px",
                 height: "40px",
-                borderRadius: "10px",
+                borderRadius: "50%",
                 objectFit: "cover",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
+                border: "1px solid #E8E2D4",
                 flexShrink: 0,
               }}
             />
             <div style={{ minWidth: 0 }}>
               <div
                 style={{
-                  fontSize: "0.9rem",
-                  fontWeight: 700,
-                  color: "var(--text-primary)",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  color: "#2B2D2A",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -302,8 +309,8 @@ export default function RecruiterManagementPage() {
               </div>
               <div
                 style={{
-                  fontSize: "0.725rem",
-                  color: "var(--text-secondary)",
+                  fontSize: "12px",
+                  color: "#5A584F",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -320,25 +327,25 @@ export default function RecruiterManagementPage() {
         <div
           style={{
             padding: "10px 12px",
-            backgroundColor: "rgba(255, 255, 255, 0.02)",
-            border: "1px solid rgba(255, 255, 255, 0.05)",
+            backgroundColor: "#FAF9F7",
+            border: "1px solid #E8E2D4",
             borderRadius: "10px",
             display: "flex",
             flexDirection: "column",
             gap: "2px",
           }}
         >
-          <span style={{ fontSize: "0.68rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
+          <span style={{ fontSize: "11px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
             Authorized Contact
           </span>
-          <div style={{ fontSize: "0.825rem", fontWeight: 600, color: "var(--text-primary)" }}>
+          <div style={{ fontSize: "14px", fontWeight: 600, color: "#2B2D2A" }}>
             {contactName}
           </div>
           {email && (
             <div
               style={{
-                fontSize: "0.75rem",
-                color: "var(--text-secondary)",
+                fontSize: "12px",
+                color: "#5A584F",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -351,20 +358,20 @@ export default function RecruiterManagementPage() {
         </div>
 
         {/* Small Fields Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "0.785rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "13px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontSize: "0.68rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: 700 }}>
+            <span style={{ fontSize: "11px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
               Business Type
             </span>
             <span
               style={{
-                fontSize: "0.725rem",
-                fontWeight: 700,
+                fontSize: "12px",
+                fontWeight: 600,
                 padding: "2px 8px",
                 borderRadius: "999px",
-                backgroundColor: "rgba(255, 188, 0, 0.14)",
-                color: "#ffbc00",
-                border: "1px solid rgba(255, 188, 0, 0.3)",
+                backgroundColor: "rgba(201, 165, 92, 0.16)",
+                color: "#6E5420",
+                border: "1px solid rgba(201, 165, 92, 0.3)",
                 display: "inline-flex",
                 alignItems: "center",
                 width: "fit-content",
@@ -376,31 +383,31 @@ export default function RecruiterManagementPage() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontSize: "0.68rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: 700 }}>
+            <span style={{ fontSize: "11px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
               City
             </span>
-            <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+            <span style={{ color: "#2B2D2A", fontWeight: 600 }}>
               {row.city || row.location || "Mumbai"}
             </span>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontSize: "0.68rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: 700 }}>
+            <span style={{ fontSize: "11px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
               Briefs Posted
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <FolderKanban size={13} color="var(--accent)" />
-              <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>
+              <FolderKanban size={13} color="#8A6B2E" />
+              <span style={{ color: "#2B2D2A", fontWeight: 700 }}>
                 {row.requirementsCount ?? 0}
               </span>
             </div>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontSize: "0.68rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: 700 }}>
+            <span style={{ fontSize: "11px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
               Joined Date
             </span>
-            <span style={{ color: "var(--text-secondary)" }}>
+            <span style={{ color: "#5A584F" }}>
               {row.joinedDate}
             </span>
           </div>
@@ -410,16 +417,21 @@ export default function RecruiterManagementPage() {
         <button
           type="button"
           onClick={() => handleOpenReview(row)}
-          className="btn-primary"
           style={{
             width: "100%",
             justifyContent: "center",
-            minHeight: "38px",
-            height: "38px",
-            fontSize: "0.8rem",
+            height: "40px",
+            fontSize: "13px",
+            fontWeight: "600",
             gap: "6px",
             borderRadius: "10px",
             marginTop: "4px",
+            backgroundColor: "#8A6B2E",
+            color: "#FFFFFF",
+            border: "none",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
           }}
         >
           <Eye size={14} />

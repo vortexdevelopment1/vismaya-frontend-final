@@ -31,13 +31,13 @@ export function UserGrowthLineChart({ data = [] }) {
 
   return (
     <div style={{ position: "relative", width: "100%", overflowX: "auto" }}>
-      <div style={{ display: "flex", gap: "16px", marginBottom: "12px", fontSize: "0.785rem" }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--gold)", fontWeight: "600" }}>
-          <span style={{ width: "9px", height: "9px", borderRadius: "50%", backgroundColor: "#ffbc00" }} />
+      <div style={{ display: "flex", gap: "20px", marginBottom: "14px", fontSize: "13px" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", color: "#2B2D2A", fontWeight: "600" }}>
+          <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#8A6B2E" }} />
           Talent Registrations
         </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--text-secondary)", fontWeight: "600" }}>
-          <span style={{ width: "9px", height: "9px", borderRadius: "50%", backgroundColor: "#a3acc2" }} />
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", color: "#5A584F", fontWeight: "600" }}>
+          <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#8C8676" }} />
           Recruiters &amp; Agencies
         </span>
       </div>
@@ -53,15 +53,15 @@ export function UserGrowthLineChart({ data = [] }) {
               y1={y}
               x2={width - padding}
               y2={y}
-              stroke="rgba(255, 255, 255, 0.10)"
+              stroke="#E8E2D4"
               strokeDasharray="4 4"
             />
           );
         })}
 
         {/* Lines */}
-        <path d={pathTalent} fill="none" stroke="#ffbc00" strokeWidth="2.5" strokeLinecap="round" />
-        <path d={pathRecruiter} fill="none" stroke="#a3acc2" strokeWidth="2" strokeDasharray="4 2" strokeLinecap="round" />
+        <path d={pathTalent} fill="none" stroke="#8A6B2E" strokeWidth="2.5" strokeLinecap="round" />
+        <path d={pathRecruiter} fill="none" stroke="#8C8676" strokeWidth="2" strokeDasharray="4 2" strokeLinecap="round" />
 
         {/* Data points */}
         {pointsTalent.map((p, i) => (
@@ -69,10 +69,10 @@ export function UserGrowthLineChart({ data = [] }) {
             key={`t-${i}`}
             cx={p.x}
             cy={p.y}
-            r={hoveredIdx === i ? 5.5 : 3.5}
-            fill="#ffbc00"
-            stroke="#0a0f19"
-            strokeWidth="2"
+            r={hoveredIdx === i ? 6 : 4}
+            fill="#FFFFFF"
+            stroke="#8A6B2E"
+            strokeWidth="2.5"
             style={{ cursor: "pointer", transition: "all 0.2s ease" }}
             onMouseEnter={() => setHoveredIdx(i)}
             onMouseLeave={() => setHoveredIdx(null)}
@@ -84,10 +84,10 @@ export function UserGrowthLineChart({ data = [] }) {
             key={`r-${i}`}
             cx={p.x}
             cy={p.y}
-            r={hoveredIdx === i ? 5.5 : 3.5}
-            fill="#a3acc2"
-            stroke="#0a0f19"
-            strokeWidth="2"
+            r={hoveredIdx === i ? 6 : 4}
+            fill="#FFFFFF"
+            stroke="#8C8676"
+            strokeWidth="2.5"
             style={{ cursor: "pointer", transition: "all 0.2s ease" }}
             onMouseEnter={() => setHoveredIdx(i)}
             onMouseLeave={() => setHoveredIdx(null)}
@@ -100,9 +100,10 @@ export function UserGrowthLineChart({ data = [] }) {
             key={`lbl-${i}`}
             x={p.x}
             y={height - 10}
-            fill="#7e89a3"
-            fontSize="10"
+            fill="#5A584F"
+            fontSize="12"
             fontWeight="500"
+            fontFamily="Inter, sans-serif"
             textAnchor="middle"
           >
             {p.label}
@@ -116,17 +117,18 @@ export function UserGrowthLineChart({ data = [] }) {
             position: "absolute",
             top: "8px",
             right: "8px",
-            padding: "8px 12px",
+            padding: "10px 14px",
             borderRadius: "12px",
-            backgroundColor: "var(--bg-alt)",
-            border: "1px solid var(--glass-border-elevated)",
-            boxShadow: "var(--shadow-md)",
-            fontSize: "0.785rem",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            boxShadow: "0 8px 24px rgba(43,45,42,0.08)",
+            fontSize: "13px",
+            fontFamily: "Inter, sans-serif",
           }}
         >
-          <div style={{ fontWeight: 700, color: "var(--text-primary)", marginBottom: "2px" }}>{data[hoveredIdx]?.label}</div>
-          <div style={{ color: "var(--gold)", fontWeight: 600 }}>Talents: {data[hoveredIdx]?.talent}</div>
-          <div style={{ color: "var(--text-secondary)", fontWeight: 600 }}>Recruiters: {data[hoveredIdx]?.recruiters}</div>
+          <div style={{ fontWeight: 700, color: "#2B2D2A", marginBottom: "4px" }}>{data[hoveredIdx]?.label}</div>
+          <div style={{ color: "#8A6B2E", fontWeight: 600 }}>Talents: {data[hoveredIdx]?.talent}</div>
+          <div style={{ color: "#5A584F", fontWeight: 600 }}>Recruiters: {data[hoveredIdx]?.recruiters}</div>
         </div>
       )}
     </div>
@@ -151,7 +153,7 @@ export function ApplicationsBarChart({ data = [] }) {
           gap: "10px",
           height: `${height}px`,
           padding: "16px 8px 0 8px",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.10)",
+          borderBottom: "1px solid #E8E2D4",
         }}
       >
         {data.map((item, idx) => {
@@ -177,16 +179,16 @@ export function ApplicationsBarChart({ data = [] }) {
                 <div
                   style={{
                     position: "absolute",
-                    top: "-26px",
-                    padding: "2px 7px",
+                    top: "-28px",
+                    padding: "3px 8px",
                     borderRadius: "6px",
-                    backgroundColor: "var(--bg-alt)",
-                    border: "1px solid var(--gold)",
-                    color: "var(--gold)",
-                    fontSize: "0.7rem",
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #E8E2D4",
+                    color: "#8A6B2E",
+                    fontSize: "12px",
                     fontWeight: 700,
                     whiteSpace: "nowrap",
-                    boxShadow: "var(--shadow-sm)",
+                    boxShadow: "0 4px 12px rgba(43,45,42,0.08)",
                     zIndex: 10,
                   }}
                 >
@@ -199,12 +201,9 @@ export function ApplicationsBarChart({ data = [] }) {
                   width: "70%",
                   maxWidth: "38px",
                   height: `${barHeightPct}%`,
-                  background: isHovered
-                    ? "var(--gold-gradient)"
-                    : "linear-gradient(180deg, rgba(255, 188, 0, 0.6) 0%, rgba(255, 188, 0, 0.2) 100%)",
+                  backgroundColor: isHovered ? "#6E5420" : "#8A6B2E",
                   borderRadius: "6px 6px 0 0",
                   transition: "all 0.2s ease",
-                  boxShadow: isHovered ? "var(--gold-glow)" : "none",
                   cursor: "pointer",
                 }}
               />
@@ -220,9 +219,10 @@ export function ApplicationsBarChart({ data = [] }) {
             style={{
               flex: 1,
               textAlign: "center",
-              fontSize: "0.75rem",
-              color: hoveredIdx === idx ? "var(--gold)" : "var(--text-muted)",
+              fontSize: "12px",
+              color: hoveredIdx === idx ? "#8A6B2E" : "#5A584F",
               fontWeight: hoveredIdx === idx ? 700 : 500,
+              fontFamily: "Inter, sans-serif",
             }}
           >
             {item.month}
@@ -236,14 +236,14 @@ export function ApplicationsBarChart({ data = [] }) {
 export function CategoryDonutChart({ data = [] }) {
   if (!data || data.length === 0) return null;
 
-  const goldColors = ["#ffd54a", "#ffbc00", "#d49b00", "#aa7c00", "#7a5900"];
+  const goldShades = ["#8A6B2E", "#A88A4A", "#C9A55C", "#DDC48F", "#EADFC3"];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "14px", width: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
       {/* Visual Percentage Bars */}
-      <div style={{ display: "flex", height: "10px", borderRadius: "var(--radius-pill)", overflow: "hidden", gap: "2px" }}>
+      <div style={{ display: "flex", height: "12px", borderRadius: "999px", overflow: "hidden", gap: "2px", backgroundColor: "#F3EFE6" }}>
         {data.map((cat, i) => {
-          const color = goldColors[i % goldColors.length];
+          const color = goldShades[i % goldShades.length];
           return (
             <div
               key={i}
@@ -259,9 +259,9 @@ export function CategoryDonutChart({ data = [] }) {
       </div>
 
       {/* Legend Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
         {data.map((cat, i) => {
-          const color = goldColors[i % goldColors.length];
+          const color = goldShades[i % goldShades.length];
           return (
             <div
               key={i}
@@ -269,17 +269,17 @@ export function CategoryDonutChart({ data = [] }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "8px 12px",
+                padding: "10px 14px",
                 borderRadius: "12px",
-                backgroundColor: "var(--bg-surface-elevated)",
-                border: "1px solid var(--border-color)",
+                backgroundColor: "#FAF9F7",
+                border: "1px solid #E8E2D4",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: color }} />
-                <span style={{ fontSize: "0.785rem", color: "var(--text-secondary)", fontWeight: 500 }}>{cat.name}</span>
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: color }} />
+                <span style={{ fontSize: "13px", color: "#2B2D2A", fontWeight: 500 }}>{cat.name}</span>
               </div>
-              <span style={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--gold)" }}>
+              <span style={{ fontSize: "13px", fontWeight: 700, color: "#8A6B2E" }}>
                 {cat.value}%
               </span>
             </div>
@@ -293,43 +293,43 @@ export function CategoryDonutChart({ data = [] }) {
 export function FunnelStages({ data = [] }) {
   if (!data || data.length === 0) return null;
 
-  const funnelColors = ["#ffd54a", "#ffbc00", "#e6a800", "#b38300", "#805d00"];
+  const funnelShades = ["#8A6B2E", "#A88A4A", "#C9A55C", "#DDC48F", "#EADFC3"];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
       {data.map((stage, idx) => {
-        const stageColor = funnelColors[idx % funnelColors.length];
+        const stageColor = funnelShades[idx % funnelShades.length];
 
         return (
           <div
             key={idx}
             style={{
-              padding: "10px 14px",
+              padding: "12px 14px",
               borderRadius: "14px",
-              backgroundColor: "var(--bg-surface-elevated)",
-              border: "1px solid var(--border-color)",
+              backgroundColor: "#FAF9F7",
+              border: "1px solid #E8E2D4",
               display: "flex",
               flexDirection: "column",
-              gap: "6px",
+              gap: "8px",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-primary)" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
                 {idx + 1}. {stage.stage}
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--gold)" }}>
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#2B2D2A" }}>
                   {stage.count.toLocaleString()}
                 </span>
                 <span
                   style={{
-                    fontSize: "0.7rem",
+                    fontSize: "11px",
                     fontWeight: 700,
-                    padding: "1px 6px",
-                    borderRadius: "var(--radius-pill)",
-                    backgroundColor: "rgba(255, 188, 0, 0.12)",
-                    color: "var(--gold)",
-                    border: "1px solid rgba(255, 188, 0, 0.30)",
+                    padding: "2px 8px",
+                    borderRadius: "999px",
+                    backgroundColor: "rgba(138, 107, 46, 0.12)",
+                    color: "#6E5420",
+                    border: "1px solid rgba(138, 107, 46, 0.25)",
                   }}
                 >
                   {stage.percent}%
@@ -341,8 +341,8 @@ export function FunnelStages({ data = [] }) {
               style={{
                 width: "100%",
                 height: "6px",
-                borderRadius: "var(--radius-pill)",
-                backgroundColor: "rgba(255, 255, 255, 0.08)",
+                borderRadius: "999px",
+                backgroundColor: "#F3EFE6",
                 overflow: "hidden",
               }}
             >
@@ -351,7 +351,7 @@ export function FunnelStages({ data = [] }) {
                   width: `${stage.percent}%`,
                   height: "100%",
                   backgroundColor: stageColor,
-                  borderRadius: "var(--radius-pill)",
+                  borderRadius: "999px",
                 }}
               />
             </div>
@@ -365,18 +365,18 @@ export function FunnelStages({ data = [] }) {
 export function TopCitiesProgress({ data = [] }) {
   if (!data || data.length === 0) return null;
 
-  const cityColors = ["#ffd54a", "#ffbc00", "#e6a800", "#b38300", "#805d00"];
+  const cityShades = ["#8A6B2E", "#A88A4A", "#C9A55C", "#DDC48F", "#EADFC3"];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
       {data.map((city, idx) => (
-        <div key={idx} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.785rem" }}>
-            <span style={{ color: "var(--text-primary)", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
-              <MapPin size={12} color="var(--gold)" />
+        <div key={idx} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+            <span style={{ color: "#2B2D2A", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+              <MapPin size={14} color="#8A6B2E" />
               {city.city}
             </span>
-            <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
+            <span style={{ color: "#5A584F", fontWeight: 500 }}>
               {city.count} ({city.share}%)
             </span>
           </div>
@@ -384,8 +384,8 @@ export function TopCitiesProgress({ data = [] }) {
             style={{
               width: "100%",
               height: "6px",
-              borderRadius: "var(--radius-pill)",
-              backgroundColor: "rgba(255, 255, 255, 0.08)",
+              borderRadius: "999px",
+              backgroundColor: "#F3EFE6",
               overflow: "hidden",
             }}
           >
@@ -393,8 +393,8 @@ export function TopCitiesProgress({ data = [] }) {
               style={{
                 width: `${city.share}%`,
                 height: "100%",
-                backgroundColor: cityColors[idx % cityColors.length],
-                borderRadius: "var(--radius-pill)",
+                backgroundColor: cityShades[idx % cityShades.length],
+                borderRadius: "999px",
               }}
             />
           </div>

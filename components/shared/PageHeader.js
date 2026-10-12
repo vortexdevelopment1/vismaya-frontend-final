@@ -18,8 +18,8 @@ export default function PageHeader({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "10px",
-        marginBottom: "24px",
+        gap: "12px",
+        marginBottom: "28px",
         width: "100%",
         ...style,
       }}
@@ -33,23 +33,24 @@ export default function PageHeader({
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            fontSize: "12px",
-            color: "#7e89a3",
+            fontSize: "13px",
+            color: "#5A584F",
             flexWrap: "wrap",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
           }}
         >
           {breadcrumbs.map((crumb, idx) => {
             const isLast = idx === breadcrumbs.length - 1;
             return (
               <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                {idx > 0 && <ChevronRight size={13} style={{ color: "#7e89a3" }} />}
+                {idx > 0 && <ChevronRight size={13} style={{ color: "#E8E2D4" }} />}
                 {crumb.href && !isLast ? (
                   <Link
                     href={crumb.href}
                     style={{
-                      color: "#a3acc2",
+                      color: "#5A584F",
                       textDecoration: "none",
-                      transition: "color var(--transition)",
+                      transition: "color 0.16s ease",
                     }}
                   >
                     {crumb.label}
@@ -57,8 +58,8 @@ export default function PageHeader({
                 ) : (
                   <span
                     style={{
-                      color: isLast ? "var(--gold)" : "inherit",
-                      fontWeight: isLast ? "700" : "normal",
+                      color: isLast ? "#8A6B2E" : "#5A584F",
+                      fontWeight: isLast ? "600" : "normal",
                     }}
                   >
                     {crumb.label}
@@ -75,23 +76,23 @@ export default function PageHeader({
         style={{
           display: "flex",
           flexWrap: "wrap",
-          alignItems: "flex-start",
+          alignItems: "center",
           justifyContent: "space-between",
           gap: "16px",
           width: "100%",
         }}
         className="page-header-row"
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: "1 1 300px", minWidth: 0 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: "1 1 300px", minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
             <h1
               style={{
-                fontFamily: "var(--font-heading), 'Playfair Display', serif",
-                fontSize: "clamp(22px, 4vw, 28px)",
-                lineHeight: 1.25,
-                fontWeight: "700",
-                color: "#eceaf5",
-                letterSpacing: "-0.015em",
+                fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                fontSize: "clamp(26px, 3.5vw, 40px)",
+                lineHeight: 1.15,
+                fontWeight: 600,
+                color: "#2B2D2A",
+                letterSpacing: "-0.02em",
                 margin: 0,
                 overflowWrap: "break-word",
                 wordBreak: "normal",
@@ -105,14 +106,15 @@ export default function PageHeader({
                 style={{
                   fontSize: "11px",
                   fontWeight: "700",
-                  padding: "3px 10px",
+                  padding: "4px 12px",
                   borderRadius: "999px",
-                  backgroundColor: "rgba(255, 188, 0, 0.12)",
-                  color: "var(--gold)",
-                  border: "1px solid rgba(255, 188, 0, 0.28)",
-                  letterSpacing: "0.04em",
+                  backgroundColor: "rgba(138, 107, 46, 0.10)",
+                  color: "#6E5420",
+                  border: "1px solid rgba(138, 107, 46, 0.20)",
+                  letterSpacing: "0.12em",
                   textTransform: "uppercase",
                   whiteSpace: "nowrap",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
                 {badge}
@@ -123,13 +125,14 @@ export default function PageHeader({
           {subtitle && (
             <p
               style={{
-                fontSize: "14px",
-                lineHeight: "22px",
-                color: "#a3acc2",
+                fontSize: "16px",
+                lineHeight: "1.7",
+                color: "#5A584F",
                 margin: 0,
-                maxWidth: "760px",
+                maxWidth: "800px",
                 overflowWrap: "break-word",
                 wordBreak: "normal",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
               }}
             >
               {subtitle}
@@ -164,7 +167,7 @@ export default function PageHeader({
           .page-header-actions > :global(a) {
             flex: 1 1 140px;
             text-align: center;
-            justify-content: center;
+            justifyContent: center;
           }
         }
       `}</style>

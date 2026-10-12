@@ -9,7 +9,6 @@ import { talentNav } from "@/lib/talent/nav";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useAuth } from "@/context/AuthContext";
-import StatusBadge from "@/components/shared/StatusBadge";
 
 export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
   const pathname = usePathname();
@@ -52,29 +51,42 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
     return false;
   };
 
+  const getInitials = (name) => {
+    if (!name) return "TA";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <>
       {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
           onClick={onCloseMobile}
+          aria-hidden="true"
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(7, 11, 18, 0.84)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
+            backgroundColor: "rgba(43, 45, 42, 0.45)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
             zIndex: 40,
           }}
         />
       )}
 
       <aside
+        aria-label="Talent Navigation Sidebar"
         style={{
-          width: "var(--sidebar-width)",
-          maxWidth: "min(var(--sidebar-width), 85vw)",
-          backgroundColor: "var(--bg-deep, #292C29)",
-          borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+          width: "var(--sidebar-width, 280px)",
+          height: "100vh",
+          maxHeight: "100vh",
+          backgroundColor: "#FFFFFF",
+          borderRight: "1px solid #E8E2D4",
           display: "flex",
           flexDirection: "column",
           position: "fixed",
@@ -84,32 +96,36 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
           zIndex: 50,
           transition: "transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)",
           transform: mobileOpen ? "translateX(0)" : undefined,
+          boxShadow: mobileOpen ? "8px 0 28px rgba(43, 45, 42, 0.12)" : "none",
         }}
         className={`talent-sidebar ${mobileOpen ? "sidebar-open" : ""}`}
       >
-        {/* Top Header: Logo & Mobile Close */}
+        {/* FIXED TOP: Logo Header */}
         <div
           style={{
-            height: "var(--topbar-height)",
+            height: "var(--topbar-height, 72px)",
+            minHeight: "var(--topbar-height, 72px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             padding: "0 20px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            borderBottom: "1px solid #E8E2D4",
+            backgroundColor: "#FFFFFF",
             flexShrink: 0,
           }}
         >
-          <Logo variant="light" size="sm" href="/talent/dashboard" />
+          <Logo variant="dark" size="sm" href="/talent/dashboard" />
           <button
             onClick={onCloseMobile}
             aria-label="Close navigation"
             style={{
-              color: "#a3acc2",
-              width: "44px",
-              height: "44px",
-              borderRadius: "12px",
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              color: "#5A584F",
+              padding: "8px",
+              minHeight: "44px",
+              minWidth: "44px",
+              borderRadius: "10px",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
               display: "none",
               alignItems: "center",
               justifyContent: "center",
@@ -117,17 +133,17 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
             }}
             className="mobile-close-btn"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Talent Portal Pill & Verification Status */}
-        <div style={{ padding: "16px 16px 8px 16px", flexShrink: 0 }}>
+        {/* FIXED TOP: Talent Portal Card */}
+        <div style={{ padding: "12px 16px 8px 16px", flexShrink: 0 }}>
           <div
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "12px",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
+              borderRadius: "14px",
               padding: "10px 14px",
               display: "flex",
               alignItems: "center",
@@ -140,8 +156,9 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
                   width: "8px",
                   height: "8px",
                   borderRadius: "50%",
-                  backgroundColor: "var(--gold)",
-                  boxShadow: "0 0 8px rgba(255, 188, 0, 0.6)",
+                  backgroundColor: "#8A6B2E",
+                  boxShadow: "0 0 6px rgba(138, 107, 46, 0.4)",
+                  flexShrink: 0,
                 }}
               />
               <div style={{ display: "flex", flexDirection: "column" }}>
@@ -149,7 +166,9 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
                   style={{
                     fontSize: "13px",
                     fontWeight: "700",
-                    color: "#eceaf5",
+                    color: "#2B2D2A",
+                    lineHeight: 1.25,
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
                   }}
                 >
                   Talent Portal
@@ -157,7 +176,9 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
                 <span
                   style={{
                     fontSize: "11px",
-                    color: "#a3acc2",
+                    color: "#5A584F",
+                    lineHeight: 1.2,
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
                   }}
                 >
                   Artist Workspace
@@ -165,21 +186,38 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
               </div>
             </div>
 
-            <StatusBadge status={profile.status} size="xs" />
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "3px 9px",
+                borderRadius: "999px",
+                backgroundColor: "rgba(138, 107, 46, 0.12)",
+                border: "1px solid rgba(138, 107, 46, 0.22)",
+                color: "#8A6B2E",
+                fontSize: "10px",
+                fontWeight: "700",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
+            >
+              APPROVED
+            </span>
           </div>
         </div>
 
-        {/* Sidebar Nav Items */}
+        {/* MIDDLE NAV: flex 1, min-height 0, overflow-y auto */}
         <nav
           style={{
-            flex: 1,
+            flex: "1 1 0%",
+            minHeight: 0,
             overflowY: "auto",
-            WebkitOverflowScrolling: "touch",
-            padding: "12px 14px",
+            padding: "8px 14px 16px 14px",
             display: "flex",
             flexDirection: "column",
             gap: "4px",
           }}
+          className="talent-sidebar-scroll"
         >
           {talentNav.map((item) => {
             const active = isNavActive(item.href);
@@ -198,52 +236,67 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
                 key={item.href}
                 href={item.href}
                 onClick={onCloseMobile}
+                title={item.title}
                 style={{
                   position: "relative",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                  height: "44px",
                   minHeight: "44px",
                   padding: "0 14px",
-                  borderRadius: "12px",
-                  color: active ? "var(--gold)" : "#a3acc2",
-                  backgroundColor: active ? "rgba(255, 188, 0, 0.14)" : "transparent",
-                  borderLeft: active ? "3px solid var(--gold)" : "3px solid transparent",
-                  fontWeight: active ? "700" : "600",
-                  fontSize: "13px",
+                  borderRadius: "10px",
+                  color: active ? "#8A6B2E" : "#5A584F",
+                  backgroundColor: active ? "#F3EFE6" : "transparent",
+                  borderLeft: active ? "3px solid #8A6B2E" : "3px solid transparent",
+                  fontWeight: active ? "600" : "500",
+                  fontSize: "15px",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                   textDecoration: "none",
-                  transition: "all var(--transition)",
+                  transition: "all 0.16s ease",
+                  whiteSpace: "nowrap",
                 }}
                 className={`talent-nav-item ${active ? "talent-nav-active" : ""}`}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
                   {Icon && (
                     <Icon
-                      size={18}
+                      size={20}
+                      strokeWidth={2}
                       style={{
-                        color: active ? "var(--gold)" : "#7e89a3",
-                        transition: "color var(--transition)",
+                        color: active ? "#8A6B2E" : "#5A584F",
+                        transition: "color 0.16s ease",
                         flexShrink: 0,
                       }}
                     />
                   )}
-                  <span>{item.title}</span>
+                  <span
+                    style={{
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {item.title}
+                  </span>
                 </div>
 
                 {badgeCount !== null && badgeCount > 0 && (
                   <span
                     style={{
-                      height: "20px",
-                      minWidth: "20px",
-                      fontSize: "11px",
-                      fontWeight: "800",
+                      height: "22px",
+                      minWidth: "22px",
+                      fontSize: "12px",
+                      fontWeight: "700",
                       padding: "0 6px",
                       borderRadius: "999px",
-                      backgroundColor: active ? "var(--gold)" : "rgba(255, 188, 0, 0.20)",
-                      color: active ? "#1a1300" : "var(--gold)",
+                      backgroundColor: "#8A6B2E",
+                      color: "#FFFFFF",
                       display: "inline-flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      flexShrink: 0,
+                      marginLeft: "6px",
                     }}
                   >
                     {badgeCount}
@@ -254,12 +307,12 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
           })}
         </nav>
 
-        {/* Sidebar Bottom: User Card & Logout */}
+        {/* FIXED BOTTOM: User Profile Block */}
         <div
           style={{
-            padding: "16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px",
-            borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-            backgroundColor: "var(--bg-deep, #292C29)",
+            padding: "14px 16px calc(14px + env(safe-area-inset-bottom, 0px)) 16px",
+            borderTop: "1px solid #E8E2D4",
+            backgroundColor: "#FFFFFF",
             flexShrink: 0,
           }}
         >
@@ -282,71 +335,96 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
                 textDecoration: "none",
               }}
             >
-              <div
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "50%",
-                  backgroundImage: `url(${profile.avatar})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  border: "2px solid rgba(255, 188, 0, 0.35)",
-                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.35)",
-                  flexShrink: 0,
-                  backgroundColor: "#0f1626",
-                }}
-              />
+              {profile?.avatar ? (
+                <div
+                  style={{
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "50%",
+                    backgroundImage: `url(${profile.avatar})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    border: "1px solid #E8E2D4",
+                    flexShrink: 0,
+                    backgroundColor: "#F3EFE6",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "50%",
+                    backgroundColor: "#F3EFE6",
+                    border: "1px solid #E8E2D4",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    color: "#8A6B2E",
+                    flexShrink: 0,
+                  }}
+                >
+                  {getInitials(profile?.personal?.fullName)}
+                </div>
+              )}
+
               <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                 <span
                   style={{
                     fontSize: "13px",
                     fontWeight: "600",
-                    color: "#eceaf5",
+                    color: "#2B2D2A",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
                   }}
                 >
-                  {profile.personal.fullName}
+                  {profile?.personal?.fullName || "Artist Profile"}
                 </span>
                 <span
                   style={{
                     fontSize: "11px",
-                    color: "#a3acc2",
+                    color: "#5A584F",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
                   }}
                 >
-                  {profile.personal.city} &bull; {profile.status}
+                  {profile?.personal?.city || "Mumbai"} &bull; Verified
                 </span>
               </div>
             </Link>
 
-            <Link
-              href="/login"
+            <button
+              type="button"
               onClick={async (e) => {
                 e.preventDefault();
                 await logout();
-                router.push("/login");
               }}
               title="Logout of Vismaya"
+              aria-label="Logout"
               style={{
-                color: "#a3acc2",
-                width: "40px",
-                height: "40px",
-                borderRadius: "10px",
+                color: "#5A584F",
+                width: "34px",
+                height: "34px",
+                borderRadius: "8px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "all var(--transition)",
-                textDecoration: "none",
+                transition: "all 0.16s ease",
+                backgroundColor: "transparent",
+                border: "none",
+                cursor: "pointer",
                 flexShrink: 0,
               }}
               className="talent-logout-btn"
             >
-              <LogOut size={18} />
-            </Link>
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </aside>
@@ -355,7 +433,6 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
         @media (max-width: 1023.98px) {
           .talent-sidebar {
             transform: translateX(-100%);
-            box-shadow: 8px 0 32px rgba(0, 0, 0, 0.6);
           }
           .talent-sidebar.sidebar-open {
             transform: translateX(0);
@@ -369,13 +446,27 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
             display: none !important;
           }
         }
+        .talent-sidebar-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #E8E2D4 transparent;
+        }
+        .talent-sidebar-scroll::-webkit-scrollbar {
+          width: 5px;
+        }
+        .talent-sidebar-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .talent-sidebar-scroll::-webkit-scrollbar-thumb {
+          background: #E8E2D4;
+          border-radius: 4px;
+        }
         .talent-nav-item:hover:not(.talent-nav-active) {
-          background-color: rgba(255, 255, 255, 0.06) !important;
-          color: #eceaf5 !important;
+          background-color: #F3EFE6 !important;
+          color: #2B2D2A !important;
         }
         .talent-logout-btn:hover {
-          color: var(--gold) !important;
-          background-color: rgba(255, 255, 255, 0.08);
+          color: #8A6B2E !important;
+          background-color: #F3EFE6 !important;
         }
       `}</style>
     </>

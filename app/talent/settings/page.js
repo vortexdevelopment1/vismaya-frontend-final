@@ -29,16 +29,18 @@ import {
 import PageHeader from "@/components/shared/PageHeader";
 import Modal from "@/components/shared/Modal";
 import ProgressBar from "@/components/shared/ProgressBar";
+import PasswordInput from "@/components/PasswordInput";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { authService } from "@/lib/api/services/authService";
 import { isRealMode } from "@/lib/api/config";
 
 
 export default function TalentSettingsPage() {
-  const { profile, updateProfile, addToast } = useTalent();
+  const { profile, updateProfile, addToast, updateProfilePhoto, removeProfilePhoto } = useTalent();
 
   const [activeTab, setActiveTab] = useState("account");
   const tabNavRef = useRef(null);
+  const settingsPhotoInputRef = useRef(null);
 
   // Tab 1: Account Profile State
   const [accountName, setAccountName] = useState(profile.personal.fullName || "");
@@ -327,31 +329,71 @@ export default function TalentSettingsPage() {
                 <form id="account-settings-form" onSubmit={handleSaveAccount}>
                   {/* Top Row: Headshot + Info + Change Photo Button */}
                   <div className="settings-avatar-row">
+                    <input
+                      ref={settingsPhotoInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/jpg"
+                      style={{ display: "none" }}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            await updateProfilePhoto(file);
+                          } catch (err) {
+                            addToast({
+                              type: "danger",
+                              title: "Photo Update Failed",
+                              message: err.message || "Could not upload image.",
+                            });
+                          }
+                          e.target.value = "";
+                        }
+                      }}
+                    />
                     <div
                       className="settings-headshot-circle"
                       style={{
-                        backgroundImage: `url(${profile.avatar})`,
+                        backgroundImage: profile.avatar ? `url(${profile.avatar})` : undefined,
+                        backgroundColor: "#F3EFE6",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#8A6B2E",
+                        fontWeight: "700",
+                        fontSize: "18px",
                       }}
-                    />
+                    >
+                      {!profile.avatar && (profile.personal?.fullName ? profile.personal.fullName.slice(0, 2).toUpperCase() : "TR")}
+                    </div>
                     <div className="settings-avatar-info">
                       <span className="settings-avatar-title">Profile display headshot</span>
                       <span className="settings-avatar-subtitle">
                         Used across casting shortlist summaries
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        addToast({
-                          type: "info",
-                          title: "Photo Update",
-                          message: "Upload headshots in your Portfolio tab to update your display avatar.",
-                        })
-                      }
-                      className="btn-secondary settings-photo-btn"
-                    >
-                      Change photo
-                    </button>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <button
+                        type="button"
+                        onClick={() => settingsPhotoInputRef.current?.click()}
+                        className="btn-secondary settings-photo-btn"
+                      >
+                        {profile.avatar ? "Change photo" : "Upload photo"}
+                      </button>
+                      {profile.avatar && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (window.confirm("Remove profile photo?")) {
+                              await removeProfilePhoto();
+                            }
+                          }}
+                          className="btn-secondary settings-photo-btn"
+                          style={{ color: "#B42318", borderColor: "#FECDCA" }}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* 2-Column Grid Fields */}
@@ -458,32 +500,19 @@ export default function TalentSettingsPage() {
                     <div className="talent-form-grid">
                       <div className="talent-form-grid-full">
                         <label className="settings-field-label">Current password</label>
-                        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                          <input
-                            type={showPassword ? "text" : "password"}
-                            placeholder="Enter current password"
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                            className="settings-input"
-                            style={{ paddingRight: "44px" }}
-                            required
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            aria-label={showPassword ? "Hide password" : "Show password"}
-                            className="settings-eye-toggle"
-                          >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                        </div>
+                        <PasswordInput
+                          placeholder="Enter current password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          className="settings-input"
+                          required
+                        />
                         <span className="settings-helper-text">Required to confirm authorization</span>
                       </div>
 
                       <div>
                         <label className="settings-field-label">New password</label>
-                        <input
-                          type={showPassword ? "text" : "password"}
+                        <PasswordInput
                           placeholder="Minimum 8 characters"
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
@@ -512,8 +541,7 @@ export default function TalentSettingsPage() {
 
                       <div>
                         <label className="settings-field-label">Confirm new password</label>
-                        <input
-                          type={showPassword ? "text" : "password"}
+                        <PasswordInput
                           placeholder="Re-type new password"
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -956,8 +984,8 @@ export default function TalentSettingsPage() {
         }
 
         .settings-nav-btn {
-          height: 44px;
-          border-radius: 12px;
+          height: 40px;
+          border-radius: 6px;
           display: flex;
           align-items: center;
           gap: 12px;
@@ -979,12 +1007,12 @@ export default function TalentSettingsPage() {
         }
 
         .settings-nav-btn:hover:not(.settings-tab-active) {
-          background-color: rgba(255, 255, 255, 0.05);
+          background-color: var(--bg-alt);
           color: var(--text-primary);
         }
 
         .settings-tab-active {
-          background-color: rgba(255, 188, 0, 0.14) !important;
+          background-color: var(--bg-alt) !important;
           color: var(--gold) !important;
           border-left: 3px solid var(--gold) !important;
         }
@@ -1002,12 +1030,10 @@ export default function TalentSettingsPage() {
 
         /* Card container for every tab */
         .settings-card {
-          background: var(--glass-bg);
-          border: 1px solid var(--glass-border);
-          border-radius: var(--radius-card);
-          backdrop-filter: var(--glass-blur);
-          -webkit-backdrop-filter: var(--glass-blur);
-          box-shadow: var(--glass-shadow);
+          background: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          border-radius: 18px;
+          box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06);
           overflow: hidden;
           width: 100%;
         }
@@ -1021,24 +1047,25 @@ export default function TalentSettingsPage() {
         }
 
         .settings-card-title {
-          font-family: var(--font-body), "Inter", sans-serif;
-          font-size: 18px;
-          font-weight: 600;
-          color: var(--text-primary);
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: 20px;
+          fontWeight: 600;
+          color: #2B2D2A;
           margin: 0 0 4px 0;
           line-height: 1.3;
         }
 
         .settings-card-description {
           font-size: 13px;
-          color: var(--text-muted);
+          color: #5A584F;
           margin: 0;
           line-height: 1.45;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         .settings-card-divider {
           height: 1px;
-          background-color: rgba(255, 255, 255, 0.08);
+          background-color: #E8E2D4;
           width: 100%;
         }
 
@@ -1049,7 +1076,7 @@ export default function TalentSettingsPage() {
         .settings-card-footer {
           margin-top: 28px;
           padding-top: 20px;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          border-top: 1px solid var(--border-color);
           display: flex;
           align-items: center;
           justifyContent: flex-end;
@@ -1057,13 +1084,13 @@ export default function TalentSettingsPage() {
         }
 
         .settings-footer-btn {
-          min-height: 44px;
-          padding: 0 22px;
+          min-height: 38px;
+          padding: 0 20px;
           font-size: 13px;
           font-weight: 600;
           text-transform: none;
           letter-spacing: 0;
-          border-radius: 12px;
+          border-radius: 4px;
         }
 
         /* Avatar Top Row */
@@ -1072,9 +1099,9 @@ export default function TalentSettingsPage() {
           align-items: center;
           gap: 20px;
           padding: 16px;
-          background-color: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
+          background-color: var(--bg-alt);
+          border: 1px solid var(--border-color);
+          border-radius: 6px;
           flex-wrap: wrap;
         }
 
@@ -1085,9 +1112,9 @@ export default function TalentSettingsPage() {
           background-size: cover;
           background-position: center;
           border: 2px solid var(--gold);
-          box-shadow: 0 0 16px rgba(255, 188, 0, 0.3);
+          box-shadow: var(--shadow-sm);
           flex-shrink: 0;
-          background-color: #0f1626;
+          background-color: var(--bg-surface);
         }
 
         .settings-avatar-info {
@@ -1110,11 +1137,11 @@ export default function TalentSettingsPage() {
         }
 
         .settings-photo-btn {
-          min-height: 38px;
+          min-height: 36px;
           padding: 0 16px;
           font-size: 12px;
           font-weight: 600;
-          border-radius: 10px;
+          border-radius: 4px;
           text-transform: none;
           letter-spacing: 0;
         }
@@ -1130,12 +1157,12 @@ export default function TalentSettingsPage() {
 
         .settings-input {
           width: 100%;
-          height: 44px;
-          min-height: 44px;
-          padding: 0 16px;
-          background-color: rgba(255, 255, 255, 0.055);
-          border: 1px solid rgba(255, 255, 255, 0.16);
-          border-radius: var(--radius-input);
+          height: 38px;
+          min-height: 38px;
+          padding: 0 14px;
+          background-color: var(--bg-surface);
+          border: 1px solid var(--border-color);
+          border-radius: 4px;
           color: var(--text-primary);
           font-size: 14px;
           outline: none;
@@ -1144,8 +1171,7 @@ export default function TalentSettingsPage() {
 
         .settings-input:focus {
           border-color: var(--gold);
-          background-color: rgba(255, 255, 255, 0.08);
-          box-shadow: 0 0 0 3px rgba(255, 188, 0, 0.25);
+          box-shadow: 0 0 0 2px rgba(155, 122, 63, 0.2);
         }
 
         .settings-helper-text {
@@ -1160,10 +1186,10 @@ export default function TalentSettingsPage() {
           align-items: center;
           gap: 4px;
           padding: 2px 8px;
-          border-radius: 999px;
-          background-color: rgba(52, 211, 153, 0.12);
-          border: 1px solid rgba(52, 211, 153, 0.32);
-          color: var(--success);
+          border-radius: 4px;
+          background-color: #EFF2EC;
+          border: 1px solid #D1DCC8;
+          color: var(--text-primary);
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
@@ -1200,7 +1226,7 @@ export default function TalentSettingsPage() {
         }
 
         .settings-check-item.check-pass {
-          color: var(--success);
+          color: var(--gold);
           font-weight: 600;
         }
 
@@ -1208,28 +1234,28 @@ export default function TalentSettingsPage() {
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background-color: rgba(255, 255, 255, 0.25);
+          background-color: var(--border-color);
         }
 
         /* Active Sessions */
         .settings-session-row {
           display: flex;
           align-items: center;
-          justifyContent: space-between;
+          justify-content: space-between;
           gap: 14px;
           padding: 14px 16px;
-          border-radius: 12px;
-          background-color: rgba(255, 255, 255, 0.035);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 6px;
+          background-color: var(--bg-alt);
+          border: 1px solid var(--border-color);
           flex-wrap: wrap;
         }
 
         .settings-session-icon {
-          width: 42px;
-          height: 42px;
-          border-radius: 10px;
-          background-color: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          width: 38px;
+          height: 38px;
+          border-radius: 4px;
+          background-color: var(--bg-surface);
+          border: 1px solid var(--border-color);
           color: var(--gold);
           display: flex;
           align-items: center;
@@ -1240,9 +1266,9 @@ export default function TalentSettingsPage() {
         .settings-current-badge {
           display: inline-flex;
           padding: 2px 8px;
-          border-radius: 999px;
-          background-color: rgba(255, 188, 0, 0.14);
-          border: 1px solid rgba(255, 188, 0, 0.32);
+          border-radius: 4px;
+          background-color: var(--bg-surface);
+          border: 1px solid var(--border-color);
           color: var(--gold);
           font-size: 11px;
           font-weight: 700;
@@ -1250,10 +1276,10 @@ export default function TalentSettingsPage() {
         }
 
         .settings-signout-btn {
-          min-height: 36px;
+          min-height: 34px;
           padding: 0 14px;
           font-size: 12px;
-          border-radius: 8px;
+          border-radius: 4px;
         }
 
         /* Notification Channels Grid */
@@ -1265,13 +1291,13 @@ export default function TalentSettingsPage() {
         }
 
         .settings-channel-card {
-          background-color: rgba(255, 255, 255, 0.035);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 14px;
+          background-color: var(--bg-alt);
+          border: 1px solid var(--border-color);
+          border-radius: 6px;
           padding: 16px 18px;
           display: flex;
           align-items: center;
-          justifyContent: space-between;
+          justify-content: space-between;
           gap: 14px;
         }
 
@@ -1284,11 +1310,11 @@ export default function TalentSettingsPage() {
         }
 
         .settings-channel-icon {
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
-          background-color: rgba(255, 188, 0, 0.12);
-          border: 1px solid rgba(255, 188, 0, 0.25);
+          width: 38px;
+          height: 38px;
+          border-radius: 4px;
+          background-color: var(--bg-surface);
+          border: 1px solid var(--border-color);
           color: var(--gold);
           display: flex;
           align-items: center;
@@ -1335,10 +1361,10 @@ export default function TalentSettingsPage() {
         .settings-toggle-slider {
           position: absolute;
           inset: 0;
-          background-color: rgba(255, 255, 255, 0.16);
+          background-color: var(--border-color);
           border-radius: 999px;
           transition: background-color 0.2s ease;
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          border: 1px solid var(--border-color);
         }
 
         .settings-toggle-slider::before {
@@ -1348,27 +1374,27 @@ export default function TalentSettingsPage() {
           width: 18px;
           left: 2px;
           bottom: 2px;
-          background-color: #eceaf5;
+          background-color: #FFFFFF;
           border-radius: 50%;
           transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
         .settings-toggle-switch input:checked + .settings-toggle-slider {
           background-color: var(--gold);
-          border-color: #ffd54a;
+          border-color: var(--gold);
         }
 
         .settings-toggle-switch input:checked + .settings-toggle-slider::before {
           transform: translateX(20px);
-          background-color: #1a1300;
+          background-color: #FFFFFF;
         }
 
         /* Privacy Info Card */
         .settings-info-card {
-          background: linear-gradient(135deg, rgba(255, 188, 0, 0.10) 0%, rgba(255, 255, 255, 0.03) 100%);
-          border: 1px solid rgba(255, 188, 0, 0.28);
-          border-radius: var(--radius-card);
+          background: var(--bg-alt);
+          border: 1px solid var(--border-color);
+          border-radius: 6px;
           padding: 22px 24px;
           display: flex;
           align-items: flex-start;
@@ -1382,7 +1408,7 @@ export default function TalentSettingsPage() {
         }
 
         .settings-info-title {
-          font-family: var(--font-body), "Inter", sans-serif;
+          font-family: Georgia, serif;
           font-size: 16px;
           font-weight: 700;
           color: var(--text-primary);
@@ -1398,30 +1424,28 @@ export default function TalentSettingsPage() {
 
         /* Danger Zone Card */
         .settings-danger-card {
-          background: rgba(255, 107, 107, 0.06);
-          border: 1px solid rgba(255, 107, 107, 0.32);
-          border-radius: var(--radius-card);
-          backdrop-filter: var(--glass-blur);
-          -webkit-backdrop-filter: var(--glass-blur);
-          box-shadow: var(--glass-shadow);
+          background: #FAF0F0;
+          border: 1px solid #F5C6C6;
+          border-radius: 6px;
+          box-shadow: var(--shadow-card);
           overflow: hidden;
           width: 100%;
         }
 
         .settings-danger-title {
-          font-family: var(--font-body), "Inter", sans-serif;
+          font-family: Georgia, serif;
           font-size: 18px;
-          font-weight: 600;
+          font-weight: 700;
           color: var(--danger);
           margin: 0 0 4px 0;
         }
 
         .settings-danger-btn {
-          min-height: 44px;
+          min-height: 38px;
           padding: 0 20px;
           font-size: 13px;
           font-weight: 600;
-          border-radius: 12px;
+          border-radius: 4px;
           text-transform: none;
           letter-spacing: 0;
         }
@@ -1462,16 +1486,16 @@ export default function TalentSettingsPage() {
             flex-shrink: 0;
             width: auto;
             border-left: 1px solid transparent;
-            border-radius: 999px;
+            border-radius: 4px;
             padding: 0 18px;
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background-color: var(--bg-alt);
+            border: 1px solid var(--border-color);
           }
 
           .settings-tab-active {
-            border-left: 1px solid #ffd54a !important;
-            border-color: #ffd54a !important;
-            background: linear-gradient(135deg, rgba(255, 188, 0, 0.22) 0%, rgba(255, 188, 0, 0.12) 100%) !important;
+            border-left: 1px solid var(--gold) !important;
+            border-color: var(--gold) !important;
+            background: var(--bg-alt) !important;
           }
 
           .settings-channels-grid {

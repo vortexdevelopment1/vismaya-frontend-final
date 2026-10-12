@@ -24,21 +24,22 @@ export default function MediaReviewCard({
   return (
     <>
       <div
-        className="card-surface media-moderation-card"
+        className="media-moderation-card"
         style={{
-          borderRadius: "16px",
+          borderRadius: "20px",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
           height: "100%",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
-          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.35)",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
+          boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
           transition: "transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
           position: "relative",
           boxSizing: "border-box",
         }}
       >
-        {/* A. Top Thumbnail Preview Container (16:10 Aspect Ratio) */}
+        {/* Top Thumbnail Preview Container */}
         <div
           onClick={() => onPreview && onPreview(media)}
           style={{
@@ -46,27 +47,13 @@ export default function MediaReviewCard({
             aspectRatio: "16 / 10",
             position: "relative",
             cursor: "pointer",
-            backgroundColor: "#070b12",
+            backgroundColor: "#F3EFE6",
             overflow: "hidden",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          {/* Top Gradient Overlay for Badge Contrast */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "65%",
-              background: "linear-gradient(180deg, rgba(7, 11, 18, 0.75) 0%, rgba(7, 11, 18, 0.25) 60%, transparent 100%)",
-              zIndex: 2,
-              pointerEvents: "none",
-            }}
-          />
-
           {/* Media Image or Styled Fallback */}
           {thumbnailSrc && !imgError ? (
             <img
@@ -87,62 +74,60 @@ export default function MediaReviewCard({
               style={{
                 width: "100%",
                 height: "100%",
-                backgroundColor: "#0a0f19",
+                backgroundColor: "#F3EFE6",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "8px",
-                color: "#7e89a3",
+                color: "#5A584F",
               }}
             >
               {isVideo ? (
-                <Video size={32} style={{ color: "var(--gold)", opacity: 0.8 }} />
+                <Video size={32} style={{ color: "#8A6B2E" }} />
               ) : (
-                <ImageIcon size={32} style={{ color: "#7e89a3", opacity: 0.8 }} />
+                <ImageIcon size={32} style={{ color: "#5A584F" }} />
               )}
-              <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#7e89a3" }}>
+              <span style={{ fontSize: "12px", fontWeight: 600, color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 {imgError ? "Preview unavailable" : `Click to preview ${media.type || "media"}`}
               </span>
             </div>
           )}
 
-          {/* Top-Left: Media Type Badge */}
-          <div style={{ position: "absolute", top: "10px", left: "10px", zIndex: 4 }}>
+          {/* Top-Left: Type chip - White pill with charcoal text over image */}
+          <div style={{ position: "absolute", top: "12px", left: "12px", zIndex: 4 }}>
             <span
               style={{
-                fontSize: "10px",
-                fontWeight: 800,
+                fontSize: "11px",
+                fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                padding: "3px 8px",
-                borderRadius: "6px",
-                backgroundColor: "rgba(7, 11, 18, 0.85)",
-                color: "var(--gold)",
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-                border: "1px solid rgba(255, 188, 0, 0.35)",
+                padding: "4px 10px",
+                borderRadius: "999px",
+                backgroundColor: "#FFFFFF",
+                color: "#2B2D2A",
+                border: "1px solid #E8E2D4",
+                boxShadow: "0 2px 8px rgba(43, 45, 42, 0.12)",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "4px",
+                gap: "5px",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
               }}
             >
-              {isVideo ? <Video size={11} /> : <ImageIcon size={11} />}
+              {isVideo ? <Video size={12} style={{ color: "#8A6B2E" }} /> : <ImageIcon size={12} style={{ color: "#8A6B2E" }} />}
               <span>{media.type}</span>
             </span>
           </div>
 
-          {/* Top-Right: Status Badge (with Backdrop Blur for Light Backgrounds) */}
+          {/* Top-Right: Status Badge */}
           <div
             style={{
               position: "absolute",
-              top: "10px",
-              right: "10px",
+              top: "12px",
+              right: "12px",
               zIndex: 4,
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
+              boxShadow: "0 2px 8px rgba(43, 45, 42, 0.12)",
               borderRadius: "999px",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
             }}
           >
             <StatusBadge status={media.status} size="xs" />
@@ -164,22 +149,20 @@ export default function MediaReviewCard({
               <div
                 className="play-overlay-btn"
                 style={{
-                  width: "44px",
-                  height: "44px",
+                  width: "48px",
+                  height: "48px",
                   borderRadius: "50%",
-                  backgroundColor: "rgba(7, 11, 18, 0.75)",
-                  border: "1px solid rgba(255, 188, 0, 0.5)",
-                  color: "var(--gold)",
+                  backgroundColor: "rgba(255, 255, 255, 0.9)",
+                  border: "1px solid #E8E2D4",
+                  color: "#8A6B2E",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  backdropFilter: "blur(6px)",
-                  WebkitBackdropFilter: "blur(6px)",
-                  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.5)",
-                  transition: "transform 0.18s ease, background-color 0.18s ease",
+                  boxShadow: "0 4px 16px rgba(43, 45, 42, 0.15)",
+                  transition: "transform 0.18s ease",
                 }}
               >
-                <Play size={18} fill="var(--gold)" style={{ marginLeft: "2px" }} />
+                <Play size={20} fill="#8A6B2E" style={{ marginLeft: "2px" }} />
               </div>
             </div>
           )}
@@ -189,24 +172,23 @@ export default function MediaReviewCard({
             <div
               style={{
                 position: "absolute",
-                bottom: "8px",
-                right: "8px",
-                backgroundColor: "rgba(7, 11, 18, 0.85)",
-                color: "#eceaf5",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
+                bottom: "10px",
+                right: "10px",
+                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                color: "#2B2D2A",
+                border: "1px solid #E8E2D4",
                 fontSize: "11px",
                 fontWeight: 700,
-                padding: "2px 7px",
+                padding: "2px 8px",
                 borderRadius: "6px",
                 display: "flex",
                 alignItems: "center",
                 gap: "4px",
                 zIndex: 4,
-                backdropFilter: "blur(6px)",
-                WebkitBackdropFilter: "blur(6px)",
+                boxShadow: "0 2px 6px rgba(43, 45, 42, 0.08)",
               }}
             >
-              <Clock size={11} style={{ color: "var(--gold)" }} />
+              <Clock size={11} style={{ color: "#8A6B2E" }} />
               <span>{media.duration}</span>
             </div>
           )}
@@ -223,32 +205,31 @@ export default function MediaReviewCard({
             className="thumb-preview-btn"
             style={{
               position: "absolute",
-              bottom: "8px",
-              left: "8px",
-              width: "30px",
-              height: "30px",
+              bottom: "10px",
+              left: "10px",
+              width: "32px",
+              height: "32px",
               borderRadius: "8px",
-              backgroundColor: "rgba(7, 11, 18, 0.85)",
-              border: "1px solid rgba(255, 255, 255, 0.16)",
-              color: "#eceaf5",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E8E2D4",
+              color: "#5A584F",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
               zIndex: 4,
-              backdropFilter: "blur(6px)",
-              WebkitBackdropFilter: "blur(6px)",
-              transition: "background-color 0.18s ease, transform 0.18s ease, color 0.18s ease",
+              boxShadow: "0 2px 6px rgba(43, 45, 42, 0.08)",
+              transition: "all 0.16s ease",
             }}
           >
-            <Eye size={14} />
+            <Eye size={15} />
           </button>
         </div>
 
-        {/* B. Card Body (Consistent padding & reserved 2-line title height) */}
+        {/* Card Body */}
         <div
           style={{
-            padding: "16px",
+            padding: "18px 20px",
             display: "flex",
             flexDirection: "column",
             gap: "10px",
@@ -256,13 +237,14 @@ export default function MediaReviewCard({
             boxSizing: "border-box",
           }}
         >
-          {/* Title - Clamped to 2 lines, 2.7em reserved height */}
+          {/* Title - Playfair 18px charcoal */}
           <h3
             title={media.title}
             style={{
-              fontSize: "0.95rem",
+              fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+              fontSize: "18px",
               fontWeight: 600,
-              color: "#eceaf5",
+              color: "#2B2D2A",
               margin: 0,
               lineHeight: "1.35",
               display: "-webkit-box",
@@ -283,23 +265,24 @@ export default function MediaReviewCard({
               alignItems: "center",
               justifyContent: "space-between",
               gap: "8px",
-              fontSize: "0.785rem",
+              fontSize: "13px",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "7px", minWidth: 0, flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
               <div
                 style={{
-                  width: "22px",
-                  height: "22px",
+                  width: "24px",
+                  height: "24px",
                   borderRadius: "50%",
-                  backgroundColor: "rgba(255, 188, 0, 0.14)",
-                  color: "var(--gold)",
-                  border: "1px solid rgba(255, 188, 0, 0.3)",
+                  backgroundColor: "#F3EFE6",
+                  color: "#8A6B2E",
+                  border: "1px solid #E8E2D4",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "10px",
-                  fontWeight: 800,
+                  fontSize: "11px",
+                  fontWeight: 700,
                   flexShrink: 0,
                 }}
               >
@@ -310,15 +293,15 @@ export default function MediaReviewCard({
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
-                  color: "#a3acc2",
+                  color: "#5A584F",
                 }}
                 title={`Uploaded by ${media.talentName}`}
               >
-                <span style={{ fontSize: "0.725rem", color: "#7e89a3" }}>Uploaded by </span>
-                <strong style={{ color: "#eceaf5", fontWeight: 600 }}>{media.talentName}</strong>
+                <span style={{ color: "#5A584F" }}>Uploaded by </span>
+                <strong style={{ color: "#8A6B2E", fontWeight: 600 }}>{media.talentName}</strong>
               </div>
             </div>
-            <span style={{ fontSize: "0.725rem", color: "#7e89a3", whiteSpace: "nowrap", flexShrink: 0 }}>
+            <span style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap", flexShrink: 0 }}>
               {media.uploadDate}
             </span>
           </div>
@@ -331,20 +314,21 @@ export default function MediaReviewCard({
               gap: "6px",
               flexWrap: "wrap",
               marginTop: "auto",
-              paddingTop: "2px",
+              paddingTop: "4px",
             }}
           >
             {(media.resolution || media.dimensions) && (
               <span
                 style={{
-                  fontSize: "0.7rem",
+                  fontSize: "12px",
                   fontWeight: 600,
-                  color: "#a3acc2",
-                  backgroundColor: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  padding: "2px 8px",
+                  color: "#5A584F",
+                  backgroundColor: "#F3EFE6",
+                  border: "1px solid #E8E2D4",
+                  padding: "3px 9px",
                   borderRadius: "6px",
                   whiteSpace: "nowrap",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
                 {media.resolution || media.dimensions}
@@ -353,14 +337,15 @@ export default function MediaReviewCard({
             {media.fileSize && (
               <span
                 style={{
-                  fontSize: "0.7rem",
+                  fontSize: "12px",
                   fontWeight: 600,
-                  color: "#a3acc2",
-                  backgroundColor: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  padding: "2px 8px",
+                  color: "#5A584F",
+                  backgroundColor: "#F3EFE6",
+                  border: "1px solid #E8E2D4",
+                  padding: "3px 9px",
                   borderRadius: "6px",
                   whiteSpace: "nowrap",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
                 {media.fileSize}
@@ -369,17 +354,18 @@ export default function MediaReviewCard({
             {media.category && (
               <span
                 style={{
-                  fontSize: "0.7rem",
+                  fontSize: "12px",
                   fontWeight: 600,
-                  color: "#a3acc2",
-                  backgroundColor: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  padding: "2px 8px",
+                  color: "#6E5420",
+                  backgroundColor: "rgba(201, 165, 92, 0.16)",
+                  border: "1px solid rgba(201, 165, 92, 0.25)",
+                  padding: "3px 9px",
                   borderRadius: "6px",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   maxWidth: "140px",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
                 title={media.category}
               >
@@ -392,13 +378,14 @@ export default function MediaReviewCard({
           {media.rejectReason && (
             <div
               style={{
-                backgroundColor: "rgba(255, 107, 107, 0.12)",
-                border: "1px solid rgba(255, 107, 107, 0.32)",
+                backgroundColor: "rgba(180, 35, 24, 0.08)",
+                border: "1px solid rgba(180, 35, 24, 0.25)",
                 borderRadius: "8px",
-                padding: "6px 10px",
-                fontSize: "0.725rem",
-                color: "#ff6b6b",
+                padding: "8px 12px",
+                fontSize: "12px",
+                color: "#B42318",
                 marginTop: "4px",
+                lineHeight: 1.4,
               }}
             >
               <strong>Reject Reason: </strong>{media.rejectReason}
@@ -406,12 +393,12 @@ export default function MediaReviewCard({
           )}
         </div>
 
-        {/* C. Card Footer with Equal-Width Action Buttons */}
+        {/* Card Footer with Equal-Width 44px Action Buttons */}
         <div
           style={{
-            padding: "12px 16px",
-            backgroundColor: "rgba(15, 22, 38, 0.6)",
-            borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+            padding: "16px 20px",
+            backgroundColor: "#FFFFFF",
+            borderTop: "1px solid #E8E2D4",
             display: "flex",
             alignItems: "center",
             width: "100%",
@@ -423,60 +410,64 @@ export default function MediaReviewCard({
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: "10px",
+                gap: "12px",
                 width: "100%",
               }}
             >
               <button
                 type="button"
                 onClick={() => setShowRejectModal(true)}
-                className="btn-secondary"
+                className="media-btn-reject"
                 style={{
                   width: "100%",
-                  padding: "0 10px",
-                  minHeight: "36px",
-                  height: "36px",
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
-                  color: "#ff6b6b",
-                  border: "1px solid rgba(255, 107, 107, 0.35)",
-                  backgroundColor: "rgba(255, 107, 107, 0.08)",
+                  height: "44px",
+                  minHeight: "44px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#B42318",
+                  border: "1px solid rgba(180, 35, 24, 0.35)",
+                  backgroundColor: "#FFFFFF",
                   borderRadius: "10px",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "5px",
-                  minWidth: 0,
+                  gap: "6px",
                   whiteSpace: "nowrap",
                   cursor: "pointer",
+                  transition: "all 0.16s ease",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
-                <X size={13} strokeWidth={2.5} />
+                <X size={15} strokeWidth={2.5} />
                 <span>Reject</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => onApprove(media.id)}
-                className="btn-primary"
+                className="media-btn-approve"
                 style={{
                   width: "100%",
-                  padding: "0 10px",
-                  minHeight: "36px",
-                  height: "36px",
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
+                  height: "44px",
+                  minHeight: "44px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#FFFFFF",
+                  backgroundColor: "#8A6B2E",
+                  border: "1px solid #8A6B2E",
                   borderRadius: "10px",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "5px",
-                  minWidth: 0,
+                  gap: "6px",
                   whiteSpace: "nowrap",
                   cursor: "pointer",
+                  boxShadow: "0 2px 6px rgba(138, 107, 46, 0.2)",
+                  transition: "all 0.16s ease",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
-                <Check size={13} strokeWidth={3} />
+                <Check size={15} strokeWidth={3} />
                 <span>Approve</span>
               </button>
             </div>
@@ -485,27 +476,28 @@ export default function MediaReviewCard({
               <button
                 type="button"
                 onClick={() => setShowRejectModal(true)}
-                className="btn-secondary"
+                className="media-btn-reject"
                 style={{
                   width: "100%",
-                  padding: "0 12px",
-                  minHeight: "36px",
-                  height: "36px",
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
-                  color: "#ff6b6b",
-                  border: "1px solid rgba(255, 107, 107, 0.35)",
-                  backgroundColor: "rgba(255, 107, 107, 0.08)",
+                  height: "44px",
+                  minHeight: "44px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#B42318",
+                  border: "1px solid rgba(180, 35, 24, 0.35)",
+                  backgroundColor: "#FFFFFF",
                   borderRadius: "10px",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "5px",
+                  gap: "6px",
                   whiteSpace: "nowrap",
                   cursor: "pointer",
+                  transition: "all 0.16s ease",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
-                <X size={13} strokeWidth={2.5} />
+                <X size={15} strokeWidth={2.5} />
                 <span>Revoke / Reject</span>
               </button>
             </div>
@@ -514,24 +506,29 @@ export default function MediaReviewCard({
               <button
                 type="button"
                 onClick={() => onApprove(media.id)}
-                className="btn-primary"
+                className="media-btn-approve"
                 style={{
                   width: "100%",
-                  padding: "0 12px",
-                  minHeight: "36px",
-                  height: "36px",
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
+                  height: "44px",
+                  minHeight: "44px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#FFFFFF",
+                  backgroundColor: "#8A6B2E",
+                  border: "1px solid #8A6B2E",
                   borderRadius: "10px",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "5px",
+                  gap: "6px",
                   whiteSpace: "nowrap",
                   cursor: "pointer",
+                  boxShadow: "0 2px 6px rgba(138, 107, 46, 0.2)",
+                  transition: "all 0.16s ease",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
-                <Check size={13} strokeWidth={3} />
+                <Check size={15} strokeWidth={3} />
                 <span>Approve Media</span>
               </button>
             </div>
@@ -563,25 +560,24 @@ export default function MediaReviewCard({
       <style jsx global>{`
         .media-moderation-card:hover {
           transform: translateY(-2px);
-          border-color: rgba(255, 188, 0, 0.5) !important;
-          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 20px rgba(255, 188, 0, 0.12) !important;
+          border-color: #8A6B2E !important;
+          box-shadow: 0 4px 8px rgba(43, 45, 42, 0.06), 0 16px 36px rgba(43, 45, 42, 0.08) !important;
         }
         .media-moderation-card:hover .card-thumb-img {
           transform: scale(1.03);
         }
-        .media-moderation-card:hover .play-overlay-btn {
-          transform: scale(1.1);
-          background-color: rgba(7, 11, 18, 0.9);
-          border-color: var(--gold);
+        .media-btn-reject:hover {
+          background-color: rgba(180, 35, 24, 0.08) !important;
+          border-color: #B42318 !important;
         }
-        .media-moderation-card:hover .thumb-preview-btn {
-          background-color: var(--gold);
-          color: #1a1300;
-          border-color: var(--gold);
+        .media-btn-approve:hover {
+          background-color: #6E5420 !important;
+          border-color: #6E5420 !important;
         }
-        .media-moderation-card button:focus-visible {
-          outline: 2px solid var(--gold) !important;
-          outline-offset: 2px !important;
+        .thumb-preview-btn:hover {
+          background-color: #8A6B2E !important;
+          color: #FFFFFF !important;
+          border-color: #8A6B2E !important;
         }
       `}</style>
     </>

@@ -56,7 +56,7 @@ export default function EmptyState({
           fontSize: "18px",
           lineHeight: "24px",
           fontWeight: "700",
-          color: "#eceaf5",
+          color: "var(--text-primary, #2B2D2A)",
           marginBottom: "6px",
         }}
       >
@@ -67,7 +67,7 @@ export default function EmptyState({
         style={{
           fontSize: "14px",
           lineHeight: "22px",
-          color: "#a3acc2",
+          color: "var(--text-secondary, #5A584F)",
           maxWidth: "420px",
           marginBottom: (actionLabel && (actionHref || onAction)) ? "20px" : "0",
         }}

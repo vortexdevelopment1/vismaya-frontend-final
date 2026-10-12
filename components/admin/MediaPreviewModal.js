@@ -27,7 +27,7 @@ export default function MediaPreviewModal({
         onClose={onClose}
         title={media.title}
         description={`Uploaded by ${media.talentName} • ${media.type} • ${media.uploadDate}`}
-        maxWidth="700px"
+        maxWidth="720px"
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "16px", paddingTop: "8px" }}>
           {/* Media Player / Image Viewer Container */}
@@ -35,9 +35,9 @@ export default function MediaPreviewModal({
             style={{
               width: "100%",
               aspectRatio: "16/9",
-              backgroundColor: "rgba(10, 15, 25, 0.9)",
+              backgroundColor: "#F3EFE6",
               borderRadius: "16px",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
+              border: "1px solid #E8E2D4",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -51,73 +51,40 @@ export default function MediaPreviewModal({
                 alt={media.title}
                 style={{ width: "100%", height: "100%", objectFit: "contain" }}
               />
-            ) : isVideo ? (
-              isPlaying ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-                  <div style={{ width: "40px", height: "40px", border: "3px solid var(--gold)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-                  <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "#eceaf5" }}>
-                    Playing Audition Video Stream...
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsPlaying(false)}
-                    className="btn-secondary"
-                    style={{ padding: "6px 14px", fontSize: "0.75rem", borderRadius: "10px" }}
-                  >
-                    <Pause size={14} /> Pause Video
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", textAlign: "center", padding: "20px" }}>
-                  <button
-                    type="button"
-                    onClick={() => setIsPlaying(true)}
-                    style={{
-                      width: "56px",
-                      height: "56px",
-                      borderRadius: "50%",
-                      background: "var(--gold-gradient, linear-gradient(135deg, #ffd54a 0%, #ffbc00 100%))",
-                      color: "#1a1300",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 4px 16px rgba(255, 188, 0, 0.35)",
-                      cursor: "pointer",
-                      border: "none",
-                      transition: "transform 0.18s ease",
-                    }}
-                  >
-                    <Play size={22} style={{ marginLeft: "3px" }} fill="#1a1300" />
-                  </button>
-                  <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "#eceaf5" }}>
-                    {media.title}
-                  </span>
-                  <span style={{ fontSize: "0.75rem", color: "#a3acc2" }}>
-                    Duration: {media.duration || "1:20 min"} &bull; 1080p HD
-                  </span>
-                </div>
-              )
-            ) : null}
+            ) : isVideo && media.url ? (
+              <video
+                src={media.url}
+                controls
+                autoPlay
+                playsInline
+                style={{ width: "100%", height: "100%", backgroundColor: "#1C1D1A", objectFit: "contain" }}
+              />
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", color: "#5A584F" }}>
+                <Video size={36} style={{ color: "#8A6B2E" }} />
+              </div>
+            )}
           </div>
 
           {/* Media Info Bar */}
           <div
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              backgroundColor: "#FAF9F7",
+              border: "1px solid #E8E2D4",
               borderRadius: "12px",
               padding: "12px 16px",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              fontSize: "0.8rem",
+              fontSize: "13px",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
             }}
           >
             <div>
-              <span style={{ color: "#a3acc2" }}>Resolution: </span>
-              <strong style={{ color: "#eceaf5" }}>{media.resolution || "1080p Full HD"}</strong>
-              <span style={{ color: "#a3acc2", marginLeft: "14px" }}>Size: </span>
-              <strong style={{ color: "#eceaf5" }}>{media.fileSize || "4.8 MB"}</strong>
+              <span style={{ color: "#5A584F" }}>Resolution: </span>
+              <strong style={{ color: "#2B2D2A" }}>{media.resolution || "1080p Full HD"}</strong>
+              <span style={{ color: "#5A584F", marginLeft: "14px" }}>Size: </span>
+              <strong style={{ color: "#2B2D2A" }}>{media.fileSize || "4.8 MB"}</strong>
             </div>
             <StatusBadge status={media.status} size="xs" />
           </div>
@@ -127,8 +94,17 @@ export default function MediaPreviewModal({
             <button
               type="button"
               onClick={onClose}
-              className="btn-secondary"
-              style={{ padding: "8px 16px", fontSize: "0.85rem", borderRadius: "12px" }}
+              style={{
+                padding: "8px 18px",
+                fontSize: "14px",
+                fontWeight: 600,
+                borderRadius: "10px",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #E8E2D4",
+                color: "#5A584F",
+                cursor: "pointer",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
+              }}
             >
               Close
             </button>
@@ -137,14 +113,19 @@ export default function MediaPreviewModal({
               <button
                 type="button"
                 onClick={() => setShowRejectModal(true)}
-                className="btn-secondary"
                 style={{
-                  padding: "8px 16px",
-                  fontSize: "0.85rem",
-                  color: "#ff6b6b",
-                  border: "1px solid rgba(255, 107, 107, 0.35)",
-                  backgroundColor: "rgba(255, 107, 107, 0.08)",
-                  borderRadius: "12px",
+                  padding: "8px 18px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#B42318",
+                  border: "1px solid rgba(180, 35, 24, 0.35)",
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
                 <X size={14} /> Reject
@@ -158,8 +139,21 @@ export default function MediaPreviewModal({
                   onApprove(media.id);
                   onClose();
                 }}
-                className="btn-primary"
-                style={{ padding: "8px 18px", fontSize: "0.85rem", gap: "6px", borderRadius: "12px" }}
+                style={{
+                  padding: "8px 20px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  gap: "6px",
+                  borderRadius: "10px",
+                  backgroundColor: "#8A6B2E",
+                  color: "#FFFFFF",
+                  border: "1px solid #8A6B2E",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  boxShadow: "0 2px 6px rgba(138, 107, 46, 0.2)",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
+                }}
               >
                 <Check size={14} strokeWidth={3} /> Approve Media
               </button>

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Bell, ShieldCheck, User } from "lucide-react";
+import { Menu, Bell } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 
 export default function AdminTopbar({ onOpenMobile }) {
@@ -21,16 +21,16 @@ export default function AdminTopbar({ onOpenMobile }) {
     if (pathname === "/admin/talent-management") return "Talent Management";
     if (pathname === "/admin/recruiter-management") return "Organization Management";
     if (pathname === "/admin/opportunity-review") return "Opportunity Review";
-    if (pathname === "/admin/opportunities") return "Opportunities";
-    if (pathname === "/admin/applications") return "Applications";
+    if (pathname === "/admin/opportunities") return "Opportunities Directory";
+    if (pathname === "/admin/applications") return "Applications Registry";
     if (pathname === "/admin/auditions") return "Auditions & Self-Tapes";
     if (pathname === "/admin/media-moderation") return "Media Moderation";
-    if (pathname === "/admin/projects") return "Projects";
-    if (pathname === "/admin/payments") return "Payments";
+    if (pathname === "/admin/projects") return "Projects Directory";
+    if (pathname === "/admin/payments") return "Escrow & Payments";
     if (pathname === "/admin/cancellation-requests") return "Cancellation Requests";
     if (pathname === "/admin/analytics") return "Platform Analytics";
     if (pathname === "/admin/notifications") return "Notifications & Broadcasts";
-    return "Admin Console";
+    return "Operations Console";
   };
 
   const recentUnread = adminNotifications.filter((n) => !n.read).slice(0, 4);
@@ -40,34 +40,35 @@ export default function AdminTopbar({ onOpenMobile }) {
       style={{
         height: "var(--topbar-height, 72px)",
         minHeight: "72px",
-        backgroundColor: "rgba(250, 249, 246, 0.95)",
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        borderBottom: "1px solid var(--border-color, #E4E1D9)",
+        borderBottom: "1px solid #E8E2D4",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingInline: "clamp(16px, 2.5vw, 32px)",
+        paddingInline: "clamp(16px, 2.5vw, 40px)",
         position: "sticky",
         top: 0,
-        zIndex: 30,
+        zIndex: 40,
         width: "100%",
         boxSizing: "border-box",
       }}
     >
-      {/* Left: Mobile hamburger & title, Desktop Desk Name Chip */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+      {/* Left: Mobile hamburger & title, Desktop Single Title + Muted Subtitle */}
+      <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0 }}>
         {/* Mobile Hamburger */}
         <button
           onClick={onOpenMobile}
           aria-label="Open navigation drawer"
           style={{
-            color: "#eceaf5",
-            width: "40px",
-            height: "40px",
+            color: "#2B2D2A",
+            width: "44px",
+            height: "44px",
             borderRadius: "10px",
-            backgroundColor: "rgba(255, 255, 255, 0.06)",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
+            backgroundColor: "#F3EFE6",
+            border: "1px solid #E8E2D4",
+            display: "none",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
@@ -78,66 +79,58 @@ export default function AdminTopbar({ onOpenMobile }) {
           <Menu size={20} />
         </button>
 
-        {/* Mobile Title (shown only on mobile) */}
-        <div className="admin-mobile-title-wrap" style={{ minWidth: 0 }}>
-          <h2
+        {/* Page Title & Subtitle */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0 }}>
+          <h1
             style={{
-              fontSize: "15px",
-              fontWeight: "600",
-              color: "#eceaf5",
+              fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+              fontSize: "22px",
+              lineHeight: "28px",
+              fontWeight: 600,
+              color: "#2B2D2A",
               margin: 0,
+              letterSpacing: "-0.01em",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
             }}
           >
             {getPageTitle()}
-          </h2>
-        </div>
+          </h1>
 
-        {/* Desktop Desk Name Chip (do NOT repeat page title on desktop) */}
-        <div
-          className="admin-desktop-desk-chip"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "6px 12px",
-            borderRadius: "10px",
-            backgroundColor: "rgba(255, 255, 255, 0.04)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-          }}
-        >
-          <ShieldCheck size={16} style={{ color: "var(--gold)" }} />
-          <span style={{ fontSize: "13px", fontWeight: "600", color: "#eceaf5" }}>
-            Super-Admin Desk
-          </span>
-          <span style={{ color: "rgba(255, 255, 255, 0.2)", margin: "0 2px" }}>&bull;</span>
-          <span style={{ fontSize: "12px", color: "var(--gold)", fontWeight: "600" }}>
-            Vismaya Control Center
+          <span
+            className="admin-desktop-subtitle"
+            style={{
+              fontSize: "12px",
+              fontWeight: "600",
+              color: "#5A584F",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Super-Admin Desk &bull; Vismaya Control Center
           </span>
         </div>
       </div>
 
       {/* Right Controls: System Status Chip + Bell + Avatar */}
       <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
-        {/* System Status Chip (26px high, Inter 12px weight 600, sentence case, tinted green with a dot) */}
+        {/* System Status Chip (Neutral bg #F3EFE6, charcoal text, gold-brown dot) */}
         <div
           style={{
-            height: "26px",
-            paddingInline: "10px",
+            height: "30px",
+            paddingInline: "12px",
             borderRadius: "999px",
-            backgroundColor: "rgba(52, 211, 153, 0.12)",
-            border: "1px solid rgba(52, 211, 153, 0.30)",
-            color: "var(--status-green)",
+            backgroundColor: "#F3EFE6",
+            border: "1px solid #E8E2D4",
+            color: "#2B2D2A",
             fontFamily: "var(--font-body), 'Inter', sans-serif",
             fontSize: "12px",
             fontWeight: "600",
-            textTransform: "none",
-            letterSpacing: "normal",
             display: "inline-flex",
             alignItems: "center",
-            gap: "6px",
+            gap: "7px",
             whiteSpace: "nowrap",
           }}
           className="admin-status-chip"
@@ -147,8 +140,7 @@ export default function AdminTopbar({ onOpenMobile }) {
               width: "6px",
               height: "6px",
               borderRadius: "50%",
-              backgroundColor: "var(--status-green)",
-              boxShadow: "0 0 6px rgba(52, 211, 153, 0.6)",
+              backgroundColor: "#8A6B2E",
             }}
           />
           <span>System normal</span>
@@ -160,38 +152,38 @@ export default function AdminTopbar({ onOpenMobile }) {
             onClick={() => setShowNotifMenu(!showNotifMenu)}
             aria-label="View system alerts"
             style={{
-              width: "36px",
-              height: "36px",
+              width: "44px",
+              height: "44px",
               borderRadius: "10px",
-              backgroundColor: showNotifMenu ? "rgba(255, 188, 0, 0.14)" : "rgba(255, 255, 255, 0.06)",
-              border: `1px solid ${showNotifMenu ? "rgba(255, 188, 0, 0.35)" : "rgba(255, 255, 255, 0.12)"}`,
-              color: showNotifMenu ? "var(--gold)" : "#eceaf5",
+              backgroundColor: showNotifMenu ? "#F3EFE6" : "#FFFFFF",
+              border: `1px solid ${showNotifMenu ? "#8A6B2E" : "#E8E2D4"}`,
+              color: showNotifMenu ? "#8A6B2E" : "#5A584F",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
               position: "relative",
-              transition: "all 0.18s ease",
+              transition: "all 0.16s ease",
             }}
           >
-            <Bell size={17} />
+            <Bell size={18} />
             {unreadCount > 0 && (
               <span
                 style={{
                   position: "absolute",
-                  top: "-3px",
-                  right: "-3px",
+                  top: "-4px",
+                  right: "-4px",
                   width: "18px",
                   height: "18px",
                   borderRadius: "50%",
-                  backgroundColor: "var(--gold)",
-                  color: "#1a1300",
+                  backgroundColor: "#8A6B2E",
+                  color: "#FFFFFF",
                   fontSize: "10px",
                   fontWeight: "700",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.4)",
+                  boxShadow: "0 2px 6px rgba(138, 107, 46, 0.3)",
                 }}
               >
                 {unreadCount}
@@ -203,15 +195,14 @@ export default function AdminTopbar({ onOpenMobile }) {
             <div
               style={{
                 position: "absolute",
-                top: "46px",
+                top: "52px",
                 right: 0,
-                width: "320px",
-                maxWidth: "calc(100vw - 32px)",
-                backgroundColor: "#0f1626",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
+                width: "min(340px, calc(100vw - 32px))",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #E8E2D4",
                 borderRadius: "16px",
-                boxShadow: "0 16px 40px rgba(0, 0, 0, 0.65)",
-                padding: "14px",
+                boxShadow: "0 16px 40px rgba(43, 45, 42, 0.12)",
+                padding: "16px",
                 zIndex: 50,
                 display: "flex",
                 flexDirection: "column",
@@ -223,11 +214,11 @@ export default function AdminTopbar({ onOpenMobile }) {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderBottom: "1px solid #E8E2D4",
                   paddingBottom: "10px",
                 }}
               >
-                <span style={{ fontSize: "13px", fontWeight: "600", color: "#eceaf5" }}>
+                <span style={{ fontSize: "13px", fontWeight: "700", color: "#2B2D2A" }}>
                   Operations Alerts
                 </span>
                 <Link
@@ -235,7 +226,7 @@ export default function AdminTopbar({ onOpenMobile }) {
                   onClick={() => setShowNotifMenu(false)}
                   style={{
                     fontSize: "12px",
-                    color: "var(--gold)",
+                    color: "#8A6B2E",
                     fontWeight: "600",
                     textDecoration: "none",
                   }}
@@ -245,7 +236,7 @@ export default function AdminTopbar({ onOpenMobile }) {
               </div>
 
               {recentUnread.length === 0 ? (
-                <div style={{ padding: "16px 8px", textAlign: "center", fontSize: "13px", color: "#a3acc2" }}>
+                <div style={{ padding: "16px 8px", textAlign: "center", fontSize: "13px", color: "#5A584F" }}>
                   You are all caught up
                 </div>
               ) : (
@@ -257,18 +248,19 @@ export default function AdminTopbar({ onOpenMobile }) {
                       setShowNotifMenu(false);
                     }}
                     style={{
-                      padding: "10px",
+                      padding: "10px 12px",
                       borderRadius: "10px",
-                      backgroundColor: "rgba(255, 255, 255, 0.04)",
+                      backgroundColor: "#F3EFE6",
+                      border: "1px solid #E8E2D4",
                       fontSize: "12px",
                       cursor: "pointer",
                       transition: "background 0.15s ease",
                     }}
                   >
-                    <div style={{ fontWeight: "600", color: "#eceaf5", marginBottom: "2px" }}>
+                    <div style={{ fontWeight: "600", color: "#2B2D2A", marginBottom: "2px" }}>
                       {notif.title || "Alert"}
                     </div>
-                    <div style={{ color: "#a3acc2", lineHeight: 1.4 }}>{notif.message}</div>
+                    <div style={{ color: "#5A584F", lineHeight: 1.4 }}>{notif.message}</div>
                   </div>
                 ))
               )}
@@ -279,12 +271,12 @@ export default function AdminTopbar({ onOpenMobile }) {
         {/* User Avatar with SA initial */}
         <div
           style={{
-            width: "36px",
-            height: "36px",
+            width: "38px",
+            height: "38px",
             borderRadius: "50%",
-            backgroundColor: "rgba(255, 188, 0, 0.14)",
-            border: "1.5px solid rgba(255, 188, 0, 0.40)",
-            color: "var(--gold)",
+            backgroundColor: "#F3EFE6",
+            border: "1.5px solid #E8E2D4",
+            color: "#8A6B2E",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -306,10 +298,7 @@ export default function AdminTopbar({ onOpenMobile }) {
           .admin-hamburger-btn {
             display: flex !important;
           }
-          .admin-mobile-title-wrap {
-            display: block !important;
-          }
-          .admin-desktop-desk-chip {
+          .admin-desktop-subtitle {
             display: none !important;
           }
         }
@@ -322,4 +311,3 @@ export default function AdminTopbar({ onOpenMobile }) {
     </header>
   );
 }
-

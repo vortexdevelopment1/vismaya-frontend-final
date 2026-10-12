@@ -43,10 +43,10 @@ export default function RecruiterTopbar({ onOpenMobile }) {
     <header
       style={{
         height: "var(--topbar-height)",
-        backgroundColor: "rgba(250, 249, 246, 0.95)",
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        borderBottom: "1px solid var(--border-color, #E4E1D9)",
+        borderBottom: "1px solid #E8E2D4",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -62,12 +62,13 @@ export default function RecruiterTopbar({ onOpenMobile }) {
           onClick={onOpenMobile}
           aria-label="Open navigation drawer"
           style={{
-            color: "#eceaf5",
-            width: "40px",
-            height: "40px",
+            color: "#2B2D2A",
+            width: "44px",
+            height: "44px",
             borderRadius: "10px",
-            backgroundColor: "rgba(255, 255, 255, 0.06)",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
+            backgroundColor: "#F3EFE6",
+            border: "1px solid #E8E2D4",
+            display: "none",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
@@ -78,31 +79,34 @@ export default function RecruiterTopbar({ onOpenMobile }) {
         </button>
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-          <h1
+          <div
+            role="heading"
+            aria-level={2}
             style={{
-              fontFamily: "var(--font-heading), 'Playfair Display', serif",
-              fontSize: "clamp(16px, 2.5vw, 20px)",
-              lineHeight: "28px",
-              fontWeight: "700",
-              color: "#eceaf5",
+              fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+              fontSize: "clamp(16px, 2vw, 22px)",
+              lineHeight: "26px",
+              fontWeight: 600,
+              color: "#2B2D2A",
               letterSpacing: "-0.015em",
               margin: 0,
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
-              maxWidth: "clamp(160px, 35vw, 400px)",
+              maxWidth: "clamp(130px, 30vw, 360px)",
             }}
           >
             {getPageTitle()}
-          </h1>
-          <span style={{ color: "rgba(255, 255, 255, 0.2)" }} className="topbar-divider">/</span>
+          </div>
+          <span style={{ color: "#E8E2D4", fontWeight: 300 }} className="topbar-divider">/</span>
           <span
             style={{
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
               fontSize: "12px",
-              color: "var(--gold)",
-              fontWeight: "700",
+              color: "#5A584F",
+              fontWeight: "600",
               textTransform: "uppercase",
-              letterSpacing: "0.08em",
+              letterSpacing: "0.10em",
               whiteSpace: "nowrap",
             }}
             className="topbar-subtitle"
@@ -114,32 +118,34 @@ export default function RecruiterTopbar({ onOpenMobile }) {
 
       {/* Right Controls */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <Link
-          href="/recruiter/opportunities/new"
-          className="recruiter-topbar-post-btn"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            height: "40px",
-            minHeight: "40px",
-            padding: "0 14px",
-            borderRadius: "10px",
-            background: "linear-gradient(135deg, #d4af37 0%, #f3e5ab 100%)",
-            color: "#0c1222",
-            fontSize: "13px",
-            fontWeight: "600",
-            fontFamily: "var(--font-sans), Inter, sans-serif",
-            textDecoration: "none",
-            whiteSpace: "nowrap",
-            flexShrink: 0,
-            boxShadow: "0 2px 8px rgba(212, 175, 55, 0.25)",
-            transition: "all 0.18s ease",
-          }}
-        >
-          <PlusCircle size={15} />
-          <span>Submit opportunity</span>
-        </Link>
+        {!pathname?.startsWith("/recruiter/opportunities/new") && pathname !== "/recruiter/opportunities" && (
+          <Link
+            href="/recruiter/opportunities/new"
+            className="recruiter-topbar-post-btn"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              height: "42px",
+              minHeight: "42px",
+              padding: "0 18px",
+              borderRadius: "8px",
+              backgroundColor: "#8A6B2E",
+              color: "#FFFFFF",
+              fontSize: "13.5px",
+              fontWeight: "600",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
+              transition: "all 0.18s ease",
+            }}
+          >
+            <PlusCircle size={16} />
+            <span>Submit opportunity</span>
+          </Link>
+        )}
 
         {/* Notifications Dropdown */}
         <div style={{ position: "relative" }}>
@@ -152,9 +158,9 @@ export default function RecruiterTopbar({ onOpenMobile }) {
               width: "44px",
               height: "44px",
               borderRadius: "10px",
-              backgroundColor: showNotifMenu ? "rgba(255, 188, 0, 0.14)" : "rgba(255, 255, 255, 0.06)",
-              border: `1px solid ${showNotifMenu ? "rgba(255, 188, 0, 0.35)" : "rgba(255, 255, 255, 0.12)"}`,
-              color: showNotifMenu ? "var(--gold)" : "#eceaf5",
+              backgroundColor: showNotifMenu ? "#F3EFE6" : "#FFFFFF",
+              border: `1px solid ${showNotifMenu ? "#8A6B2E" : "#E8E2D4"}`,
+              color: showNotifMenu ? "#8A6B2E" : "#5A584F",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -173,14 +179,14 @@ export default function RecruiterTopbar({ onOpenMobile }) {
                   width: "18px",
                   height: "18px",
                   borderRadius: "50%",
-                  backgroundColor: "var(--gold)",
-                  color: "#1a1300",
+                  backgroundColor: "#8A6B2E",
+                  color: "#FFFFFF",
                   fontSize: "10px",
-                  fontWeight: "900",
+                  fontWeight: "700",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.4)",
+                  boxShadow: "0 2px 6px rgba(138, 107, 46, 0.3)",
                 }}
               >
                 {unreadCount}
@@ -195,10 +201,10 @@ export default function RecruiterTopbar({ onOpenMobile }) {
                 top: "52px",
                 right: 0,
                 width: "min(320px, calc(100vw - 32px))",
-                backgroundColor: "#0f1626",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #E8E2D4",
                 borderRadius: "16px",
-                boxShadow: "0 16px 40px rgba(0, 0, 0, 0.65)",
+                boxShadow: "0 16px 40px rgba(43, 45, 42, 0.12)",
                 padding: "14px",
                 zIndex: 50,
                 display: "flex",
@@ -206,19 +212,19 @@ export default function RecruiterTopbar({ onOpenMobile }) {
                 gap: "10px",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "10px" }}>
-                <span style={{ fontSize: "13px", fontWeight: "700", color: "#eceaf5" }}>Studio Alerts</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E8E2D4", paddingBottom: "10px" }}>
+                <span style={{ fontSize: "13px", fontWeight: "700", color: "#2B2D2A" }}>Studio Alerts</span>
                 <Link
                   href="/recruiter/notifications"
                   onClick={() => setShowNotifMenu(false)}
-                  style={{ fontSize: "11px", color: "var(--gold)", fontWeight: "700", textDecoration: "none" }}
+                  style={{ fontSize: "11px", color: "#8A6B2E", fontWeight: "700", textDecoration: "none" }}
                 >
                   View All
                 </Link>
               </div>
 
               {recentUnread.length === 0 ? (
-                <div style={{ padding: "16px 8px", textAlign: "center", fontSize: "13px", color: "#a3acc2" }}>
+                <div style={{ padding: "16px 8px", textAlign: "center", fontSize: "13px", color: "#5A584F" }}>
                   No new notifications
                 </div>
               ) : (
@@ -232,13 +238,14 @@ export default function RecruiterTopbar({ onOpenMobile }) {
                     style={{
                       padding: "10px",
                       borderRadius: "10px",
-                      backgroundColor: "rgba(255, 255, 255, 0.04)",
+                      backgroundColor: "#F3EFE6",
                       fontSize: "12px",
                       cursor: "pointer",
+                      border: "1px solid #E8E2D4",
                     }}
                   >
-                    <div style={{ fontWeight: "700", color: "#eceaf5", marginBottom: "2px" }}>{notif.title || notif.message}</div>
-                    <div style={{ color: "#a3acc2", lineHeight: 1.4 }}>{notif.message}</div>
+                    <div style={{ fontWeight: "700", color: "#2B2D2A", marginBottom: "2px" }}>{notif.title || notif.message}</div>
+                    <div style={{ color: "#5A584F", lineHeight: 1.4 }}>{notif.message}</div>
                   </div>
                 ))
               )}
@@ -256,15 +263,16 @@ export default function RecruiterTopbar({ onOpenMobile }) {
             minWidth: "44px",
             minHeight: "44px",
             borderRadius: "10px",
-            backgroundColor: "rgba(255, 188, 0, 0.12)",
-            border: "1px solid rgba(255, 188, 0, 0.3)",
-            color: "var(--gold)",
+            backgroundColor: "#F3EFE6",
+            border: "1px solid #E8E2D4",
+            color: "#8A6B2E",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontWeight: "800",
-            fontSize: "14px",
+            fontWeight: "700",
+            fontSize: "15px",
             textDecoration: "none",
+            transition: "all 0.18s ease",
           }}
         >
           {(companyProfile.name || "Z").charAt(0).toUpperCase()}
@@ -292,6 +300,11 @@ export default function RecruiterTopbar({ onOpenMobile }) {
             justify-content: center !important;
           }
           .recruiter-topbar-post-btn span {
+            display: none !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .recruiter-topbar-post-btn {
             display: none !important;
           }
         }

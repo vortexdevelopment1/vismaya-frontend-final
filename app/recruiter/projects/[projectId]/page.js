@@ -335,34 +335,34 @@ export default function ProjectDetailsPage({ params: paramsPromise }) {
               gap: "18px",
             }}
           >
-            <h3 style={{ fontSize: "1rem", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+            <h3 style={{ fontSize: "1rem", fontWeight: "700", color: "#2B2D2A", margin: 0, fontFamily: "Playfair Display, Georgia, serif" }}>
               Production summary
             </h3>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", color: "#a3acc2" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
                 <span>Production type</span>
-                <strong style={{ color: "#eceaf5" }}>{project.type}</strong>
+                <strong style={{ color: "#2B2D2A" }}>{project.type}</strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", color: "#a3acc2" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
                 <span>Total briefs posted</span>
-                <strong style={{ color: "#eceaf5" }}>{projOpportunities.length}</strong>
+                <strong style={{ color: "#2B2D2A" }}>{projOpportunities.length}</strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", color: "#a3acc2" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
                 <span>Active live briefs</span>
-                <strong style={{ color: "var(--gold)" }}>
+                <strong style={{ color: "#8A6B2E" }}>
                   {projOpportunities.filter((o) => o.status === "Published").length}
                 </strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", color: "#a3acc2" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
                 <span>Total applicants</span>
-                <strong style={{ color: "#34d399" }}>
+                <strong style={{ color: "#6E5420" }}>
                   {applications.filter((a) => projOpportunities.some((o) => o.id === a.opportunityId)).length}
                 </strong>
               </div>
             </div>
 
-            <hr style={{ border: "none", borderTop: "1px solid rgba(255, 255, 255, 0.08)", margin: "4px 0" }} />
+            <hr style={{ border: "none", borderTop: "1px solid #E8E2D4", margin: "4px 0" }} />
 
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <Link

@@ -20,42 +20,36 @@ export default function CastingCallCard({ call, onViewDetails, onApply }) {
   const isApplied = applications.some((app) => app.callId === call.id);
   const isUrgent = call.daysLeft <= 3;
 
-  const gradients = [
-    "linear-gradient(135deg, #070b12 0%, #0f1626 50%, rgba(255, 188, 0, 0.15) 100%)",
-    "linear-gradient(155deg, #0a0f19 0%, #141c2e 50%, rgba(255, 188, 0, 0.18) 100%)",
-    "linear-gradient(175deg, #070b12 0%, #10192b 50%, rgba(255, 213, 74, 0.15) 100%)",
-  ];
-  const charCode = (call.id || "1").charCodeAt(0) || 0;
-  const gradient = gradients[charCode % gradients.length];
-
   return (
     <div
       className="card-surface"
       style={{
-        border: `1px solid ${isUrgent ? "rgba(255, 107, 107, 0.40)" : "rgba(255, 255, 255, 0.12)"}`,
-        borderRadius: "16px",
-        backgroundColor: "rgba(255, 255, 255, 0.07)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+        border: "1px solid var(--border-color, #E4E1D9)",
+        borderRadius: "var(--radius-card, 6px)",
+        backgroundColor: "var(--bg-surface, #FFFFFF)",
+        boxShadow: "var(--card-shadow, 0 1px 3px rgba(41, 44, 41, 0.05))",
         display: "flex",
         flexDirection: "column",
+        height: "100%",
         position: "relative",
         overflow: "hidden",
+        transition: "transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease",
       }}
     >
-      {/* Gradient Thumbnail */}
+      {/* Header Band (Fixed 100px Height) */}
       <div
         style={{
-          height: "120px",
+          height: "100px",
+          minHeight: "100px",
+          flexShrink: 0,
           width: "100%",
-          background: gradient,
+          backgroundColor: "#F3EFE6",
           position: "relative",
           padding: "12px 14px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          borderBottom: "1px solid #E8E2D4",
         }}
       >
         {/* Top Badges Row */}
@@ -63,15 +57,16 @@ export default function CastingCallCard({ call, onViewDetails, onApply }) {
           <span
             style={{
               fontSize: "10px",
-              fontWeight: "800",
+              fontWeight: "700",
               padding: "4px 10px",
-              borderRadius: "999px",
-              backgroundColor: "rgba(255, 255, 255, 0.10)",
-              backdropFilter: "blur(6px)",
-              color: "#eceaf5",
-              border: "1px solid rgba(255, 255, 255, 0.18)",
+              borderRadius: "4px",
+              backgroundColor: "rgba(255, 255, 255, 0.12)",
+              color: "#FAF9F6",
+              backgroundColor: "rgba(201, 165, 92, 0.18)",
+              border: "1px solid rgba(138, 107, 46, 0.22)",
+              color: "#6E5420",
               textTransform: "uppercase",
-              letterSpacing: "0.06em",
+              letterSpacing: "0.08em",
             }}
           >
             {call.category}
@@ -82,19 +77,20 @@ export default function CastingCallCard({ call, onViewDetails, onApply }) {
               <span
                 style={{
                   fontSize: "10px",
-                  fontWeight: "800",
+                  fontWeight: "700",
                   padding: "3px 10px",
-                  borderRadius: "999px",
-                  backgroundColor: "rgba(255, 188, 0, 0.18)",
-                  border: "1px solid rgba(255, 188, 0, 0.35)",
-                  color: "var(--gold)",
+                  borderRadius: "4px",
+                  backgroundColor: "rgba(138, 107, 46, 0.12)",
+                  border: "1px solid rgba(138, 107, 46, 0.28)",
+                  color: "#6E5420",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "4px",
                   textTransform: "uppercase",
+                  letterSpacing: "0.06em",
                 }}
               >
-                <Sparkles size={11} />
+                <Sparkles size={11} style={{ color: "#8A6B2E" }} />
                 Featured
               </span>
             )}
@@ -103,16 +99,17 @@ export default function CastingCallCard({ call, onViewDetails, onApply }) {
               <span
                 style={{
                   fontSize: "10px",
-                  fontWeight: "800",
+                  fontWeight: "700",
                   padding: "3px 10px",
-                  borderRadius: "999px",
-                  backgroundColor: "rgba(255, 107, 107, 0.22)",
-                  color: "#ff6b6b",
-                  border: "1px solid rgba(255, 107, 107, 0.45)",
+                  borderRadius: "4px",
+                  backgroundColor: "rgba(138, 107, 46, 0.12)",
+                  color: "#6E5420",
+                  border: "1px solid rgba(138, 107, 46, 0.28)",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "4px",
                   textTransform: "uppercase",
+                  letterSpacing: "0.06em",
                 }}
               >
                 <Clock size={11} />
@@ -131,37 +128,56 @@ export default function CastingCallCard({ call, onViewDetails, onApply }) {
             position: "relative",
             zIndex: 2,
             fontSize: "12px",
-            color: "#eceaf5",
+            color: "#5A584F",
             fontWeight: "600",
           }}
         >
           <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <MapPin size={13} style={{ color: "var(--gold)" }} />
+            <MapPin size={13} style={{ color: "#8A6B2E" }} />
             {call.location}
           </span>
           <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <Calendar size={12} style={{ color: "var(--gold)" }} />
+            <Calendar size={12} style={{ color: "#8A6B2E" }} />
             {call.deadline}
           </span>
         </div>
       </div>
 
       {/* Card Content */}
-      <div style={{ padding: "18px", display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
-        <div>
+      <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <h3
             style={{
-              fontFamily: "var(--font-heading), 'Playfair Display', serif",
+              fontFamily: "Georgia, serif",
               fontSize: "18px",
               fontWeight: "700",
-              color: "#eceaf5",
+              color: "var(--text-primary, #292C29)",
               margin: 0,
-              lineHeight: 1.35,
+              lineHeight: "1.35",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              minHeight: "2.7em",
+              overflowWrap: "anywhere",
+              wordBreak: "break-word",
             }}
           >
             {call.title}
           </h3>
-          <span style={{ fontSize: "12px", color: "#a3acc2", fontWeight: "500", marginTop: "2px", display: "block" }}>
+          <span
+            style={{
+              fontSize: "12px",
+              color: "var(--text-secondary, #5A5C53)",
+              fontWeight: "500",
+              display: "block",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              minHeight: "1.4em",
+              lineHeight: "1.4",
+            }}
+          >
             {call.productionHouse}
           </span>
         </div>
@@ -169,13 +185,16 @@ export default function CastingCallCard({ call, onViewDetails, onApply }) {
         <p
           style={{
             fontSize: "13px",
-            color: "#a3acc2",
-            lineHeight: 1.5,
+            color: "var(--text-secondary, #5A5C53)",
+            lineHeight: "1.5",
             margin: 0,
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
+            minHeight: "3em",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
           }}
         >
           {call.description}
@@ -184,23 +203,24 @@ export default function CastingCallCard({ call, onViewDetails, onApply }) {
         {/* Roles Strip */}
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.04)",
+            backgroundColor: "var(--bg-alt, #F0EEE7)",
             padding: "8px 12px",
-            borderRadius: "10px",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "4px",
+            border: "1px solid var(--border-color, #E4E1D9)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             fontSize: "12px",
-            color: "var(--gold)",
+            color: "var(--gold, #9B7A3F)",
             fontWeight: "700",
+            minHeight: "42px",
           }}
         >
           <span>{call.budget || "Competitive Pay"}</span>
-          <span style={{ color: "#a3acc2", fontWeight: "500" }}>{call.openRoles || "1"} Roles</span>
+          <span style={{ color: "var(--text-secondary, #5A5C53)", fontWeight: "500" }}>{call.openRoles || "1"} Roles</span>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons Pinned to Bottom */}
         <div
           style={{
             marginTop: "auto",
@@ -213,7 +233,7 @@ export default function CastingCallCard({ call, onViewDetails, onApply }) {
           <button
             onClick={() => (onViewDetails ? onViewDetails(call) : null)}
             className="btn-secondary btn-dash"
-            style={{ flex: 1, justifyContent: "center", minHeight: "44px" }}
+            style={{ flex: 1, justifyContent: "center", minHeight: "40px", borderRadius: "4px" }}
           >
             <span>Details</span>
           </button>
@@ -223,11 +243,11 @@ export default function CastingCallCard({ call, onViewDetails, onApply }) {
               disabled
               style={{
                 flex: 1,
-                minHeight: "44px",
-                borderRadius: "12px",
-                backgroundColor: "rgba(52, 211, 153, 0.16)",
-                color: "var(--status-green)",
-                border: "1px solid rgba(52, 211, 153, 0.35)",
+                minHeight: "40px",
+                borderRadius: "4px",
+                backgroundColor: "var(--bg-alt, #F0EEE7)",
+                color: "var(--text-primary, #292C29)",
+                border: "1px solid var(--border-color, #E4E1D9)",
                 fontWeight: "700",
                 fontSize: "11px",
                 display: "inline-flex",
@@ -238,14 +258,14 @@ export default function CastingCallCard({ call, onViewDetails, onApply }) {
                 textTransform: "uppercase",
               }}
             >
-              <CheckCircle2 size={13} />
+              <CheckCircle2 size={13} style={{ color: "var(--gold, #9B7A3F)" }} />
               <span>Applied</span>
             </button>
           ) : (
             <button
               onClick={() => (onApply ? onApply(call) : null)}
               className="btn-primary btn-dash"
-              style={{ flex: 1, justifyContent: "center", minHeight: "44px" }}
+              style={{ flex: 1, justifyContent: "center", minHeight: "40px", borderRadius: "4px" }}
             >
               <span>Apply</span>
               <ArrowRight size={13} />

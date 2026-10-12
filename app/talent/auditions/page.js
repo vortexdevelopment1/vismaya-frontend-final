@@ -139,25 +139,24 @@ export default function TalentAuditionsPage() {
       <div
         className="card-surface"
         style={{
-          background: "linear-gradient(135deg, rgba(255, 188, 0, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)",
-          border: "1px solid rgba(255, 188, 0, 0.25)",
-          borderRadius: "16px",
+          backgroundColor: "#F3EFE6",
+          border: "1px solid #E8E2D4",
+          borderRadius: "14px",
           padding: "18px 24px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
           gap: "14px",
-          boxShadow: "var(--shadow-card)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <ShieldCheck size={24} style={{ color: "var(--gold)", flexShrink: 0 }} />
+          <ShieldCheck size={24} style={{ color: "#8A6B2E", flexShrink: 0 }} />
           <div>
-            <span style={{ fontSize: "0.925rem", fontWeight: "700", color: "var(--gold)", display: "block" }}>
+            <span style={{ fontSize: "14px", fontWeight: "700", color: "#2B2D2A", display: "block", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
               Your self-tape is sent through Vismaya
             </span>
-            <span style={{ fontSize: "0.825rem", color: "var(--text-secondary)" }}>
+            <span style={{ fontSize: "13px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
               All auditions and video callbacks are reviewed and verified by Vismaya before relay to casting teams to guarantee artist privacy.
             </span>
           </div>
@@ -165,8 +164,19 @@ export default function TalentAuditionsPage() {
 
         <Link
           href="/talent/portfolio"
-          className="btn-secondary"
-          style={{ fontSize: "0.8rem", padding: "8px 16px", borderRadius: "12px" }}
+          style={{
+            fontSize: "13px",
+            fontWeight: 600,
+            padding: "8px 16px",
+            borderRadius: "10px",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #8A6B2E",
+            color: "#8A6B2E",
+            textDecoration: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
+          }}
         >
           <span>View Media Portfolio</span>
         </Link>
@@ -176,7 +186,7 @@ export default function TalentAuditionsPage() {
       {!isHydrated ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {[1, 2].map((i) => (
-            <div key={i} className="card-surface" style={{ padding: "28px", height: "240px", borderRadius: "16px" }}>
+            <div key={i} className="card-surface" style={{ padding: "28px", height: "240px", borderRadius: "18px", backgroundColor: "#FFFFFF", border: "1px solid #E8E2D4" }}>
               <Skeleton width="40%" height="24px" />
               <Skeleton width="80%" height="16px" style={{ marginTop: "12px" }} />
               <Skeleton width="60%" height="16px" style={{ marginTop: "8px" }} />
@@ -208,18 +218,14 @@ export default function TalentAuditionsPage() {
                 key={aud.id}
                 className="card-surface"
                 style={{
-                  backgroundColor: "var(--bg-glass)",
-                  backdropFilter: "blur(16px)",
-                  WebkitBackdropFilter: "blur(16px)",
-                  border: isPendingUpload ? "1px solid rgba(255, 188, 0, 0.4)" : "1px solid var(--border-glass)",
-                  borderRadius: "16px",
-                  padding: "clamp(16px, 3vw, 26px) clamp(16px, 3.5vw, 28px)",
+                  backgroundColor: "#FFFFFF",
+                  border: isPendingUpload ? "1.5px solid #8A6B2E" : "1px solid #E8E2D4",
+                  borderRadius: "18px",
+                  padding: "clamp(18px, 3vw, 26px) clamp(18px, 3.5vw, 28px)",
                   display: "flex",
                   flexDirection: "column",
                   gap: "20px",
-                  boxShadow: isPendingUpload
-                    ? "0 8px 30px rgba(0, 0, 0, 0.45)"
-                    : "var(--shadow-card)",
+                  boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
                   position: "relative",
                   overflow: "hidden",
                 }}
@@ -233,7 +239,7 @@ export default function TalentAuditionsPage() {
                       left: 0,
                       right: 0,
                       height: "4px",
-                      background: "linear-gradient(90deg, #ffd54a 0%, #ffbc00 100%)",
+                      background: "var(--gold)",
                     }}
                   />
                 )}
@@ -247,10 +253,10 @@ export default function TalentAuditionsPage() {
                           fontSize: "0.725rem",
                           fontWeight: "700",
                           padding: "3px 10px",
-                          borderRadius: "8px",
-                          backgroundColor: "rgba(255, 188, 0, 0.12)",
+                          borderRadius: "4px",
+                          backgroundColor: "var(--bg-alt)",
                           color: "var(--gold)",
-                          border: "1px solid rgba(255, 188, 0, 0.25)",
+                          border: "1px solid var(--border-color)",
                           textTransform: "uppercase",
                         }}
                       >
@@ -261,7 +267,7 @@ export default function TalentAuditionsPage() {
                       </span>
                     </div>
 
-                    <h3 style={{ fontSize: "clamp(1.1rem, 2.5vw, 1.25rem)", fontWeight: "700", color: "var(--text-primary)", margin: "4px 0 0 0", overflowWrap: "anywhere" }}>
+                    <h3 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.1rem, 2.5vw, 1.25rem)", fontWeight: "700", color: "var(--text-primary)", margin: "4px 0 0 0", overflowWrap: "anywhere" }}>
                       {opp?.title || "Opportunity Audition"}
                     </h3>
 
@@ -283,9 +289,9 @@ export default function TalentAuditionsPage() {
                 {/* Audition Note / Script Sides Instructions */}
                 <div
                   style={{
-                    backgroundColor: "rgba(255, 255, 255, 0.04)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                    borderRadius: "12px",
+                    backgroundColor: "var(--bg-alt)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "6px",
                     padding: "16px 20px",
                     display: "flex",
                     flexDirection: "column",
@@ -307,18 +313,18 @@ export default function TalentAuditionsPage() {
                 {isReceived && (
                   <div
                     style={{
-                      backgroundColor: "rgba(52, 211, 153, 0.12)",
-                      border: "1px solid rgba(52, 211, 153, 0.3)",
-                      borderRadius: "12px",
+                      backgroundColor: "#EFF2EC",
+                      border: "1px solid #D1DCC8",
+                      borderRadius: "6px",
                       padding: "14px 18px",
                       display: "flex",
                       alignItems: "center",
                       gap: "12px",
                     }}
                   >
-                    <CheckCircle2 size={20} style={{ color: "var(--success)", flexShrink: 0 }} />
+                    <CheckCircle2 size={20} style={{ color: "var(--gold)", flexShrink: 0 }} />
                     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--success)" }}>
+                      <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>
                         Self-tape Received by Vismaya Desk
                       </span>
                       <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", overflowWrap: "anywhere" }}>
@@ -331,9 +337,9 @@ export default function TalentAuditionsPage() {
                 {isForwarded && (
                   <div
                     style={{
-                      backgroundColor: "rgba(255, 188, 0, 0.08)",
-                      border: "1px solid rgba(255, 188, 0, 0.25)",
-                      borderRadius: "12px",
+                      backgroundColor: "var(--bg-alt)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "6px",
                       padding: "14px 18px",
                       display: "flex",
                       alignItems: "center",
@@ -373,9 +379,9 @@ export default function TalentAuditionsPage() {
                 {(isPendingUpload || isReceived) && (
                   <div
                     style={{
-                      backgroundColor: "rgba(255, 255, 255, 0.03)",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
-                      borderRadius: "14px",
+                      backgroundColor: "var(--bg-alt)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "6px",
                       padding: "clamp(16px, 2.5vw, 20px) clamp(16px, 3vw, 22px)",
                       display: "flex",
                       flexDirection: "column",
@@ -399,9 +405,9 @@ export default function TalentAuditionsPage() {
                     {/* File Picker Strip */}
                     <div
                       style={{
-                        backgroundColor: "rgba(255, 255, 255, 0.04)",
-                        border: "1px dashed rgba(255, 188, 0, 0.35)",
-                        borderRadius: "12px",
+                        backgroundColor: "var(--bg-surface)",
+                        border: "1px dashed var(--gold)",
+                        borderRadius: "6px",
                         padding: "16px",
                         display: "flex",
                         alignItems: "center",
@@ -416,9 +422,9 @@ export default function TalentAuditionsPage() {
                           style={{
                             width: "42px",
                             height: "42px",
-                            borderRadius: "12px",
-                            backgroundColor: "rgba(255, 255, 255, 0.08)",
-                            border: "1px solid rgba(255, 255, 255, 0.12)",
+                            borderRadius: "6px",
+                            backgroundColor: "var(--bg-alt)",
+                            border: "1px solid var(--border-color)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -440,11 +446,11 @@ export default function TalentAuditionsPage() {
 
                       <label
                         style={{
-                          padding: "10px 20px",
-                          minHeight: "44px",
-                          borderRadius: "12px",
-                          backgroundColor: "rgba(255, 255, 255, 0.08)",
-                          border: "1px solid rgba(255, 255, 255, 0.16)",
+                          padding: "8px 16px",
+                          minHeight: "38px",
+                          borderRadius: "4px",
+                          backgroundColor: "var(--bg-alt)",
+                          border: "1px solid var(--border-color)",
                           color: "var(--text-primary)",
                           fontSize: "0.825rem",
                           fontWeight: "700",
@@ -503,9 +509,9 @@ export default function TalentAuditionsPage() {
                         style={{
                           width: "100%",
                           padding: "10px 14px",
-                          backgroundColor: "rgba(255, 255, 255, 0.06)",
-                          border: "1px solid rgba(255, 255, 255, 0.14)",
-                          borderRadius: "12px",
+                          backgroundColor: "var(--bg-surface)",
+                          border: "1px solid var(--border-color)",
+                          borderRadius: "4px",
                           color: "var(--text-primary)",
                           fontSize: "0.875rem",
                           outline: "none",
@@ -525,10 +531,10 @@ export default function TalentAuditionsPage() {
                         disabled={isSubmittingMap[aud.id]}
                         className="btn-primary"
                         style={{
-                          padding: "10px 24px",
-                          minHeight: "44px",
-                          fontSize: "0.875rem",
-                          borderRadius: "12px",
+                          padding: "8px 20px",
+                          minHeight: "38px",
+                          fontSize: "0.85rem",
+                          borderRadius: "4px",
                           display: "inline-flex",
                           alignItems: "center",
                           gap: "8px",

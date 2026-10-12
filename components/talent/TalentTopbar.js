@@ -31,37 +31,51 @@ export default function TalentTopbar({ onOpenMobile }) {
 
   const recentUnread = notifications.filter((n) => !n.read).slice(0, 4);
 
+  const getInitials = (name) => {
+    if (!name) return "AS";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <header
       style={{
-        backgroundColor: "rgba(250, 249, 246, 0.95)",
+        height: "var(--topbar-height, 72px)",
+        minHeight: "72px",
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        borderBottom: "1px solid var(--border-color, #E4E1D9)",
+        borderBottom: "1px solid #E8E2D4",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 clamp(16px, 3vw, 32px)",
+        paddingInline: "clamp(16px, 2.5vw, 40px)",
         position: "sticky",
         top: 0,
-        zIndex: 30,
+        zIndex: 40,
         width: "100%",
         boxSizing: "border-box",
       }}
       className="talent-topbar"
     >
-      {/* Left: Mobile Toggle & Title */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+      {/* Left: Mobile hamburger & title, Desktop Single Title + Muted Subtitle */}
+      <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0 }}>
+        {/* Mobile Hamburger */}
         <button
           onClick={onOpenMobile}
           aria-label="Open navigation drawer"
           style={{
-            color: "#eceaf5",
+            color: "#2B2D2A",
             width: "44px",
             height: "44px",
-            borderRadius: "12px",
-            backgroundColor: "rgba(255, 255, 255, 0.06)",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "10px",
+            backgroundColor: "#F3EFE6",
+            border: "1px solid #E8E2D4",
+            display: "none",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
@@ -72,16 +86,17 @@ export default function TalentTopbar({ onOpenMobile }) {
           <Menu size={20} />
         </button>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+        {/* Page Title & Subtitle */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0 }}>
           <h1
             style={{
-              fontFamily: "var(--font-heading), 'Playfair Display', serif",
-              fontSize: "clamp(16px, 3vw, 20px)",
-              lineHeight: 1.3,
-              fontWeight: "700",
-              color: "#eceaf5",
-              letterSpacing: "-0.015em",
+              fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+              fontSize: "22px",
+              lineHeight: "28px",
+              fontWeight: 600,
+              color: "#2B2D2A",
               margin: 0,
+              letterSpacing: "-0.01em",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -89,70 +104,76 @@ export default function TalentTopbar({ onOpenMobile }) {
           >
             {getPageTitle()}
           </h1>
-          <span style={{ color: "rgba(255, 255, 255, 0.2)" }} className="topbar-divider">/</span>
+
           <span
             style={{
-              fontSize: "11px",
-              color: "var(--gold)",
-              fontWeight: "700",
+              fontSize: "12px",
+              letterSpacing: "0.10em",
+              color: "#5A584F",
+              fontWeight: 600,
               textTransform: "uppercase",
-              letterSpacing: "0.08em",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
               whiteSpace: "nowrap",
+              display: "inline-block",
             }}
-            className="topbar-subtitle"
+            className="talent-topbar-subtitle"
           >
-            Vismaya
+            &bull;&nbsp;&nbsp;ARTIST WORKSPACE &bull; VISMAYA TALENT
           </span>
         </div>
       </div>
 
-      {/* Right Controls */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-        {/* Live Board Link (hidden below 768px) */}
+      {/* Right Actions: LIVE BOARD button, Bell & Avatar */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+        {/* Live Opportunities Directory Link */}
         <Link
           href="/opportunities"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Browse Live Public Casting Board"
           style={{
-            fontSize: "12px",
-            fontWeight: "700",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            color: "#a3acc2",
-            textDecoration: "none",
+            height: "40px",
+            padding: "0 16px",
+            borderRadius: "10px",
+            border: "1px solid #E8E2D4",
+            backgroundColor: "#FFFFFF",
+            color: "#5A584F",
+            fontSize: "13px",
+            fontWeight: "600",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
             display: "inline-flex",
             alignItems: "center",
-            gap: "5px",
-            padding: "0 14px",
-            minHeight: "38px",
-            borderRadius: "999px",
-            backgroundColor: "rgba(255, 255, 255, 0.05)",
-            border: "1px solid rgba(255, 255, 255, 0.10)",
-            transition: "all 0.18s ease",
+            gap: "8px",
+            textDecoration: "none",
+            transition: "all 0.16s ease",
+            whiteSpace: "nowrap",
           }}
-          className="public-opps-link"
+          className="talent-live-board-btn"
         >
-          <span>Live Board</span>
-          <ExternalLink size={13} />
+          <span>LIVE BOARD</span>
+          <ExternalLink size={14} style={{ color: "#8A6B2E" }} />
         </Link>
 
-        {/* Notifications Dropdown */}
+        {/* Notifications Bell */}
         <div style={{ position: "relative" }}>
           <button
             onClick={() => setShowNotifMenu(!showNotifMenu)}
-            aria-label="View notifications"
+            aria-label={`View notifications (${unreadCount} unread)`}
             style={{
               width: "44px",
               height: "44px",
-              borderRadius: "12px",
-              backgroundColor: showNotifMenu ? "rgba(255, 188, 0, 0.14)" : "rgba(255, 255, 255, 0.06)",
-              border: `1px solid ${showNotifMenu ? "rgba(255, 188, 0, 0.35)" : "rgba(255, 255, 255, 0.12)"}`,
-              color: showNotifMenu ? "var(--gold)" : "#eceaf5",
+              borderRadius: "10px",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E8E2D4",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              color: "#2B2D2A",
               cursor: "pointer",
               position: "relative",
-              transition: "all 0.18s ease",
+              transition: "all 0.16s ease",
             }}
+            className="talent-bell-btn"
           >
             <Bell size={18} />
             {unreadCount > 0 && (
@@ -161,17 +182,19 @@ export default function TalentTopbar({ onOpenMobile }) {
                   position: "absolute",
                   top: "-4px",
                   right: "-4px",
-                  width: "18px",
-                  height: "18px",
-                  borderRadius: "50%",
-                  backgroundColor: "var(--gold)",
-                  color: "#1a1300",
-                  fontSize: "10px",
-                  fontWeight: "900",
-                  display: "flex",
+                  height: "20px",
+                  minWidth: "20px",
+                  borderRadius: "999px",
+                  backgroundColor: "#8A6B2E",
+                  color: "#FFFFFF",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.4)",
+                  padding: "0 5px",
+                  border: "2px solid #FFFFFF",
+                  boxShadow: "0 2px 6px rgba(138, 107, 46, 0.3)",
                 }}
               >
                 {unreadCount}
@@ -179,115 +202,138 @@ export default function TalentTopbar({ onOpenMobile }) {
             )}
           </button>
 
+          {/* Notifications Dropdown Panel */}
           {showNotifMenu && (
             <div
               style={{
                 position: "absolute",
-                top: "52px",
+                top: "calc(100% + 8px)",
                 right: 0,
-                width: "320px",
+                width: "340px",
                 maxWidth: "calc(100vw - 32px)",
-                backgroundColor: "#0f1626",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #E8E2D4",
                 borderRadius: "16px",
-                boxShadow: "0 16px 40px rgba(0, 0, 0, 0.65)",
-                padding: "14px",
+                boxShadow: "0 12px 28px rgba(43, 45, 42, 0.08)",
+                padding: "16px",
                 zIndex: 50,
                 display: "flex",
                 flexDirection: "column",
-                gap: "10px",
+                gap: "12px",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "10px" }}>
-                <span style={{ fontSize: "13px", fontWeight: "700", color: "#eceaf5" }}>Recent Alerts</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "14px", fontWeight: "700", color: "#2B2D2A", fontFamily: "var(--font-heading), 'Playfair Display', serif" }}>
+                  Notifications
+                </span>
                 <Link
                   href="/talent/notifications"
                   onClick={() => setShowNotifMenu(false)}
-                  style={{ fontSize: "11px", color: "var(--gold)", fontWeight: "700", textDecoration: "none" }}
+                  style={{ fontSize: "12px", color: "#8A6B2E", fontWeight: "600", textDecoration: "none" }}
                 >
-                  View All
+                  View all
                 </Link>
               </div>
 
               {recentUnread.length === 0 ? (
-                <div style={{ padding: "16px 8px", textAlign: "center", fontSize: "13px", color: "#a3acc2" }}>
-                  No new notifications
+                <div style={{ padding: "20px 0", textAlign: "center", color: "#5A584F", fontSize: "13px" }}>
+                  No unread notifications
                 </div>
               ) : (
-                recentUnread.map((notif) => (
-                  <div
-                    key={notif.id}
-                    onClick={() => {
-                      markNotificationRead(notif.id);
-                      setShowNotifMenu(false);
-                    }}
-                    style={{
-                      padding: "10px",
-                      borderRadius: "10px",
-                      backgroundColor: "rgba(255, 255, 255, 0.04)",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div style={{ fontWeight: "700", color: "#eceaf5", marginBottom: "2px" }}>{notif.title}</div>
-                    <div style={{ color: "#a3acc2", lineHeight: 1.4 }}>{notif.message}</div>
-                  </div>
-                ))
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {recentUnread.map((notif) => (
+                    <div
+                      key={notif.id}
+                      onClick={() => markNotificationRead(notif.id)}
+                      style={{
+                        padding: "10px 12px",
+                        borderRadius: "10px",
+                        backgroundColor: "#F3EFE6",
+                        border: "1px solid #E8E2D4",
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "4px",
+                      }}
+                    >
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A" }}>
+                        {notif.title}
+                      </span>
+                      <span style={{ fontSize: "12px", color: "#5A584F" }}>
+                        {notif.message}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
         </div>
 
-        {/* Mobile Avatar Link (shown only on mobile < 1024px) */}
+        {/* User Avatar Circle */}
         <Link
           href="/talent/profile"
-          aria-label="View artist profile"
-          style={{
-            width: "40px",
-            height: "40px",
-            borderRadius: "50%",
-            backgroundImage: `url(${profile.avatar})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            border: "2px solid rgba(255, 188, 0, 0.4)",
-            flexShrink: 0,
-            display: "none",
-          }}
-          className="topbar-mobile-avatar"
-        />
+          title="My Profile"
+          style={{ textDecoration: "none" }}
+        >
+          {profile?.avatar ? (
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                backgroundImage: `url(${profile.avatar})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                border: "1px solid #E8E2D4",
+                backgroundColor: "#F3EFE6",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                backgroundColor: "#F3EFE6",
+                border: "1px solid #E8E2D4",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 700,
+                fontSize: "13px",
+                color: "#8A6B2E",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
+              }}
+            >
+              {getInitials(profile?.personal?.fullName)}
+            </div>
+          )}
+        </Link>
       </div>
 
-      <style jsx>{`
-        .talent-topbar {
-          height: 72px;
-        }
-        .talent-hamburger-btn {
-          display: none;
-        }
-        @media (max-width: 1023.98px) {
-          .talent-topbar {
-            height: 64px !important;
-          }
+      <style jsx global>{`
+        @media (max-width: 1024px) {
           .talent-hamburger-btn {
             display: flex !important;
           }
-          .topbar-mobile-avatar {
-            display: block !important;
-          }
-        }
-        @media (max-width: 767.98px) {
-          .public-opps-link {
-            display: none !important;
-          }
-          .topbar-subtitle,
-          .topbar-divider {
+          .talent-topbar-subtitle {
             display: none !important;
           }
         }
-        :global(.public-opps-link:hover) {
-          color: var(--gold) !important;
-          border-color: rgba(255, 188, 0, 0.35) !important;
-          background-color: rgba(255, 188, 0, 0.10) !important;
+        @media (max-width: 480px) {
+          .talent-live-board-btn {
+            display: none !important;
+          }
+        }
+        .talent-live-board-btn:hover {
+          border-color: #8A6B2E !important;
+          color: #8A6B2E !important;
+          background-color: #F3EFE6 !important;
+        }
+        .talent-bell-btn:hover {
+          background-color: #F3EFE6 !important;
+          border-color: #8A6B2E !important;
         }
       `}</style>
     </header>

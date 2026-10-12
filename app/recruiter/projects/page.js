@@ -368,7 +368,7 @@ export default function OrganizationProjectsPage() {
                 }}
               >
                 {PROJECT_TYPES.map((t) => (
-                  <option key={t} value={t} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+                  <option key={t} value={t}>
                     {t}
                   </option>
                 ))}

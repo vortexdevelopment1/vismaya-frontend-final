@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
+import PasswordInput from "@/components/PasswordInput";
+import GoogleAuthButton from "@/components/GoogleAuthButton";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowRight, User, Mail, Lock, Building2, AlertCircle } from "lucide-react";
 
@@ -17,6 +19,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("Aanya Sharma");
   const [email, setEmail] = useState("aanya.sharma@vismaya.io");
   const [password, setPassword] = useState("secretpassword123");
+  const [confirmPassword, setConfirmPassword] = useState("secretpassword123");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -33,8 +36,13 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !confirmPassword) {
       setFormError("Please fill in all required registration fields.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setFormError("Passwords do not match.");
       return;
     }
 
@@ -75,8 +83,8 @@ export default function RegisterPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          paddingTop: "clamp(120px, 16vh, 160px)",
-          paddingBottom: "clamp(56px, 8vw, 96px)",
+          paddingTop: "clamp(36px, 5vh, 64px)",
+          paddingBottom: "clamp(48px, 6vw, 80px)",
           overflow: "hidden",
         }}
       >
@@ -85,7 +93,7 @@ export default function RegisterPage() {
           style={{
             position: "absolute",
             inset: 0,
-            background: "radial-gradient(60% 60% at 50% 40%, rgba(255, 188, 0, 0.12), transparent 70%), linear-gradient(180deg, #070b12 0%, #0a0f19 100%)",
+            background: "radial-gradient(60% 60% at 50% 40%, rgba(201, 165, 92, 0.08), transparent 70%)",
             pointerEvents: "none",
           }}
         />
@@ -112,17 +120,17 @@ export default function RegisterPage() {
 
               <h1
                 style={{
-                  fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                  fontFamily: "var(--font-heading), Georgia, serif",
                   fontSize: "26px",
-                  fontWeight: 700,
-                  color: "#eceaf5",
+                  fontWeight: 400,
+                  color: "var(--text-primary, #292C29)",
                   marginBottom: "6px",
                   lineHeight: 1.25,
                 }}
               >
                 Create Account
               </h1>
-              <p style={{ fontSize: "14px", color: "#a3acc2", margin: 0, lineHeight: "22px" }}>
+              <p style={{ fontSize: "14px", color: "var(--text-secondary, #777970)", margin: 0, lineHeight: "22px" }}>
                 Connect with verified artists, casting directors, and production studios.
               </p>
             </div>
@@ -134,10 +142,10 @@ export default function RegisterPage() {
                   alignItems: "center",
                   gap: "8px",
                   padding: "12px 14px",
-                  backgroundColor: "rgba(239, 68, 68, 0.15)",
-                  border: "1px solid rgba(239, 68, 68, 0.35)",
-                  borderRadius: "10px",
-                  color: "#fca5a5",
+                  backgroundColor: "var(--danger-bg)",
+                  border: "1px solid var(--danger-border)",
+                  borderRadius: "var(--radius-card, 6px)",
+                  color: "var(--danger)",
                   fontSize: "13px",
                   marginBottom: "16px",
                 }}
@@ -150,7 +158,7 @@ export default function RegisterPage() {
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {/* Role Selection */}
               <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#a3acc2", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   I want to join as:
                 </label>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
@@ -159,17 +167,17 @@ export default function RegisterPage() {
                     onClick={() => handleRoleChange("talent")}
                     style={{
                       height: "44px",
-                      borderRadius: "10px",
-                      border: selectedRole === "talent" ? "1px solid #ffd54a" : "1px solid rgba(255, 255, 255, 0.14)",
-                      background: selectedRole === "talent" ? "linear-gradient(135deg, #ffd54a 0%, #ffbc00 100%)" : "rgba(255, 255, 255, 0.05)",
-                      color: selectedRole === "talent" ? "#1a1300" : "#eceaf5",
+                      borderRadius: "var(--radius-btn, 4px)",
+                      border: selectedRole === "talent" ? "1px solid var(--gold)" : "1px solid var(--border-color)",
+                      background: selectedRole === "talent" ? "var(--gold)" : "var(--bg-alt)",
+                      color: selectedRole === "talent" ? "var(--text-dark-primary, #FAF9F6)" : "var(--text-primary, #292C29)",
                       fontSize: "12px",
-                      fontWeight: "800",
+                      fontWeight: "600",
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
                       cursor: "pointer",
                       transition: "all var(--transition)",
-                      boxShadow: selectedRole === "talent" ? "0 4px 14px rgba(255, 188, 0, 0.35)" : "none",
+                      boxShadow: selectedRole === "talent" ? "var(--gold-glow)" : "none",
                     }}
                   >
                     Talent / Artist
@@ -179,17 +187,17 @@ export default function RegisterPage() {
                     onClick={() => handleRoleChange("organization")}
                     style={{
                       height: "44px",
-                      borderRadius: "10px",
-                      border: selectedRole === "organization" ? "1px solid #ffd54a" : "1px solid rgba(255, 255, 255, 0.14)",
-                      background: selectedRole === "organization" ? "linear-gradient(135deg, #ffd54a 0%, #ffbc00 100%)" : "rgba(255, 255, 255, 0.05)",
-                      color: selectedRole === "organization" ? "#1a1300" : "#eceaf5",
+                      borderRadius: "var(--radius-btn, 4px)",
+                      border: selectedRole === "organization" ? "1px solid var(--gold)" : "1px solid var(--border-color)",
+                      background: selectedRole === "organization" ? "var(--gold)" : "var(--bg-alt)",
+                      color: selectedRole === "organization" ? "var(--text-dark-primary, #FAF9F6)" : "var(--text-primary, #292C29)",
                       fontSize: "12px",
-                      fontWeight: "800",
+                      fontWeight: "600",
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
                       cursor: "pointer",
                       transition: "all var(--transition)",
-                      boxShadow: selectedRole === "organization" ? "0 4px 14px rgba(255, 188, 0, 0.35)" : "none",
+                      boxShadow: selectedRole === "organization" ? "var(--gold-glow)" : "none",
                     }}
                   >
                     Organization
@@ -198,14 +206,14 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#a3acc2", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   {selectedRole === "organization" ? "Studio / Organization Name" : "Full Name"}
                 </label>
                 <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
                   {selectedRole === "organization" ? (
-                    <Building2 size={16} style={{ position: "absolute", left: "14px", color: "#7e89a3", pointerEvents: "none" }} />
+                    <Building2 size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
                   ) : (
-                    <User size={16} style={{ position: "absolute", left: "14px", color: "#7e89a3", pointerEvents: "none" }} />
+                    <User size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
                   )}
                   <input
                     type="text"
@@ -219,11 +227,11 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#a3acc2", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Work Email Address
                 </label>
                 <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                  <Mail size={16} style={{ position: "absolute", left: "14px", color: "#7e89a3", pointerEvents: "none" }} />
+                  <Mail size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
                   <input
                     type="email"
                     placeholder={selectedRole === "organization" ? "casting@studio.com" : "name@example.com"}
@@ -236,20 +244,31 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#a3acc2", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Create Password
                 </label>
-                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                  <Lock size={16} style={{ position: "absolute", left: "14px", color: "#7e89a3", pointerEvents: "none" }} />
-                  <input
-                    type="password"
-                    placeholder="Minimum 8 characters"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    style={{ paddingLeft: "42px", width: "100%" }}
-                  />
-                </div>
+                <PasswordInput
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Minimum 8 characters"
+                  required
+                  autoComplete="new-password"
+                  leftIcon={<Lock size={16} />}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  Confirm Password
+                </label>
+                <PasswordInput
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter your password"
+                  required
+                  autoComplete="new-password"
+                  leftIcon={<Lock size={16} />}
+                />
               </div>
 
               <button
@@ -261,11 +280,20 @@ export default function RegisterPage() {
                 <span>{isSubmitting ? "Creating Account..." : "Complete Registration"}</span>
                 <ArrowRight size={15} />
               </button>
+
+              <GoogleAuthButton
+                role={selectedRole}
+                isRegister={true}
+                onSuccess={(user) => {
+                  router.push(getDashboardPath(user?.role));
+                }}
+                onError={(err) => setFormError(err)}
+              />
             </form>
 
-            <div style={{ textAlign: "center", marginTop: "24px", fontSize: "13px", color: "#a3acc2" }}>
+            <div style={{ textAlign: "center", marginTop: "24px", fontSize: "13px", color: "var(--text-secondary, #777970)" }}>
               Already have an account?{" "}
-              <Link href="/login" style={{ color: "var(--gold)", fontWeight: "700", textDecoration: "none" }}>
+              <Link href="/login" style={{ color: "var(--gold)", fontWeight: "600", textDecoration: "none" }}>
                 Sign In
               </Link>
             </div>

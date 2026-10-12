@@ -85,8 +85,8 @@ export default function AdminProjectsPage() {
   if (!isHydrated) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        <div style={{ height: "48px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "12px", width: "40%" }} />
-        <div style={{ height: "350px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "16px" }} />
+        <div style={{ height: "48px", background: "#F3EFE6", borderRadius: "12px", width: "40%" }} />
+        <div style={{ height: "350px", background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "16px" }} />
       </div>
     );
   }
@@ -97,42 +97,42 @@ export default function AdminProjectsPage() {
       <PageHeader
         title="Projects Directory"
         subtitle="Overview of production titles, web series, TVCs, and feature films across accredited organizations."
+        badge={`${projects.length} Total Projects`}
         breadcrumbs={[
           { label: "Dashboard", href: "/admin/dashboard" },
           { label: "Projects" },
         ]}
       />
 
-      {/* Filter and Search Bar */}
+      {/* Filter and Search Bar Card */}
       <div
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.07)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
           borderRadius: "16px",
           padding: "16px 20px",
           display: "flex",
           flexWrap: "wrap",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: "14px",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+          gap: "16px",
+          boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
         }}
       >
         <div
           style={{
-            flex: "1 1 260px",
+            flex: "1 1 280px",
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            backgroundColor: "rgba(255, 255, 255, 0.06)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
-            borderRadius: "12px",
-            padding: "8px 14px",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D9D2C0",
+            borderRadius: "10px",
+            padding: "0 14px",
+            height: "44px",
           }}
         >
-          <Search size={16} style={{ color: "#7c869e" }} />
+          <Search size={16} style={{ color: "#5A584F" }} />
           <input
             type="text"
             placeholder="Search project title, format, studio..."
@@ -142,57 +142,62 @@ export default function AdminProjectsPage() {
               border: "none",
               background: "transparent",
               outline: "none",
-              fontSize: "0.85rem",
-              color: "#eceaf5",
+              fontSize: "14px",
+              color: "#2B2D2A",
               width: "100%",
+              fontFamily: "Inter, sans-serif",
             }}
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
           {/* Status Filter */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "0.825rem", fontWeight: "600", color: "#a3acc2" }}>Status:</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", whiteSpace: "nowrap" }}>Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               style={{
-                backgroundColor: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
-                borderRadius: "12px",
-                padding: "8px 12px",
-                fontSize: "0.825rem",
-                color: "#eceaf5",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D2C0",
+                borderRadius: "10px",
+                height: "44px",
+                padding: "0 14px",
+                fontSize: "14px",
+                color: "#2B2D2A",
                 outline: "none",
                 cursor: "pointer",
+                fontFamily: "Inter, sans-serif",
               }}
             >
-              <option value="ALL" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>All Statuses</option>
-              <option value="Active" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Active</option>
-              <option value="Completed" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Completed</option>
+              <option value="ALL">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Completed">Completed</option>
             </select>
           </div>
 
           {/* Org Filter */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "0.825rem", fontWeight: "600", color: "#a3acc2" }}>Organization:</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", whiteSpace: "nowrap" }}>Organization:</span>
             <select
               value={orgFilter}
               onChange={(e) => setOrgFilter(e.target.value)}
               style={{
-                backgroundColor: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
-                borderRadius: "12px",
-                padding: "8px 12px",
-                fontSize: "0.825rem",
-                color: "#eceaf5",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D2C0",
+                borderRadius: "10px",
+                height: "44px",
+                padding: "0 14px",
+                fontSize: "14px",
+                color: "#2B2D2A",
                 outline: "none",
                 cursor: "pointer",
+                fontFamily: "Inter, sans-serif",
               }}
             >
-              <option value="ALL" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>All Organizations</option>
+              <option value="ALL">All Organizations</option>
               {organizations.map((org) => (
-                <option key={org.id} value={org.id} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+                <option key={org.id} value={org.id}>
                   {org.name}
                 </option>
               ))}
@@ -205,48 +210,44 @@ export default function AdminProjectsPage() {
       {filteredProjects.length === 0 ? (
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
             borderRadius: "16px",
             padding: "48px 20px",
             textAlign: "center",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
           }}
         >
-          <FolderKanban size={40} style={{ color: "#ffbc00", marginBottom: "12px" }} />
-          <h3 style={{ fontSize: "1.05rem", color: "#eceaf5", marginBottom: "6px" }}>
+          <FolderKanban size={40} style={{ color: "#8A6B2E", marginBottom: "12px" }} />
+          <h3 style={{ fontSize: "18px", fontFamily: "var(--font-playfair), serif", color: "#2B2D2A", marginBottom: "6px" }}>
             No Projects Found
           </h3>
-          <p style={{ color: "#a3acc2", fontSize: "0.85rem", margin: 0 }}>
+          <p style={{ color: "#5A584F", fontSize: "14px", margin: 0 }}>
             No projects match your filter selection.
           </p>
         </div>
       ) : (
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
             borderRadius: "16px",
             overflow: "hidden",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
           }}
         >
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px", minWidth: "960px" }}>
               <thead>
                 <tr
                   style={{
-                    backgroundColor: "#0f1626",
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.14)",
-                    color: "#ffbc00",
+                    backgroundColor: "#F3EFE6",
+                    borderBottom: "1px solid #E8E2D4",
+                    color: "#5A584F",
                     fontWeight: "700",
-                    fontSize: "0.75rem",
+                    fontSize: "12px",
                     textTransform: "uppercase",
-                    letterSpacing: "0.06em",
+                    letterSpacing: "0.14em",
                   }}
                 >
                   <th style={{ padding: "16px 20px" }}>Project Name &amp; Format</th>
@@ -266,35 +267,35 @@ export default function AdminProjectsPage() {
                     <tr
                       key={proj.id}
                       style={{
-                        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+                        borderBottom: "1px solid #E8E2D4",
                         transition: "background-color 0.15s ease",
                       }}
                     >
                       {/* Project Title & Format */}
-                      <td style={{ padding: "16px 20px" }}>
-                        <div style={{ fontWeight: "700", color: "#eceaf5" }}>
+                      <td style={{ padding: "18px 20px" }}>
+                        <div style={{ fontWeight: 600, fontSize: "15px", color: "#2B2D2A" }}>
                           {proj.title}
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "#ffbc00", fontWeight: "600" }}>
+                        <div style={{ fontSize: "12px", color: "#6E5420", fontWeight: "600", marginTop: "2px" }}>
                           {proj.type}
                         </div>
                       </td>
 
                       {/* Organization */}
-                      <td style={{ padding: "16px 20px" }}>
+                      <td style={{ padding: "18px 20px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <Building2 size={13} style={{ color: "#7c869e" }} />
-                          <span style={{ fontWeight: "600", color: "#eceaf5" }}>
+                          <Building2 size={13} style={{ color: "#5A584F" }} />
+                          <span style={{ fontWeight: 600, color: "#2B2D2A" }}>
                             {org?.name || "Zee Films"}
                           </span>
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "#a3acc2" }}>
+                        <div style={{ fontSize: "12px", color: "#5A584F", marginTop: "2px" }}>
                           {org?.type || "Production House"}
                         </div>
                       </td>
 
                       {/* Opportunities Linked */}
-                      <td style={{ padding: "16px 20px" }}>
+                      <td style={{ padding: "18px 20px" }}>
                         <span
                           style={{
                             display: "inline-flex",
@@ -302,11 +303,11 @@ export default function AdminProjectsPage() {
                             gap: "6px",
                             padding: "4px 10px",
                             borderRadius: "999px",
-                            backgroundColor: opps.length > 0 ? "rgba(255, 188, 0, 0.14)" : "rgba(255, 255, 255, 0.06)",
-                            color: opps.length > 0 ? "#ffbc00" : "#7c869e",
-                            border: opps.length > 0 ? "1px solid rgba(255, 188, 0, 0.3)" : "1px solid rgba(255, 255, 255, 0.1)",
-                            fontWeight: "700",
-                            fontSize: "0.8rem",
+                            backgroundColor: opps.length > 0 ? "rgba(138, 107, 46, 0.12)" : "#F3EFE6",
+                            color: opps.length > 0 ? "#6E5420" : "#5A584F",
+                            border: opps.length > 0 ? "1px solid rgba(138, 107, 46, 0.25)" : "1px solid #E8E2D4",
+                            fontWeight: 700,
+                            fontSize: "12px",
                           }}
                         >
                           <Megaphone size={12} />
@@ -315,21 +316,21 @@ export default function AdminProjectsPage() {
                       </td>
 
                       {/* Created Date */}
-                      <td style={{ padding: "16px 20px", color: "#a3acc2", fontSize: "0.825rem" }}>
+                      <td style={{ padding: "18px 20px", color: "#5A584F", fontSize: "13px" }}>
                         {formatDate(proj.createdAt)}
                       </td>
 
                       {/* Status */}
-                      <td style={{ padding: "16px 20px" }}>
+                      <td style={{ padding: "18px 20px" }}>
                         <span
                           style={{
-                            fontSize: "0.75rem",
-                            fontWeight: "700",
+                            fontSize: "12px",
+                            fontWeight: 600,
                             padding: "4px 10px",
                             borderRadius: "999px",
-                            backgroundColor: proj.status === "Active" ? "rgba(52, 211, 153, 0.15)" : "rgba(255, 255, 255, 0.06)",
-                            color: proj.status === "Active" ? "#34d399" : "#a3acc2",
-                            border: proj.status === "Active" ? "1px solid rgba(52, 211, 153, 0.35)" : "1px solid rgba(255, 255, 255, 0.1)",
+                            backgroundColor: "#F3EFE6",
+                            color: "#2B2D2A",
+                            border: "1px solid #E8E2D4",
                           }}
                         >
                           {proj.status}
@@ -337,20 +338,24 @@ export default function AdminProjectsPage() {
                       </td>
 
                       {/* Action */}
-                      <td style={{ padding: "16px 20px", textAlign: "right" }}>
+                      <td style={{ padding: "18px 20px", textAlign: "right" }}>
                         <button
                           type="button"
                           onClick={() => setSelectedProject(proj)}
-                          className="btn-ghost"
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
-                            gap: "4px",
-                            fontSize: "0.8rem",
-                            color: "#ffbc00",
-                            fontWeight: "600",
-                            borderRadius: "8px",
+                            gap: "6px",
+                            fontSize: "13px",
+                            color: "#8A6B2E",
+                            fontWeight: 600,
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            textDecoration: "none",
                           }}
+                          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
                         >
                           <Eye size={14} />
                           <span>Drawer</span>
@@ -375,51 +380,51 @@ export default function AdminProjectsPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div
               style={{
-                backgroundColor: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "12px",
+                backgroundColor: "#FAF9F7",
+                border: "1px solid #E8E2D4",
+                borderRadius: "14px",
                 padding: "16px",
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: "12px",
+                gap: "14px",
               }}
             >
               <div>
-                <span style={{ fontSize: "0.75rem", color: "#7c869e", display: "block" }}>Organization</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>
+                <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Organization</span>
+                <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
                   {getOrgForProject(selectedProject.orgId)?.name || "Zee Films"}
                 </strong>
               </div>
               <div>
-                <span style={{ fontSize: "0.75rem", color: "#7c869e", display: "block" }}>Format / Type</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>{selectedProject.type}</strong>
+                <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Format / Type</span>
+                <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>{selectedProject.type}</strong>
               </div>
               <div>
-                <span style={{ fontSize: "0.75rem", color: "#7c869e", display: "block" }}>Project Status</span>
-                <strong style={{ fontSize: "0.9rem", color: "#34d399" }}>{selectedProject.status}</strong>
+                <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Project Status</span>
+                <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>{selectedProject.status}</strong>
               </div>
               <div>
-                <span style={{ fontSize: "0.75rem", color: "#7c869e", display: "block" }}>Registered Date</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>{formatDate(selectedProject.createdAt)}</strong>
+                <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Registered Date</span>
+                <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>{formatDate(selectedProject.createdAt)}</strong>
               </div>
             </div>
 
             <div>
-              <strong style={{ fontSize: "0.85rem", color: "#eceaf5", display: "block", marginBottom: "6px" }}>
+              <strong style={{ fontSize: "14px", color: "#2B2D2A", display: "block", marginBottom: "6px" }}>
                 Synopsis &amp; Production Scope:
               </strong>
-              <p style={{ fontSize: "0.85rem", color: "#a3acc2", margin: 0, lineHeight: "1.5" }}>
+              <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
                 {selectedProject.description || "Comprehensive multi-episode OTT thriller with high-stakes medical emergency and investigative storylines."}
               </p>
             </div>
 
             <div>
-              <strong style={{ fontSize: "0.85rem", color: "#eceaf5", display: "block", marginBottom: "8px" }}>
+              <strong style={{ fontSize: "14px", color: "#2B2D2A", display: "block", marginBottom: "8px" }}>
                 Opportunities Created Under This Project:
               </strong>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {getOpportunitiesForProject(selectedProject.id).length === 0 ? (
-                  <span style={{ fontSize: "0.8rem", color: "#7c869e" }}>
+                  <span style={{ fontSize: "13px", color: "#5A584F" }}>
                     No opportunities posted under this project yet.
                   </span>
                 ) : (
@@ -429,8 +434,8 @@ export default function AdminProjectsPage() {
                       <div
                         key={opp.id}
                         style={{
-                          backgroundColor: "rgba(255, 255, 255, 0.04)",
-                          border: "1px solid rgba(255, 255, 255, 0.08)",
+                          backgroundColor: "#FAF9F7",
+                          border: "1px solid #E8E2D4",
                           borderRadius: "10px",
                           padding: "12px 14px",
                           display: "flex",
@@ -440,10 +445,10 @@ export default function AdminProjectsPage() {
                         }}
                       >
                         <div>
-                          <strong style={{ fontSize: "0.85rem", color: "#eceaf5", display: "block" }}>
+                          <strong style={{ fontSize: "14px", color: "#2B2D2A", display: "block" }}>
                             {opp.title}
                           </strong>
-                          <span style={{ fontSize: "0.75rem", color: "#a3acc2" }}>
+                          <span style={{ fontSize: "12px", color: "#5A584F" }}>
                             {apps.length} applicants &bull; Deadline: {opp.deadline}
                           </span>
                         </div>
@@ -459,8 +464,16 @@ export default function AdminProjectsPage() {
               <button
                 type="button"
                 onClick={() => setSelectedProject(null)}
-                className="btn-primary"
-                style={{ padding: "8px 20px", borderRadius: "12px" }}
+                style={{
+                  padding: "10px 22px",
+                  borderRadius: "10px",
+                  backgroundColor: "#8A6B2E",
+                  color: "#FFFFFF",
+                  border: "none",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
               >
                 Close Drawer
               </button>

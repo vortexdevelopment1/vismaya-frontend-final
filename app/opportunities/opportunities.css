@@ -21,7 +21,7 @@
 .opp-header-section {
   position: relative;
   width: 100%;
-  padding-top: 112px;
+  padding-top: clamp(24px, 4vw, 40px);
   padding-bottom: 24px;
   margin: 0;
   background-color: var(--bg-alt);
@@ -214,26 +214,41 @@
    -------------------------------------------------------------------------- */
 .opp-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px; /* 24px gap between cards */
   align-items: stretch;
   width: 100%;
   margin: 0;
 }
 
-/* --------------------------------------------------------------------------
-   5. Responsive Breakpoints
-   -------------------------------------------------------------------------- */
-@media (max-width: 1024px) {
+@media (max-width: 1439.98px) {
+  .opp-cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (max-width: 1023.98px) {
   .opp-filters-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
+  }
+  .opp-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .opp-cards-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
   }
 }
 
 @media (max-width: 640px) {
   .opp-header-section {
-    padding-top: 96px; /* 96px on mobile */
+    padding-top: 24px;
     padding-bottom: 20px;
   }
 
@@ -250,10 +265,5 @@
   .opp-filters-grid {
     grid-template-columns: 1fr;
     gap: 12px;
-  }
-
-  .opp-cards-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
   }
 }

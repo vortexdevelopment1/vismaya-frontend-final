@@ -80,7 +80,7 @@ export default function PublicOpportunityDetailsPage() {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", width: "100%", backgroundColor: "var(--bg-primary)" }}>
         <PublicNav />
-        <section style={{ paddingTop: "140px", paddingBottom: "40px", backgroundColor: "#070b12" }}>
+        <section style={{ paddingTop: "clamp(28px, 4vw, 48px)", paddingBottom: "40px", backgroundColor: "var(--bg-alt)" }}>
           <div className="public-container">
             <Skeleton width="220px" height="36px" />
           </div>
@@ -99,17 +99,17 @@ export default function PublicOpportunityDetailsPage() {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", width: "100%", backgroundColor: "var(--bg-primary)" }}>
         <PublicNav />
-        <section style={{ paddingTop: "140px", paddingBottom: "40px", backgroundColor: "#070b12", borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
+        <section style={{ paddingTop: "clamp(28px, 4vw, 48px)", paddingBottom: "40px", backgroundColor: "var(--bg-alt)", borderBottom: "1px solid var(--border-color)" }}>
           <div className="public-container">
-            <h1 style={{ fontFamily: "var(--font-heading), 'Playfair Display', serif", fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 700, color: "#eceaf5", margin: 0 }}>
+            <h1 style={{ fontFamily: "var(--font-heading), Georgia, serif", fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 400, color: "var(--text-primary)", margin: 0 }}>
               Opportunity Closed or Unavailable
             </h1>
           </div>
         </section>
         <main className="public-section" style={{ flex: 1, backgroundColor: "var(--bg-primary)", display: "flex", alignItems: "center" }}>
           <div className="public-container" style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
-            <AlertCircle size={48} style={{ color: "var(--status-gold)" }} />
-            <p style={{ color: "#a3acc2", fontSize: "15px", maxWidth: "500px", margin: 0, lineHeight: "24px" }}>
+            <AlertCircle size={48} style={{ color: "var(--text-secondary)" }} />
+            <p style={{ color: "var(--text-secondary)", fontSize: "15px", maxWidth: "500px", margin: 0, lineHeight: "24px" }}>
               This opportunity has expired, closed, or is no longer accepting public submissions.
             </p>
             <Link href="/opportunities" className="btn-primary" style={{ marginTop: "12px" }}>
@@ -133,27 +133,17 @@ export default function PublicOpportunityDetailsPage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", width: "100%", backgroundColor: "var(--bg-primary)" }}>
       <PublicNav />
 
-      {/* 1. TOP DARK HEADER */}
+      {/* 1. TOP HEADER */}
       <section
         style={{
           position: "relative",
-          paddingTop: "clamp(120px, 15vh, 150px)",
+          paddingTop: "clamp(28px, 4vw, 48px)",
           paddingBottom: "clamp(40px, 5vh, 56px)",
-          backgroundColor: "#070b12",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          backgroundColor: "var(--bg-alt)",
+          borderBottom: "1px solid var(--border-color)",
           overflow: "hidden",
         }}
       >
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "radial-gradient(50% 50% at 80% 20%, rgba(255, 188, 0, 0.10), transparent 70%)",
-            pointerEvents: "none",
-          }}
-        />
-
         <div className="public-container" style={{ position: "relative", zIndex: 5 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "20px" }}>
             <Link
@@ -162,8 +152,8 @@ export default function PublicOpportunityDetailsPage() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
-                color: "var(--gold)",
-                fontWeight: "700",
+                color: "var(--text-primary)",
+                fontWeight: "600",
                 fontSize: "13px",
                 textDecoration: "none",
                 textTransform: "uppercase",
@@ -179,14 +169,14 @@ export default function PublicOpportunityDetailsPage() {
               onClick={toggleDemoLogin}
               style={{
                 fontSize: "11px",
-                fontWeight: "800",
+                fontWeight: "700",
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
                 padding: "8px 16px",
                 borderRadius: "999px",
-                backgroundColor: isLoggedIn ? "rgba(255, 188, 0, 0.16)" : "rgba(255, 255, 255, 0.06)",
-                border: `1px solid ${isLoggedIn ? "rgba(255, 188, 0, 0.40)" : "rgba(255, 255, 255, 0.14)"}`,
-                color: isLoggedIn ? "var(--gold)" : "#eceaf5",
+                backgroundColor: isLoggedIn ? "var(--bg-surface)" : "var(--bg-primary)",
+                border: "1px solid var(--border-color)",
+                color: "var(--text-primary)",
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
@@ -205,11 +195,11 @@ export default function PublicOpportunityDetailsPage() {
                 style={{
                   padding: "4px 12px",
                   borderRadius: "999px",
-                  backgroundColor: "rgba(255, 188, 0, 0.12)",
-                  border: "1px solid rgba(255, 188, 0, 0.28)",
-                  color: "var(--gold)",
+                  backgroundColor: "rgba(119, 121, 112, 0.12)",
+                  border: "1px solid var(--border-color)",
+                  color: "var(--text-primary)",
                   fontSize: "11px",
-                  fontWeight: "800",
+                  fontWeight: "700",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                 }}
@@ -218,18 +208,18 @@ export default function PublicOpportunityDetailsPage() {
               </span>
 
               {project && (
-                <span style={{ fontSize: "14px", color: "#a3acc2" }}>
-                  Project: <strong style={{ color: "#eceaf5" }}>{project.title}</strong>
+                <span style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
+                  Project: <strong style={{ color: "var(--text-primary)" }}>{project.title}</strong>
                 </span>
               )}
             </div>
 
             <h1
               style={{
-                fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                fontFamily: "var(--font-heading), Georgia, serif",
                 fontSize: "clamp(30px, 4.5vw, 48px)",
-                fontWeight: 700,
-                color: "#eceaf5",
+                fontWeight: 400,
+                color: "var(--text-primary)",
                 lineHeight: 1.15,
                 margin: "4px 0 0 0",
               }}
@@ -258,7 +248,7 @@ export default function PublicOpportunityDetailsPage() {
               <div className="eyebrow" style={{ marginBottom: "10px" }}>
                 <span>Casting Overview</span>
               </div>
-              <p style={{ fontSize: "15px", color: "#a3acc2", lineHeight: "26px", margin: 0, maxWidth: "900px" }}>
+              <p style={{ fontSize: "15px", color: "var(--text-secondary)", lineHeight: "26px", margin: 0, maxWidth: "900px" }}>
                 {opportunity.summary || "Verified opportunity brief published live on the Vismaya Casting Network."}
               </p>
             </div>
@@ -270,9 +260,9 @@ export default function PublicOpportunityDetailsPage() {
                 gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
                 gap: "16px",
                 padding: "20px",
-                backgroundColor: "rgba(255, 255, 255, 0.04)",
+                backgroundColor: "var(--bg-alt)",
                 borderRadius: "14px",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                border: "1px solid var(--border-color)",
               }}
             >
               <div>
@@ -292,7 +282,7 @@ export default function PublicOpportunityDetailsPage() {
 
               <div>
                 <span style={specLabelStyle}>Verified Remuneration</span>
-                <span style={{ ...specValueStyle, color: "var(--gold)" }}>
+                <span style={{ ...specValueStyle, color: "var(--text-primary)" }}>
                   {opportunity.remuneration || "Industry Standard"}
                 </span>
               </div>
@@ -319,9 +309,9 @@ export default function PublicOpportunityDetailsPage() {
                   style={{
                     padding: "4px 12px",
                     borderRadius: "999px",
-                    backgroundColor: "rgba(52, 211, 153, 0.16)",
-                    border: "1px solid rgba(52, 211, 153, 0.35)",
-                    color: "var(--status-green)",
+                    backgroundColor: "#e8f5e9",
+                    border: "1px solid #c8e6c9",
+                    color: "#2e7d32",
                     fontSize: "11px",
                     fontWeight: "700",
                     textTransform: "uppercase",
@@ -339,11 +329,11 @@ export default function PublicOpportunityDetailsPage() {
                   style={{
                     padding: "4px 12px",
                     borderRadius: "999px",
-                    backgroundColor: "rgba(255, 188, 0, 0.16)",
-                    border: "1px solid rgba(255, 188, 0, 0.35)",
-                    color: "var(--gold)",
+                    backgroundColor: "rgba(119, 121, 112, 0.12)",
+                    border: "1px solid var(--border-color)",
+                    color: "var(--text-primary)",
                     fontSize: "11px",
-                    fontWeight: "800",
+                    fontWeight: "700",
                     textTransform: "uppercase",
                     letterSpacing: "0.06em",
                     display: "inline-flex",
@@ -369,27 +359,27 @@ export default function PublicOpportunityDetailsPage() {
               }}
             >
               <div>
-                <h4 style={{ fontFamily: "var(--font-heading), 'Playfair Display', serif", fontSize: "18px", color: "#eceaf5", marginBottom: "8px" }}>
+                <h4 style={{ fontFamily: "var(--font-heading), Georgia, serif", fontSize: "18px", color: "var(--text-primary)", marginBottom: "8px" }}>
                   Character Breakdown &amp; Directing Notes
                 </h4>
-                <p style={{ color: "#a3acc2", fontSize: "14px", lineHeight: "24px", margin: 0 }}>
+                <p style={{ color: "var(--text-secondary)", fontSize: "14px", lineHeight: "24px", margin: 0 }}>
                   The candidate should portray a charismatic yet enigmatic protagonist who navigates high-stakes corporate espionage. We are looking for strong emotional range, expressive eyes, and crisp dialogue delivery in Hindi and English.
                 </p>
               </div>
 
               <div>
-                <h4 style={{ fontFamily: "var(--font-heading), 'Playfair Display', serif", fontSize: "18px", color: "#eceaf5", marginBottom: "8px" }}>
+                <h4 style={{ fontFamily: "var(--font-heading), Georgia, serif", fontSize: "18px", color: "var(--text-primary)", marginBottom: "8px" }}>
                   Audition Script / Sides Excerpt
                 </h4>
                 <div
                   style={{
                     padding: "16px 20px",
-                    backgroundColor: "rgba(255, 255, 255, 0.03)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    backgroundColor: "var(--bg-alt)",
+                    border: "1px solid var(--border-color)",
                     borderRadius: "12px",
                     fontSize: "13px",
                     lineHeight: "22px",
-                    color: "#eceaf5",
+                    color: "var(--text-primary)",
                     fontFamily: "monospace",
                   }}
                 >
@@ -419,20 +409,19 @@ export default function PublicOpportunityDetailsPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   padding: "24px",
-                  background: "rgba(10, 15, 25, 0.70)",
+                  background: "rgba(41, 44, 41, 0.40)",
                   backdropFilter: "blur(4px)",
                 }}
               >
                 <div
-                  className="glass"
                   style={{
-                    backgroundColor: "#0f1626",
-                    border: "1px solid rgba(255, 188, 0, 0.35)",
+                    backgroundColor: "var(--bg-surface)",
+                    border: "1px solid var(--border-color)",
                     borderRadius: "20px",
                     padding: "32px",
                     maxWidth: "480px",
                     textAlign: "center",
-                    boxShadow: "0 20px 50px rgba(0, 0, 0, 0.70)",
+                    boxShadow: "var(--shadow-lg)",
                   }}
                 >
                   <div
@@ -440,9 +429,9 @@ export default function PublicOpportunityDetailsPage() {
                       width: "48px",
                       height: "48px",
                       borderRadius: "50%",
-                      backgroundColor: "rgba(255, 188, 0, 0.14)",
-                      border: "1px solid rgba(255, 188, 0, 0.30)",
-                      color: "var(--gold)",
+                      backgroundColor: "var(--bg-alt)",
+                      border: "1px solid var(--border-color)",
+                      color: "var(--text-primary)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -454,17 +443,17 @@ export default function PublicOpportunityDetailsPage() {
 
                   <h3
                     style={{
-                      fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                      fontFamily: "var(--font-heading), Georgia, serif",
                       fontSize: "22px",
-                      fontWeight: 700,
-                      color: "#eceaf5",
+                      fontWeight: 400,
+                      color: "var(--text-primary)",
                       margin: "0 0 8px 0",
                     }}
                   >
                     Sign In to Access Audition Brief
                   </h3>
 
-                  <p style={{ color: "#a3acc2", fontSize: "14px", lineHeight: "22px", margin: "0 0 24px 0" }}>
+                  <p style={{ color: "var(--text-secondary)", fontSize: "14px", lineHeight: "22px", margin: "0 0 24px 0" }}>
                     Verified casting sides, script excerpts, and self-tape submission portals are reserved for registered talent profiles.
                   </p>
 
@@ -492,8 +481,8 @@ export default function PublicOpportunityDetailsPage() {
 const specLabelStyle = {
   display: "block",
   fontSize: "11px",
-  fontWeight: "800",
-  color: "var(--gold)",
+  fontWeight: "700",
+  color: "var(--text-secondary)",
   textTransform: "uppercase",
   letterSpacing: "0.10em",
   marginBottom: "4px",
@@ -502,6 +491,6 @@ const specLabelStyle = {
 const specValueStyle = {
   display: "block",
   fontSize: "15px",
-  fontWeight: "700",
-  color: "#eceaf5",
+  fontWeight: "600",
+  color: "var(--text-primary)",
 };

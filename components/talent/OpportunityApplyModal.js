@@ -152,18 +152,18 @@ export default function OpportunityApplyModal({ isOpen, onClose, opportunity, pr
         {/* Profile Preview Card */}
         <div
           style={{
-            backgroundColor: "var(--glass-bg-elevated)",
-            border: "1px solid var(--glass-border)",
-            borderRadius: "18px",
+            backgroundColor: "var(--bg-surface, #FFFFFF)",
+            border: "1px solid var(--border-color, #E4E1D9)",
+            borderRadius: "6px",
             padding: "18px 20px",
             display: "flex",
             flexDirection: "column",
             gap: "14px",
-            boxShadow: "var(--shadow-sm)",
+            boxShadow: "var(--card-shadow, 0 1px 3px rgba(41, 44, 41, 0.05))",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: "0.785rem", fontWeight: "700", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+            <span style={{ fontSize: "0.785rem", fontWeight: "700", color: "var(--text-secondary, #5A5C53)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
               Profile to be Shared
             </span>
             <StatusBadge status={profile.status} size="xs" />
@@ -178,15 +178,15 @@ export default function OpportunityApplyModal({ isOpen, onClose, opportunity, pr
                 backgroundImage: `url(${profile.avatar})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
-                border: "2px solid rgba(255, 188, 0, 0.4)",
+                border: "2px solid var(--gold, #9B7A3F)",
                 flexShrink: 0,
               }}
             />
             <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-              <span style={{ fontSize: "1.05rem", fontWeight: "700", color: "var(--text-primary)" }}>
+              <span style={{ fontSize: "1.05rem", fontWeight: "700", color: "var(--text-primary, #292C29)", fontFamily: "Georgia, serif" }}>
                 {profile.personal.fullName}
               </span>
-              <span style={{ fontSize: "0.825rem", color: "var(--text-secondary)" }}>
+              <span style={{ fontSize: "0.825rem", color: "var(--text-secondary, #5A5C53)" }}>
                 {profile.personal.age} yrs &bull; {profile.personal.gender} &bull; {profile.personal.city}
               </span>
             </div>
@@ -198,19 +198,19 @@ export default function OpportunityApplyModal({ isOpen, onClose, opportunity, pr
               gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
               gap: "8px",
               paddingTop: "10px",
-              borderTop: "1px solid rgba(255, 255, 255, 0.10)",
+              borderTop: "1px solid var(--border-color, #E4E1D9)",
               fontSize: "0.8rem",
             }}
           >
             <div>
-              <span style={{ color: "var(--text-muted)", display: "block" }}>Languages:</span>
-              <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>
+              <span style={{ color: "var(--text-muted, #777970)", display: "block" }}>Languages:</span>
+              <span style={{ color: "var(--text-primary, #292C29)", fontWeight: "600" }}>
                 {Array.isArray(profile.languages) ? profile.languages.join(", ") : "Hindi, English"}
               </span>
             </div>
             <div>
-              <span style={{ color: "var(--text-muted)", display: "block" }}>Primary Skills:</span>
-              <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>
+              <span style={{ color: "var(--text-muted, #777970)", display: "block" }}>Primary Skills:</span>
+              <span style={{ color: "var(--text-primary, #292C29)", fontWeight: "600" }}>
                 {Array.isArray(profile.skills) ? profile.skills.slice(0, 3).join(", ") : "Screen Acting"}
               </span>
             </div>

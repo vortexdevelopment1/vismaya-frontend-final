@@ -1,0 +1,528 @@
+/* ==========================================================================
+   Public Navigation Styles - Vismaya Creative Studios
+   Theme Tokens:
+     Cream: #FAF9F7
+     White: #FFFFFF
+     Gold-Brown: #8A6B2E
+     Light Gold: #C9A55C
+     Charcoal: #2B2D2A
+     Muted: #5A584F
+     Border: #E8E2D4
+     Soft Tint: #F3EFE6
+     Hover Dark Gold: #6E5420
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Sticky Floating Navbar Wrapper
+   -------------------------------------------------------------------------- */
+.public-nav-wrapper {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 14px 24px 8px 24px;
+  box-sizing: border-box;
+  transition: padding 250ms ease;
+}
+
+.public-nav-wrapper.is-scrolled {
+  padding: 8px 24px 8px 24px;
+  background-color: rgba(250, 249, 247, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(232, 226, 212, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   Floating Card Container
+   -------------------------------------------------------------------------- */
+.public-nav-card {
+  max-width: 1320px;
+  margin: 0 auto;
+  width: 100%;
+  height: 68px;
+  padding: 0 12px 0 20px;
+  box-sizing: border-box;
+  background-color: rgba(255, 255, 255, 0.98);
+  border: 1px solid #E8E2D4;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(43, 45, 42, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: all 250ms ease;
+  position: relative;
+}
+
+.public-nav-wrapper.is-scrolled .public-nav-card {
+  height: 64px;
+  background-color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 30px rgba(43, 45, 42, 0.08);
+  border-color: #DFD8C8;
+}
+
+/* --------------------------------------------------------------------------
+   Brand Logo
+   -------------------------------------------------------------------------- */
+.public-nav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: #2B2D2A;
+  user-select: none;
+  flex-shrink: 0;
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+
+.public-nav-brand:hover {
+  transform: scale(1.02);
+  opacity: 0.96;
+}
+
+.public-nav-brand:active {
+  transform: scale(0.98);
+}
+
+.public-nav-brand:focus-visible {
+  outline: 2px solid #8A6B2E;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.public-nav-brand-badge {
+  width: 38px;
+  height: 38px;
+  background-color: #8A6B2E;
+  color: #FFFFFF;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(138, 107, 46, 0.22);
+  flex-shrink: 0;
+}
+
+.public-nav-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.public-nav-brand-title {
+  font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #2B2D2A;
+}
+
+.public-nav-brand-subtitle {
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 8.5px;
+  letter-spacing: 1.6px;
+  color: #8A887E;
+  font-weight: 600;
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   Desktop Navigation Links
+   -------------------------------------------------------------------------- */
+.public-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-nav-link {
+  position: relative;
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #5A584F;
+  text-decoration: none;
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  transition: color 250ms ease, background-color 250ms ease, border-color 250ms ease, transform 150ms ease;
+}
+
+/* Underline slide-in effect on inactive links */
+.public-nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 16px;
+  right: 16px;
+  height: 2px;
+  background-color: #8A6B2E;
+  border-radius: 1px;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 250ms ease;
+  pointer-events: none;
+}
+
+.public-nav-link:hover {
+  color: #8A6B2E;
+}
+
+.public-nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+.public-nav-link:active {
+  transform: scale(0.97);
+  color: #6E5420;
+}
+
+.public-nav-link:focus-visible {
+  outline: 2px solid #8A6B2E;
+  outline-offset: 3px;
+}
+
+/* Active Link Pill (matches Home pill: cream-tint #F3EFE6 + gold-brown border & text) */
+.public-nav-link.active {
+  background-color: #F3EFE6;
+  border-color: #8A6B2E;
+  color: #8A6B2E;
+  font-weight: 600;
+}
+
+.public-nav-link.active::after {
+  display: none;
+}
+
+.public-nav-link.active:hover {
+  background-color: #ECE7DC;
+  color: #6E5420;
+}
+
+/* --------------------------------------------------------------------------
+   Desktop Action Buttons (Right)
+   -------------------------------------------------------------------------- */
+.public-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.public-nav-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #8A6B2E;
+  color: #FFFFFF;
+  border: 1px solid #755B25;
+  border-radius: 8px;
+  height: 42px;
+  padding: 0 20px;
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(138, 107, 46, 0.2);
+  transition: background-color 250ms ease, transform 200ms ease, box-shadow 250ms ease;
+}
+
+.public-nav-cta:hover {
+  background-color: #6E5420;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(138, 107, 46, 0.28);
+}
+
+.public-nav-cta:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 4px rgba(138, 107, 46, 0.2);
+}
+
+.public-nav-cta:focus-visible {
+  outline: 2px solid #8A6B2E;
+  outline-offset: 3px;
+}
+
+.public-nav-cta-arrow {
+  transition: transform 250ms ease;
+}
+
+.public-nav-cta:hover .public-nav-cta-arrow {
+  transform: translateX(4px);
+}
+
+/* --------------------------------------------------------------------------
+   Mobile Hamburger Button (44x44px Tap Target)
+   -------------------------------------------------------------------------- */
+.public-nav-hamburger {
+  display: none;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  background-color: #FFFFFF;
+  border: 1px solid #E8E2D4;
+  border-radius: 8px;
+  color: #2B2D2A;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  transition: background-color 200ms ease, border-color 200ms ease, transform 150ms ease;
+}
+
+.public-nav-hamburger:hover {
+  background-color: #FAF9F7;
+  border-color: #8A6B2E;
+}
+
+.public-nav-hamburger:active {
+  transform: scale(0.96);
+}
+
+.public-nav-hamburger:focus-visible {
+  outline: 2px solid #8A6B2E;
+  outline-offset: 3px;
+}
+
+/* Hamburger Icon Animated Bars (3 bars to X) */
+.public-nav-hamburger-bar {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background-color: #2B2D2A;
+  border-radius: 2px;
+  transition: transform 250ms ease, opacity 250ms ease, background-color 250ms ease;
+  transform-origin: center;
+}
+
+.public-nav-hamburger.is-open .public-nav-hamburger-bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+  background-color: #8A6B2E;
+}
+
+.public-nav-hamburger.is-open .public-nav-hamburger-bar:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.public-nav-hamburger.is-open .public-nav-hamburger-bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+  background-color: #8A6B2E;
+}
+
+/* --------------------------------------------------------------------------
+   Mobile Dropdown Panel (<1024px)
+   -------------------------------------------------------------------------- */
+.public-nav-mobile-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  right: 0;
+  background-color: #FFFFFF;
+  border: 1px solid #E8E2D4;
+  border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(43, 45, 42, 0.12);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: publicNavSlideDown 240ms ease forwards;
+  z-index: 1001;
+  box-sizing: border-box;
+}
+
+@keyframes publicNavSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.public-nav-mobile-link {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #2B2D2A;
+  text-decoration: none;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: all 180ms ease;
+}
+
+.public-nav-mobile-link:hover {
+  color: #8A6B2E;
+  background-color: #FAF9F7;
+}
+
+.public-nav-mobile-link:active {
+  transform: scale(0.98);
+}
+
+.public-nav-mobile-link:focus-visible {
+  outline: 2px solid #8A6B2E;
+  outline-offset: 2px;
+}
+
+.public-nav-mobile-link.active {
+  background-color: #F3EFE6;
+  border-color: #8A6B2E;
+  color: #8A6B2E;
+  font-weight: 600;
+}
+
+.public-nav-mobile-divider {
+  height: 1px;
+  background-color: #E8E2D4;
+  margin: 8px 0;
+  width: 100%;
+}
+
+.public-nav-mobile-cta {
+  min-height: 44px;
+  height: 44px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #8A6B2E;
+  color: #FFFFFF;
+  border: 1px solid #755B25;
+  border-radius: 8px;
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(138, 107, 46, 0.2);
+  transition: background-color 200ms ease, transform 150ms ease;
+  box-sizing: border-box;
+}
+
+.public-nav-mobile-cta:hover {
+  background-color: #6E5420;
+}
+
+.public-nav-mobile-cta:active {
+  transform: scale(0.98);
+}
+
+.public-nav-mobile-cta:focus-visible {
+  outline: 2px solid #8A6B2E;
+  outline-offset: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 1023px) {
+  .public-nav-links,
+  .public-nav-actions .public-nav-cta {
+    display: none !important;
+  }
+
+  .public-nav-hamburger {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .public-nav-wrapper {
+    padding: 12px 16px 6px 16px;
+  }
+
+  .public-nav-wrapper.is-scrolled {
+    padding: 8px 16px 6px 16px;
+  }
+
+  .public-nav-card {
+    height: 62px;
+    padding: 0 10px 0 14px;
+  }
+
+  .public-nav-wrapper.is-scrolled .public-nav-card {
+    height: 58px;
+  }
+
+  .public-nav-brand-badge {
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  .public-nav-brand-title {
+    font-size: 17px;
+    letter-spacing: 1.6px;
+  }
+
+  .public-nav-brand-subtitle {
+    font-size: 8px;
+    letter-spacing: 1.2px;
+  }
+}
+
+@media (max-width: 390px) {
+  .public-nav-wrapper {
+    padding: 10px 12px 6px 12px;
+  }
+
+  .public-nav-brand-subtitle {
+    display: none;
+  }
+
+  .public-nav-card {
+    padding: 0 8px 0 12px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .public-nav-wrapper,
+  .public-nav-card,
+  .public-nav-brand,
+  .public-nav-link,
+  .public-nav-link::after,
+  .public-nav-cta,
+  .public-nav-cta-arrow,
+  .public-nav-hamburger,
+  .public-nav-hamburger-bar,
+  .public-nav-mobile-panel,
+  .public-nav-mobile-link,
+  .public-nav-mobile-cta {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

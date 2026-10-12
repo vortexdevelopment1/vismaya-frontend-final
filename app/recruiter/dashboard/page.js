@@ -171,6 +171,8 @@ export default function OrganizationDashboardPage() {
             display: "flex",
             flexDirection: "column",
             gap: "16px",
+            minWidth: 0,
+            overflow: "hidden",
           }}
         >
           <div
@@ -352,6 +354,8 @@ export default function OrganizationDashboardPage() {
             display: "flex",
             flexDirection: "column",
             gap: "16px",
+            minWidth: 0,
+            overflow: "hidden",
           }}
         >
           <div
@@ -469,12 +473,12 @@ export default function OrganizationDashboardPage() {
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
           }
           .dashboard-main-grid {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: minmax(0, 1fr) !important;
           }
         }
         @media (max-width: 599.98px) {
           .dashboard-stats-grid {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: minmax(0, 1fr) !important;
           }
         }
       `}</style>

@@ -32,18 +32,18 @@
 
   /* Text Colors */
   --text-primary: #292C29;
-  --text-secondary: #777970;
-  --text-muted: #777970;
-  --text-soft-muted: #99948A;
+  --text-secondary: #5A5C53;
+  --text-muted: #5A5C53;
+  --text-soft-muted: #777970;
   --text-dark-primary: #FAF9F6;
   --text-dark-muted: #99948A;
 
   /* Gold/Bronze Studio Accent System */
-  --gold: #9B7A3F;
-  --pri: #9B7A3F;
-  --primary: #9B7A3F;
-  --primary-hover: #866731;
-  --gold-light: #B8924F;
+  --gold: #80632E;
+  --pri: #80632E;
+  --primary: #80632E;
+  --primary-hover: #6B5122;
+  --gold-light: #9B7A3F;
   --gold-gradient: linear-gradient(135deg, #9B7A3F 0%, #866731 100%);
   --primary-gradient: linear-gradient(135deg, #9B7A3F 0%, #866731 100%);
   --gold-text: #FAF9F6;
@@ -86,7 +86,7 @@
   --radius-pill: 999px;
 
   /* Layout dimensions */
-  --sidebar-width: 260px;
+  --sidebar-width: 280px;
   --topbar-height: 72px;
 
   /* Shadows */
@@ -360,39 +360,39 @@ a:focus-visible {
   min-height: 44px;
 }
 
-/* Primary Button (Gold Gradient with Dark Text & Glow) */
+/* Primary Button (Flat Gold Accent with White Text) */
 .btn-primary,
 .btn.pri,
 .btn-pista {
-  background: var(--gold-gradient) !important;
-  color: var(--gold-text) !important;
-  border: 1px solid #ffd54a !important;
-  box-shadow: var(--gold-glow) !important;
+  background: var(--gold, #9B7A3F) !important;
+  color: var(--text-inverse, #FAF9F6) !important;
+  border: 1px solid var(--primary-hover, #866731) !important;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(41, 44, 41, 0.05)) !important;
 }
 
 .btn-primary:hover,
 .btn.pri:hover,
 .btn-pista:hover {
-  box-shadow: 0 10px 28px rgba(255, 188, 0, 0.40) !important;
+  background: var(--primary-hover, #866731) !important;
+  color: var(--text-inverse, #FAF9F6) !important;
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(41, 44, 41, 0.08)) !important;
 }
 
 /* Secondary / Glass Button */
 .btn-secondary,
 .btn-glass,
 .btn.glass {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  color: var(--text-primary);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
+  background: var(--bg-alt, #F0EEE7);
+  border: 1px solid var(--border-color, #E4E1D9);
+  color: var(--text-primary, #292C29);
 }
 
 .btn-secondary:hover,
 .btn-glass:hover,
 .btn.glass:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.28);
-  color: #ffffff;
+  background: var(--border-color, #E4E1D9);
+  border-color: #D1CBC1;
+  color: var(--text-primary, #292C29);
 }
 
 /* Ghost / Flat Button */
@@ -679,17 +679,25 @@ p, span, h1, h2, h3, h4, h5, h6, td, th {
   }
 }
 
-/* Responsive Content Cards Grid: 3 cols (>= 1180px), 2 cols (768 - 1179px), 1 col (< 768px) */
+/* Responsive Content Cards Grid: 4 cols (>= 1440px), 3 cols (1024-1439px), 2 cols (768-1023px), 1 col (< 768px) */
 .talent-cards-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
   gap: 24px;
 }
 
-@media (max-width: 1179.98px) {
+@media (max-width: 1439.98px) {
+  .talent-cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (max-width: 1023.98px) {
   .talent-cards-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
+    gap: 16px;
   }
 }
 

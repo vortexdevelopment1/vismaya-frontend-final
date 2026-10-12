@@ -57,9 +57,9 @@ export default function Modal({
         style={{
           position: "fixed",
           inset: 0,
-          backgroundColor: "rgba(7, 11, 18, 0.84)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
+          backgroundColor: "rgba(43, 45, 42, 0.55)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
           animation: "fadeIn 0.2s ease-out",
         }}
       />
@@ -77,11 +77,11 @@ export default function Modal({
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          backgroundColor: "#0f1626",
-          border: "1px solid rgba(255, 255, 255, 0.16)",
-          borderRadius: "20px",
-          boxShadow: "0 24px 60px rgba(0, 0, 0, 0.7)",
-          color: "#eceaf5",
+          backgroundColor: "var(--bg-surface, #FFFFFF)",
+          border: "1px solid var(--border-color, #E4E1D9)",
+          borderRadius: "8px",
+          boxShadow: "0 20px 48px rgba(41, 44, 41, 0.16)",
+          color: "var(--text-primary, #292C29)",
           ...style,
         }}
         className="modal-dialog-panel"
@@ -91,17 +91,18 @@ export default function Modal({
           <div className="bottom-sheet-drag-handle" />
         </div>
 
-        {/* Header */}
+        {/* Header - Gold-Brown Theme Band */}
         {(title || onClose) && (
           <div
             style={{
               padding: "18px 24px",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.10)",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.18)",
               display: "flex",
               alignItems: "flex-start",
               justifyContent: "space-between",
               gap: "16px",
-              backgroundColor: "rgba(255, 255, 255, 0.02)",
+              backgroundColor: "var(--gold, #9B7A3F)",
+              color: "#FAF9F6",
               flexShrink: 0,
             }}
             className="modal-header-box"
@@ -110,11 +111,11 @@ export default function Modal({
               {title && (
                 <h3
                   style={{
-                    fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                    fontFamily: "var(--font-heading), Georgia, serif",
                     fontSize: "20px",
                     lineHeight: "26px",
                     fontWeight: "700",
-                    color: "#eceaf5",
+                    color: "#FAF9F6",
                     margin: 0,
                   }}
                 >
@@ -126,7 +127,7 @@ export default function Modal({
                   style={{
                     fontSize: "13px",
                     lineHeight: "20px",
-                    color: "#a3acc2",
+                    color: "rgba(250, 249, 246, 0.88)",
                     margin: "4px 0 0 0",
                   }}
                 >
@@ -140,15 +141,15 @@ export default function Modal({
                 onClick={onClose}
                 aria-label="Close dialog"
                 style={{
-                  color: "#a3acc2",
-                  width: "44px",
-                  height: "44px",
+                  color: "#FAF9F6",
+                  width: "36px",
+                  height: "36px",
                   borderRadius: "50%",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(255, 255, 255, 0.14)",
+                  backgroundColor: "rgba(255, 255, 255, 0.15)",
+                  border: "1px solid rgba(255, 255, 255, 0.25)",
                   cursor: "pointer",
                   transition: "all var(--transition)",
                   flexShrink: 0,
@@ -167,7 +168,8 @@ export default function Modal({
             overflowY: "auto",
             WebkitOverflowScrolling: "touch",
             flex: 1,
-            color: "#eceaf5",
+            backgroundColor: "#FAF9F6",
+            color: "var(--text-primary, #292C29)",
           }}
           className="modal-body-content"
         >
@@ -179,8 +181,8 @@ export default function Modal({
           <div
             style={{
               padding: "16px 24px",
-              borderTop: "1px solid rgba(255, 255, 255, 0.10)",
-              backgroundColor: "rgba(255, 255, 255, 0.02)",
+              borderTop: "1px solid var(--border-color, #E4E1D9)",
+              backgroundColor: "var(--bg-surface, #FFFFFF)",
               display: "flex",
               alignItems: "center",
               justifyContent: "flex-end",

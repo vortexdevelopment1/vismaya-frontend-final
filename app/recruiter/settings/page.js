@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
+import Link from "next/link";
 import {
   Building2,
   ShieldCheck,
@@ -11,27 +12,20 @@ import {
   AlertCircle,
   UploadCloud,
   FileText,
-  Eye,
-  EyeOff,
   Smartphone,
   MessageSquare,
   Mail,
   Check,
   Laptop,
-  Globe,
-  Radio,
   Clock,
-  Sparkles,
   AlertTriangle,
-  RotateCcw,
-  X,
+  ChevronRight,
 } from "lucide-react";
-import PageHeader from "@/components/shared/PageHeader";
 import ProgressBar from "@/components/shared/ProgressBar";
+import PasswordInput from "@/components/PasswordInput";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { authService } from "@/lib/api/services/authService";
 import { isRealMode } from "@/lib/api/config";
-
 
 const SETTINGS_MENU_ITEMS = [
   { key: "profile", label: "Organization profile", icon: Building2 },
@@ -92,7 +86,6 @@ export default function OrganizationSettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [securityErrors, setSecurityErrors] = useState({});
 
   // Active sessions state
@@ -169,10 +162,10 @@ export default function OrganizationSettingsPage() {
   };
 
   const getStrengthColor = (score) => {
-    if (score <= 25) return "var(--danger)";
-    if (score <= 50) return "var(--warning)";
-    if (score <= 75) return "var(--info)";
-    return "var(--success)";
+    if (score <= 25) return "#B42318";
+    if (score <= 50) return "#C9A55C";
+    if (score <= 75) return "#8A6B2E";
+    return "#8A6B2E";
   };
 
   // Tab switching with dirty state detection
@@ -281,7 +274,7 @@ export default function OrganizationSettingsPage() {
 
   // Security Form Submit
   const handleUpdatePassword = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     const errs = {};
     if (!currentPassword) {
       errs.currentPassword = "Enter your current password.";
@@ -318,7 +311,6 @@ export default function OrganizationSettingsPage() {
     showFeedback("Password updated securely.");
   };
 
-
   const handleSignOutSession = (sessionId) => {
     setActiveSessions((prev) => prev.filter((s) => s.id !== sessionId));
     showFeedback("Signed out of session successfully.");
@@ -339,25 +331,24 @@ export default function OrganizationSettingsPage() {
 
   if (!isHydrated) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%" }}>
-        <div style={{ height: "48px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "12px", width: "40%" }} />
-        <div style={{ height: "400px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "16px" }} />
+      <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ height: "48px", background: "#F3EFE6", borderRadius: "12px", width: "40%" }} />
+        <div style={{ height: "400px", background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "20px" }} />
       </div>
     );
   }
 
   const inputStyle = {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.14)",
+    backgroundColor: "#FFFFFF",
+    border: "1px solid #D9D2C0",
     borderRadius: "10px",
-    padding: "0 14px",
-    height: "44px",
-    minHeight: "44px",
-    color: "#eceaf5",
-    fontSize: "13px",
+    padding: "0 16px",
+    height: "48px",
+    minHeight: "48px",
+    color: "#2B2D2A",
+    fontSize: "15px",
     fontFamily: "var(--font-body), 'Inter', sans-serif",
     outline: "none",
-    colorScheme: "dark",
     width: "100%",
     boxSizing: "border-box",
     transition: "border-color 0.15s ease, box-shadow 0.15s ease",
@@ -366,16 +357,62 @@ export default function OrganizationSettingsPage() {
   const isCurrentTabDirty = (activeTab === "profile" && isProfileDirty) || (activeTab === "notifications" && isNotifDirty);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px", width: "100%", minWidth: 0 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px", width: "100%", maxWidth: "1200px", margin: "0 auto" }}>
       {/* Page Header */}
-      <PageHeader
-        title="Settings & Corporate Profile"
-        subtitle="Manage organization verification credentials, authorized contact details, security, and notification channels."
-        breadcrumbs={[
-          { label: "Dashboard", href: "/recruiter/dashboard" },
-          { label: "Settings" },
-        ]}
-      />
+      <div>
+        <nav
+          aria-label="Breadcrumb"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "13px",
+            color: "#5A584F",
+            marginBottom: "8px",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
+          }}
+        >
+          <Link
+            href="/recruiter/dashboard"
+            style={{
+              color: "#5A584F",
+              textDecoration: "none",
+              transition: "color 0.15s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#8A6B2E")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#5A584F")}
+          >
+            Dashboard
+          </Link>
+          <ChevronRight size={13} style={{ color: "#5A584F" }} />
+          <span style={{ color: "#8A6B2E", fontWeight: 600 }}>Settings</span>
+        </nav>
+
+        <h1
+          style={{
+            fontFamily: "Playfair Display, Georgia, serif",
+            fontSize: "40px",
+            fontWeight: 700,
+            color: "#2B2D2A",
+            margin: "0 0 8px 0",
+            letterSpacing: "-0.01em",
+            lineHeight: 1.2,
+          }}
+        >
+          Settings & Corporate Profile
+        </h1>
+        <p
+          style={{
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
+            fontSize: "16px",
+            color: "#5A584F",
+            margin: 0,
+            lineHeight: 1.6,
+          }}
+        >
+          Manage organization verification credentials, authorized contact details, security, and notification channels.
+        </p>
+      </div>
 
       {/* Feedback Toast Banner */}
       {toastMessage && (
@@ -383,31 +420,27 @@ export default function OrganizationSettingsPage() {
           style={{
             backgroundColor:
               toastType === "error"
-                ? "rgba(239, 68, 68, 0.15)"
+                ? "rgba(180, 35, 24, 0.08)"
                 : toastType === "info"
-                ? "rgba(59, 130, 246, 0.15)"
-                : "rgba(52, 211, 153, 0.15)",
+                ? "rgba(138, 107, 46, 0.08)"
+                : "rgba(138, 107, 46, 0.12)",
             border: `1px solid ${
               toastType === "error"
-                ? "rgba(239, 68, 68, 0.35)"
-                : toastType === "info"
-                ? "rgba(59, 130, 246, 0.35)"
-                : "rgba(52, 211, 153, 0.35)"
+                ? "rgba(180, 35, 24, 0.3)"
+                : "#C9A55C"
             }`,
             color:
               toastType === "error"
-                ? "#ef4444"
-                : toastType === "info"
-                ? "#60a5fa"
-                : "#34d399",
-            padding: "14px 18px",
+                ? "#B42318"
+                : "#6E5420",
+            padding: "14px 20px",
             borderRadius: "12px",
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            fontSize: "13px",
-            fontWeight: "600",
-            backdropFilter: "blur(12px)",
+            fontSize: "14px",
+            fontWeight: 600,
+            boxShadow: "0 2px 8px rgba(43, 45, 42, 0.04)",
           }}
         >
           {toastType === "error" ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
@@ -421,8 +454,8 @@ export default function OrganizationSettingsPage() {
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(7, 11, 18, 0.8)",
-            backdropFilter: "blur(8px)",
+            backgroundColor: "rgba(43, 45, 42, 0.55)",
+            backdropFilter: "blur(4px)",
             zIndex: 100,
             display: "flex",
             alignItems: "center",
@@ -432,33 +465,59 @@ export default function OrganizationSettingsPage() {
         >
           <div
             style={{
-              backgroundColor: "#0d1424",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E8E2D4",
               borderRadius: "16px",
-              padding: "24px",
+              padding: "28px",
               maxWidth: "460px",
               width: "100%",
-              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.6)",
+              boxShadow: "0 20px 50px rgba(43, 45, 42, 0.15)",
               display: "flex",
               flexDirection: "column",
               gap: "16px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", color: "var(--gold)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", color: "#8A6B2E" }}>
               <AlertTriangle size={24} />
-              <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+              <h3
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "700",
+                  color: "#2B2D2A",
+                  margin: 0,
+                  fontFamily: "Playfair Display, Georgia, serif",
+                }}
+              >
                 Unsaved changes detected
               </h3>
             </div>
-            <p style={{ fontSize: "13px", color: "#a3acc2", margin: 0, lineHeight: 1.5 }}>
+            <p
+              style={{
+                fontSize: "14px",
+                color: "#5A584F",
+                margin: 0,
+                lineHeight: 1.5,
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
+              }}
+            >
               You have unsaved changes in this tab. If you switch tabs without saving, your modifications will be discarded.
             </p>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "8px" }}>
               <button
                 type="button"
                 onClick={handleDiscardChanges}
-                className="btn-danger-outline"
-                style={{ height: "36px", padding: "0 16px", fontSize: "13px" }}
+                style={{
+                  height: "42px",
+                  padding: "0 18px",
+                  borderRadius: "10px",
+                  border: "1px solid #B42318",
+                  background: "transparent",
+                  color: "#B42318",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
               >
                 Discard changes
               </button>
@@ -469,8 +528,18 @@ export default function OrganizationSettingsPage() {
                   if (activeTab === "notifications") handleSaveNotifications();
                   if (pendingTab) switchTab(pendingTab);
                 }}
-                className="btn-primary"
-                style={{ height: "36px", padding: "0 16px", fontSize: "13px" }}
+                style={{
+                  height: "42px",
+                  padding: "0 20px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: "#8A6B2E",
+                  color: "#FFFFFF",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  transition: "background 0.15s ease",
+                }}
               >
                 Save & continue
               </button>
@@ -496,7 +565,9 @@ export default function OrganizationSettingsPage() {
                   onClick={() => handleTabClick(item.key)}
                   className={`settings-menu-item ${isActive ? "active" : ""}`}
                 >
-                  <Icon size={20} className="menu-item-icon" />
+                  <span className="menu-item-icon-wrap">
+                    <Icon size={20} />
+                  </span>
                   <span className="menu-item-label">{item.label}</span>
                   {item.key === "profile" && isProfileDirty && (
                     <span className="dirty-dot" title="Unsaved edits" />
@@ -514,7 +585,7 @@ export default function OrganizationSettingsPage() {
         <div className="settings-content-area">
           {/* TAB 1: ORGANIZATION PROFILE */}
           {activeTab === "profile" && (
-            <form onSubmit={handleSaveProfile} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <form onSubmit={handleSaveProfile} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
               {/* Card 1: Organization Identity */}
               <div className="settings-card">
                 <div className="settings-card-header">
@@ -542,7 +613,7 @@ export default function OrganizationSettingsPage() {
                         }}
                         style={{
                           ...inputStyle,
-                          borderColor: profileErrors.companyName ? "var(--danger)" : undefined,
+                          borderColor: profileErrors.companyName ? "#B42318" : "#D9D2C0",
                         }}
                         placeholder="e.g. Zee Films Studios"
                       />
@@ -562,18 +633,19 @@ export default function OrganizationSettingsPage() {
                           setProfileForm({ ...profileForm, companyType: e.target.value });
                           setIsProfileDirty(true);
                         }}
+                        className="form-select"
                         style={{
                           ...inputStyle,
                           cursor: "pointer",
-                          borderColor: profileErrors.companyType ? "var(--danger)" : undefined,
+                          borderColor: profileErrors.companyType ? "#B42318" : "#D9D2C0",
                         }}
                       >
-                        <option value="Production House" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Production House</option>
-                        <option value="Film Studio" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Film Studio</option>
-                        <option value="Casting Agency" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Casting Agency</option>
-                        <option value="Ad Film Agency" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Ad Film Agency</option>
-                        <option value="OTT Platform / Studio" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>OTT Platform / Studio</option>
-                        <option value="Independent Producer" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Independent Producer</option>
+                        <option value="Production House">Production House</option>
+                        <option value="Film Studio">Film Studio</option>
+                        <option value="Casting Agency">Casting Agency</option>
+                        <option value="Ad Film Agency">Ad Film Agency</option>
+                        <option value="OTT Platform / Studio">OTT Platform / Studio</option>
+                        <option value="Independent Producer">Independent Producer</option>
                       </select>
                       {profileErrors.companyType && (
                         <span className="form-error">{profileErrors.companyType}</span>
@@ -630,7 +702,7 @@ export default function OrganizationSettingsPage() {
                         }}
                         style={{
                           ...inputStyle,
-                          borderColor: profileErrors.website ? "var(--danger)" : undefined,
+                          borderColor: profileErrors.website ? "#B42318" : "#D9D2C0",
                         }}
                         placeholder="https://zeefilms.com"
                       />
@@ -645,7 +717,7 @@ export default function OrganizationSettingsPage() {
                         Registered studio address <span className="req">*</span>
                       </label>
                       <textarea
-                        rows={2}
+                        rows={3}
                         value={profileForm.address}
                         onChange={(e) => {
                           setProfileForm({ ...profileForm, address: e.target.value });
@@ -654,11 +726,11 @@ export default function OrganizationSettingsPage() {
                         style={{
                           ...inputStyle,
                           height: "auto",
-                          minHeight: "72px",
-                          padding: "10px 14px",
+                          minHeight: "110px",
+                          padding: "12px 16px",
                           resize: "vertical",
                           lineHeight: 1.5,
-                          borderColor: profileErrors.address ? "var(--danger)" : undefined,
+                          borderColor: profileErrors.address ? "#B42318" : "#D9D2C0",
                         }}
                         placeholder="Complete studio/registered office address..."
                       />
@@ -697,7 +769,7 @@ export default function OrganizationSettingsPage() {
                         }}
                         style={{
                           ...inputStyle,
-                          borderColor: profileErrors.contactPerson ? "var(--danger)" : undefined,
+                          borderColor: profileErrors.contactPerson ? "#B42318" : "#D9D2C0",
                         }}
                         placeholder="e.g. Vikram Malhotra"
                       />
@@ -720,7 +792,7 @@ export default function OrganizationSettingsPage() {
                         }}
                         style={{
                           ...inputStyle,
-                          borderColor: profileErrors.contactDesignation ? "var(--danger)" : undefined,
+                          borderColor: profileErrors.contactDesignation ? "#B42318" : "#D9D2C0",
                         }}
                         placeholder="e.g. Head of Casting"
                       />
@@ -743,7 +815,7 @@ export default function OrganizationSettingsPage() {
                         }}
                         style={{
                           ...inputStyle,
-                          borderColor: profileErrors.contactPhone ? "var(--danger)" : undefined,
+                          borderColor: profileErrors.contactPhone ? "#B42318" : "#D9D2C0",
                         }}
                         placeholder="+91 98201 54321"
                       />
@@ -766,7 +838,7 @@ export default function OrganizationSettingsPage() {
                         }}
                         style={{
                           ...inputStyle,
-                          borderColor: profileErrors.contactEmail ? "var(--danger)" : undefined,
+                          borderColor: profileErrors.contactEmail ? "#B42318" : "#D9D2C0",
                         }}
                         placeholder="vikram@zeefilms.com"
                       />
@@ -796,35 +868,35 @@ export default function OrganizationSettingsPage() {
                         width: "80px",
                         height: "80px",
                         borderRadius: "16px",
-                        backgroundColor: "rgba(255, 188, 0, 0.12)",
-                        border: "1px solid rgba(255, 188, 0, 0.35)",
+                        backgroundColor: "#F3EFE6",
+                        border: "1px solid #E8E2D4",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: "28px",
-                        fontWeight: "800",
-                        color: "var(--gold)",
+                        fontSize: "32px",
+                        fontWeight: "700",
+                        fontFamily: "Playfair Display, Georgia, serif",
+                        color: "#8A6B2E",
                         flexShrink: 0,
                       }}
                     >
                       {profileForm.companyName.charAt(0).toUpperCase()}
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1, minWidth: "200px" }}>
-                      <span style={{ fontSize: "14px", fontWeight: "600", color: "#eceaf5" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1, minWidth: "220px" }}>
+                      <span style={{ fontSize: "15px", fontWeight: "600", color: "#2B2D2A" }}>
                         Corporate watermark preview
                       </span>
-                      <span className="form-hint">
+                      <span className="form-hint" style={{ marginTop: 0 }}>
                         Recommended: Square PNG, WebP or SVG format. Minimum resolution 400x400px (Max file size 2MB).
                       </span>
-                      <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+                      <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
                         <button
                           type="button"
                           onClick={() => showFeedback("File selector opened for corporate logo upload.")}
-                          className="btn-secondary"
-                          style={{ height: "36px", padding: "0 14px", fontSize: "13px" }}
+                          className="btn-upload-logo"
                         >
-                          <UploadCloud size={15} style={{ color: "var(--gold)" }} />
+                          <UploadCloud size={16} style={{ color: "#8A6B2E" }} />
                           <span>Upload logo</span>
                         </button>
                       </div>
@@ -832,29 +904,22 @@ export default function OrganizationSettingsPage() {
                   </div>
                 </div>
 
-                {/* Desktop Card Footer */}
-                <div className="settings-card-footer">
+                {/* Card Footer / Save Bar */}
+                <div className="settings-card-footer settings-save-bar">
                   <div className="footer-actions">
                     <button
                       type="button"
                       onClick={handleCancelProfile}
-                      className="btn-secondary"
+                      className="btn-ghost-cancel"
                       disabled={!isProfileDirty}
-                      style={{
-                        height: "36px",
-                        padding: "0 16px",
-                        opacity: isProfileDirty ? 1 : 0.5,
-                        cursor: isProfileDirty ? "pointer" : "not-allowed",
-                      }}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="btn-primary"
-                      style={{ height: "36px", padding: "0 20px" }}
+                      className="btn-primary-gold"
                     >
-                      <Save size={15} />
+                      <Save size={16} />
                       <span>Save changes</span>
                     </button>
                   </div>
@@ -865,39 +930,47 @@ export default function OrganizationSettingsPage() {
 
           {/* TAB 2: VERIFICATION STATUS */}
           {activeTab === "verification" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
               {/* Status Banner Card */}
               <div className="settings-card">
-                <div className="settings-card-body" style={{ padding: "24px" }}>
+                <div className="settings-card-body" style={{ padding: "32px" }}>
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
                       flexWrap: "wrap",
-                      gap: "16px",
+                      gap: "20px",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
                       <div
                         style={{
-                          width: "52px",
-                          height: "52px",
-                          borderRadius: "14px",
-                          backgroundColor: "rgba(52, 211, 153, 0.18)",
-                          border: "1px solid rgba(52, 211, 153, 0.35)",
-                          color: "#34d399",
+                          width: "56px",
+                          height: "56px",
+                          borderRadius: "16px",
+                          backgroundColor: "rgba(138, 107, 46, 0.12)",
+                          border: "1px solid rgba(138, 107, 46, 0.25)",
+                          color: "#8A6B2E",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
                         }}
                       >
-                        <ShieldCheck size={28} />
+                        <ShieldCheck size={30} />
                       </div>
                       <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                          <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                          <h2
+                            style={{
+                              fontSize: "22px",
+                              fontWeight: "700",
+                              color: "#2B2D2A",
+                              fontFamily: "Playfair Display, Georgia, serif",
+                              margin: 0,
+                            }}
+                          >
                             Verification status:
                           </h2>
                           <span
@@ -906,17 +979,21 @@ export default function OrganizationSettingsPage() {
                               fontWeight: "700",
                               padding: "4px 12px",
                               borderRadius: "8px",
-                              backgroundColor: "rgba(52, 211, 153, 0.2)",
-                              color: "#34d399",
-                              border: "1px solid rgba(52, 211, 153, 0.4)",
+                              backgroundColor: "rgba(138, 107, 46, 0.12)",
+                              color: "#6E5420",
+                              border: "1px solid rgba(138, 107, 46, 0.25)",
                               textTransform: "uppercase",
                               letterSpacing: "0.04em",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
                             }}
                           >
+                            <Check size={14} />
                             Verified Organization
                           </span>
                         </div>
-                        <p style={{ fontSize: "13px", color: "#a3acc2", margin: "4px 0 0 0" }}>
+                        <p style={{ fontSize: "14px", color: "#5A584F", margin: "6px 0 0 0" }}>
                           Last compliance review by Vismaya Senior Casting Desk: <strong>October 02, 2026</strong>
                         </p>
                       </div>
@@ -937,30 +1014,29 @@ export default function OrganizationSettingsPage() {
                 </div>
 
                 <div className="settings-card-body">
-                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
                     {/* Document 1 */}
                     <div className="doc-row">
-                      <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0 }}>
                         <div className="doc-icon-box">
-                          <FileText size={20} style={{ color: "var(--gold)" }} />
+                          <FileText size={20} />
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <strong style={{ fontSize: "14px", color: "#eceaf5", display: "block" }}>
+                          <strong style={{ fontSize: "15px", color: "#2B2D2A", display: "block", fontWeight: 600 }}>
                             Company registration (Certificate of Incorporation)
                           </strong>
-                          <span style={{ fontSize: "12px", color: "#a3acc2" }}>
+                          <span style={{ fontSize: "13px", color: "#5A584F", marginTop: "2px", display: "block" }}>
                             CIN_Zee_Films_Incorporation_2026.pdf • Verified
                           </span>
                         </div>
                       </div>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                         <span className="status-chip-active">Verified</span>
                         <button
                           type="button"
                           onClick={() => showFeedback("Replace document dialog opened for Company Registration.")}
-                          className="btn-secondary"
-                          style={{ height: "36px", padding: "0 12px", fontSize: "13px" }}
+                          className="btn-replace-doc"
                         >
                           Replace
                         </button>
@@ -969,27 +1045,26 @@ export default function OrganizationSettingsPage() {
 
                     {/* Document 2 */}
                     <div className="doc-row">
-                      <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0 }}>
                         <div className="doc-icon-box">
-                          <FileText size={20} style={{ color: "var(--gold)" }} />
+                          <FileText size={20} />
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <strong style={{ fontSize: "14px", color: "#eceaf5", display: "block" }}>
+                          <strong style={{ fontSize: "15px", color: "#2B2D2A", display: "block", fontWeight: 600 }}>
                             GST registration certificate
                           </strong>
-                          <span style={{ fontSize: "12px", color: "#a3acc2" }}>
+                          <span style={{ fontSize: "13px", color: "#5A584F", marginTop: "2px", display: "block" }}>
                             GSTIN_27AAACZ1234F1Z8_Cert.pdf • Verified
                           </span>
                         </div>
                       </div>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                         <span className="status-chip-active">Verified</span>
                         <button
                           type="button"
                           onClick={() => showFeedback("Replace document dialog opened for GST Certificate.")}
-                          className="btn-secondary"
-                          style={{ height: "36px", padding: "0 12px", fontSize: "13px" }}
+                          className="btn-replace-doc"
                         >
                           Replace
                         </button>
@@ -998,27 +1073,26 @@ export default function OrganizationSettingsPage() {
 
                     {/* Document 3 */}
                     <div className="doc-row">
-                      <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0 }}>
                         <div className="doc-icon-box">
-                          <FileText size={20} style={{ color: "var(--gold)" }} />
+                          <FileText size={20} />
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <strong style={{ fontSize: "14px", color: "#eceaf5", display: "block" }}>
+                          <strong style={{ fontSize: "15px", color: "#2B2D2A", display: "block", fontWeight: 600 }}>
                             Authorized signatory identity proof
                           </strong>
-                          <span style={{ fontSize: "12px", color: "#a3acc2" }}>
+                          <span style={{ fontSize: "13px", color: "#5A584F", marginTop: "2px", display: "block" }}>
                             Govt_ID_Vikram_Malhotra.pdf • Verified
                           </span>
                         </div>
                       </div>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                         <span className="status-chip-active">Verified</span>
                         <button
                           type="button"
                           onClick={() => showFeedback("Replace document dialog opened for Signatory ID.")}
-                          className="btn-secondary"
-                          style={{ height: "36px", padding: "0 12px", fontSize: "13px" }}
+                          className="btn-replace-doc"
                         >
                           Replace
                         </button>
@@ -1045,21 +1119,21 @@ export default function OrganizationSettingsPage() {
                 </div>
 
                 <div className="settings-card-body">
-                  <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%" }}>
                     {/* Current Password */}
                     <div className="form-group">
                       <label className="form-label">
                         Current password <span className="req">*</span>
                       </label>
-                      <input
-                        type="password"
+                      <PasswordInput
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        style={{
+                        inputStyle={{
                           ...inputStyle,
-                          borderColor: securityErrors.currentPassword ? "var(--danger)" : undefined,
+                          borderColor: securityErrors.currentPassword ? "#B42318" : "#D9D2C0",
                         }}
                         placeholder="••••••••••••"
+                        required
                       />
                       {securityErrors.currentPassword && (
                         <span className="form-error">{securityErrors.currentPassword}</span>
@@ -1071,40 +1145,16 @@ export default function OrganizationSettingsPage() {
                       <label className="form-label">
                         New password <span className="req">*</span>
                       </label>
-                      <div style={{ position: "relative" }}>
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          style={{
-                            ...inputStyle,
-                            paddingRight: "40px",
-                            borderColor: securityErrors.newPassword ? "var(--danger)" : undefined,
-                          }}
-                          placeholder="••••••••••••"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          aria-label={showPassword ? "Hide password" : "Show password"}
-                          style={{
-                            position: "absolute",
-                            right: "12px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            background: "transparent",
-                            border: "none",
-                            color: "#a3acc2",
-                            cursor: "pointer",
-                            padding: 0,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
+                      <PasswordInput
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        inputStyle={{
+                          ...inputStyle,
+                          borderColor: securityErrors.newPassword ? "#B42318" : "#D9D2C0",
+                        }}
+                        placeholder="••••••••••••"
+                        required
+                      />
                       {securityErrors.newPassword && (
                         <span className="form-error">{securityErrors.newPassword}</span>
                       )}
@@ -1113,15 +1163,16 @@ export default function OrganizationSettingsPage() {
                       {newPassword && (
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px" }}>
                           <ProgressBar
-                            progress={passwordStrength}
+                            value={passwordStrength}
                             color={getStrengthColor(passwordStrength)}
-                            height={4}
+                            height="5px"
+                            showPercentage={false}
                           />
                           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
-                            <span style={{ color: "#a3acc2" }}>
+                            <span style={{ color: "#5A584F" }}>
                               Strength: <strong style={{ color: getStrengthColor(passwordStrength) }}>{getStrengthLabel(passwordStrength)}</strong>
                             </span>
-                            <span style={{ color: "#7c869e" }}>8+ chars, uppercase, number & symbol</span>
+                            <span style={{ color: "#5A584F" }}>8+ chars, uppercase, number & symbol</span>
                           </div>
                         </div>
                       )}
@@ -1132,15 +1183,15 @@ export default function OrganizationSettingsPage() {
                       <label className="form-label">
                         Confirm new password <span className="req">*</span>
                       </label>
-                      <input
-                        type="password"
+                      <PasswordInput
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        style={{
+                        inputStyle={{
                           ...inputStyle,
-                          borderColor: securityErrors.confirmPassword ? "var(--danger)" : undefined,
+                          borderColor: securityErrors.confirmPassword ? "#B42318" : "#D9D2C0",
                         }}
                         placeholder="••••••••••••"
+                        required
                       />
                       {securityErrors.confirmPassword && (
                         <span className="form-error">{securityErrors.confirmPassword}</span>
@@ -1150,44 +1201,43 @@ export default function OrganizationSettingsPage() {
                     {/* Password Requirements Checklist */}
                     <div
                       style={{
-                        backgroundColor: "rgba(255, 255, 255, 0.03)",
-                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        backgroundColor: "#FAF9F7",
+                        border: "1px solid #E8E2D4",
                         borderRadius: "10px",
-                        padding: "12px 14px",
+                        padding: "14px 16px",
                         display: "flex",
                         flexDirection: "column",
-                        gap: "6px",
+                        gap: "8px",
                       }}
                     >
-                      <span style={{ fontSize: "12px", fontWeight: "700", color: "#a3acc2" }}>
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A" }}>
                         Password requirements:
                       </span>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "12px" }}>
-                        <span style={{ color: newPassword.length >= 8 ? "#34d399" : "#7c869e", display: "flex", alignItems: "center", gap: "6px" }}>
-                          <Check size={12} /> At least 8 characters
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "13px" }}>
+                        <span style={{ color: newPassword.length >= 8 ? "#2B2D2A" : "#5A584F", display: "flex", alignItems: "center", gap: "6px" }}>
+                          <Check size={14} style={{ color: newPassword.length >= 8 ? "#8A6B2E" : "#D9D2C0" }} /> At least 8 characters
                         </span>
-                        <span style={{ color: /[A-Z]/.test(newPassword) ? "#34d399" : "#7c869e", display: "flex", alignItems: "center", gap: "6px" }}>
-                          <Check size={12} /> Uppercase letter
+                        <span style={{ color: /[A-Z]/.test(newPassword) ? "#2B2D2A" : "#5A584F", display: "flex", alignItems: "center", gap: "6px" }}>
+                          <Check size={14} style={{ color: /[A-Z]/.test(newPassword) ? "#8A6B2E" : "#D9D2C0" }} /> Uppercase letter
                         </span>
-                        <span style={{ color: /[0-9]/.test(newPassword) ? "#34d399" : "#7c869e", display: "flex", alignItems: "center", gap: "6px" }}>
-                          <Check size={12} /> One number
+                        <span style={{ color: /[0-9]/.test(newPassword) ? "#2B2D2A" : "#5A584F", display: "flex", alignItems: "center", gap: "6px" }}>
+                          <Check size={14} style={{ color: /[0-9]/.test(newPassword) ? "#8A6B2E" : "#D9D2C0" }} /> One number
                         </span>
-                        <span style={{ color: /[^A-Za-z0-9]/.test(newPassword) ? "#34d399" : "#7c869e", display: "flex", alignItems: "center", gap: "6px" }}>
-                          <Check size={12} /> Special character
+                        <span style={{ color: /[^A-Za-z0-9]/.test(newPassword) ? "#2B2D2A" : "#5A584F", display: "flex", alignItems: "center", gap: "6px" }}>
+                          <Check size={14} style={{ color: /[^A-Za-z0-9]/.test(newPassword) ? "#8A6B2E" : "#D9D2C0" }} /> Special character
                         </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="security-card-footer">
-                  <div className="footer-actions" style={{ width: "100%", justifyContent: "flex-end" }}>
+                <div className="settings-card-footer settings-save-bar">
+                  <div className="footer-actions">
                     <button
                       type="submit"
-                      className="btn-primary"
-                      style={{ height: "36px", padding: "0 20px" }}
+                      className="btn-primary-gold"
                     >
-                      <Lock size={15} />
+                      <Lock size={16} />
                       <span>Update password</span>
                     </button>
                   </div>
@@ -1206,23 +1256,23 @@ export default function OrganizationSettingsPage() {
                 </div>
 
                 <div className="settings-card-body">
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
                     {activeSessions.map((sess) => (
                       <div key={sess.id} className="session-row">
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0, flex: 1 }}>
                           <div className="session-icon-box">
-                            <Laptop size={20} style={{ color: sess.isCurrent ? "var(--gold)" : "#a3acc2" }} />
+                            <Laptop size={20} style={{ color: sess.isCurrent ? "#8A6B2E" : "#5A584F" }} />
                           </div>
                           <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                              <strong style={{ fontSize: "14px", color: "#eceaf5", overflowWrap: "anywhere" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+                              <strong style={{ fontSize: "15px", color: "#2B2D2A", fontWeight: 600, overflowWrap: "anywhere" }}>
                                 {sess.device}
                               </strong>
                               {sess.isCurrent && (
                                 <span className="session-current-chip">Current device</span>
                               )}
                             </div>
-                            <span style={{ fontSize: "12px", color: "#a3acc2", display: "block", overflowWrap: "anywhere", lineHeight: 1.4 }}>
+                            <span style={{ fontSize: "13px", color: "#5A584F", display: "block", overflowWrap: "anywhere", lineHeight: 1.4 }}>
                               {sess.location} • {sess.ip} • {sess.lastActive}
                             </span>
                           </div>
@@ -1232,8 +1282,7 @@ export default function OrganizationSettingsPage() {
                           <button
                             type="button"
                             onClick={() => handleSignOutSession(sess.id)}
-                            className="btn-secondary"
-                            style={{ height: "36px", padding: "0 12px", fontSize: "13px", flexShrink: 0 }}
+                            className="btn-signout-session"
                           >
                             Sign out
                           </button>
@@ -1248,7 +1297,7 @@ export default function OrganizationSettingsPage() {
 
           {/* TAB 4: NOTIFICATION CHANNELS */}
           {activeTab === "notifications" && (
-            <form onSubmit={handleSaveNotifications} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <form onSubmit={handleSaveNotifications} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
               <div className="settings-card">
                 <div className="settings-card-header">
                   <div>
@@ -1260,167 +1309,226 @@ export default function OrganizationSettingsPage() {
                 </div>
 
                 <div className="settings-card-body">
-                  <div className="notif-channels-grid">
+                  <div className="notif-channels-list">
                     {/* In-App Alerts */}
-                    <div className="channel-card">
-                      <div className="channel-header">
+                    <div className="channel-row">
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", minWidth: 0, flex: 1 }}>
                         <div className="channel-icon-box">
-                          <Bell size={20} style={{ color: "var(--gold)" }} />
+                          <Bell size={20} />
                         </div>
-                        <input
-                          type="checkbox"
-                          checked={notifState.inApp}
-                          onChange={(e) => {
-                            setNotifState({ ...notifState, inApp: e.target.checked });
-                            setIsNotifDirty(true);
-                          }}
-                          className="channel-toggle"
-                          aria-label="Toggle in-app alerts"
-                        />
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <strong className="channel-title">In-app notifications</strong>
+                          <p className="channel-desc">
+                            Real-time alerts inside the Organization portal when talent applies, reviews conclude, or auditions arrive.
+                          </p>
+                        </div>
                       </div>
-                      <strong className="channel-title">In-app notifications</strong>
-                      <p className="channel-desc">
-                        Real-time alerts inside the Organization portal when talent applies, reviews conclude, or auditions arrive.
-                      </p>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={notifState.inApp}
+                        aria-label="Toggle in-app alerts"
+                        onClick={() => {
+                          setNotifState({ ...notifState, inApp: !notifState.inApp });
+                          setIsNotifDirty(true);
+                        }}
+                        className="notif-toggle-btn"
+                        style={{
+                          backgroundColor: notifState.inApp ? "#8A6B2E" : "#E8E2D4",
+                        }}
+                      >
+                        <span
+                          className="notif-toggle-knob"
+                          style={{
+                            transform: notifState.inApp ? "translateX(18px)" : "translateX(0px)",
+                          }}
+                        />
+                      </button>
                     </div>
 
                     {/* Email Digest */}
-                    <div className="channel-card">
-                      <div className="channel-header">
+                    <div className="channel-row">
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", minWidth: 0, flex: 1 }}>
                         <div className="channel-icon-box">
-                          <Mail size={20} style={{ color: "var(--gold)" }} />
+                          <Mail size={20} />
                         </div>
-                        <input
-                          type="checkbox"
-                          checked={notifState.email}
-                          onChange={(e) => {
-                            setNotifState({ ...notifState, email: e.target.checked });
-                            setIsNotifDirty(true);
-                          }}
-                          className="channel-toggle"
-                          aria-label="Toggle email notifications"
-                        />
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <strong className="channel-title">Daily casting email digest</strong>
+                          <p className="channel-desc">
+                            Consolidated executive summary of applicant pipeline counts, shortlisted talent, and pending deadlines.
+                          </p>
+                        </div>
                       </div>
-                      <strong className="channel-title">Daily casting email digest</strong>
-                      <p className="channel-desc">
-                        Consolidated executive summary of applicant pipeline counts, shortlisted talent, and pending deadlines.
-                      </p>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={notifState.email}
+                        aria-label="Toggle email notifications"
+                        onClick={() => {
+                          setNotifState({ ...notifState, email: !notifState.email });
+                          setIsNotifDirty(true);
+                        }}
+                        className="notif-toggle-btn"
+                        style={{
+                          backgroundColor: notifState.email ? "#8A6B2E" : "#E8E2D4",
+                        }}
+                      >
+                        <span
+                          className="notif-toggle-knob"
+                          style={{
+                            transform: notifState.email ? "translateX(18px)" : "translateX(0px)",
+                          }}
+                        />
+                      </button>
                     </div>
 
                     {/* WhatsApp Audition Alerts */}
-                    <div className="channel-card">
-                      <div className="channel-header">
+                    <div className="channel-row">
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", minWidth: 0, flex: 1 }}>
                         <div className="channel-icon-box">
-                          <MessageSquare size={20} style={{ color: "var(--gold)" }} />
+                          <MessageSquare size={20} />
                         </div>
-                        <input
-                          type="checkbox"
-                          checked={notifState.whatsapp}
-                          onChange={(e) => {
-                            setNotifState({ ...notifState, whatsapp: e.target.checked });
-                            setIsNotifDirty(true);
-                          }}
-                          className="channel-toggle"
-                          aria-label="Toggle WhatsApp alerts"
-                        />
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <strong className="channel-title">WhatsApp audition updates</strong>
+                          <p className="channel-desc">
+                            Urgent instant notifications for confirmed audition callbacks and fast-turnaround self-tape submissions.
+                          </p>
+                        </div>
                       </div>
-                      <strong className="channel-title">WhatsApp audition updates</strong>
-                      <p className="channel-desc">
-                        Urgent instant notifications for confirmed audition callbacks and fast-turnaround self-tape submissions.
-                      </p>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={notifState.whatsapp}
+                        aria-label="Toggle WhatsApp alerts"
+                        onClick={() => {
+                          setNotifState({ ...notifState, whatsapp: !notifState.whatsapp });
+                          setIsNotifDirty(true);
+                        }}
+                        className="notif-toggle-btn"
+                        style={{
+                          backgroundColor: notifState.whatsapp ? "#8A6B2E" : "#E8E2D4",
+                        }}
+                      >
+                        <span
+                          className="notif-toggle-knob"
+                          style={{
+                            transform: notifState.whatsapp ? "translateX(18px)" : "translateX(0px)",
+                          }}
+                        />
+                      </button>
                     </div>
 
                     {/* SMS Urgent Updates */}
-                    <div className="channel-card">
-                      <div className="channel-header">
+                    <div className="channel-row">
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", minWidth: 0, flex: 1 }}>
                         <div className="channel-icon-box">
-                          <Smartphone size={20} style={{ color: "var(--gold)" }} />
+                          <Smartphone size={20} />
                         </div>
-                        <input
-                          type="checkbox"
-                          checked={notifState.sms}
-                          onChange={(e) => {
-                            setNotifState({ ...notifState, sms: e.target.checked });
-                            setIsNotifDirty(true);
-                          }}
-                          className="channel-toggle"
-                          aria-label="Toggle SMS alerts"
-                        />
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <strong className="channel-title">SMS critical alerts</strong>
+                          <p className="channel-desc">
+                            High-priority SMS alerts when talent confirms availability or when casting call deadlines reach zero.
+                          </p>
+                        </div>
                       </div>
-                      <strong className="channel-title">SMS critical alerts</strong>
-                      <p className="channel-desc">
-                        High-priority SMS alerts when talent confirms availability or when casting call deadlines reach zero.
-                      </p>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={notifState.sms}
+                        aria-label="Toggle SMS alerts"
+                        onClick={() => {
+                          setNotifState({ ...notifState, sms: !notifState.sms });
+                          setIsNotifDirty(true);
+                        }}
+                        className="notif-toggle-btn"
+                        style={{
+                          backgroundColor: notifState.sms ? "#8A6B2E" : "#E8E2D4",
+                        }}
+                      >
+                        <span
+                          className="notif-toggle-knob"
+                          style={{
+                            transform: notifState.sms ? "translateX(18px)" : "translateX(0px)",
+                          }}
+                        />
+                      </button>
                     </div>
 
                     {/* Vismaya System Announcements */}
-                    <div className="channel-card span-full-desktop">
-                      <div className="channel-header">
+                    <div className="channel-row">
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", minWidth: 0, flex: 1 }}>
                         <div className="channel-icon-box">
-                          <Radio size={20} style={{ color: "var(--gold)" }} />
+                          <Bell size={20} />
                         </div>
-                        <input
-                          type="checkbox"
-                          checked={notifState.announcements}
-                          onChange={(e) => {
-                            setNotifState({ ...notifState, announcements: e.target.checked });
-                            setIsNotifDirty(true);
-                          }}
-                          className="channel-toggle"
-                          aria-label="Toggle Vismaya announcements"
-                        />
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <strong className="channel-title">Vismaya casting desk bulletins</strong>
+                          <p className="channel-desc">
+                            Updates on platform casting guidelines, compliance protocols, and seasonal talent network expansions.
+                          </p>
+                        </div>
                       </div>
-                      <strong className="channel-title">Vismaya casting desk bulletins</strong>
-                      <p className="channel-desc">
-                        Updates on platform casting guidelines, compliance protocols, and seasonal talent network expansions.
-                      </p>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={notifState.announcements}
+                        aria-label="Toggle Vismaya announcements"
+                        onClick={() => {
+                          setNotifState({ ...notifState, announcements: !notifState.announcements });
+                          setIsNotifDirty(true);
+                        }}
+                        className="notif-toggle-btn"
+                        style={{
+                          backgroundColor: notifState.announcements ? "#8A6B2E" : "#E8E2D4",
+                        }}
+                      >
+                        <span
+                          className="notif-toggle-knob"
+                          style={{
+                            transform: notifState.announcements ? "translateX(18px)" : "translateX(0px)",
+                          }}
+                        />
+                      </button>
                     </div>
                   </div>
 
                   {/* Important note */}
                   <div
                     style={{
-                      marginTop: "20px",
-                      backgroundColor: "rgba(255, 188, 0, 0.08)",
-                      border: "1px solid rgba(255, 188, 0, 0.25)",
+                      marginTop: "24px",
+                      backgroundColor: "#F3EFE6",
+                      border: "1px solid #E8E2D4",
                       borderRadius: "12px",
-                      padding: "14px 18px",
-                      fontSize: "12px",
-                      color: "var(--gold)",
+                      padding: "16px 20px",
+                      fontSize: "13px",
+                      color: "#5A584F",
                       display: "flex",
                       alignItems: "center",
-                      gap: "10px",
+                      gap: "12px",
+                      lineHeight: 1.5,
                     }}
                   >
-                    <Clock size={18} style={{ flexShrink: 0 }} />
+                    <Clock size={20} style={{ color: "#8A6B2E", flexShrink: 0 }} />
                     <span>
-                      <strong>Notice:</strong> SMS and WhatsApp notifications are restricted exclusively to urgent updates (such as time-critical audition scheduling and call sheet confirmations) to maintain message privacy and avoid clutter.
+                      <strong style={{ color: "#2B2D2A" }}>Notice:</strong> SMS and WhatsApp notifications are restricted exclusively to urgent updates (such as time-critical audition scheduling and call sheet confirmations) to maintain message privacy and avoid clutter.
                     </span>
                   </div>
                 </div>
 
-                <div className="settings-card-footer">
+                <div className="settings-card-footer settings-save-bar">
                   <div className="footer-actions">
                     <button
                       type="button"
                       onClick={handleCancelNotifications}
-                      className="btn-secondary"
+                      className="btn-ghost-cancel"
                       disabled={!isNotifDirty}
-                      style={{
-                        height: "36px",
-                        padding: "0 16px",
-                        opacity: isNotifDirty ? 1 : 0.5,
-                        cursor: isNotifDirty ? "pointer" : "not-allowed",
-                      }}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="btn-primary"
-                      style={{ height: "36px", padding: "0 20px" }}
+                      className="btn-primary-gold"
                     >
-                      <Save size={15} />
+                      <Save size={16} />
                       <span>Save changes</span>
                     </button>
                   </div>
@@ -1437,24 +1545,24 @@ export default function OrganizationSettingsPage() {
           <button
             type="button"
             onClick={activeTab === "profile" ? handleCancelProfile : handleCancelNotifications}
-            className="btn-secondary"
-            style={{ flex: 1, height: "40px", fontSize: "13px" }}
+            className="btn-ghost-cancel"
+            style={{ flex: 1, height: "48px" }}
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={activeTab === "profile" ? handleSaveProfile : handleSaveNotifications}
-            className="btn-primary"
-            style={{ flex: 1, height: "40px", fontSize: "13px" }}
+            className="btn-primary-gold"
+            style={{ flex: 1, height: "48px" }}
           >
-            <Save size={15} />
+            <Save size={16} />
             <span>Save changes</span>
           </button>
         </div>
       )}
 
-      {/* Scoped CSS styling for Part B Layout and Cards */}
+      {/* Scoped CSS styling */}
       <style jsx>{`
         .settings-layout-container {
           display: flex;
@@ -1466,53 +1574,73 @@ export default function OrganizationSettingsPage() {
 
         /* Desktop Sticky Left Menu */
         .settings-menu-nav {
-          width: 240px;
-          flex-shrink: 0;
+          flex: 0 0 280px;
+          width: 280px;
           position: sticky;
-          top: 96px;
+          top: calc(var(--topbar-height, 72px) + 24px);
           z-index: 10;
+          background: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          border-radius: 16px;
+          padding: 8px;
+          box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04), 0 8px 24px rgba(43, 45, 42, 0.04);
+          box-sizing: border-box;
         }
 
         .settings-menu-track {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 4px;
+          width: 100%;
         }
 
         .settings-menu-item {
           display: flex;
           align-items: center;
           gap: 12px;
-          height: 44px;
-          min-height: 44px;
-          padding: 0 16px;
-          border-radius: 12px;
+          padding: 14px 16px;
+          border-radius: 10px;
+          width: 100%;
+          border: none;
+          border-left: 3px solid transparent;
           background: transparent;
-          border: 1px solid transparent;
-          color: #a3acc2;
+          color: #5A584F;
           font-family: var(--font-body), "Inter", sans-serif;
-          font-size: 14px;
-          font-weight: 600;
+          font-size: 15px;
+          font-weight: 500;
           text-align: left;
           cursor: pointer;
           white-space: nowrap;
           transition: all 0.18s ease;
           position: relative;
+          box-sizing: border-box;
         }
 
         .settings-menu-item:hover {
-          background: rgba(255, 255, 255, 0.05);
-          color: #eceaf5;
+          background-color: #F3EFE6;
+          color: #2B2D2A;
         }
 
         .settings-menu-item.active {
-          background: rgba(255, 188, 0, 0.14);
-          color: var(--gold);
-          border-left: 3px solid var(--gold);
+          background-color: #F3EFE6;
+          color: #8A6B2E;
+          font-weight: 600;
+          border-left: 3px solid #8A6B2E;
         }
 
-        .menu-item-icon {
+        .settings-menu-item:focus-visible {
+          outline: 2px solid #8A6B2E;
+          outline-offset: 2px;
+        }
+
+        .menu-item-icon-wrap {
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           flex-shrink: 0;
+          color: inherit;
         }
 
         .menu-item-label {
@@ -1525,9 +1653,9 @@ export default function OrganizationSettingsPage() {
           width: 7px;
           height: 7px;
           border-radius: 50%;
-          background: var(--gold);
+          background: #8A6B2E;
           flex-shrink: 0;
-          box-shadow: 0 0 6px var(--gold);
+          box-shadow: 0 0 6px rgba(138, 107, 46, 0.5);
         }
 
         /* Content Area */
@@ -1540,52 +1668,54 @@ export default function OrganizationSettingsPage() {
         /* Standard Full-Width Settings Card */
         .settings-card {
           width: 100%;
-          background: var(--bg-glass);
-          border: 1px solid var(--border-glass);
-          border-radius: 16px;
-          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
+          background: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          border-radius: 20px;
+          box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04), 0 14px 32px rgba(43, 45, 42, 0.06);
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          box-sizing: border-box;
         }
 
         .settings-card-header {
-          padding: 24px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 36px 40px 20px 40px;
+          border-bottom: 1px solid #E8E2D4;
           display: flex;
           align-items: center;
-          justifyContent: space-between;
+          justify-content: space-between;
           flex-wrap: wrap;
           gap: 12px;
         }
 
         .settings-card-title {
-          font-size: 18px;
-          font-weight: 600;
-          color: #eceaf5;
-          margin: 0 0 4px 0;
+          font-family: Playfair Display, Georgia, serif;
+          font-size: 28px;
+          font-weight: 700;
+          color: #2B2D2A;
+          margin: 0 0 6px 0;
+          line-height: 1.25;
         }
 
         .settings-card-desc {
-          font-size: 13px;
-          color: #a3acc2;
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 15px;
+          color: #5A584F;
           margin: 0;
           line-height: 1.5;
         }
 
         .settings-card-body {
-          padding: 24px;
+          padding: 32px 40px;
         }
 
         .settings-card-footer {
-          padding: 16px 24px;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
-          background: rgba(255, 255, 255, 0.02);
+          padding: 24px 40px 32px 40px;
+          border-top: 1px solid #E8E2D4;
+          background: #FFFFFF;
           display: flex;
           align-items: center;
-          justifyContent: flex-end;
+          justify-content: flex-end;
         }
 
         .footer-actions {
@@ -1594,18 +1724,128 @@ export default function OrganizationSettingsPage() {
           gap: 12px;
         }
 
+        /* Buttons */
+        .btn-ghost-cancel {
+          height: 48px;
+          padding: 0 24px;
+          border-radius: 10px;
+          border: 1px solid #E8E2D4;
+          background-color: #FAF9F7;
+          color: #5A584F;
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .btn-ghost-cancel:hover:not(:disabled) {
+          background-color: #F3EFE6;
+          color: #2B2D2A;
+        }
+
+        .btn-ghost-cancel:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .btn-primary-gold {
+          height: 48px;
+          padding: 0 28px;
+          border-radius: 10px;
+          border: none;
+          background-color: #8A6B2E;
+          color: #FFFFFF;
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: background-color 0.2s ease;
+        }
+
+        .btn-primary-gold:hover {
+          background-color: #6E5420;
+        }
+
+        .btn-upload-logo {
+          height: 42px;
+          padding: 0 18px;
+          border-radius: 10px;
+          border: 1px solid #E8E2D4;
+          background: #FAF9F7;
+          color: #2B2D2A;
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 14px;
+          font-weight: 600;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .btn-upload-logo:hover {
+          background: #F3EFE6;
+          border-color: #C9A55C;
+        }
+
+        .btn-replace-doc {
+          height: 38px;
+          padding: 0 16px;
+          border-radius: 10px;
+          border: 1px solid #E8E2D4;
+          background: #FAF9F7;
+          color: #2B2D2A;
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .btn-replace-doc:hover {
+          background: #F3EFE6;
+        }
+
+        .btn-signout-session {
+          height: 38px;
+          padding: 0 16px;
+          border-radius: 10px;
+          border: 1px solid #E8E2D4;
+          background: #FAF9F7;
+          color: #2B2D2A;
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .btn-signout-session:hover {
+          background: #F3EFE6;
+          border-color: rgba(180, 35, 24, 0.3);
+          color: #B42318;
+        }
+
         /* Form Grid */
         .settings-form-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 20px 24px;
+          gap: 24px 28px;
           width: 100%;
         }
 
         .form-group {
           display: flex;
           flex-direction: column;
-          gap: 8px;
           min-width: 0;
         }
 
@@ -1614,161 +1854,231 @@ export default function OrganizationSettingsPage() {
         }
 
         .form-label {
+          font-family: var(--font-body), "Inter", sans-serif;
           font-size: 13px;
           font-weight: 600;
-          color: #eceaf5;
+          color: #2B2D2A;
+          margin-bottom: 8px;
+          display: block;
         }
 
         .req {
-          color: var(--danger);
+          color: #B42318;
+          font-weight: 700;
+          margin-left: 2px;
         }
 
         .form-hint {
-          font-size: 12px;
-          color: #7c869e;
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 13px;
+          color: #5A584F;
           line-height: 1.4;
+          margin-top: 6px;
+          display: block;
         }
 
         .form-error {
-          font-size: 12px;
-          color: var(--danger);
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 13px;
+          color: #B42318;
           font-weight: 500;
+          margin-top: 6px;
+          display: block;
+        }
+
+        .form-select {
+          appearance: none;
+          -webkit-appearance: none;
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235A584F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+          background-repeat: no-repeat;
+          background-position: right 16px center;
+          background-size: 16px 16px;
+          padding-right: 44px !important;
+        }
+
+        /* Focus states */
+        input:focus,
+        select:focus,
+        textarea:focus {
+          border-color: #8A6B2E !important;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
+          outline: none !important;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+          color: #6B6A63 !important;
+          opacity: 1 !important;
         }
 
         /* Document row */
         .doc-row {
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.09);
-          border-radius: 12px;
-          padding: 16px 20px;
+          padding: 20px 0;
+          border-bottom: 1px solid #E8E2D4;
           display: flex;
           align-items: center;
-          justifyContent: space-between;
+          justify-content: space-between;
           flex-wrap: wrap;
-          gap: 14px;
+          gap: 16px;
+        }
+
+        .doc-row:last-child {
+          border-bottom: none;
+          padding-bottom: 0;
+        }
+
+        .doc-row:first-child {
+          padding-top: 0;
         }
 
         .doc-icon-box,
         .session-icon-box {
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: #F3EFE6;
+          border: 1px solid #E8E2D4;
+          color: #8A6B2E;
           display: flex;
           align-items: center;
-          justifyContent: center;
+          justify-content: center;
           flex-shrink: 0;
         }
 
         .status-chip-active {
+          font-family: var(--font-body), "Inter", sans-serif;
           font-size: 12px;
           font-weight: 700;
-          color: #34d399;
-          background: rgba(52, 211, 153, 0.15);
-          border: 1px solid rgba(52, 211, 153, 0.35);
-          padding: 4px 10px;
+          color: #6E5420;
+          background: rgba(138, 107, 46, 0.12);
+          border: 1px solid rgba(138, 107, 46, 0.25);
+          padding: 4px 12px;
           border-radius: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
         }
 
         /* Session row */
         .session-row {
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.09);
-          border-radius: 12px;
-          padding: 16px 20px;
+          padding: 20px 0;
+          border-bottom: 1px solid #E8E2D4;
           display: flex;
           align-items: center;
-          justifyContent: space-between;
+          justify-content: space-between;
           flex-wrap: wrap;
-          gap: 14px;
-        }
-
-        .session-current-chip {
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--gold);
-          background: rgba(255, 188, 0, 0.15);
-          border: 1px solid rgba(255, 188, 0, 0.3);
-          padding: 2px 8px;
-          borderRadius: 6px;
-        }
-
-        /* Notification Channels Grid */
-        .notif-channels-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 16px;
         }
 
-        .channel-card {
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.09);
-          border-radius: 14px;
-          padding: 18px;
+        .session-row:last-child {
+          border-bottom: none;
+          padding-bottom: 0;
+        }
+
+        .session-row:first-child {
+          padding-top: 0;
+        }
+
+        .session-current-chip {
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 11px;
+          font-weight: 700;
+          color: #6E5420;
+          background: rgba(138, 107, 46, 0.12);
+          border: 1px solid rgba(138, 107, 46, 0.25);
+          padding: 2px 8px;
+          border-radius: 6px;
+        }
+
+        /* Notification Channels List */
+        .notif-channels-list {
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          width: 100%;
         }
 
-        .span-full-desktop {
-          grid-column: 1 / -1;
-        }
-
-        .channel-header {
+        .channel-row {
+          padding: 20px 0;
+          border-bottom: 1px solid #E8E2D4;
           display: flex;
           align-items: center;
-          justifyContent: space-between;
-          margin-bottom: 4px;
+          justify-content: space-between;
+          gap: 20px;
+        }
+
+        .channel-row:first-child {
+          padding-top: 0;
+        }
+
+        .channel-row:last-child {
+          border-bottom: none;
+          padding-bottom: 0;
         }
 
         .channel-icon-box {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          background: rgba(255, 188, 0, 0.12);
-          border: 1px solid rgba(255, 188, 0, 0.25);
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: #F3EFE6;
+          border: 1px solid #E8E2D4;
+          color: #8A6B2E;
           display: flex;
           align-items: center;
-          justifyContent: center;
-        }
-
-        .channel-toggle {
-          width: 20px;
-          height: 20px;
-          accent-color: var(--gold);
-          cursor: pointer;
+          justify-content: center;
+          flex-shrink: 0;
         }
 
         .channel-title {
-          font-size: 14px;
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 15px;
           font-weight: 600;
-          color: #eceaf5;
+          color: #2B2D2A;
+          display: block;
+          margin-bottom: 4px;
         }
 
         .channel-desc {
-          font-size: 12px;
-          color: #a3acc2;
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 13px;
+          color: #5A584F;
           margin: 0;
           line-height: 1.5;
+        }
+
+        .notif-toggle-btn {
+          width: 44px;
+          height: 26px;
+          border-radius: 13px;
+          position: relative;
+          border: none;
+          cursor: pointer;
+          padding: 2px;
+          transition: background-color 0.2s ease;
+          flex-shrink: 0;
+          outline: none;
+        }
+
+        .notif-toggle-btn:focus-visible {
+          outline: 2px solid #8A6B2E !important;
+          outline-offset: 2px !important;
+        }
+
+        .notif-toggle-knob {
+          display: block;
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background-color: #FFFFFF;
+          box-shadow: 0 1px 3px rgba(43, 45, 42, 0.25);
+          transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* Security Tab 2-Column Grid Layout */
         .security-tab-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 20px;
+          gap: 28px;
           align-items: start;
           width: 100%;
-        }
-
-        .security-card-footer {
-          padding: 16px 24px;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
-          background: rgba(255, 255, 255, 0.02);
-          display: flex;
-          align-items: center;
-          justifyContent: flex-end;
         }
 
         /* Mobile Sticky Bottom Bar */
@@ -1777,19 +2087,21 @@ export default function OrganizationSettingsPage() {
         }
 
         /* Responsive Breakpoints */
-        @media (max-width: 1023.98px) {
+        @media (max-width: 1024px) {
           .settings-layout-container {
             flex-direction: column;
-            gap: 20px;
+            gap: 24px;
           }
 
           .settings-menu-nav {
+            flex: none;
             width: 100%;
-            position: relative;
-            top: 0;
+            position: static;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
+            padding: 6px;
+            border-radius: 14px;
           }
 
           .settings-menu-nav::-webkit-scrollbar {
@@ -1800,75 +2112,69 @@ export default function OrganizationSettingsPage() {
             flex-direction: row;
             gap: 8px;
             width: max-content;
-            padding-bottom: 4px;
           }
 
           .settings-menu-item {
-            flex-shrink: 0;
-            border-left: 1px solid transparent;
-            border-radius: 10px;
+            width: auto;
+            white-space: nowrap;
+            border-left: none;
+            border-bottom: 2px solid transparent;
+            padding: 10px 14px;
           }
 
           .settings-menu-item.active {
-            border-left: 1px solid var(--gold);
-            border-color: var(--gold);
+            border-left: none;
+            border-bottom: 2px solid #8A6B2E;
           }
-        }
 
-        @media (max-width: 860px) {
           .security-tab-grid {
-            grid-template-columns: 1fr !important;
-            gap: 20px;
+            grid-template-columns: 1fr;
+            gap: 24px;
           }
         }
 
-        @media (max-width: 767.98px) {
-          .settings-card-header,
-          .settings-card-body,
-          .settings-card-footer {
-            padding: 16px;
+        @media (max-width: 768px) {
+          .settings-card-header {
+            padding: 24px 20px 16px 20px;
           }
 
-          .security-card-footer {
-            padding: 16px !important;
+          .settings-card-title {
+            font-size: 24px;
+          }
+
+          .settings-card-body {
+            padding: 24px 20px;
+          }
+
+          .settings-card-footer,
+          .settings-save-bar {
+            display: flex !important;
+            padding: 24px 20px !important;
+          }
+
+          .footer-actions {
+            flex-direction: column-reverse !important;
+            width: 100% !important;
+            gap: 12px !important;
+          }
+
+          .btn-ghost-cancel,
+          .btn-primary-gold {
+            width: 100% !important;
+            justify-content: center !important;
           }
 
           .settings-form-grid {
             grid-template-columns: 1fr;
-            gap: 16px;
+            gap: 20px;
           }
 
           .span-full {
             grid-column: 1;
           }
 
-          .notif-channels-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .span-full-desktop {
-            grid-column: 1;
-          }
-
-          .settings-card-footer {
-            display: none;
-          }
-
-          .mobile-sticky-action-bar {
-            display: flex;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(10, 15, 25, 0.95);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-top: 1px solid rgba(255, 255, 255, 0.12);
-            padding: 12px 16px;
-            padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-            z-index: 45;
-            gap: 12px;
-            box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.5);
+          .channel-row {
+            align-items: flex-start;
           }
         }
       `}</style>

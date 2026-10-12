@@ -34,14 +34,14 @@ export default function AboutPage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", width: "100%", backgroundColor: "var(--bg-primary)" }}>
       <PublicNav />
 
-      {/* 1. TOP DARK HEADER */}
+      {/* 1. TOP HEADER */}
       <section
         style={{
           position: "relative",
-          paddingTop: "clamp(120px, 15vh, 150px)",
+          paddingTop: "clamp(28px, 4vw, 48px)",
           paddingBottom: "clamp(48px, 6vh, 64px)",
-          backgroundColor: "#070b12",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          backgroundColor: "var(--bg-alt, #F0EEE7)",
+          borderBottom: "1px solid var(--border-color, #E4E1D9)",
           overflow: "hidden",
         }}
       >
@@ -51,7 +51,7 @@ export default function AboutPage() {
           style={{
             position: "absolute",
             inset: 0,
-            background: "radial-gradient(50% 50% at 80% 20%, rgba(255, 188, 0, 0.10), transparent 70%)",
+            background: "radial-gradient(50% 50% at 80% 20%, rgba(155, 122, 63, 0.08), transparent 70%)",
             pointerEvents: "none",
           }}
         />
@@ -63,10 +63,10 @@ export default function AboutPage() {
             </div>
             <h1
               style={{
-                fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                fontFamily: "var(--font-heading), Georgia, serif",
                 fontSize: "clamp(34px, 5vw, 56px)",
-                fontWeight: 700,
-                color: "#eceaf5",
+                fontWeight: 400,
+                color: "var(--text-primary, #292C29)",
                 lineHeight: 1.1,
                 letterSpacing: "-0.02em",
                 margin: "0 0 16px 0",
@@ -74,7 +74,7 @@ export default function AboutPage() {
             >
               Transforming Entertainment Casting
             </h1>
-            <p style={{ fontSize: "16px", lineHeight: "28px", color: "#a3acc2", margin: 0 }}>
+            <p style={{ fontSize: "16px", lineHeight: "28px", color: "var(--text-secondary, #777970)", margin: 0 }}>
               Empowering artists and revolutionizing casting management across film, television, OTT, commercials, and fashion.
             </p>
           </div>
@@ -102,10 +102,10 @@ export default function AboutPage() {
 
               <h2
                 style={{
-                  fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                  fontFamily: "var(--font-heading), Georgia, serif",
                   fontSize: "clamp(24px, 3.5vw, 34px)",
-                  fontWeight: 700,
-                  color: "#eceaf5",
+                  fontWeight: 400,
+                  color: "var(--text-primary, #292C29)",
                   margin: 0,
                   lineHeight: 1.25,
                 }}
@@ -113,11 +113,11 @@ export default function AboutPage() {
                 Building the Future of Indian &amp; Global Entertainment Casting
               </h2>
 
-              <p style={{ color: "#a3acc2", fontSize: "15px", lineHeight: "26px", margin: 0 }}>
+              <p style={{ color: "var(--text-secondary, #777970)", fontSize: "15px", lineHeight: "26px", margin: 0 }}>
                 Vismaya is engineered to bridge the fragmentation in traditional casting processes. We bring together actors, models, voice talents, casting directors, and production studios into a single synchronized digital environment.
               </p>
 
-              <p style={{ color: "#a3acc2", fontSize: "15px", lineHeight: "26px", margin: 0 }}>
+              <p style={{ color: "var(--text-secondary, #777970)", fontSize: "15px", lineHeight: "26px", margin: 0 }}>
                 From discovering emerging talent in regional hubs to managing large-scale ensemble auditions for blockbuster features, Vismaya provides the infrastructure, verification tools, and management workflow for seamless collaboration.
               </p>
             </div>
@@ -130,16 +130,16 @@ export default function AboutPage() {
                 </div>
                 <h2
                   style={{
-                    fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                    fontFamily: "var(--font-heading), Georgia, serif",
                     fontSize: "clamp(28px, 4vw, 38px)",
-                    fontWeight: 700,
-                    color: "#eceaf5",
+                    fontWeight: 400,
+                    color: "var(--text-primary, #292C29)",
                     margin: "0 0 10px 0",
                   }}
                 >
                   Why Industry Leaders Trust Vismaya
                 </h2>
-                <p style={{ color: "#a3acc2", fontSize: "15px", lineHeight: "26px", margin: 0 }}>
+                <p style={{ color: "var(--text-secondary, #777970)", fontSize: "15px", lineHeight: "26px", margin: 0 }}>
                   Engineered with rigorous compliance, verified artist profiles, and encrypted audition delivery pipelines.
                 </p>
               </div>
@@ -162,7 +162,7 @@ export default function AboutPage() {
                         display: "flex",
                         flexDirection: "column",
                         gap: "16px",
-                        borderRadius: "20px",
+                        borderRadius: "var(--radius-card, 6px)",
                         minHeight: "220px",
                       }}
                     >
@@ -170,9 +170,9 @@ export default function AboutPage() {
                         style={{
                           width: "48px",
                           height: "48px",
-                          borderRadius: "14px",
-                          backgroundColor: "rgba(255, 188, 0, 0.12)",
-                          border: "1px solid rgba(255, 188, 0, 0.28)",
+                          borderRadius: "var(--radius-btn, 4px)",
+                          backgroundColor: "var(--gold-bg)",
+                          border: "1px solid var(--gold-border)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -183,16 +183,16 @@ export default function AboutPage() {
                       </div>
                       <h3
                         style={{
-                          fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                          fontFamily: "var(--font-heading), Georgia, serif",
                           fontSize: "20px",
-                          fontWeight: 700,
-                          color: "#eceaf5",
+                          fontWeight: 400,
+                          color: "var(--text-primary, #292C29)",
                           margin: 0,
                         }}
                       >
                         {item.title}
                       </h3>
-                      <p style={{ fontSize: "14px", color: "#a3acc2", lineHeight: "22px", margin: 0 }}>
+                      <p style={{ fontSize: "14px", color: "var(--text-secondary, #777970)", lineHeight: "22px", margin: 0 }}>
                         {item.desc}
                       </p>
                     </div>
@@ -205,10 +205,10 @@ export default function AboutPage() {
             <div
               className="glass"
               style={{
-                borderRadius: "20px",
+                borderRadius: "var(--radius-card, 6px)",
                 padding: "clamp(32px, 5vw, 48px)",
-                background: "linear-gradient(135deg, #0f1626 0%, #070b12 100%)",
-                border: "1px solid rgba(255, 188, 0, 0.30)",
+                backgroundColor: "var(--bg-surface, #FFFFFF)",
+                border: "1px solid var(--border-color, #E4E1D9)",
                 display: "flex",
                 flexWrap: "wrap",
                 alignItems: "center",
@@ -219,16 +219,16 @@ export default function AboutPage() {
               <div style={{ maxWidth: "600px" }}>
                 <h3
                   style={{
-                    fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                    fontFamily: "var(--font-heading), Georgia, serif",
                     fontSize: "clamp(22px, 3vw, 28px)",
-                    fontWeight: 700,
+                    fontWeight: 400,
                     margin: "0 0 8px 0",
-                    color: "#eceaf5",
+                    color: "var(--text-primary, #292C29)",
                   }}
                 >
                   Ready to Start Your Casting Journey?
                 </h3>
-                <p style={{ color: "#a3acc2", fontSize: "15px", lineHeight: "24px", margin: 0 }}>
+                <p style={{ color: "var(--text-secondary, #777970)", fontSize: "15px", lineHeight: "24px", margin: 0 }}>
                   Join thousands of verified actors, models, casting directors, and certified studios on Vismaya today.
                 </p>
               </div>

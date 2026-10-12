@@ -28,62 +28,54 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
   const isExpired = diffDays < 0;
   const isUrgent = diffDays >= 0 && diffDays <= 3;
 
-  const gradients = [
-    "linear-gradient(135deg, #070b12 0%, #0f1626 50%, rgba(255, 188, 0, 0.15) 100%)",
-    "linear-gradient(155deg, #0a0f19 0%, #141c2e 50%, rgba(255, 188, 0, 0.18) 100%)",
-    "linear-gradient(175deg, #070b12 0%, #10192b 50%, rgba(255, 213, 74, 0.15) 100%)",
-    "linear-gradient(120deg, #0a0f19 0%, #151e33 50%, rgba(255, 188, 0, 0.16) 100%)",
-  ];
-  const charCode = (opportunity.id || "1").charCodeAt(opportunity.id.length - 1) || 0;
-  const gradient = gradients[charCode % gradients.length];
-
   const rolesCount = opportunity.roles ? opportunity.roles.length : 1;
 
   return (
     <div
       className="card-surface"
       style={{
-        border: `1px solid ${isUrgent ? "rgba(255, 107, 107, 0.40)" : "rgba(255, 255, 255, 0.12)"}`,
-        borderRadius: "16px",
-        backgroundColor: "rgba(255, 255, 255, 0.07)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+        border: "1px solid #E8E2D4",
+        borderRadius: "18px",
+        backgroundColor: "#FFFFFF",
+        boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
         display: "flex",
         flexDirection: "column",
+        height: "100%",
         position: "relative",
         overflow: "hidden",
-        transition: "transform 0.2s ease, border-color 0.2s ease",
+        transition: "transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
       }}
     >
-      {/* Header Banner */}
+      {/* Header Banner - Clean Soft Cream Tint Header */}
       <div
         style={{
-          height: "120px",
+          minHeight: "88px",
+          flexShrink: 0,
           width: "100%",
-          background: gradient,
+          backgroundColor: "#F3EFE6",
           position: "relative",
-          padding: "14px 16px",
+          padding: "14px 18px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          gap: "10px",
+          borderBottom: "1px solid #E8E2D4",
         }}
       >
         {/* Top Badges Row */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", zIndex: 2 }}>
           <span
             style={{
-              fontSize: "10px",
-              fontWeight: "800",
-              padding: "4px 10px",
+              fontSize: "11px",
+              fontWeight: "700",
+              padding: "3px 10px",
               borderRadius: "999px",
-              backgroundColor: "rgba(255, 255, 255, 0.10)",
-              backdropFilter: "blur(6px)",
-              color: "#eceaf5",
-              border: "1px solid rgba(255, 255, 255, 0.18)",
+              backgroundColor: "rgba(201, 165, 92, 0.18)",
+              color: "#6E5420",
+              border: "1px solid rgba(138, 107, 46, 0.22)",
               textTransform: "uppercase",
-              letterSpacing: "0.06em",
+              letterSpacing: "0.08em",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
             }}
           >
             {opportunity.opportunityType || "OTT Series"}
@@ -93,17 +85,19 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
             {isUrgent && (
               <span
                 style={{
-                  fontSize: "10px",
-                  fontWeight: "800",
+                  fontSize: "11px",
+                  fontWeight: "700",
                   padding: "3px 10px",
                   borderRadius: "999px",
-                  backgroundColor: "rgba(255, 107, 107, 0.22)",
-                  color: "#ff6b6b",
-                  border: "1px solid rgba(255, 107, 107, 0.45)",
+                  backgroundColor: "rgba(138, 107, 46, 0.12)",
+                  color: "#6E5420",
+                  border: "1px solid rgba(138, 107, 46, 0.28)",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "4px",
                   textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
                 <Clock size={11} />
@@ -114,14 +108,16 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
             {isExpired && (
               <span
                 style={{
-                  fontSize: "10px",
+                  fontSize: "11px",
                   fontWeight: "700",
                   padding: "3px 10px",
                   borderRadius: "999px",
-                  backgroundColor: "rgba(255, 255, 255, 0.08)",
-                  color: "#a3acc2",
-                  border: "1px solid rgba(255, 255, 255, 0.14)",
+                  backgroundColor: "#FFFFFF",
+                  color: "#5A584F",
+                  border: "1px solid #E8E2D4",
                   textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
                 Deadline Passed
@@ -139,23 +135,24 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
             position: "relative",
             zIndex: 2,
             fontSize: "12px",
-            color: "#eceaf5",
+            color: "#5A584F",
             fontWeight: "600",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
           }}
         >
-          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <MapPin size={13} style={{ color: "var(--gold)" }} />
+          <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <MapPin size={13} style={{ color: "#8A6B2E" }} />
             {opportunity.location || "Mumbai"}
           </span>
-          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <Calendar size={12} style={{ color: "var(--gold)" }} />
+          <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <Calendar size={13} style={{ color: "#8A6B2E" }} />
             {formatDate(opportunity.deadline)}
           </span>
         </div>
       </div>
 
       {/* Card Content Area */}
-      <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "14px", flex: 1 }}>
+      <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <Link
             href={`/talent/opportunities/${opportunity.id}`}
@@ -166,13 +163,20 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
           >
             <h3
               style={{
-                fontFamily: "var(--font-heading), 'Playfair Display', serif",
+                fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
                 fontSize: "18px",
-                fontWeight: "700",
-                color: "#eceaf5",
+                fontWeight: "600",
+                color: "#2B2D2A",
                 margin: 0,
-                lineHeight: 1.35,
-                transition: "color 0.2s ease",
+                lineHeight: "1.35",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                minHeight: "2.7em",
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
+                transition: "color 0.16s ease",
               }}
               className="opp-card-title"
             >
@@ -180,21 +184,38 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
             </h3>
           </Link>
 
-          <span style={{ fontSize: "12px", color: "#a3acc2", fontWeight: "500", display: "flex", alignItems: "center", gap: "4px" }}>
-            Project: <strong style={{ color: "#eceaf5" }}>{project?.title || "Production Feature"}</strong>
+          <span
+            style={{
+              fontSize: "12px",
+              color: "#5A584F",
+              fontWeight: "500",
+              display: "block",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              minHeight: "1.4em",
+              lineHeight: "1.4",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+            }}
+          >
+            Project: <strong style={{ color: "#2B2D2A" }}>{project?.title || "Production Feature"}</strong>
           </span>
         </div>
 
         <p
           style={{
             fontSize: "13px",
-            color: "#a3acc2",
-            lineHeight: 1.5,
+            color: "#5A584F",
+            lineHeight: "1.5",
             margin: 0,
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
+            minHeight: "3em",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
           }}
         >
           {opportunity.summary || opportunity.fullBrief || "Seeking verified talent for upcoming production casting."}
@@ -203,32 +224,34 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
         {/* Remuneration Strip */}
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.04)",
+            backgroundColor: "#F3EFE6",
             padding: "10px 14px",
-            borderRadius: "12px",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "10px",
+            border: "1px solid #E8E2D4",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             flexWrap: "wrap",
             gap: "8px",
             fontSize: "12px",
+            minHeight: "42px",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Banknote size={15} style={{ color: "var(--gold)" }} />
-            <span style={{ color: "var(--gold)", fontWeight: "700" }}>
+            <Banknote size={15} style={{ color: "#8A6B2E" }} />
+            <span style={{ color: "#8A6B2E", fontWeight: "700" }}>
               {opportunity.remuneration || "Negotiable"}
             </span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "#a3acc2", fontWeight: "600" }}>
-            <Users size={13} style={{ color: "var(--gold)" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "#5A584F", fontWeight: "600" }}>
+            <Users size={13} style={{ color: "#8A6B2E" }} />
             <span>{rolesCount} Role{rolesCount > 1 ? "s" : ""}</span>
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons Pinned to Bottom */}
         <div
           style={{
             marginTop: "auto",
@@ -240,13 +263,25 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
         >
           <Link
             href={`/talent/opportunities/${opportunity.id}`}
-            className="btn-secondary btn-dash"
             style={{
               flex: 1,
               textAlign: "center",
+              display: "inline-flex",
+              alignItems: "center",
               justifyContent: "center",
-              minHeight: "44px",
+              height: "40px",
+              minHeight: "40px",
+              borderRadius: "10px",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #8A6B2E",
+              color: "#8A6B2E",
+              fontSize: "13px",
+              fontWeight: "600",
+              textDecoration: "none",
+              transition: "all 0.16s ease",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
             }}
+            className="opp-card-brief-btn"
           >
             <span>View Brief</span>
           </Link>
@@ -256,13 +291,14 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
               disabled
               style={{
                 flex: 1,
-                minHeight: "44px",
+                height: "40px",
+                minHeight: "40px",
                 padding: "0 14px",
-                fontSize: "11px",
-                borderRadius: "12px",
-                backgroundColor: "rgba(52, 211, 153, 0.16)",
-                color: "var(--status-green)",
-                border: "1px solid rgba(52, 211, 153, 0.35)",
+                fontSize: "12px",
+                borderRadius: "10px",
+                backgroundColor: "#F3EFE6",
+                color: "#2B2D2A",
+                border: "1px solid #E8E2D4",
                 fontWeight: "700",
                 display: "inline-flex",
                 alignItems: "center",
@@ -270,10 +306,11 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
                 gap: "6px",
                 cursor: "default",
                 textTransform: "uppercase",
-                letterSpacing: "0.08em",
+                letterSpacing: "0.06em",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
               }}
             >
-              <CheckCircle2 size={14} />
+              <CheckCircle2 size={14} style={{ color: "#8A6B2E" }} />
               <span>Applied</span>
             </button>
           ) : isExpired ? (
@@ -281,20 +318,22 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
               disabled
               style={{
                 flex: 1,
-                minHeight: "44px",
+                height: "40px",
+                minHeight: "40px",
                 padding: "0 14px",
-                fontSize: "11px",
-                borderRadius: "12px",
-                backgroundColor: "rgba(255, 255, 255, 0.05)",
-                color: "#7e89a3",
-                border: "1px solid rgba(255, 255, 255, 0.10)",
-                fontWeight: "700",
+                fontSize: "12px",
+                borderRadius: "10px",
+                backgroundColor: "#F3EFE6",
+                color: "#5A584F",
+                border: "1px solid #E8E2D4",
+                fontWeight: "600",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "not-allowed",
                 textTransform: "uppercase",
-                letterSpacing: "0.08em",
+                letterSpacing: "0.06em",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
               }}
             >
               Closed
@@ -302,12 +341,26 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
           ) : (
             <button
               onClick={() => (onApply ? onApply(opportunity) : null)}
-              className="btn-primary btn-dash"
               style={{
                 flex: 1,
+                display: "inline-flex",
+                alignItems: "center",
                 justifyContent: "center",
-                minHeight: "44px",
+                gap: "6px",
+                height: "40px",
+                minHeight: "40px",
+                borderRadius: "10px",
+                backgroundColor: "#8A6B2E",
+                border: "1px solid #8A6B2E",
+                color: "#FFFFFF",
+                fontSize: "13px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.16s ease",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
+                boxShadow: "0 2px 6px rgba(138, 107, 46, 0.2)",
               }}
+              className="opp-card-apply-btn"
             >
               <span>Apply</span>
               <ArrowRight size={13} />
@@ -318,7 +371,14 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
 
       <style jsx>{`
         .opp-card-title:hover {
-          color: var(--gold) !important;
+          color: #8A6B2E !important;
+        }
+        .opp-card-brief-btn:hover {
+          background-color: #F3EFE6 !important;
+        }
+        .opp-card-apply-btn:hover {
+          background-color: #6E5420 !important;
+          border-color: #6E5420 !important;
         }
       `}</style>
     </div>

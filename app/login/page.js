@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
+import PasswordInput from "@/components/PasswordInput";
+import GoogleAuthButton from "@/components/GoogleAuthButton";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowRight, Lock, Mail, Sparkles, AlertCircle } from "lucide-react";
 
@@ -48,6 +50,34 @@ function LoginFormContent() {
     }
   };
 
+  const handleQuickDemo = async (targetRole) => {
+    setIsSubmitting(true);
+    setFormError("");
+    try {
+      const emailMap = {
+        talent: "aanya.sharma@vismaya.io",
+        recruiter: "recruiter@zee.com",
+        admin: "admin@vismaya.io",
+      };
+      const pathMap = {
+        talent: "/talent/dashboard",
+        recruiter: "/recruiter/dashboard",
+        admin: "/admin/dashboard",
+      };
+      await login({ email: emailMap[targetRole] || "aanya.sharma@vismaya.io", password: "password123" });
+      router.push(pathMap[targetRole] || "/talent/dashboard");
+    } catch {
+      const pathMap = {
+        talent: "/talent/dashboard",
+        recruiter: "/recruiter/dashboard",
+        admin: "/admin/dashboard",
+      };
+      router.push(pathMap[targetRole] || "/talent/dashboard");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div
       className="glass"
@@ -70,17 +100,17 @@ function LoginFormContent() {
 
         <h1
           style={{
-            fontFamily: "var(--font-heading), 'Playfair Display', serif",
+            fontFamily: "var(--font-heading), Georgia, serif",
             fontSize: "26px",
-            fontWeight: 700,
-            color: "#eceaf5",
+            fontWeight: 400,
+            color: "var(--text-primary, #292C29)",
             marginBottom: "6px",
             lineHeight: 1.25,
           }}
         >
           Welcome Back
         </h1>
-        <p style={{ fontSize: "14px", color: "#a3acc2", margin: 0, lineHeight: "22px" }}>
+        <p style={{ fontSize: "14px", color: "var(--text-secondary, #777970)", margin: 0, lineHeight: "22px" }}>
           Access your talent portfolio, organization briefs, or admin desk.
         </p>
       </div>
@@ -88,9 +118,9 @@ function LoginFormContent() {
       {/* Fast Demo Access */}
       <div
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.04)",
-          border: "1px solid rgba(255, 255, 255, 0.10)",
-          borderRadius: "14px",
+          backgroundColor: "var(--bg-alt, #F0EEE7)",
+          border: "1px solid var(--border-color, #E4E1D9)",
+          borderRadius: "var(--radius-card, 6px)",
           padding: "14px",
           marginBottom: "24px",
           display: "flex",
@@ -103,7 +133,7 @@ function LoginFormContent() {
           <span
             style={{
               fontSize: "11px",
-              fontWeight: "800",
+              fontWeight: "600",
               color: "var(--gold)",
               textTransform: "uppercase",
               letterSpacing: "0.10em",
@@ -119,11 +149,11 @@ function LoginFormContent() {
               fontSize: "11px",
               textAlign: "center",
               padding: "6px 4px",
-              borderRadius: "8px",
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
-              color: "#eceaf5",
-              fontWeight: "700",
+              borderRadius: "var(--radius-btn, 4px)",
+              backgroundColor: "var(--bg-surface, #FFFFFF)",
+              border: "1px solid var(--border-color, #E4E1D9)",
+              color: "var(--text-primary, #292C29)",
+              fontWeight: "600",
               textTransform: "uppercase",
               letterSpacing: "0.04em",
               textDecoration: "none",
@@ -143,11 +173,11 @@ function LoginFormContent() {
               fontSize: "11px",
               textAlign: "center",
               padding: "6px 4px",
-              borderRadius: "8px",
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
-              color: "#eceaf5",
-              fontWeight: "700",
+              borderRadius: "var(--radius-btn, 4px)",
+              backgroundColor: "var(--bg-surface, #FFFFFF)",
+              border: "1px solid var(--border-color, #E4E1D9)",
+              color: "var(--text-primary, #292C29)",
+              fontWeight: "600",
               textTransform: "uppercase",
               letterSpacing: "0.04em",
               textDecoration: "none",
@@ -167,11 +197,11 @@ function LoginFormContent() {
               fontSize: "11px",
               textAlign: "center",
               padding: "6px 4px",
-              borderRadius: "8px",
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
-              color: "#eceaf5",
-              fontWeight: "700",
+              borderRadius: "var(--radius-btn, 4px)",
+              backgroundColor: "var(--bg-surface, #FFFFFF)",
+              border: "1px solid var(--border-color, #E4E1D9)",
+              color: "var(--text-primary, #292C29)",
+              fontWeight: "600",
               textTransform: "uppercase",
               letterSpacing: "0.04em",
               textDecoration: "none",
@@ -195,10 +225,10 @@ function LoginFormContent() {
             alignItems: "center",
             gap: "8px",
             padding: "12px 14px",
-            backgroundColor: "rgba(239, 68, 68, 0.15)",
-            border: "1px solid rgba(239, 68, 68, 0.35)",
-            borderRadius: "10px",
-            color: "#fca5a5",
+            backgroundColor: "var(--danger-bg)",
+            border: "1px solid var(--danger-border)",
+            borderRadius: "var(--radius-card, 6px)",
+            color: "var(--danger)",
             fontSize: "13px",
             marginBottom: "16px",
           }}
@@ -210,11 +240,11 @@ function LoginFormContent() {
 
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div>
-          <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#a3acc2", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
             Email Address
           </label>
           <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-            <Mail size={16} style={{ position: "absolute", left: "14px", color: "#7e89a3", pointerEvents: "none" }} />
+            <Mail size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
             <input
               type="email"
               placeholder="name@example.com"
@@ -228,24 +258,21 @@ function LoginFormContent() {
 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-            <label style={{ fontSize: "12px", fontWeight: "700", color: "#a3acc2", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+            <label style={{ fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
               Password
             </label>
-            <Link href="/forgot-password" style={{ fontSize: "12px", color: "var(--gold)", fontWeight: "700", textDecoration: "none" }}>
+            <Link href="/forgot-password" style={{ fontSize: "12px", color: "var(--gold)", fontWeight: "600", textDecoration: "none" }}>
               Forgot?
             </Link>
           </div>
-          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-            <Lock size={16} style={{ position: "absolute", left: "14px", color: "#7e89a3", pointerEvents: "none" }} />
-            <input
-              type="password"
-              placeholder="••••••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{ paddingLeft: "42px", width: "100%" }}
-            />
-          </div>
+          <PasswordInput
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••••••"
+            required
+            autoComplete="current-password"
+            leftIcon={<Lock size={16} />}
+          />
         </div>
 
         <button
@@ -257,11 +284,22 @@ function LoginFormContent() {
           <span>{isSubmitting ? "Signing in..." : "Sign In to Vismaya"}</span>
           <ArrowRight size={15} />
         </button>
+
+        <GoogleAuthButton
+          onSuccess={(user) => {
+            if (redirectPath) {
+              router.push(redirectPath);
+            } else {
+              router.push(getDashboardPath(user?.role));
+            }
+          }}
+          onError={(err) => setFormError(err)}
+        />
       </form>
 
-      <div style={{ textAlign: "center", marginTop: "24px", fontSize: "13px", color: "#a3acc2" }}>
+      <div style={{ textAlign: "center", marginTop: "24px", fontSize: "13px", color: "var(--text-secondary, #777970)" }}>
         Don&apos;t have an account?{" "}
-        <Link href="/register" style={{ color: "var(--gold)", fontWeight: "700", textDecoration: "none" }}>
+        <Link href="/register" style={{ color: "var(--gold)", fontWeight: "600", textDecoration: "none" }}>
           Register here
         </Link>
       </div>
@@ -282,8 +320,8 @@ export default function LoginPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          paddingTop: "clamp(120px, 16vh, 160px)",
-          paddingBottom: "clamp(56px, 8vw, 96px)",
+          paddingTop: "clamp(36px, 5vh, 64px)",
+          paddingBottom: "clamp(48px, 6vw, 80px)",
           overflow: "hidden",
         }}
       >
@@ -293,7 +331,7 @@ export default function LoginPage() {
           style={{
             position: "absolute",
             inset: 0,
-            background: "radial-gradient(60% 60% at 50% 40%, rgba(255, 188, 0, 0.12), transparent 70%), linear-gradient(180deg, #070b12 0%, #0a0f19 100%)",
+            background: "var(--bg-primary)",
             pointerEvents: "none",
           }}
         />

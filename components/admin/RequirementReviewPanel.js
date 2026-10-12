@@ -65,9 +65,9 @@ export default function RequirementReviewPanel({
         style={{
           position: "fixed",
           inset: 0,
-          backgroundColor: "rgba(7, 11, 18, 0.75)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          backgroundColor: "rgba(43, 45, 42, 0.55)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
           zIndex: 90,
         }}
       />
@@ -81,39 +81,37 @@ export default function RequirementReviewPanel({
           bottom: 0,
           width: "680px",
           maxWidth: "100vw",
-          backgroundColor: "#0f1626",
-          borderLeft: "1px solid rgba(255, 255, 255, 0.14)",
-          boxShadow: "0 24px 60px rgba(0, 0, 0, 0.75)",
+          backgroundColor: "var(--bg-surface, #FFFFFF)",
+          borderLeft: "1px solid var(--border-color, #E4E1D9)",
+          boxShadow: "0 20px 48px rgba(41, 44, 41, 0.16)",
           zIndex: 100,
           display: "flex",
           flexDirection: "column",
           animation: "slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
         }}
       >
         {/* Header */}
         <div
           style={{
             padding: "18px 24px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            borderBottom: "1px solid #E8E2D4",
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "space-between",
             gap: "14px",
-            backgroundColor: "rgba(15, 22, 38, 0.8)",
+            backgroundColor: "#F3EFE6",
           }}
         >
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
               <span
                 style={{
-                  fontSize: "0.7rem",
-                  color: "var(--gold)",
-                  padding: "1px 8px",
+                  fontSize: "11px",
+                  color: "#6E5420",
+                  padding: "2px 8px",
                   borderRadius: "999px",
-                  backgroundColor: "rgba(255, 188, 0, 0.12)",
-                  border: "1px solid rgba(255, 188, 0, 0.30)",
+                  backgroundColor: "rgba(138, 107, 46, 0.12)",
+                  border: "1px solid rgba(138, 107, 46, 0.25)",
                   fontWeight: 700,
                 }}
               >
@@ -122,12 +120,12 @@ export default function RequirementReviewPanel({
               <StatusBadge status={requirement.status} size="xs" />
               <span
                 style={{
-                  fontSize: "0.725rem",
-                  color: "#eceaf5",
-                  padding: "1px 8px",
+                  fontSize: "12px",
+                  color: "#5A584F",
+                  padding: "2px 8px",
                   borderRadius: "999px",
-                  backgroundColor: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #E8E2D4",
                   fontWeight: 600,
                 }}
               >
@@ -139,7 +137,7 @@ export default function RequirementReviewPanel({
                 fontFamily: "var(--font-heading), 'Playfair Display', serif",
                 fontSize: "1.2rem",
                 fontWeight: 700,
-                color: "#eceaf5",
+                color: "#2B2D2A",
                 margin: 0,
               }}
             >
@@ -199,6 +197,7 @@ export default function RequirementReviewPanel({
             display: "flex",
             flexDirection: "column",
             gap: "18px",
+            backgroundColor: "#FAF9F7",
           }}
         >
           {/* Status Alert Banner if Declined */}
@@ -647,8 +646,8 @@ export default function RequirementReviewPanel({
         <div
           style={{
             padding: "16px 24px",
-            borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-            backgroundColor: "rgba(15, 22, 38, 0.8)",
+            borderTop: "1px solid #E8E2D4",
+            backgroundColor: "#FFFFFF",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",

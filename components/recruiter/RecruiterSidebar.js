@@ -61,9 +61,9 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(7, 11, 18, 0.82)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
+            backgroundColor: "rgba(43, 45, 42, 0.45)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
             zIndex: 40,
           }}
         />
@@ -72,8 +72,8 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
       <aside
         style={{
           width: "var(--sidebar-width)",
-          backgroundColor: "var(--bg-deep, #292C29)",
-          borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+          backgroundColor: "#FFFFFF",
+          borderRight: "1px solid #E8E2D4",
           display: "flex",
           flexDirection: "column",
           position: "fixed",
@@ -85,6 +85,7 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
           zIndex: 50,
           transition: "transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)",
           transform: mobileOpen ? "translateX(0)" : undefined,
+          boxShadow: mobileOpen ? "8px 0 28px rgba(43, 45, 42, 0.12)" : "none",
         }}
         className={`recruiter-sidebar ${mobileOpen ? "sidebar-open" : ""}`}
       >
@@ -96,22 +97,23 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
             alignItems: "center",
             justifyContent: "space-between",
             padding: "0 20px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            borderBottom: "1px solid #E8E2D4",
             paddingTop: "env(safe-area-inset-top, 0px)",
+            backgroundColor: "#FFFFFF",
           }}
         >
-          <Logo variant="light" size="sm" href="/recruiter/dashboard" />
+          <Logo variant="dark" size="sm" href="/recruiter/dashboard" />
           <button
             onClick={onCloseMobile}
             aria-label="Close navigation"
             style={{
-              color: "#a3acc2",
+              color: "#5A584F",
               padding: "8px",
               minHeight: "44px",
               minWidth: "44px",
               borderRadius: "10px",
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
               display: "none",
               alignItems: "center",
               justifyContent: "center",
@@ -127,10 +129,10 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
         <div style={{ padding: "16px 16px 8px 16px" }}>
           <div
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "12px",
-              padding: "10px 14px",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
+              borderRadius: "14px",
+              padding: "12px 14px",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
@@ -142,8 +144,8 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
                   width: "8px",
                   height: "8px",
                   borderRadius: "50%",
-                  backgroundColor: "var(--gold)",
-                  boxShadow: "0 0 8px rgba(255, 188, 0, 0.6)",
+                  backgroundColor: "#8A6B2E",
+                  boxShadow: "0 0 6px rgba(138, 107, 46, 0.4)",
                 }}
               />
               <div style={{ display: "flex", flexDirection: "column" }}>
@@ -151,7 +153,7 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
                   style={{
                     fontSize: "13px",
                     fontWeight: "700",
-                    color: "#eceaf5",
+                    color: "#2B2D2A",
                   }}
                 >
                   Organization
@@ -159,7 +161,7 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
                 <span
                   style={{
                     fontSize: "11px",
-                    color: "#a3acc2",
+                    color: "#5A584F",
                   }}
                 >
                   Studio Console
@@ -167,7 +169,23 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
               </div>
             </div>
 
-            <StatusBadge status={companyProfile.status || "Verified"} size="xs" />
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "2px 8px",
+                borderRadius: "999px",
+                backgroundColor: "rgba(138, 107, 46, 0.10)",
+                border: "1px solid rgba(138, 107, 46, 0.20)",
+                color: "#8A6B2E",
+                fontSize: "10px",
+                fontWeight: "700",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
+            >
+              VERIFIED
+            </span>
           </div>
         </div>
 
@@ -207,22 +225,26 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
                   height: "44px",
                   padding: "0 14px",
                   borderRadius: "10px",
-                  color: active ? "var(--gold)" : "#a3acc2",
-                  backgroundColor: active ? "rgba(255, 188, 0, 0.14)" : "transparent",
-                  borderLeft: active ? "3px solid var(--gold)" : "3px solid transparent",
-                  fontWeight: active ? "700" : "500",
-                  fontSize: "13px",
+                  color: active ? "#8A6B2E" : "#5A584F",
+                  backgroundColor: active ? "#F3EFE6" : "transparent",
+                  borderLeft: active ? "3px solid #8A6B2E" : "3px solid transparent",
+                  fontWeight: active ? "600" : "500",
+                  fontSize: "15px",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                   textDecoration: "none",
                   outline: "none",
+                  transition: "all 0.16s ease",
                 }}
                 className={`recruiter-nav-item ${active ? "recruiter-nav-active" : ""}`}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                   {Icon && (
                     <Icon
-                      size={18}
+                      size={20}
+                      strokeWidth={2}
                       style={{
-                        color: active ? "var(--gold)" : "#7e89a3",
+                        color: active ? "#8A6B2E" : "#5A584F",
+                        flexShrink: 0,
                       }}
                     />
                   )}
@@ -234,12 +256,12 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
                     style={{
                       height: "20px",
                       minWidth: "20px",
-                      fontSize: "11px",
-                      fontWeight: "800",
+                      fontSize: "12px",
+                      fontWeight: "700",
                       padding: "0 6px",
                       borderRadius: "999px",
-                      backgroundColor: active ? "var(--gold)" : "rgba(255, 188, 0, 0.20)",
-                      color: active ? "#1a1300" : "var(--gold)",
+                      backgroundColor: "#8A6B2E",
+                      color: "#FFFFFF",
                       display: "inline-flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -258,8 +280,8 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
           style={{
             padding: "16px",
             paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))",
-            borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-            backgroundColor: "var(--bg-deep, #292C29)",
+            borderTop: "1px solid #E8E2D4",
+            backgroundColor: "#FFFFFF",
           }}
         >
           <div
@@ -276,9 +298,9 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
                   width: "38px",
                   height: "38px",
                   borderRadius: "10px",
-                  backgroundColor: "rgba(255, 188, 0, 0.12)",
-                  border: "1px solid rgba(255, 188, 0, 0.30)",
-                  color: "var(--gold)",
+                  backgroundColor: "#F3EFE6",
+                  border: "1px solid #E8E2D4",
+                  color: "#8A6B2E",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -292,7 +314,7 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
                   style={{
                     fontSize: "13px",
                     fontWeight: "600",
-                    color: "#eceaf5",
+                    color: "#2B2D2A",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -303,7 +325,7 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
                 <span
                   style={{
                     fontSize: "11px",
-                    color: "#a3acc2",
+                    color: "#5A584F",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -314,16 +336,16 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
               </div>
             </div>
 
-            <Link
-              href="/login"
+            <button
+              type="button"
               onClick={async (e) => {
                 e.preventDefault();
                 await logout();
-                router.push("/login");
               }}
               title="Logout of Organization Portal"
+              aria-label="Logout of Organization Portal"
               style={{
-                color: "#a3acc2",
+                color: "#5A584F",
                 padding: "8px",
                 minHeight: "44px",
                 minWidth: "44px",
@@ -331,12 +353,15 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                textDecoration: "none",
+                backgroundColor: "transparent",
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.16s ease",
               }}
               className="recruiter-logout-btn"
             >
               <LogOut size={16} />
-            </Link>
+            </button>
           </div>
         </div>
       </aside>
@@ -345,7 +370,6 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
         @media (max-width: 1023.98px) {
           .recruiter-sidebar {
             transform: translateX(-100%);
-            box-shadow: 8px 0 32px rgba(0, 0, 0, 0.6);
           }
           .recruiter-sidebar.sidebar-open {
             transform: translateX(0);
@@ -361,16 +385,16 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
         }
         @media (hover: hover) {
           .recruiter-nav-item:hover:not(.recruiter-nav-active) {
-            background-color: rgba(255, 255, 255, 0.06) !important;
-            color: #eceaf5 !important;
+            background-color: #F3EFE6 !important;
+            color: #2B2D2A !important;
           }
           .recruiter-logout-btn:hover {
-            color: var(--gold) !important;
-            background-color: rgba(255, 255, 255, 0.08);
+            color: #8A6B2E !important;
+            background-color: #F3EFE6;
           }
         }
         .recruiter-nav-item:focus-visible {
-          outline: 2px solid var(--gold) !important;
+          outline: 2px solid #8A6B2E !important;
           outline-offset: -2px;
         }
       `}</style>

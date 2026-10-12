@@ -48,9 +48,9 @@ export default function CallDetailsDrawer({ isOpen, onClose, call, onApply }) {
         style={{
           position: "fixed",
           inset: 0,
-          backgroundColor: "rgba(7, 11, 18, 0.75)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          backgroundColor: "rgba(43, 45, 42, 0.55)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
           animation: "fadeIn 0.2s ease-out",
         }}
       />

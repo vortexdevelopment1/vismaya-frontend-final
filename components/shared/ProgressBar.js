@@ -6,8 +6,8 @@ export default function ProgressBar({
   label,
   showPercentage = true,
   height = "8px",
-  color = "var(--gold)",
-  gradient = "linear-gradient(90deg, #ffd54a 0%, #ffbc00 100%)",
+  color = "var(--gold, #8A6B2E)",
+  gradient = "linear-gradient(90deg, #8A6B2E 0%, #C9A55C 100%)",
   animated = false,
   style = {},
 }) {
@@ -25,10 +25,10 @@ export default function ProgressBar({
           }}
         >
           {label && (
-            <span style={{ color: "#a3acc2", fontWeight: "600" }}>{label}</span>
+            <span style={{ color: "var(--text-secondary, #5A584F)", fontWeight: "600" }}>{label}</span>
           )}
           {showPercentage && (
-            <span style={{ color: "#eceaf5", fontWeight: "700" }}>{percentage}%</span>
+            <span style={{ color: "var(--text-primary, #2B2D2A)", fontWeight: "700" }}>{percentage}%</span>
           )}
         </div>
       )}
@@ -37,10 +37,10 @@ export default function ProgressBar({
         style={{
           width: "100%",
           height,
-          backgroundColor: "rgba(255, 255, 255, 0.08)",
+          backgroundColor: "var(--bg-alt, #F3EFE6)",
           borderRadius: "999px",
           overflow: "hidden",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
+          border: "1px solid var(--border-color, #E8E2D4)",
           position: "relative",
         }}
       >
@@ -51,7 +51,7 @@ export default function ProgressBar({
             background: gradient || color,
             borderRadius: "999px",
             transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
-            boxShadow: "0 0 10px rgba(255, 188, 0, 0.4)",
+            boxShadow: "0 0 8px rgba(138, 107, 46, 0.3)",
           }}
         />
       </div>

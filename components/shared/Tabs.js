@@ -6,7 +6,7 @@ export default function Tabs({
   tabs = [],
   activeTab,
   onChange,
-  variant = "pills", // "pills" | "underline"
+  variant = "pills", // "pills" | "underline" | "segmented"
   style = {},
 }) {
   const containerRef = useRef(null);
@@ -28,19 +28,19 @@ export default function Tabs({
       style={{
         display: "flex",
         alignItems: "center",
-        gap: variant === "pills" ? "8px" : "16px",
+        gap: "8px",
         overflowX: "auto",
-        scrollSnapType: "x mandatory",
+        flexWrap: "wrap",
         WebkitOverflowScrolling: "touch",
         scrollbarWidth: "none",
         msOverflowStyle: "none",
         paddingBottom: variant === "underline" ? "0" : "4px",
-        borderBottom: variant === "underline" ? "1px solid rgba(255, 255, 255, 0.12)" : "none",
+        borderBottom: variant === "underline" ? "1px solid #E8E2D4" : "none",
         width: "100%",
         maxWidth: "100%",
         ...style,
       }}
-      className="custom-tabs-container scroll-snap-x"
+      className="custom-tabs-container"
     >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
@@ -56,14 +56,14 @@ export default function Tabs({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
-                padding: "10px 14px",
-                minHeight: "44px",
-                fontSize: "13px",
-                fontWeight: isActive ? "700" : "600",
-                color: isActive ? "var(--gold)" : "#a3acc2",
-                borderBottom: isActive ? "2px solid var(--gold)" : "2px solid transparent",
+                padding: "10px 16px",
+                minHeight: "40px",
+                fontSize: "14px",
+                fontWeight: isActive ? "600" : "500",
+                color: isActive ? "#8A6B2E" : "#5A584F",
+                borderBottom: isActive ? "2px solid #8A6B2E" : "2px solid transparent",
                 marginBottom: "-1px",
-                transition: "all var(--transition)",
+                transition: "all 0.16s ease",
                 whiteSpace: "nowrap",
                 cursor: "pointer",
                 background: "transparent",
@@ -71,20 +71,21 @@ export default function Tabs({
                 borderLeft: "none",
                 borderRight: "none",
                 flexShrink: 0,
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
               }}
             >
-              {Icon && <Icon size={16} style={{ color: isActive ? "var(--gold)" : "#7e89a3", flexShrink: 0 }} />}
+              {Icon && <Icon size={16} style={{ color: isActive ? "#8A6B2E" : "#5A584F", flexShrink: 0 }} />}
               <span>{tab.label}</span>
               {tab.count !== undefined && (
                 <span
                   style={{
-                    fontSize: "11px",
+                    fontSize: "12px",
                     fontWeight: "700",
                     padding: "2px 8px",
                     borderRadius: "999px",
-                    backgroundColor: isActive ? "rgba(255, 188, 0, 0.18)" : "rgba(255, 255, 255, 0.08)",
-                    color: isActive ? "var(--gold)" : "#a3acc2",
-                    border: `1px solid ${isActive ? "rgba(255, 188, 0, 0.35)" : "rgba(255, 255, 255, 0.12)"}`,
+                    backgroundColor: isActive ? "rgba(138, 107, 46, 0.12)" : "#F3EFE6",
+                    color: isActive ? "#8A6B2E" : "#2B2D2A",
+                    border: `1px solid ${isActive ? "rgba(138, 107, 46, 0.3)" : "#E8E2D4"}`,
                   }}
                 >
                   {tab.count}
@@ -103,34 +104,40 @@ export default function Tabs({
               display: "inline-flex",
               alignItems: "center",
               gap: "8px",
-              padding: "0 18px",
-              minHeight: "44px",
-              fontSize: "12px",
-              fontWeight: "700",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              color: isActive ? "#1a1300" : "#eceaf5",
-              background: isActive ? "linear-gradient(135deg, #ffd54a 0%, #ffbc00 100%)" : "rgba(255, 255, 255, 0.06)",
-              border: `1px solid ${isActive ? "#ffd54a" : "rgba(255, 255, 255, 0.14)"}`,
+              padding: "0 16px",
+              height: "40px",
+              minHeight: "40px",
+              fontSize: "14px",
+              fontWeight: "600",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+              color: isActive ? "#FFFFFF" : "#5A584F",
+              background: isActive ? "#8A6B2E" : "#FFFFFF",
+              border: `1px solid ${isActive ? "#8A6B2E" : "#E8E2D4"}`,
               borderRadius: "999px",
-              boxShadow: isActive ? "0 4px 14px rgba(255, 188, 0, 0.32)" : "none",
-              transition: "all var(--transition)",
+              boxShadow: isActive ? "0 2px 8px rgba(138, 107, 46, 0.22)" : "none",
+              transition: "all 0.16s ease",
               whiteSpace: "nowrap",
               cursor: "pointer",
               flexShrink: 0,
             }}
           >
-            {Icon && <Icon size={14} style={{ color: isActive ? "#1a1300" : "#a3acc2", flexShrink: 0 }} />}
+            {Icon && <Icon size={15} style={{ color: isActive ? "#FFFFFF" : "#5A584F", flexShrink: 0 }} />}
             <span>{tab.label}</span>
             {tab.count !== undefined && (
               <span
                 style={{
-                  fontSize: "10px",
-                  fontWeight: "800",
-                  padding: "1px 7px",
+                  height: "22px",
+                  minWidth: "22px",
+                  fontSize: "12px",
+                  fontWeight: "700",
+                  padding: "0 6px",
                   borderRadius: "999px",
-                  backgroundColor: isActive ? "rgba(26, 19, 0, 0.20)" : "rgba(255, 255, 255, 0.12)",
-                  color: isActive ? "#1a1300" : "#eceaf5",
+                  backgroundColor: isActive ? "rgba(255, 255, 255, 0.22)" : "#F3EFE6",
+                  color: isActive ? "#FFFFFF" : "#2B2D2A",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
                 }}
               >
                 {tab.count}
@@ -145,8 +152,9 @@ export default function Tabs({
           display: none;
         }
         .tab-btn:hover:not(.tab-active) {
-          background-color: rgba(255, 255, 255, 0.10) !important;
-          color: #ffffff !important;
+          border-color: #8A6B2E !important;
+          background-color: #F3EFE6 !important;
+          color: #2B2D2A !important;
         }
       `}</style>
     </div>

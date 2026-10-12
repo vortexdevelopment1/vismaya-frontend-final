@@ -2,13 +2,18 @@
 
 import { useMemo } from "react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import PublicNav from "@/components/PublicNav";
 import Hero from "@/components/home/Hero";
 import BrandsMarquee from "@/components/home/BrandsMarquee";
 import StatsStudioStrip from "@/components/home/StatsStudioStrip";
 import PortalsSection from "@/components/home/PortalsSection";
 import OpportunitiesSection from "@/components/home/OpportunitiesSection";
 import TalentRosterSection from "@/components/home/TalentRosterSection";
+import TalentRosterSectionOld from "@/components/home/TalentRosterSection.old";
 import WorkflowSection from "@/components/home/WorkflowSection";
+
+// Switch between new light roster trial and backup old design
+const USE_NEW_ROSTER = true;
 import CtaBannerSection from "@/components/home/CtaBannerSection";
 import PublicFooter from "@/components/PublicFooter";
 
@@ -37,6 +42,9 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", width: "100%", backgroundColor: "var(--bg-primary)" }}>
+      {/* 0. Public Navigation */}
+      <PublicNav />
+
       {/* 1. Hero Section */}
       <Hero />
 
@@ -53,7 +61,7 @@ export default function Home() {
       <OpportunitiesSection opportunities={latestOpportunities} getProject={getProject} />
 
       {/* 6. Elite Talent Roster */}
-      <TalentRosterSection />
+      {USE_NEW_ROSTER ? <TalentRosterSection /> : <TalentRosterSectionOld />}
 
       {/* 7. How Vismaya Works (4-Step Workflow) */}
       <WorkflowSection />

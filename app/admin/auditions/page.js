@@ -6,18 +6,11 @@ import {
   Video,
   Play,
   CheckCircle2,
-  AlertTriangle,
-  Clock,
-  Sparkles,
   Building2,
   Users,
   Search,
-  Filter,
   Eye,
   Send,
-  ArrowRight,
-  ShieldCheck,
-  Film,
   Upload,
   X,
 } from "lucide-react";
@@ -152,75 +145,30 @@ export default function AdminAuditionsManagementPage() {
     setForwardModalAud(null);
   };
 
-  // Helper for stage badge styling
-  const getStagePill = (status) => {
-    const isForwarded = status === "Forwarded to Organization";
-    const isReceived = status === "Self-tape Received";
-    const isRelayed = status === "Relayed to Talent";
-
-    let bg = "rgba(255, 255, 255, 0.06)";
-    let color = "#eceaf5";
-    let border = "rgba(255, 255, 255, 0.14)";
-
-    if (isForwarded) {
-      bg = "rgba(52, 211, 153, 0.14)";
-      color = "var(--status-green)";
-      border = "rgba(52, 211, 153, 0.32)";
-    } else if (isReceived) {
-      bg = "rgba(251, 191, 36, 0.14)";
-      color = "#fbbf24";
-      border = "rgba(251, 191, 36, 0.35)";
-    } else if (isRelayed) {
-      bg = "rgba(138, 180, 255, 0.14)";
-      color = "#8ab4ff";
-      border = "rgba(138, 180, 255, 0.35)";
-    }
-
-    return (
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          whiteSpace: "nowrap",
-          width: "fit-content",
-          fontSize: "11px",
-          fontWeight: "700",
-          padding: "3px 10px",
-          borderRadius: "999px",
-          backgroundColor: bg,
-          color: color,
-          border: `1px solid ${border}`,
-        }}
-      >
-        {status}
-      </span>
-    );
-  };
-
   if (!isHydrated) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        <div style={{ height: "48px", background: "rgba(255, 255, 255, 0.05)", borderRadius: "12px", width: "35%", animation: "pulse 1.5s infinite" }} />
-        <div style={{ height: "420px", background: "rgba(255, 255, 255, 0.05)", borderRadius: "16px", animation: "pulse 1.5s infinite" }} />
+        <div style={{ height: "48px", background: "#F3EFE6", borderRadius: "12px", width: "35%" }} />
+        <div style={{ height: "400px", background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "16px" }} />
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
       {/* Page Header */}
       <PageHeader
-        title="Auditions & Self-Tapes Channel"
-        subtitle="Vismaya moderation channel: relay audition briefs to talent, review uploaded self-tapes, and forward verified videos to organizations."
+        title="Auditions & Self-Tapes Relay"
+        subtitle="Admin gateway between studio requests and talent submissions. Review audition requests, relay invitations, and moderate self-tapes."
+        badge={`${statusCounts.Requested} NEEDS RELAY`}
         breadcrumbs={[
           { label: "Dashboard", href: "/admin/dashboard" },
           { label: "Auditions & Self-Tapes" },
         ]}
-        style={{ marginBottom: "6px" }}
       />
 
-      {/* A. Status Tabs Row: Pill tabs with count badges */}
-      <div className="aud-tabs-row" role="tablist" aria-label="Audition stage filters">
+      {/* Filter Tabs Row */}
+      <div className="aud-tabs-row" role="tablist" aria-label="Audition request filters">
         {tabs.map((tab) => {
           const isActive = statusFilter === tab.key;
           return (
@@ -241,19 +189,9 @@ export default function AdminAuditionsManagementPage() {
         })}
       </div>
 
-      {/* A. Compact Toolbar: Search on left, Organization filter on right */}
+      {/* Toolbar Row */}
       <div className="aud-toolbar-row">
-        {/* Search Input: max-width ~420px, height 40px */}
-        <div
-          className="aud-search-wrap"
-          style={{
-            position: "relative",
-            display: "flex",
-            alignItems: "center",
-            flex: "1 1 260px",
-            maxWidth: "420px",
-          }}
-        >
+        <div className="aud-search-wrap">
           <Search
             size={16}
             style={{
@@ -261,32 +199,17 @@ export default function AdminAuditionsManagementPage() {
               left: "14px",
               top: "50%",
               transform: "translateY(-50%)",
-              color: "#7e89a3",
+              color: "#5A584F",
               pointerEvents: "none",
               zIndex: 2,
             }}
           />
           <input
             type="text"
-            placeholder="Search candidate name, opportunity, studio..."
+            placeholder="Search candidate, role, opportunity, studio..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="aud-search-input"
-            style={{
-              width: "100%",
-              height: "40px",
-              minHeight: "40px",
-              paddingLeft: "42px",
-              paddingRight: searchQuery ? "36px" : "14px",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
-              backgroundColor: "rgba(255, 255, 255, 0.055)",
-              borderRadius: "12px",
-              color: "#eceaf5",
-              fontSize: "0.825rem",
-              fontFamily: "inherit",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
             aria-label="Search auditions"
           />
           {searchQuery && (
@@ -294,22 +217,6 @@ export default function AdminAuditionsManagementPage() {
               type="button"
               onClick={() => setSearchQuery("")}
               className="aud-search-clear-btn"
-              style={{
-                position: "absolute",
-                right: "10px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                color: "#7e89a3",
-                padding: "4px",
-                borderRadius: "50%",
-                zIndex: 2,
-              }}
               aria-label="Clear search"
             >
               <X size={14} />
@@ -317,20 +224,20 @@ export default function AdminAuditionsManagementPage() {
           )}
         </div>
 
-        {/* Organization Filter */}
+        {/* Organization Filter Select */}
         <div className="aud-org-filter-wrap">
-          <span className="aud-org-label">Organization:</span>
+          <label htmlFor="aud-org-select-input" className="aud-org-label">
+            Organization:
+          </label>
           <select
+            id="aud-org-select-input"
             value={orgFilter}
             onChange={(e) => setOrgFilter(e.target.value)}
             className="aud-org-select"
-            aria-label="Filter by organization"
           >
-            <option value="ALL" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
-              All Organizations
-            </option>
+            <option value="ALL">All Organizations ({organizations.length})</option>
             {organizations.map((org) => (
-              <option key={org.id} value={org.id} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+              <option key={org.id} value={org.id}>
                 {org.name}
               </option>
             ))}
@@ -340,34 +247,34 @@ export default function AdminAuditionsManagementPage() {
 
       {/* Auditions Content: Desktop Table & Mobile Cards */}
       {filteredAuditions.length === 0 ? (
-        <div className="aud-empty-card card-surface">
+        <div className="aud-empty-card">
           <div className="aud-empty-icon-wrap">
-            <Video size={36} style={{ color: "var(--gold)" }} />
+            <Video size={32} style={{ color: "#8A6B2E" }} />
           </div>
-          <h3 style={{ fontSize: "1.1rem", color: "#eceaf5", fontWeight: 700, margin: "0 0 6px 0" }}>
-            No auditions in this category
+          <h3 style={{ fontSize: "18px", color: "#2B2D2A", fontFamily: "var(--font-heading), 'Playfair Display', serif", fontWeight: 600, margin: "0 0 6px 0" }}>
+            No audition requests in this queue
           </h3>
-          <p style={{ color: "#a3acc2", fontSize: "0.85rem", margin: 0, maxWidth: "440px" }}>
+          <p style={{ color: "#5A584F", fontSize: "14px", margin: 0, maxWidth: "440px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
             {searchQuery.trim()
-              ? `No audition records found matching "${searchQuery}". Try adjusting your search query.`
-              : statusFilter === "ALL"
-              ? "No audition or interview requests found on the platform."
-              : `No auditions currently in "${tabs.find((t) => t.key === statusFilter)?.label || statusFilter}".`}
+              ? `No audition records found matching "${searchQuery}". Try clearing search filter.`
+              : statusFilter === "Requested"
+              ? "All audition requests have been relayed to candidates."
+              : `No auditions currently under status "${tabs.find((t) => t.key === statusFilter)?.label || statusFilter}".`}
           </p>
         </div>
       ) : (
         <>
-          {/* B. Desktop Table View (>= 768px) */}
-          <div className="aud-table-card card-surface">
+          {/* Desktop Table View (>= 768px) with internal horizontal scroll wrapper */}
+          <div className="aud-table-card">
             <div className="aud-table-scroll">
               <table className="aud-table">
                 <thead>
                   <tr className="aud-thead-row">
-                    <th style={{ width: "22%" }}>Talent / Candidate</th>
-                    <th style={{ width: "24%" }}>Opportunity &amp; Studio</th>
-                    <th style={{ width: "25%" }}>Type &amp; Instructions</th>
-                    <th style={{ width: "14%" }}>Audition Stage</th>
-                    <th style={{ width: "15%", textAlign: "right" }}>Moderation Action</th>
+                    <th style={{ width: "22%" }}>Candidate</th>
+                    <th style={{ width: "26%" }}>Opportunity &amp; Studio</th>
+                    <th style={{ width: "12%" }}>Audition Type</th>
+                    <th style={{ width: "16%" }}>Pipeline Stage</th>
+                    <th style={{ width: "240px", minWidth: "240px", textAlign: "right" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -375,18 +282,13 @@ export default function AdminAuditionsManagementPage() {
                     const opp = getOpportunityForAud(aud.opportunityId);
                     const org = getOrgForAud(aud.orgId);
 
-                    const isRequested = aud.status === "Requested";
-                    const isRelayed = aud.status === "Relayed to Talent";
-                    const isReceived = aud.status === "Self-tape Received";
-                    const isForwarded = aud.status === "Forwarded to Organization";
-
                     return (
                       <tr key={aud.id} className="aud-tbody-row">
                         {/* 1. Candidate Column */}
-                        <td style={{ padding: "14px 18px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <td style={{ padding: "16px 20px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                             <div className="aud-candidate-avatar">
-                              {(aud.talentName || "T")[0]}
+                              {(aud.talentName || "T").charAt(0).toUpperCase()}
                             </div>
                             <div style={{ minWidth: 0 }}>
                               <strong className="aud-candidate-name">
@@ -400,83 +302,77 @@ export default function AdminAuditionsManagementPage() {
                         </td>
 
                         {/* 2. Opportunity & Studio Column */}
-                        <td style={{ padding: "14px 18px" }}>
+                        <td style={{ padding: "16px 20px" }}>
                           <div title={opp?.title || "Opportunity"} className="aud-opp-title">
                             {opp?.title || "Opportunity"}
                           </div>
-                          <div title={org?.name || "Organization"} className="aud-studio-line">
-                            <Building2 size={12} style={{ color: "#7c869e", flexShrink: 0 }} />
-                            <span className="aud-truncate-text">{org?.name || "Organization"}</span>
+                          <div className="aud-studio-line" title={org?.name || "Studio"}>
+                            <Building2 size={13} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                            <span className="aud-truncate-text">{org?.name || "Studio"}</span>
                           </div>
                         </td>
 
-                        {/* 3. Type & Instructions Column */}
-                        <td style={{ padding: "14px 18px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            <span className="aud-type-chip">
-                              {aud.type}
-                            </span>
-                          </div>
-                          <p title={aud.note || "No specific instructions"} className="aud-instructions-text">
-                            {aud.note || "No specific instructions provided."}
-                          </p>
+                        {/* 3. Type Column */}
+                        <td style={{ padding: "16px 20px" }}>
+                          <span className="aud-type-chip">
+                            {aud.type || "Audition"}
+                          </span>
                         </td>
 
-                        {/* 4. Audition Stage Column */}
-                        <td style={{ padding: "14px 18px" }}>
-                          {getStagePill(aud.status)}
+                        {/* 4. Stage Column */}
+                        <td style={{ padding: "16px 20px" }}>
+                          <StatusBadge status={aud.status} size="xs" />
                         </td>
 
-                        {/* 5. Moderation Action Column */}
-                        <td style={{ padding: "14px 18px", textAlign: "right" }}>
+                        {/* 5. Moderation Actions Column */}
+                        <td style={{ padding: "16px 20px", textAlign: "right" }}>
                           <div className="aud-actions-cluster">
-                            {/* 1. If Requested -> Relay to Talent */}
-                            {isRequested && (
+                            {/* State 1: Needs Relay */}
+                            {aud.status === "Requested" && (
                               <button
                                 type="button"
                                 onClick={() => {
                                   setRelayModalAud(aud);
                                   setRelayNote(aud.note || "");
                                 }}
-                                className="btn-primary aud-action-btn"
+                                className="aud-btn-primary"
                               >
                                 <Send size={13} />
                                 <span>Relay to Talent</span>
                               </button>
                             )}
 
-                            {/* 2. If Relayed -> Simulate Upload (Demo) */}
-                            {isRelayed && (
+                            {/* State 2: Relayed - Simulate talent upload */}
+                            {aud.status === "Relayed to Talent" && (
                               <button
                                 type="button"
                                 onClick={() => handleSimulateTalentUpload(aud.id)}
-                                className="btn-secondary aud-action-btn"
-                                title="Simulate talent submitting self-tape"
+                                className="aud-btn-secondary"
+                                title="Simulate candidate submitting audition video"
                               >
                                 <Upload size={13} />
                                 <span>Simulate Upload</span>
                               </button>
                             )}
 
-                            {/* 3. If Received -> Preview Video & Forward */}
-                            {isReceived && (
+                            {/* State 3: Self-tape Received - Preview & Forward */}
+                            {aud.status === "Self-tape Received" && (
                               <>
                                 <button
                                   type="button"
                                   onClick={() => setPreviewVideoModalAud(aud)}
-                                  className="btn-secondary aud-action-btn"
+                                  className="aud-btn-secondary"
                                 >
-                                  <Play size={13} />
-                                  <span>Preview Video</span>
+                                  <Eye size={13} />
+                                  <span>Watch Video</span>
                                 </button>
-
                                 <button
                                   type="button"
                                   onClick={() => {
                                     setForwardModalAud(aud);
                                     setForwardNote("");
                                   }}
-                                  className="btn-primary aud-action-btn"
+                                  className="aud-btn-primary"
                                 >
                                   <CheckCircle2 size={13} />
                                   <span>Forward</span>
@@ -484,12 +380,12 @@ export default function AdminAuditionsManagementPage() {
                               </>
                             )}
 
-                            {/* 4. If Forwarded -> Watch Video */}
-                            {isForwarded && (
+                            {/* State 4: Forwarded to Organization */}
+                            {aud.status === "Forwarded to Organization" && (
                               <button
                                 type="button"
                                 onClick={() => setPreviewVideoModalAud(aud)}
-                                className="btn-secondary aud-action-btn aud-btn-gold-outline"
+                                className="aud-btn-secondary"
                               >
                                 <Play size={13} />
                                 <span>Watch Video</span>
@@ -505,101 +401,84 @@ export default function AdminAuditionsManagementPage() {
             </div>
           </div>
 
-          {/* E. Mobile Cards View (< 768px) */}
+          {/* Mobile Cards View (< 768px) */}
           <div className="aud-mobile-cards-stack">
             {filteredAuditions.map((aud) => {
               const opp = getOpportunityForAud(aud.opportunityId);
               const org = getOrgForAud(aud.orgId);
 
-              const isRequested = aud.status === "Requested";
-              const isRelayed = aud.status === "Relayed to Talent";
-              const isReceived = aud.status === "Self-tape Received";
-              const isForwarded = aud.status === "Forwarded to Organization";
-
               return (
-                <div key={aud.id} className="aud-mobile-card card-surface">
-                  {/* Card Header: Avatar, Name, Stage */}
+                <div key={aud.id} className="aud-mobile-card">
                   <div className="aud-mobile-card-top">
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <div className="aud-candidate-avatar">
-                        {(aud.talentName || "T")[0]}
+                        {(aud.talentName || "T").charAt(0).toUpperCase()}
                       </div>
-                      <div style={{ minWidth: 0 }}>
-                        <strong className="aud-candidate-name" style={{ fontSize: "0.95rem" }}>
-                          {aud.talentName}
-                        </strong>
-                        <span className="aud-candidate-date">
-                          Requested {formatDate(aud.requestedAt)}
-                        </span>
+                      <div>
+                        <strong className="aud-candidate-name">{aud.talentName}</strong>
+                        <span className="aud-candidate-date">{formatDate(aud.requestedAt)}</span>
                       </div>
                     </div>
-                    <div style={{ flexShrink: 0 }}>
-                      {getStagePill(aud.status)}
-                    </div>
+                    <StatusBadge status={aud.status} size="xs" />
                   </div>
 
-                  {/* Card Body: Opportunity & Studio */}
                   <div className="aud-mobile-card-body">
-                    <div className="aud-opp-title" style={{ fontSize: "0.925rem" }}>
-                      {opp?.title || "Opportunity"}
-                    </div>
+                    <strong className="aud-opp-title">{opp?.title || "Opportunity"}</strong>
                     <div className="aud-studio-line">
-                      <Building2 size={12} style={{ color: "#7c869e", flexShrink: 0 }} />
-                      <span>{org?.name || "Organization"}</span>
+                      <Building2 size={13} style={{ color: "#8A6B2E" }} />
+                      <span>{org?.name || "Studio"}</span>
                     </div>
                   </div>
 
-                  {/* Card Instructions */}
-                  <div className="aud-mobile-card-instructions">
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                      <span className="aud-type-chip">
-                        {aud.type}
-                      </span>
+                  {aud.note && (
+                    <div className="aud-mobile-card-instructions">
+                      <strong style={{ fontSize: "11px", color: "#5A584F", display: "block", marginBottom: "2px", textTransform: "uppercase" }}>
+                        Audition Instructions:
+                      </strong>
+                      <p style={{ margin: 0, fontSize: "13px", color: "#2B2D2A", lineHeight: 1.4 }}>
+                        {aud.note}
+                      </p>
                     </div>
-                    <p className="aud-instructions-text" style={{ WebkitLineClamp: 3 }}>
-                      {aud.note || "No specific instructions provided."}
-                    </p>
-                  </div>
+                  )}
 
-                  {/* Card Footer: Action buttons in 2-col grid */}
                   <div className="aud-mobile-card-footer">
-                    {isRequested && (
+                    {aud.status === "Requested" && (
                       <button
                         type="button"
                         onClick={() => {
                           setRelayModalAud(aud);
                           setRelayNote(aud.note || "");
                         }}
-                        className="btn-primary"
-                        style={{ width: "100%", height: "38px", justifyContent: "center", fontSize: "0.8rem" }}
+                        className="aud-btn-primary"
+                        style={{ width: "100%", justifyContent: "center" }}
                       >
                         <Send size={13} />
                         <span>Relay to Talent</span>
                       </button>
                     )}
 
-                    {isRelayed && (
+                    {aud.status === "Relayed to Talent" && (
                       <button
                         type="button"
                         onClick={() => handleSimulateTalentUpload(aud.id)}
-                        className="btn-secondary"
-                        style={{ width: "100%", height: "38px", justifyContent: "center", fontSize: "0.8rem" }}
+                        className="aud-btn-secondary"
+                        style={{ width: "100%", justifyContent: "center" }}
                       >
                         <Upload size={13} />
                         <span>Simulate Upload</span>
                       </button>
                     )}
 
-                    {isReceived && (
+                    {aud.status === "Self-tape Received" && (
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", width: "100%" }}>
                         <button
                           type="button"
                           onClick={() => setPreviewVideoModalAud(aud)}
-                          className="btn-secondary"
-                          style={{ height: "38px", justifyContent: "center", fontSize: "0.8rem" }}
+                          className="aud-btn-secondary"
+                          style={{ justifyContent: "center" }}
                         >
-                          <Play size={13} />
-                          <span>Preview Video</span>
+                          <Eye size={13} />
+                          <span>Watch Video</span>
                         </button>
                         <button
                           type="button"
@@ -607,8 +486,8 @@ export default function AdminAuditionsManagementPage() {
                             setForwardModalAud(aud);
                             setForwardNote("");
                           }}
-                          className="btn-primary"
-                          style={{ height: "38px", justifyContent: "center", fontSize: "0.8rem" }}
+                          className="aud-btn-primary"
+                          style={{ justifyContent: "center" }}
                         >
                           <CheckCircle2 size={13} />
                           <span>Forward</span>
@@ -616,12 +495,12 @@ export default function AdminAuditionsManagementPage() {
                       </div>
                     )}
 
-                    {isForwarded && (
+                    {aud.status === "Forwarded to Organization" && (
                       <button
                         type="button"
                         onClick={() => setPreviewVideoModalAud(aud)}
-                        className="btn-secondary aud-btn-gold-outline"
-                        style={{ width: "100%", height: "38px", justifyContent: "center", fontSize: "0.8rem" }}
+                        className="aud-btn-secondary"
+                        style={{ width: "100%", justifyContent: "center" }}
                       >
                         <Play size={13} />
                         <span>Watch Video</span>
@@ -635,36 +514,30 @@ export default function AdminAuditionsManagementPage() {
         </>
       )}
 
-      {/* C. MODALS */}
-
-      {/* Modal 1: Relay to Talent */}
+      {/* MODALS */}
+      {/* Modal 1: Relay Audition Modal */}
       {relayModalAud && (
         <Modal
           isOpen={!!relayModalAud}
           onClose={() => setRelayModalAud(null)}
-          title={`Relay Audition Instructions to ${relayModalAud.talentName}`}
+          title="Relay Audition Invitation to Talent"
         >
           <form onSubmit={handleRelay} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <p style={{ fontSize: "0.875rem", color: "#a3acc2", margin: 0, lineHeight: 1.5 }}>
-              The Vismaya Casting Desk will verify talent availability and send the official brief instructions to <strong style={{ color: "#eceaf5" }}>{relayModalAud.talentName}</strong>.
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.6, fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              Verify script guidelines, audition scene requirements, and relay the invitation to{" "}
+              <strong style={{ color: "#2B2D2A" }}>{relayModalAud.talentName}</strong>.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label style={{ fontSize: "0.825rem", fontWeight: "600", color: "#eceaf5" }}>
-                  Audition Directions &amp; Scene Details *
-                </label>
-                <span style={{ fontSize: "0.725rem", color: "#7c869e" }}>
-                  {relayNote.length} characters
-                </span>
-              </div>
+              <label style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                Audition Note &amp; Instructions to Artist
+              </label>
               <textarea
                 rows={4}
-                required
                 value={relayNote}
                 onChange={(e) => setRelayNote(e.target.value)}
+                placeholder="Include dialogue scene lines, character nuances, lighting advice..."
                 className="aud-modal-textarea"
-                placeholder="Specify audition dialogue, scene sides, recording framing, and submission deadline..."
               />
             </div>
 
@@ -672,33 +545,30 @@ export default function AdminAuditionsManagementPage() {
               <button
                 type="button"
                 onClick={() => setRelayModalAud(null)}
-                className="btn-secondary"
-                style={{ borderRadius: "10px", padding: "8px 16px" }}
+                className="aud-modal-cancel-btn"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="btn-primary"
-                style={{ borderRadius: "10px", padding: "8px 20px" }}
+                className="aud-btn-primary"
+                style={{ padding: "0 20px", height: "42px" }}
               >
-                Relay to Talent
+                Relay to Artist
               </button>
             </div>
           </form>
         </Modal>
       )}
 
-      {/* Modal 2: Video Preview Modal */}
+      {/* Modal 2: Preview Video Modal */}
       {previewVideoModalAud && (
         <Modal
           isOpen={!!previewVideoModalAud}
           onClose={() => setPreviewVideoModalAud(null)}
-          title={`Self-Tape Preview: ${previewVideoModalAud.talentName}`}
-          maxWidth="640px"
+          title={`Self-Tape Review: ${previewVideoModalAud.talentName}`}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {/* 16:9 Video Player */}
             <VideoPlayer
               src={previewVideoModalAud.selfTapeUrl}
               fileName={`${previewVideoModalAud.talentName}-SelfTape.mp4`}
@@ -706,10 +576,10 @@ export default function AdminAuditionsManagementPage() {
             />
 
             <div className="aud-video-note-box">
-              <strong style={{ color: "var(--gold)", fontSize: "0.825rem", display: "block", marginBottom: "4px" }}>
+              <strong style={{ color: "#6E5420", fontSize: "13px", display: "block", marginBottom: "4px" }}>
                 Talent Submission Note:
               </strong>
-              <p style={{ color: "#a3acc2", fontSize: "0.825rem", margin: 0, lineHeight: 1.45 }}>
+              <p style={{ color: "#5A584F", fontSize: "13px", margin: 0, lineHeight: 1.5 }}>
                 {previewVideoModalAud.note || "Recorded in studio natural light according to dialogue scene guidelines."}
               </p>
             </div>
@@ -718,8 +588,7 @@ export default function AdminAuditionsManagementPage() {
               <button
                 type="button"
                 onClick={() => setPreviewVideoModalAud(null)}
-                className="btn-secondary"
-                style={{ borderRadius: "10px", padding: "8px 16px" }}
+                className="aud-modal-cancel-btn"
               >
                 Close Player
               </button>
@@ -732,8 +601,8 @@ export default function AdminAuditionsManagementPage() {
                     setForwardModalAud(target);
                     setForwardNote("");
                   }}
-                  className="btn-primary"
-                  style={{ borderRadius: "10px", padding: "8px 18px" }}
+                  className="aud-btn-primary"
+                  style={{ padding: "0 20px", height: "42px" }}
                 >
                   <CheckCircle2 size={14} />
                   <span>Forward to Studio</span>
@@ -752,12 +621,12 @@ export default function AdminAuditionsManagementPage() {
           title="Forward Verified Self-Tape to Organization"
         >
           <form onSubmit={handleForward} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <p style={{ fontSize: "0.875rem", color: "#a3acc2", margin: 0, lineHeight: 1.5 }}>
-              Confirm forwarding self-tape from <strong style={{ color: "#eceaf5" }}>{forwardModalAud.talentName}</strong> to the organization. This unlocks the video player on the organization's shortlist board.
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.6, fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              Confirm forwarding self-tape from <strong style={{ color: "#2B2D2A" }}>{forwardModalAud.talentName}</strong> to the organization. This unlocks the video player on the organization's shortlist board.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "0.825rem", fontWeight: "600", color: "#eceaf5" }}>
+              <label style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Moderation Notes (Optional)
               </label>
               <textarea
@@ -773,15 +642,14 @@ export default function AdminAuditionsManagementPage() {
               <button
                 type="button"
                 onClick={() => setForwardModalAud(null)}
-                className="btn-secondary"
-                style={{ borderRadius: "10px", padding: "8px 16px" }}
+                className="aud-modal-cancel-btn"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="btn-primary"
-                style={{ borderRadius: "10px", padding: "8px 18px" }}
+                className="aud-btn-primary"
+                style={{ padding: "0 20px", height: "42px" }}
               >
                 Forward &amp; Unlock for Studio
               </button>
@@ -792,23 +660,12 @@ export default function AdminAuditionsManagementPage() {
 
       {/* Embedded CSS */}
       <style jsx global>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.6; }
-          50% { opacity: 0.3; }
-        }
-
         /* Tabs Row */
         .aud-tabs-row {
           display: flex;
           align-items: center;
           gap: 8px;
-          overflow-x: auto;
-          scrollbar-width: none;
-          -webkit-overflow-scrolling: touch;
-          padding-bottom: 2px;
-        }
-        .aud-tabs-row::-webkit-scrollbar {
-          display: none;
+          flex-wrap: wrap;
         }
 
         .aud-tab-btn {
@@ -816,133 +673,166 @@ export default function AdminAuditionsManagementPage() {
           align-items: center;
           gap: 8px;
           padding: 0 16px;
-          height: 38px;
-          min-height: 38px;
+          height: 40px;
+          min-height: 40px;
           border-radius: 999px;
-          font-size: 0.775rem;
+          font-size: 14px;
           font-weight: 600;
-          color: #a3acc2;
-          background-color: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          font-family: var(--font-body), 'Inter', sans-serif;
+          color: #5A584F;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
           cursor: pointer;
           white-space: nowrap;
-          transition: all 0.15s ease;
+          transition: all 0.16s ease;
           flex-shrink: 0;
           box-sizing: border-box;
         }
         .aud-tab-btn:hover:not(.aud-tab-active) {
-          background-color: rgba(255, 255, 255, 0.08);
-          color: #eceaf5;
-          border-color: rgba(255, 255, 255, 0.2);
+          border-color: #8A6B2E !important;
+          background-color: #F3EFE6 !important;
+          color: #2B2D2A !important;
         }
         .aud-tab-active {
-          background: linear-gradient(135deg, #ffd54a 0%, #ffbc00 100%) !important;
-          color: #1a1300 !important;
-          border-color: #ffd54a !important;
-          box-shadow: 0 4px 12px rgba(255, 188, 0, 0.25);
+          background-color: #8A6B2E !important;
+          color: #FFFFFF !important;
+          border-color: #8A6B2E !important;
+          box-shadow: 0 2px 8px rgba(138, 107, 46, 0.22);
         }
 
         .aud-tab-badge {
-          padding: 1px 7px;
+          height: 22px;
+          min-width: 22px;
+          padding: 0 6px;
           border-radius: 999px;
-          font-size: 0.7rem;
+          font-size: 12px;
           font-weight: 700;
-          background-color: rgba(255, 255, 255, 0.1);
-          color: #eceaf5;
+          background-color: #F3EFE6;
+          color: #2B2D2A;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
         }
         .aud-tab-badge-active {
-          background-color: rgba(26, 19, 0, 0.25) !important;
-          color: #1a1300 !important;
+          background-color: rgba(255, 255, 255, 0.22) !important;
+          color: #FFFFFF !important;
         }
 
-        /* Toolbar Row (No big card, simple bottom border) */
+        /* Toolbar Row */
         .aud-toolbar-row {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          gap: 14px;
-          padding-bottom: 16px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          justifyContent: space-between;
+          gap: 16px;
           width: 100%;
           flex-wrap: wrap;
         }
 
         .aud-search-wrap {
-          background: transparent !important;
-          border: none !important;
-          padding: 0 !important;
+          position: relative;
+          display: flex;
+          align-items: center;
+          flex: 1 1 280px;
+          max-width: 440px;
         }
 
         .aud-search-input {
-          transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
-        }
-        .aud-search-input:hover {
-          background-color: rgba(255, 255, 255, 0.075) !important;
-          border-color: rgba(255, 255, 255, 0.22) !important;
+          width: 100%;
+          height: 44px;
+          min-height: 44px;
+          padding-left: 42px;
+          padding-right: 38px;
+          border: 1px solid #D9D2C0;
+          background-color: #FFFFFF;
+          border-radius: 10px;
+          color: #2B2D2A;
+          font-size: 14px;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          outline: none;
+          box-sizing: border-box;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease;
         }
         .aud-search-input:focus {
-          border-color: #ffbc00 !important;
-          box-shadow: 0 0 0 3px rgba(255, 188, 0, 0.15) !important;
-          background-color: rgba(255, 255, 255, 0.075) !important;
+          border-color: #8A6B2E !important;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
         }
         .aud-search-input::placeholder {
-          color: #7e89a3;
-          font-size: 0.825rem;
+          color: #6B6A63;
         }
 
+        .aud-search-clear-btn {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          color: #5A584F;
+          padding: 4px;
+          border-radius: 50%;
+          z-index: 2;
+        }
         .aud-search-clear-btn:hover {
-          color: #eceaf5 !important;
-          background-color: rgba(255, 255, 255, 0.1) !important;
+          color: #2B2D2A;
+          background-color: #F3EFE6;
         }
 
         .aud-org-filter-wrap {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
           flex-shrink: 0;
         }
 
         .aud-org-label {
-          font-size: 0.825rem;
+          font-size: 13px;
           font-weight: 600;
-          color: #a3acc2;
+          color: #2B2D2A;
           white-space: nowrap;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         .aud-org-select {
-          height: 40px;
-          background-color: rgba(255, 255, 255, 0.055);
-          border: 1px solid rgba(255, 255, 255, 0.14);
-          border-radius: 12px;
-          padding: 0 14px;
-          font-size: 0.825rem;
-          color: #eceaf5;
+          height: 44px;
+          background-color: #FFFFFF;
+          border: 1px solid #D9D2C0;
+          border-radius: 10px;
+          padding: 0 16px;
+          font-size: 14px;
+          color: #2B2D2A;
           outline: none;
           cursor: pointer;
-          transition: border-color 0.15s ease;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease;
         }
         .aud-org-select:focus {
-          border-color: #ffbc00;
-          box-shadow: 0 0 0 3px rgba(255, 188, 0, 0.15);
+          border-color: #8A6B2E;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18);
         }
 
         /* Empty State */
         .aud-empty-card {
-          border-radius: 16px;
+          border-radius: 18px;
           padding: 56px 24px;
           text-align: center;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04);
         }
         .aud-empty-icon-wrap {
-          width: 64px;
-          height: 64px;
-          border-radius: 50%;
-          background-color: rgba(255, 188, 0, 0.12);
-          border: 1px solid rgba(255, 188, 0, 0.3);
+          width: 60px;
+          height: 60px;
+          border-radius: 16px;
+          background-color: #F3EFE6;
+          border: 1px solid #E8E2D4;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -953,105 +843,111 @@ export default function AdminAuditionsManagementPage() {
         .aud-table-card {
           border-radius: 16px;
           overflow: hidden;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06);
           width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
         }
 
         .aud-table-scroll {
           overflow-x: auto;
-          scrollbar-width: thin;
-          scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+          width: 100%;
+          max-width: 100%;
+          -webkit-overflow-scrolling: touch;
         }
 
         .aud-table {
           width: 100%;
-          min-width: 1080px;
+          min-width: 1020px;
           border-collapse: collapse;
           text-align: left;
-          font-size: 0.85rem;
+          font-size: 14px;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         .aud-thead-row {
-          background-color: #0a0f19;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+          background-color: #F3EFE6;
+          border-bottom: 1px solid #E8E2D4;
         }
 
         .aud-thead-row th {
-          padding: 14px 18px;
-          color: #7c869e;
+          padding: 14px 20px;
+          color: #5A584F;
           font-weight: 700;
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.14em;
           white-space: nowrap;
           position: sticky;
           top: 0;
-          background-color: #0a0f19;
+          background-color: #F3EFE6;
           z-index: 5;
         }
 
         .aud-tbody-row {
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-          transition: background-color 0.15s ease;
+          border-bottom: 1px solid #E8E2D4;
+          transition: background-color 0.16s ease;
+          background-color: #FFFFFF;
         }
         .aud-tbody-row:hover {
-          background-color: rgba(255, 255, 255, 0.035) !important;
+          background-color: #FAF9F7 !important;
         }
 
         .aud-candidate-avatar {
-          width: 36px;
-          height: 36px;
+          width: 38px;
+          height: 38px;
           border-radius: 50%;
-          background: rgba(255, 188, 0, 0.12);
-          color: var(--gold);
-          border: 1px solid rgba(255, 188, 0, 0.28);
+          background: #F3EFE6;
+          color: #8A6B2E;
+          border: 1.5px solid #E8E2D4;
           display: flex;
           align-items: center;
           justify-content: center;
           font-weight: 700;
-          font-size: 0.85rem;
+          font-size: 14px;
           flex-shrink: 0;
         }
 
         .aud-candidate-name {
-          color: #eceaf5;
+          color: #2B2D2A;
           display: block;
-          font-size: 0.875rem;
+          font-size: 15px;
+          font-weight: 600;
           line-height: 1.3;
         }
 
         .aud-candidate-date {
-          font-size: 0.75rem;
-          color: #7e89a3;
+          font-size: 12px;
+          color: #5A584F;
           white-space: nowrap;
           display: block;
-          margin-top: 1px;
+          margin-top: 2px;
         }
 
         .aud-opp-title {
           font-weight: 600;
-          color: #eceaf5;
+          color: #2B2D2A;
           line-height: 1.35;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
           text-overflow: ellipsis;
-          max-width: 260px;
+          font-size: 15px;
         }
 
         .aud-studio-line {
-          font-size: 0.775rem;
-          color: #a3acc2;
+          font-size: 13px;
+          color: #5A584F;
           display: flex;
           align-items: center;
-          gap: 5px;
-          margin-top: 3px;
+          gap: 6px;
+          margin-top: 4px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          max-width: 240px;
         }
 
         .aud-truncate-text {
@@ -1062,27 +958,13 @@ export default function AdminAuditionsManagementPage() {
         }
 
         .aud-type-chip {
-          font-size: 0.7rem;
-          font-weight: 700;
-          color: var(--gold);
-          background-color: rgba(255, 188, 0, 0.12);
-          border: 1px solid rgba(255, 188, 0, 0.3);
-          padding: 2px 7px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #6E5420;
+          background-color: rgba(201, 165, 92, 0.16);
+          padding: 3px 8px;
           border-radius: 6px;
           white-space: nowrap;
-        }
-
-        .aud-instructions-text {
-          font-size: 0.775rem;
-          color: #a3acc2;
-          margin: 3px 0 0 0;
-          max-width: 280px;
-          line-height: 1.4;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-          text-overflow: ellipsis;
         }
 
         .aud-actions-cluster {
@@ -1090,103 +972,144 @@ export default function AdminAuditionsManagementPage() {
           align-items: center;
           justify-content: flex-end;
           gap: 8px;
-          width: 100%;
+          white-space: nowrap;
         }
 
-        .aud-action-btn {
-          height: 36px;
-          min-height: 36px;
-          padding: 0 14px;
-          font-size: 0.775rem;
-          font-weight: 700;
+        .aud-btn-primary {
+          height: 40px;
+          min-height: 40px;
+          padding: 0 16px;
+          font-size: 13px;
+          font-weight: 600;
           border-radius: 10px;
           display: inline-flex;
           align-items: center;
-          gap: 5px;
+          gap: 6px;
           white-space: nowrap;
           cursor: pointer;
-          min-width: 0;
-          transition: all 0.15s ease;
+          background-color: #8A6B2E;
+          color: #FFFFFF;
+          border: 1px solid #8A6B2E;
+          transition: all 0.16s ease;
+          box-shadow: 0 2px 6px rgba(138, 107, 46, 0.2);
+          font-family: var(--font-body), 'Inter', sans-serif;
+        }
+        .aud-btn-primary:hover {
+          background-color: #6E5420;
+          border-color: #6E5420;
         }
 
-        .aud-btn-gold-outline {
-          color: var(--gold) !important;
-          border-color: rgba(255, 188, 0, 0.35) !important;
-          background-color: rgba(255, 188, 0, 0.08) !important;
+        .aud-btn-secondary {
+          height: 40px;
+          min-height: 40px;
+          padding: 0 16px;
+          font-size: 13px;
+          font-weight: 600;
+          border-radius: 10px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+          cursor: pointer;
+          background-color: #FFFFFF;
+          color: #8A6B2E;
+          border: 1px solid #8A6B2E;
+          transition: all 0.16s ease;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
-        .aud-btn-gold-outline:hover {
-          background-color: rgba(255, 188, 0, 0.16) !important;
-          border-color: var(--gold) !important;
+        .aud-btn-secondary:hover {
+          background-color: #F3EFE6;
+        }
+
+        .aud-modal-cancel-btn {
+          height: 42px;
+          padding: 0 18px;
+          border-radius: 10px;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          color: #5A584F;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.16s ease;
+          font-family: var(--font-body), 'Inter', sans-serif;
+        }
+        .aud-modal-cancel-btn:hover {
+          background-color: #F3EFE6;
+          color: #2B2D2A;
         }
 
         /* Mobile Cards Layout (< 768px) */
         .aud-mobile-cards-stack {
           display: none;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
           width: 100%;
         }
 
         .aud-mobile-card {
-          border-radius: 14px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          background-color: rgba(255, 255, 255, 0.035);
-          padding: 16px;
+          border-radius: 16px;
+          border: 1px solid #E8E2D4;
+          background-color: #FFFFFF;
+          padding: 18px;
           display: flex;
           flex-direction: column;
           gap: 12px;
+          box-shadow: 0 2px 6px rgba(43, 45, 42, 0.04);
         }
 
         .aud-mobile-card-top {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 10px;
+          gap: 12px;
         }
 
         .aud-mobile-card-body {
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 4px;
         }
 
         .aud-mobile-card-instructions {
-          background-color: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          border-radius: 10px;
-          padding: 10px 12px;
+          background-color: #FAF9F7;
+          border: 1px solid #E8E2D4;
+          border-radius: 12px;
+          padding: 12px 14px;
         }
 
         .aud-mobile-card-footer {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
           padding-top: 4px;
         }
 
         /* Modal Styles */
         .aud-modal-textarea {
-          background-color: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.14);
+          background-color: #FFFFFF;
+          border: 1px solid #D9D2C0;
           border-radius: 10px;
-          padding: 10px 12px;
-          font-size: 0.85rem;
-          color: #eceaf5;
+          padding: 12px 14px;
+          font-size: 14px;
+          color: #2B2D2A;
           outline: none;
           resize: vertical;
           width: 100%;
           box-sizing: border-box;
-          font-family: inherit;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease;
         }
         .aud-modal-textarea:focus {
-          border-color: #ffbc00;
+          border-color: #8A6B2E;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18);
         }
 
         .aud-video-note-box {
-          background-color: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          background-color: #FAF9F7;
+          border: 1px solid #E8E2D4;
           border-radius: 12px;
-          padding: 12px 14px;
+          padding: 14px 16px;
         }
 
         /* RESPONSIVE BREAKPOINTS */
@@ -1201,7 +1124,7 @@ export default function AdminAuditionsManagementPage() {
           .aud-toolbar-row {
             flex-direction: column;
             align-items: stretch;
-            gap: 10px;
+            gap: 12px;
           }
           .aud-search-wrap {
             max-width: 100% !important;

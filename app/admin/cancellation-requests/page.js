@@ -8,13 +8,8 @@ import {
   Calendar,
   Users,
   Search,
-  Filter,
   CheckCircle2,
   XCircle,
-  Clock,
-  Sparkles,
-  Megaphone,
-  AlertTriangle,
   X,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
@@ -137,69 +132,40 @@ export default function AdminCancellationRequestsPage() {
     setDeclineReason("");
   };
 
-  // Helper for status pill
+  // Status pill using semantic system
   const getStatusPill = (status) => {
-    const isApproved = status === "Approved";
-    const isDeclined = status === "Declined";
-
-    let bg = "rgba(251, 191, 36, 0.14)";
-    let color = "var(--status-amber)";
-    let border = "rgba(251, 191, 36, 0.35)";
-
-    if (isApproved) {
-      bg = "rgba(52, 211, 153, 0.14)";
-      color = "var(--status-green)";
-      border = "rgba(52, 211, 153, 0.32)";
-    } else if (isDeclined) {
-      bg = "rgba(255, 107, 107, 0.14)";
-      color = "var(--status-red)";
-      border = "rgba(255, 107, 107, 0.35)";
+    if (status === "Approved") {
+      return <StatusBadge status="Approved" size="xs" />;
     }
-
-    return (
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          whiteSpace: "nowrap",
-          width: "fit-content",
-          fontSize: "11px",
-          fontWeight: "700",
-          padding: "3px 10px",
-          borderRadius: "999px",
-          backgroundColor: bg,
-          color: color,
-          border: `1px solid ${border}`,
-        }}
-      >
-        {status}
-      </span>
-    );
+    if (status === "Declined") {
+      return <StatusBadge status="Declined" size="xs" />;
+    }
+    return <StatusBadge status="Pending" label="Pending Review" size="xs" />;
   };
 
   if (!isHydrated) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        <div style={{ height: "48px", background: "rgba(255, 255, 255, 0.05)", borderRadius: "12px", width: "35%", animation: "pulse 1.5s infinite" }} />
-        <div style={{ height: "400px", background: "rgba(255, 255, 255, 0.05)", borderRadius: "16px", animation: "pulse 1.5s infinite" }} />
+        <div style={{ height: "48px", background: "#F3EFE6", borderRadius: "12px", width: "35%" }} />
+        <div style={{ height: "400px", background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "16px" }} />
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
       {/* Page Header */}
       <PageHeader
         title="Opportunity Cancellation Requests"
         subtitle="Review formal opportunity withdrawal requests submitted by organizations and manage applicant notifications."
+        badge={`${statusCounts.Pending} PENDING REVIEW`}
         breadcrumbs={[
           { label: "Dashboard", href: "/admin/dashboard" },
           { label: "Cancellation Requests" },
         ]}
-        style={{ marginBottom: "6px" }}
       />
 
-      {/* A. Filter Tabs Row: Pill tabs with count badges */}
+      {/* Filter Tabs Row */}
       <div className="cancel-tabs-row" role="tablist" aria-label="Cancellation request filters">
         {tabs.map((tab) => {
           const isActive = statusFilter === tab.key;
@@ -221,18 +187,9 @@ export default function AdminCancellationRequestsPage() {
         })}
       </div>
 
-      {/* A. Compact Toolbar Row (No big card, simple bottom border) */}
+      {/* Compact Toolbar Row with Search */}
       <div className="cancel-toolbar-row">
-        <div
-          className="cancel-search-wrap"
-          style={{
-            position: "relative",
-            display: "flex",
-            alignItems: "center",
-            flex: "1 1 260px",
-            maxWidth: "420px",
-          }}
-        >
+        <div className="cancel-search-wrap">
           <Search
             size={16}
             style={{
@@ -240,7 +197,7 @@ export default function AdminCancellationRequestsPage() {
               left: "14px",
               top: "50%",
               transform: "translateY(-50%)",
-              color: "#7e89a3",
+              color: "#5A584F",
               pointerEvents: "none",
               zIndex: 2,
             }}
@@ -251,21 +208,6 @@ export default function AdminCancellationRequestsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="cancel-search-input"
-            style={{
-              width: "100%",
-              height: "40px",
-              minHeight: "40px",
-              paddingLeft: "42px",
-              paddingRight: searchQuery ? "36px" : "14px",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
-              backgroundColor: "rgba(255, 255, 255, 0.055)",
-              borderRadius: "12px",
-              color: "#eceaf5",
-              fontSize: "0.825rem",
-              fontFamily: "inherit",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
             aria-label="Search cancellation requests"
           />
           {searchQuery && (
@@ -273,22 +215,6 @@ export default function AdminCancellationRequestsPage() {
               type="button"
               onClick={() => setSearchQuery("")}
               className="cancel-search-clear-btn"
-              style={{
-                position: "absolute",
-                right: "10px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                color: "#7e89a3",
-                padding: "4px",
-                borderRadius: "50%",
-                zIndex: 2,
-              }}
               aria-label="Clear search"
             >
               <X size={14} />
@@ -299,14 +225,14 @@ export default function AdminCancellationRequestsPage() {
 
       {/* Cancellation Requests Content: Desktop Table & Mobile Cards */}
       {filteredRequests.length === 0 ? (
-        <div className="cancel-empty-card card-surface">
+        <div className="cancel-empty-card">
           <div className="cancel-empty-icon-wrap">
-            <AlertOctagon size={36} style={{ color: "var(--gold)" }} />
+            <AlertOctagon size={32} style={{ color: "#8A6B2E" }} />
           </div>
-          <h3 style={{ fontSize: "1.1rem", color: "#eceaf5", fontWeight: 700, margin: "0 0 6px 0" }}>
+          <h3 style={{ fontSize: "18px", color: "#2B2D2A", fontFamily: "var(--font-heading), 'Playfair Display', serif", fontWeight: 600, margin: "0 0 6px 0" }}>
             No cancellation requests in this category
           </h3>
-          <p style={{ color: "#a3acc2", fontSize: "0.85rem", margin: 0, maxWidth: "440px" }}>
+          <p style={{ color: "#5A584F", fontSize: "14px", margin: 0, maxWidth: "440px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
             {searchQuery.trim()
               ? `No cancellation requests found matching "${searchQuery}". Try adjusting your search query.`
               : statusFilter === "Pending"
@@ -316,19 +242,19 @@ export default function AdminCancellationRequestsPage() {
         </div>
       ) : (
         <>
-          {/* B. Desktop Table View (>= 768px) */}
-          <div className="cancel-table-card card-surface">
+          {/* Desktop Table View (>= 768px) with full-width card wrapper & internal horizontal scroll */}
+          <div className="cancel-table-card">
             <div className="cancel-table-scroll">
               <table className="cancel-table">
                 <thead>
                   <tr className="cancel-thead-row">
-                    <th style={{ width: "24%" }}>Opportunity</th>
-                    <th style={{ width: "16%" }}>Organization</th>
-                    <th style={{ width: "26%" }}>Reason for Cancellation</th>
-                    <th style={{ width: "11%" }}>Active Applicants</th>
-                    <th style={{ width: "11%" }}>Requested On</th>
-                    <th style={{ width: "12%" }}>Decision Status</th>
-                    <th style={{ width: "220px", minWidth: "220px", textAlign: "right" }}>Action</th>
+                    <th style={{ width: "18%", minWidth: "150px" }}>Opportunity</th>
+                    <th style={{ width: "14%", minWidth: "130px" }}>Organization</th>
+                    <th style={{ width: "22%", minWidth: "170px" }}>Reason for Cancellation</th>
+                    <th style={{ width: "11%", minWidth: "100px" }}>Active Applicants</th>
+                    <th style={{ width: "11%", minWidth: "100px" }}>Requested On</th>
+                    <th style={{ width: "11%", minWidth: "110px" }}>Decision Status</th>
+                    <th style={{ width: "13%", minWidth: "180px", textAlign: "right" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -342,7 +268,7 @@ export default function AdminCancellationRequestsPage() {
                     return (
                       <tr key={req.id} className="cancel-tbody-row">
                         {/* 1. Opportunity Column */}
-                        <td style={{ padding: "14px 18px" }}>
+                        <td style={{ padding: "16px 20px" }}>
                           <div title={opp?.title || "Opportunity"} className="cancel-opp-title">
                             {opp?.title || "Opportunity"}
                           </div>
@@ -354,10 +280,10 @@ export default function AdminCancellationRequestsPage() {
                         </td>
 
                         {/* 2. Organization Column */}
-                        <td style={{ padding: "14px 18px" }}>
+                        <td style={{ padding: "16px 20px" }}>
                           <div className="cancel-org-cell" title={org?.name || "Organization"}>
                             <div className="cancel-org-icon-wrap">
-                              <Building2 size={13} style={{ color: "var(--gold)" }} />
+                              <Building2 size={14} style={{ color: "#8A6B2E" }} />
                             </div>
                             <span className="cancel-org-name">
                               {org?.name || "Organization"}
@@ -366,22 +292,22 @@ export default function AdminCancellationRequestsPage() {
                         </td>
 
                         {/* 3. Reason for Cancellation Column */}
-                        <td style={{ padding: "14px 18px" }}>
+                        <td style={{ padding: "16px 20px" }}>
                           <p title={req.reason} className="cancel-reason-text">
                             {req.reason}
                           </p>
                         </td>
 
-                        {/* 4. Active Applicants Column (Neutral / Gold token instead of danger red) */}
-                        <td style={{ padding: "14px 18px" }}>
+                        {/* 4. Active Applicants Column */}
+                        <td style={{ padding: "16px 20px" }}>
                           <span className="cancel-applicants-chip">
-                            <Users size={11} />
+                            <Users size={12} />
                             <span>{apps.length} {apps.length === 1 ? "applicant" : "applicants"}</span>
                           </span>
                         </td>
 
-                        {/* 5. Requested On Column (Stacked Date & Time) */}
-                        <td style={{ padding: "14px 18px" }}>
+                        {/* 5. Requested On Column */}
+                        <td style={{ padding: "16px 20px" }}>
                           <div className="cancel-date-stack">
                             <span className="cancel-date-val">{date}</span>
                             {time && <span className="cancel-time-val">{time}</span>}
@@ -389,12 +315,12 @@ export default function AdminCancellationRequestsPage() {
                         </td>
 
                         {/* 6. Decision Status Column */}
-                        <td style={{ padding: "14px 18px" }}>
+                        <td style={{ padding: "16px 20px" }}>
                           {getStatusPill(req.status)}
                         </td>
 
-                        {/* 7. Moderation Action Column (Fixed ~220px, right-aligned) */}
-                        <td style={{ padding: "14px 18px", textAlign: "right" }}>
+                        {/* 7. Moderation Action Column */}
+                        <td style={{ padding: "16px 20px", textAlign: "right" }}>
                           {isPending ? (
                             <div className="cancel-actions-cluster">
                               <button
@@ -403,9 +329,9 @@ export default function AdminCancellationRequestsPage() {
                                   setApproveModalReq(req);
                                   setApproveNote("");
                                 }}
-                                className="btn-primary cancel-action-btn"
+                                className="cancel-btn-approve"
                               >
-                                <CheckCircle2 size={13} />
+                                <CheckCircle2 size={14} />
                                 <span>Approve</span>
                               </button>
 
@@ -415,9 +341,9 @@ export default function AdminCancellationRequestsPage() {
                                   setDeclineModalReq(req);
                                   setDeclineReason("");
                                 }}
-                                className="cancel-action-btn cancel-btn-decline"
+                                className="cancel-btn-decline"
                               >
-                                <XCircle size={13} />
+                                <XCircle size={14} />
                                 <span>Decline</span>
                               </button>
                             </div>
@@ -435,7 +361,7 @@ export default function AdminCancellationRequestsPage() {
             </div>
           </div>
 
-          {/* E. Mobile Cards View (< 768px) */}
+          {/* Mobile Cards View (< 768px) */}
           <div className="cancel-mobile-cards-stack">
             {filteredRequests.map((req) => {
               const opp = getOpportunityForReq(req.opportunityId);
@@ -445,15 +371,15 @@ export default function AdminCancellationRequestsPage() {
               const { date, time } = formatRequestedDate(req.requestedAt);
 
               return (
-                <div key={req.id} className="cancel-mobile-card card-surface">
+                <div key={req.id} className="cancel-mobile-card">
                   {/* Card Header: Opp title & Status pill */}
                   <div className="cancel-mobile-top">
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <strong className="cancel-opp-title" style={{ fontSize: "0.95rem" }}>
+                      <strong className="cancel-opp-title" style={{ fontSize: "15px" }}>
                         {opp?.title || "Opportunity"}
                       </strong>
                       {opp?.opportunityType && (
-                        <span className="cancel-opp-category" style={{ marginTop: "2px" }}>
+                        <span className="cancel-opp-category" style={{ marginTop: "4px" }}>
                           {opp.opportunityType}
                         </span>
                       )}
@@ -466,8 +392,8 @@ export default function AdminCancellationRequestsPage() {
                   {/* Organization & Date row */}
                   <div className="cancel-mobile-meta-row">
                     <div className="cancel-org-cell">
-                      <div className="cancel-org-icon-wrap" style={{ width: "24px", height: "24px" }}>
-                        <Building2 size={12} style={{ color: "var(--gold)" }} />
+                      <div className="cancel-org-icon-wrap" style={{ width: "26px", height: "26px" }}>
+                        <Building2 size={13} style={{ color: "#8A6B2E" }} />
                       </div>
                       <span className="cancel-org-name">{org?.name || "Organization"}</span>
                     </div>
@@ -480,7 +406,7 @@ export default function AdminCancellationRequestsPage() {
 
                   {/* Reason text */}
                   <div className="cancel-mobile-reason-box">
-                    <strong style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block", marginBottom: "2px" }}>
+                    <strong style={{ fontSize: "11px", color: "#5A584F", display: "block", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                       Reason for Withdrawal:
                     </strong>
                     <p className="cancel-reason-text" style={{ WebkitLineClamp: 3, maxWidth: "100%" }}>
@@ -490,9 +416,9 @@ export default function AdminCancellationRequestsPage() {
 
                   {/* Applicants tag & Action buttons */}
                   <div className="cancel-mobile-footer">
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginBottom: isPending ? "6px" : "0" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginBottom: isPending ? "8px" : "0" }}>
                       <span className="cancel-applicants-chip">
-                        <Users size={11} />
+                        <Users size={12} />
                         <span>{apps.length} {apps.length === 1 ? "applicant" : "applicants"} impacted</span>
                       </span>
 
@@ -504,17 +430,17 @@ export default function AdminCancellationRequestsPage() {
                     </div>
 
                     {isPending && (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", width: "100%" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", width: "100%" }}>
                         <button
                           type="button"
                           onClick={() => {
                             setApproveModalReq(req);
                             setApproveNote("");
                           }}
-                          className="btn-primary"
-                          style={{ height: "38px", justifyContent: "center", fontSize: "0.8rem" }}
+                          className="cancel-btn-approve"
+                          style={{ height: "40px", justifyContent: "center" }}
                         >
-                          <CheckCircle2 size={13} />
+                          <CheckCircle2 size={14} />
                           <span>Approve</span>
                         </button>
                         <button
@@ -524,9 +450,9 @@ export default function AdminCancellationRequestsPage() {
                             setDeclineReason("");
                           }}
                           className="cancel-btn-decline"
-                          style={{ height: "38px", justifyContent: "center", fontSize: "0.8rem", borderRadius: "10px" }}
+                          style={{ height: "40px", justifyContent: "center" }}
                         >
-                          <XCircle size={13} />
+                          <XCircle size={14} />
                           <span>Decline</span>
                         </button>
                       </div>
@@ -539,8 +465,7 @@ export default function AdminCancellationRequestsPage() {
         </>
       )}
 
-      {/* C. MODALS */}
-
+      {/* MODALS */}
       {/* Modal 1: Approve Confirmation Modal */}
       {approveModalReq && (
         <Modal
@@ -548,16 +473,16 @@ export default function AdminCancellationRequestsPage() {
           onClose={() => setApproveModalReq(null)}
           title="Approve Opportunity Cancellation"
         >
-          <form onSubmit={handleConfirmApprove} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <form onSubmit={handleConfirmApprove} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
             <div className="cancel-modal-warning-box">
-              <strong style={{ color: "#ff8585", display: "block", marginBottom: "4px" }}>
+              <strong style={{ color: "#B42318", display: "block", marginBottom: "4px" }}>
                 Impact Warning:
               </strong>
-              Approving this request will permanently change the opportunity status to <strong style={{ color: "#ffffff" }}>Cancelled</strong>. All talent with submitted applications will receive automated notification updates.
+              Approving this request will permanently change the opportunity status to <strong style={{ color: "#2B2D2A" }}>Cancelled</strong>. All talent with submitted applications will receive automated notification updates.
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "0.825rem", fontWeight: "600", color: "#eceaf5" }}>
+              <label style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Resolution Note (Optional)
               </label>
               <textarea
@@ -569,19 +494,18 @@ export default function AdminCancellationRequestsPage() {
               />
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
               <button
                 type="button"
                 onClick={() => setApproveModalReq(null)}
-                className="btn-secondary"
-                style={{ borderRadius: "10px", padding: "8px 16px" }}
+                className="cancel-modal-cancel-btn"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="btn-primary"
-                style={{ borderRadius: "10px", padding: "8px 20px" }}
+                className="cancel-btn-approve"
+                style={{ padding: "0 22px", height: "42px" }}
               >
                 Confirm Cancellation
               </button>
@@ -597,17 +521,17 @@ export default function AdminCancellationRequestsPage() {
           onClose={() => setDeclineModalReq(null)}
           title="Decline Cancellation Request"
         >
-          <form onSubmit={handleConfirmDecline} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <p style={{ fontSize: "0.875rem", color: "#a3acc2", margin: 0, lineHeight: 1.5 }}>
+          <form onSubmit={handleConfirmDecline} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.6, fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
               Specify the reason for declining this request. The opportunity will remain Published and the organization will be notified.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label style={{ fontSize: "0.825rem", fontWeight: "600", color: "#eceaf5" }}>
+                <label style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                   Decline Reason / Feedback *
                 </label>
-                <span style={{ fontSize: "0.725rem", color: "#7c869e" }}>
+                <span style={{ fontSize: "12px", color: "#5A584F" }}>
                   {declineReason.length} characters
                 </span>
               </div>
@@ -621,22 +545,21 @@ export default function AdminCancellationRequestsPage() {
               />
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
               <button
                 type="button"
                 onClick={() => setDeclineModalReq(null)}
-                className="btn-secondary"
-                style={{ borderRadius: "10px", padding: "8px 16px" }}
+                className="cancel-modal-cancel-btn"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!declineReason.trim()}
-                className="btn-primary"
+                className="cancel-btn-decline"
                 style={{
-                  borderRadius: "10px",
-                  padding: "8px 20px",
+                  padding: "0 22px",
+                  height: "42px",
                   opacity: declineReason.trim() ? 1 : 0.6,
                   cursor: declineReason.trim() ? "pointer" : "not-allowed",
                 }}
@@ -650,23 +573,12 @@ export default function AdminCancellationRequestsPage() {
 
       {/* Embedded CSS */}
       <style jsx global>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.6; }
-          50% { opacity: 0.3; }
-        }
-
         /* Tabs Row */
         .cancel-tabs-row {
           display: flex;
           align-items: center;
           gap: 8px;
-          overflow-x: auto;
-          scrollbar-width: none;
-          -webkit-overflow-scrolling: touch;
-          padding-bottom: 2px;
-        }
-        .cancel-tabs-row::-webkit-scrollbar {
-          display: none;
+          flex-wrap: wrap;
         }
 
         .cancel-tab-btn {
@@ -674,101 +586,132 @@ export default function AdminCancellationRequestsPage() {
           align-items: center;
           gap: 8px;
           padding: 0 16px;
-          height: 38px;
-          min-height: 38px;
+          height: 40px;
+          min-height: 40px;
           border-radius: 999px;
-          font-size: 0.775rem;
+          font-size: 14px;
           font-weight: 600;
-          color: #a3acc2;
-          background-color: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          font-family: var(--font-body), 'Inter', sans-serif;
+          color: #5A584F;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
           cursor: pointer;
           white-space: nowrap;
-          transition: all 0.15s ease;
+          transition: all 0.16s ease;
           flex-shrink: 0;
           box-sizing: border-box;
         }
         .cancel-tab-btn:hover:not(.cancel-tab-active) {
-          background-color: rgba(255, 255, 255, 0.08);
-          color: #eceaf5;
-          border-color: rgba(255, 255, 255, 0.2);
+          border-color: #8A6B2E !important;
+          background-color: #F3EFE6 !important;
+          color: #2B2D2A !important;
         }
         .cancel-tab-active {
-          background: linear-gradient(135deg, #ffd54a 0%, #ffbc00 100%) !important;
-          color: #1a1300 !important;
-          border-color: #ffd54a !important;
-          box-shadow: 0 4px 12px rgba(255, 188, 0, 0.25);
+          background-color: #8A6B2E !important;
+          color: #FFFFFF !important;
+          border-color: #8A6B2E !important;
+          box-shadow: 0 2px 8px rgba(138, 107, 46, 0.22);
         }
 
         .cancel-tab-badge {
-          padding: 1px 7px;
+          height: 22px;
+          min-width: 22px;
+          padding: 0 6px;
           border-radius: 999px;
-          font-size: 0.7rem;
+          font-size: 12px;
           font-weight: 700;
-          background-color: rgba(255, 255, 255, 0.1);
-          color: #eceaf5;
+          background-color: #F3EFE6;
+          color: #2B2D2A;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
         }
         .cancel-tab-badge-active {
-          background-color: rgba(26, 19, 0, 0.25) !important;
-          color: #1a1300 !important;
+          background-color: rgba(255, 255, 255, 0.22) !important;
+          color: #FFFFFF !important;
         }
 
         /* Toolbar Row */
         .cancel-toolbar-row {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justifyContent: space-between;
           gap: 14px;
-          padding-bottom: 16px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           width: 100%;
         }
 
         .cancel-search-wrap {
-          background: transparent !important;
-          border: none !important;
-          padding: 0 !important;
+          position: relative;
+          display: flex;
+          align-items: center;
+          flex: 1 1 280px;
+          max-width: 440px;
         }
 
         .cancel-search-input {
-          transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
-        }
-        .cancel-search-input:hover {
-          background-color: rgba(255, 255, 255, 0.075) !important;
-          border-color: rgba(255, 255, 255, 0.22) !important;
+          width: 100%;
+          height: 44px;
+          min-height: 44px;
+          padding-left: 42px;
+          padding-right: 38px;
+          border: 1px solid #D9D2C0;
+          background-color: #FFFFFF;
+          border-radius: 10px;
+          color: "#2B2D2A";
+          font-size: 14px;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          outline: none;
+          box-sizing: border-box;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease;
         }
         .cancel-search-input:focus {
-          border-color: #ffbc00 !important;
-          box-shadow: 0 0 0 3px rgba(255, 188, 0, 0.15) !important;
-          background-color: rgba(255, 255, 255, 0.075) !important;
+          border-color: #8A6B2E !important;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
         }
         .cancel-search-input::placeholder {
-          color: #7e89a3;
-          font-size: 0.825rem;
+          color: #6B6A63;
         }
 
+        .cancel-search-clear-btn {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          color: #5A584F;
+          padding: 4px;
+          border-radius: 50%;
+          z-index: 2;
+        }
         .cancel-search-clear-btn:hover {
-          color: #eceaf5 !important;
-          background-color: rgba(255, 255, 255, 0.1) !important;
+          color: #2B2D2A;
+          background-color: #F3EFE6;
         }
 
         /* Empty State */
         .cancel-empty-card {
-          border-radius: 16px;
+          border-radius: 18px;
           padding: 56px 24px;
           text-align: center;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04);
         }
         .cancel-empty-icon-wrap {
-          width: 64px;
-          height: 64px;
-          border-radius: 50%;
-          background-color: rgba(255, 188, 0, 0.12);
-          border: 1px solid rgba(255, 188, 0, 0.3);
+          width: 60px;
+          height: 60px;
+          border-radius: 16px;
+          background-color: #F3EFE6;
+          border: 1px solid #E8E2D4;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -779,87 +722,114 @@ export default function AdminCancellationRequestsPage() {
         .cancel-table-card {
           border-radius: 16px;
           overflow: hidden;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06);
           width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
         }
 
         .cancel-table-scroll {
           overflow-x: auto;
-          scrollbar-width: thin;
-          scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+          width: 100%;
+          max-width: 100%;
+          -webkit-overflow-scrolling: touch;
         }
 
         .cancel-table {
           width: 100%;
-          min-width: 1100px;
+          min-width: 960px;
           border-collapse: collapse;
           text-align: left;
-          font-size: 0.85rem;
+          font-size: 14px;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         .cancel-thead-row {
-          background-color: #0a0f19;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+          background-color: #F3EFE6;
+          border-bottom: 1px solid #E8E2D4;
         }
 
         .cancel-thead-row th {
-          padding: 14px 18px;
-          color: #7c869e;
+          padding: 14px 16px;
+          color: #5A584F;
           font-weight: 700;
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.12em;
           white-space: nowrap;
           position: sticky;
           top: 0;
-          background-color: #0a0f19;
+          background-color: #F3EFE6;
           z-index: 5;
         }
 
+        .cancel-thead-row th:last-child {
+          position: sticky;
+          right: 0;
+          background-color: #F3EFE6;
+          z-index: 7;
+          box-shadow: -4px 0 8px rgba(43, 45, 42, 0.04);
+        }
+
         .cancel-tbody-row {
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-          transition: background-color 0.15s ease;
+          border-bottom: 1px solid #E8E2D4;
+          transition: background-color 0.16s ease;
+          background-color: #FFFFFF;
         }
         .cancel-tbody-row:hover {
-          background-color: rgba(255, 255, 255, 0.035) !important;
+          background-color: #FAF9F7 !important;
+        }
+
+        .cancel-tbody-row td:last-child {
+          position: sticky;
+          right: 0;
+          background-color: #FFFFFF;
+          z-index: 3;
+          box-shadow: -4px 0 8px rgba(43, 45, 42, 0.04);
+        }
+        .cancel-tbody-row:hover td:last-child {
+          background-color: #FAF9F7 !important;
         }
 
         .cancel-opp-title {
-          font-weight: 700;
-          color: #eceaf5;
+          font-weight: 600;
+          color: #2B2D2A;
           line-height: 1.35;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
           text-overflow: ellipsis;
-          max-width: 250px;
-          font-size: 0.875rem;
+          font-size: 15px;
         }
 
         .cancel-opp-category {
-          font-size: 0.725rem;
-          color: var(--gold);
+          font-size: 12px;
+          color: #6E5420;
+          background-color: rgba(201, 165, 92, 0.16);
+          padding: 2px 8px;
+          border-radius: 4px;
           font-weight: 600;
-          display: block;
-          margin-top: 2px;
+          display: inline-block;
+          margin-top: 4px;
           white-space: nowrap;
         }
 
         .cancel-org-cell {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
           min-width: 0;
         }
 
         .cancel-org-icon-wrap {
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          background: #F3EFE6;
+          border: 1px solid #E8E2D4;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -868,22 +838,20 @@ export default function AdminCancellationRequestsPage() {
 
         .cancel-org-name {
           font-weight: 600;
-          color: #eceaf5;
-          font-size: 0.825rem;
+          color: #2B2D2A;
+          font-size: 14px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          max-width: 150px;
         }
 
         .cancel-reason-text {
-          font-size: 0.8rem;
-          color: #a3acc2;
+          font-size: 13px;
+          color: #5A584F;
           margin: 0;
-          max-width: 280px;
-          line-height: 1.45;
+          line-height: 1.5;
           display: -webkit-box;
-          -webkit-line-clamp: 3;
+          -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -892,13 +860,13 @@ export default function AdminCancellationRequestsPage() {
         .cancel-applicants-chip {
           display: inline-flex;
           align-items: center;
-          gap: 5px;
-          font-size: 0.725rem;
-          font-weight: 700;
-          color: var(--gold);
-          background-color: rgba(255, 188, 0, 0.10);
-          border: 1px solid rgba(255, 188, 0, 0.28);
-          padding: 3px 9px;
+          gap: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #6E5420;
+          background-color: #F3EFE6;
+          border: 1px solid #E8E2D4;
+          padding: 3px 10px;
           border-radius: 999px;
           white-space: nowrap;
         }
@@ -906,19 +874,19 @@ export default function AdminCancellationRequestsPage() {
         .cancel-date-stack {
           display: flex;
           flex-direction: column;
-          gap: 1px;
+          gap: 2px;
         }
 
         .cancel-date-val {
-          font-size: 0.775rem;
+          font-size: 13px;
           font-weight: 600;
-          color: #eceaf5;
+          color: #2B2D2A;
           white-space: nowrap;
         }
 
         .cancel-time-val {
-          font-size: 0.7rem;
-          color: #7e89a3;
+          font-size: 12px;
+          color: #5A584F;
           white-space: nowrap;
         }
 
@@ -927,114 +895,156 @@ export default function AdminCancellationRequestsPage() {
           align-items: center;
           justify-content: flex-end;
           gap: 8px;
-          width: 100%;
+          white-space: nowrap;
         }
 
-        .cancel-action-btn {
-          height: 36px;
-          min-height: 36px;
+        .cancel-btn-approve {
+          height: 40px;
+          min-height: 40px;
           padding: 0 14px;
-          font-size: 0.775rem;
-          font-weight: 700;
+          font-size: 13px;
+          font-weight: 600;
           border-radius: 10px;
           display: inline-flex;
           align-items: center;
-          gap: 5px;
+          gap: 6px;
           white-space: nowrap;
           cursor: pointer;
-          min-width: 0;
-          flex-shrink: 0;
-          transition: all 0.15s ease;
+          background-color: #8A6B2E;
+          color: #FFFFFF;
+          border: 1px solid #8A6B2E;
+          transition: all 0.16s ease;
+          box-shadow: 0 2px 6px rgba(138, 107, 46, 0.2);
+          font-family: var(--font-body), 'Inter', sans-serif;
+        }
+        .cancel-btn-approve:hover {
+          background-color: #6E5420;
+          border-color: #6E5420;
         }
 
         .cancel-btn-decline {
-          background-color: rgba(255, 107, 107, 0.12) !important;
-          color: #ff6b6b !important;
-          border: 1px solid rgba(255, 107, 107, 0.35) !important;
+          height: 40px;
+          min-height: 40px;
+          padding: 0 14px;
+          font-size: 13px;
+          font-weight: 600;
+          border-radius: 10px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+          cursor: pointer;
+          background-color: #FFFFFF;
+          color: #B42318;
+          border: 1px solid rgba(180, 35, 24, 0.35);
+          transition: all 0.16s ease;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
         .cancel-btn-decline:hover {
-          background-color: rgba(255, 107, 107, 0.22) !important;
-          border-color: #ff6b6b !important;
+          background-color: rgba(180, 35, 24, 0.08);
+          border-color: #B42318;
+        }
+
+        .cancel-modal-cancel-btn {
+          height: 42px;
+          padding: 0 18px;
+          border-radius: 10px;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          color: #5A584F;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.16s ease;
+          font-family: var(--font-body), 'Inter', sans-serif;
+        }
+        .cancel-modal-cancel-btn:hover {
+          background-color: #F3EFE6;
+          color: #2B2D2A;
         }
 
         .cancel-resolved-date {
-          font-size: 0.75rem;
-          color: #7e89a3;
+          font-size: 13px;
+          color: #5A584F;
           white-space: nowrap;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         /* Mobile Cards Layout (< 768px) */
         .cancel-mobile-cards-stack {
           display: none;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
           width: 100%;
         }
 
         .cancel-mobile-card {
-          border-radius: 14px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          background-color: rgba(255, 255, 255, 0.035);
-          padding: 16px;
+          border-radius: 16px;
+          border: 1px solid #E8E2D4;
+          background-color: #FFFFFF;
+          padding: 18px;
           display: flex;
           flex-direction: column;
           gap: 12px;
+          box-shadow: 0 2px 6px rgba(43, 45, 42, 0.04);
         }
 
         .cancel-mobile-top {
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
-          gap: 10px;
+          gap: 12px;
         }
 
         .cancel-mobile-meta-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 10px;
+          gap: 12px;
           padding-bottom: 2px;
         }
 
         .cancel-mobile-reason-box {
-          background-color: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          border-radius: 10px;
-          padding: 10px 12px;
+          background-color: #FAF9F7;
+          border: 1px solid #E8E2D4;
+          border-radius: 12px;
+          padding: 12px 14px;
         }
 
         .cancel-mobile-footer {
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 10px;
         }
 
         /* Modals */
         .cancel-modal-warning-box {
-          background-color: rgba(255, 107, 107, 0.12);
-          border: 1px solid rgba(255, 107, 107, 0.35);
+          background-color: rgba(180, 35, 24, 0.08);
+          border: 1px solid rgba(180, 35, 24, 0.25);
           border-radius: 12px;
-          padding: 12px 14px;
-          color: #ff8585;
-          font-size: 0.85rem;
-          line-height: 1.45;
+          padding: 14px 16px;
+          color: #B42318;
+          font-size: 14px;
+          line-height: 1.5;
         }
 
         .cancel-modal-textarea {
-          background-color: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.14);
+          background-color: #FFFFFF;
+          border: 1px solid #D9D2C0;
           border-radius: 10px;
-          padding: 10px 12px;
-          font-size: 0.85rem;
-          color: #eceaf5;
+          padding: 12px 14px;
+          font-size: 14px;
+          color: #2B2D2A;
           outline: none;
           resize: vertical;
           width: 100%;
           box-sizing: border-box;
-          font-family: inherit;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease;
         }
         .cancel-modal-textarea:focus {
-          border-color: #ffbc00;
+          border-color: #8A6B2E;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18);
         }
 
         /* RESPONSIVE BREAKPOINTS */

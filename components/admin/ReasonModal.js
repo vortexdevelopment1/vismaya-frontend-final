@@ -46,7 +46,7 @@ export default function ReasonModal({
         {/* Quick Reason Chips */}
         {quickReasons && quickReasons.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ fontSize: "0.725rem", color: "#a3acc2", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            <span style={{ fontSize: "0.725rem", color: "var(--text-secondary, #5A5C53)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
               Quick Selection Presets:
             </span>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -62,9 +62,9 @@ export default function ReasonModal({
                     fontSize: "0.75rem",
                     padding: "4px 10px",
                     borderRadius: "999px",
-                    backgroundColor: reason === preset ? "rgba(255, 188, 0, 0.18)" : "rgba(255, 255, 255, 0.05)",
-                    border: `1px solid ${reason === preset ? "var(--gold)" : "rgba(255, 255, 255, 0.12)"}`,
-                    color: reason === preset ? "var(--gold)" : "#eceaf5",
+                    backgroundColor: reason === preset ? "rgba(155, 122, 63, 0.14)" : "var(--bg-alt, #F0EEE7)",
+                    border: `1px solid ${reason === preset ? "var(--gold, #9B7A3F)" : "var(--border-color, #E4E1D9)"}`,
+                    color: reason === preset ? "var(--gold, #9B7A3F)" : "var(--text-primary, #292C29)",
                     cursor: "pointer",
                     fontWeight: reason === preset ? "700" : "500",
                     transition: "all 0.15s ease",
@@ -79,8 +79,8 @@ export default function ReasonModal({
 
         {/* Reason Text Area */}
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "#eceaf5" }}>
-            Reason / Moderation Notes <span style={{ color: "var(--status-danger, #ff6b6b)" }}>*</span>
+          <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary, #292C29)" }}>
+            Reason / Moderation Notes <span style={{ color: "var(--status-red, #B84A39)" }}>*</span>
           </label>
           <textarea
             rows={3}
@@ -91,18 +91,18 @@ export default function ReasonModal({
               if (error) setError("");
             }}
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.05)",
-              border: `1px solid ${error ? "#ff6b6b" : "rgba(255, 255, 255, 0.14)"}`,
-              borderRadius: "12px",
+              backgroundColor: "var(--bg-surface, #FFFFFF)",
+              border: `1px solid ${error ? "var(--status-red, #B84A39)" : "var(--border-color, #E4E1D9)"}`,
+              borderRadius: "4px",
               padding: "10px 12px",
-              color: "#eceaf5",
+              color: "var(--text-primary, #292C29)",
               fontSize: "0.85rem",
               outline: "none",
               resize: "vertical",
             }}
           />
           {error && (
-            <span style={{ fontSize: "0.725rem", color: "#ff6b6b" }}>{error}</span>
+            <span style={{ fontSize: "0.725rem", color: "var(--status-red, #B84A39)" }}>{error}</span>
           )}
         </div>
 
@@ -112,7 +112,7 @@ export default function ReasonModal({
             type="button"
             onClick={onClose}
             className="btn-secondary"
-            style={{ padding: "8px 16px", fontSize: "0.825rem", borderRadius: "12px" }}
+            style={{ padding: "8px 16px", fontSize: "0.825rem", borderRadius: "4px" }}
           >
             Cancel
           </button>
@@ -121,15 +121,14 @@ export default function ReasonModal({
             style={{
               padding: "8px 18px",
               fontSize: "0.825rem",
-              background: confirmVariant === "danger"
-                ? "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)"
-                : "var(--gold-gradient, linear-gradient(135deg, #ffd54a 0%, #ffbc00 100%))",
-              color: confirmVariant === "danger" ? "#ffffff" : "#1a1300",
-              borderRadius: "12px",
+              backgroundColor: confirmVariant === "danger"
+                ? "var(--status-red, #B84A39)"
+                : "var(--gold, #9B7A3F)",
+              color: "#FAF9F6",
+              borderRadius: "4px",
               fontWeight: 700,
               cursor: "pointer",
               border: "none",
-              boxShadow: confirmVariant === "danger" ? "0 4px 14px rgba(220, 38, 38, 0.35)" : "0 4px 14px rgba(255, 188, 0, 0.35)",
             }}
           >
             {confirmLabel}

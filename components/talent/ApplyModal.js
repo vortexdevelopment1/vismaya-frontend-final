@@ -100,7 +100,7 @@ export default function ApplyModal({ isOpen, onClose, call }) {
             }}
           >
             {(call.roles || [{ roleName: "Audition Candidate" }]).map((r, idx) => (
-              <option key={idx} value={r.roleName} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+              <option key={idx} value={r.roleName} style={{ backgroundColor: "#FFFFFF", color: "#292C29" }}>
                 {r.roleName} {r.gender ? `(${r.gender}, ${r.ageRange || ""})` : ""}
               </option>
             ))}

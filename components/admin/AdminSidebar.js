@@ -8,7 +8,6 @@ import Logo from "@/components/Logo";
 import { adminNavSections, adminNav } from "@/lib/admin/nav";
 import { useAdmin } from "@/lib/admin/AdminContext";
 import { useAuth } from "@/context/AuthContext";
-import StatusBadge from "@/components/shared/StatusBadge";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 
 export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
@@ -64,7 +63,6 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
       return pathname === href || pathname.startsWith(href + "/");
     });
     if (matches.length === 0) return null;
-    // Sort descending by length
     matches.sort((a, b) => b.length - a.length);
     return matches[0];
   }, [pathname]);
@@ -100,9 +98,9 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(7, 11, 18, 0.82)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
+            backgroundColor: "rgba(43, 45, 42, 0.45)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
             zIndex: 40,
           }}
         />
@@ -111,11 +109,11 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
       <aside
         aria-label="Admin Navigation Sidebar"
         style={{
-          width: "var(--sidebar-width, 260px)",
+          width: "var(--sidebar-width, 280px)",
           height: "100vh",
           maxHeight: "100vh",
-          backgroundColor: "var(--bg-deep, #292C29)",
-          borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+          backgroundColor: "#FFFFFF",
+          borderRight: "1px solid #E8E2D4",
           display: "flex",
           flexDirection: "column",
           position: "fixed",
@@ -125,6 +123,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
           zIndex: 50,
           transition: "transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)",
           transform: mobileOpen ? "translateX(0)" : undefined,
+          boxShadow: mobileOpen ? "8px 0 28px rgba(43, 45, 42, 0.12)" : "none",
         }}
         className={`admin-sidebar ${mobileOpen ? "sidebar-open" : ""}`}
       >
@@ -136,21 +135,24 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "0 18px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            padding: "0 20px",
+            borderBottom: "1px solid #E8E2D4",
+            backgroundColor: "#FFFFFF",
             flexShrink: 0,
           }}
         >
-          <Logo variant="light" size="sm" href="/admin/dashboard" />
+          <Logo variant="dark" size="sm" href="/admin/dashboard" />
           <button
             onClick={onCloseMobile}
             aria-label="Close navigation"
             style={{
-              color: "#a3acc2",
-              padding: "6px",
-              borderRadius: "8px",
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              color: "#5A584F",
+              padding: "8px",
+              minHeight: "44px",
+              minWidth: "44px",
+              borderRadius: "10px",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
               display: "none",
               alignItems: "center",
               justifyContent: "center",
@@ -163,44 +165,47 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
         </div>
 
         {/* FIXED TOP: Vismaya Operations Desk Card */}
-        <div style={{ padding: "10px 14px 4px 14px", flexShrink: 0 }}>
+        <div style={{ padding: "12px 16px 8px 16px", flexShrink: 0 }}>
           <div
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "10px",
-              padding: "8px 12px",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
+              borderRadius: "14px",
+              padding: "10px 14px",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <div
                 style={{
-                  width: "7px",
-                  height: "7px",
+                  width: "8px",
+                  height: "8px",
                   borderRadius: "50%",
-                  backgroundColor: "var(--gold)",
-                  boxShadow: "0 0 8px rgba(255, 188, 0, 0.6)",
+                  backgroundColor: "#8A6B2E",
+                  boxShadow: "0 0 6px rgba(138, 107, 46, 0.4)",
+                  flexShrink: 0,
                 }}
               />
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span
                   style={{
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    color: "#eceaf5",
-                    lineHeight: 1.2,
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    color: "#2B2D2A",
+                    lineHeight: 1.25,
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
                   }}
                 >
                   Vismaya Desk
                 </span>
                 <span
                   style={{
-                    fontSize: "10px",
-                    color: "#a3acc2",
+                    fontSize: "11px",
+                    color: "#5A584F",
                     lineHeight: 1.2,
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
                   }}
                 >
                   Operations Console
@@ -208,7 +213,23 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
               </div>
             </div>
 
-            <StatusBadge status="Active" size="xs" />
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "3px 9px",
+                borderRadius: "999px",
+                backgroundColor: "rgba(138, 107, 46, 0.12)",
+                border: "1px solid rgba(138, 107, 46, 0.22)",
+                color: "#8A6B2E",
+                fontSize: "10px",
+                fontWeight: "700",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
+            >
+              ACTIVE
+            </span>
           </div>
         </div>
 
@@ -218,10 +239,10 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
             flex: "1 1 0%",
             minHeight: 0,
             overflowY: "auto",
-            padding: "6px 12px 12px 12px",
+            padding: "8px 14px 16px 14px",
             display: "flex",
             flexDirection: "column",
-            gap: "8px",
+            gap: "4px",
           }}
           className="admin-sidebar-scroll"
         >
@@ -229,13 +250,14 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
             <div key={sIdx} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
               <div
                 style={{
-                  fontSize: "10px",
+                  fontSize: "11px",
                   fontWeight: "700",
                   textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "#7e89a3",
-                  padding: "4px 10px 2px 10px",
+                  letterSpacing: "0.16em",
+                  color: "#5A584F",
+                  padding: "16px 10px 6px 10px",
                   userSelect: "none",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
                 {section.group}
@@ -257,28 +279,30 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      height: "40px",
-                      minHeight: "40px",
-                      padding: "0 10px",
-                      borderRadius: "8px",
-                      color: active ? "var(--gold)" : "#a3acc2",
-                      backgroundColor: active ? "rgba(255, 188, 0, 0.14)" : "transparent",
-                      borderLeft: active ? "3px solid var(--gold)" : "3px solid transparent",
+                      height: "44px",
+                      minHeight: "44px",
+                      padding: "0 14px",
+                      borderRadius: "10px",
+                      color: active ? "#8A6B2E" : "#5A584F",
+                      backgroundColor: active ? "#F3EFE6" : "transparent",
+                      borderLeft: active ? "3px solid #8A6B2E" : "3px solid transparent",
                       fontWeight: active ? "600" : "500",
-                      fontSize: "13px",
+                      fontSize: "15px",
+                      fontFamily: "var(--font-body), 'Inter', sans-serif",
                       textDecoration: "none",
-                      transition: "all var(--transition)",
+                      transition: "all 0.16s ease",
                       whiteSpace: "nowrap",
                     }}
                     className={`admin-nav-item ${active ? "admin-nav-active" : ""}`}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "9px", minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
                       {Icon && (
                         <Icon
-                          size={17}
+                          size={20}
+                          strokeWidth={2}
                           style={{
-                            color: active ? "var(--gold)" : "#7e89a3",
-                            transition: "color var(--transition)",
+                            color: active ? "#8A6B2E" : "#5A584F",
+                            transition: "color 0.16s ease",
                             flexShrink: 0,
                           }}
                         />
@@ -297,14 +321,14 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
                     {badgeCount > 0 && (
                       <span
                         style={{
-                          height: "18px",
-                          minWidth: "18px",
-                          fontSize: "10px",
+                          height: "22px",
+                          minWidth: "22px",
+                          fontSize: "12px",
                           fontWeight: "700",
-                          padding: "0 5px",
+                          padding: "0 6px",
                           borderRadius: "999px",
-                          backgroundColor: active ? "var(--gold)" : "rgba(255, 188, 0, 0.20)",
-                          color: active ? "#1a1300" : "var(--gold)",
+                          backgroundColor: "#8A6B2E",
+                          color: "#FFFFFF",
                           display: "inline-flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -325,9 +349,9 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
         {/* FIXED BOTTOM: User Profile Block */}
         <div
           style={{
-            padding: "10px 14px",
-            borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-            backgroundColor: "var(--bg-deep, #292C29)",
+            padding: "14px 16px",
+            borderTop: "1px solid #E8E2D4",
+            backgroundColor: "#FFFFFF",
             flexShrink: 0,
           }}
         >
@@ -336,48 +360,50 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              gap: "8px",
+              gap: "10px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "9px", minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
               <div
                 style={{
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "8px",
-                  backgroundColor: "rgba(255, 188, 0, 0.12)",
-                  border: "1px solid rgba(255, 188, 0, 0.30)",
-                  color: "var(--gold)",
+                  width: "38px",
+                  height: "38px",
+                  borderRadius: "10px",
+                  backgroundColor: "rgba(138, 107, 46, 0.12)",
+                  border: "1px solid rgba(138, 107, 46, 0.25)",
+                  color: "#8A6B2E",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
                 }}
               >
-                <ShieldCheck size={16} />
+                <ShieldCheck size={18} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                 <span
                   style={{
-                    fontSize: "12px",
+                    fontSize: "13px",
                     fontWeight: "600",
-                    color: "#eceaf5",
+                    color: "#2B2D2A",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
-                    lineHeight: 1.2,
+                    lineHeight: 1.25,
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
                   }}
                 >
                   Super Admin
                 </span>
                 <span
                   style={{
-                    fontSize: "10px",
-                    color: "#a3acc2",
+                    fontSize: "11px",
+                    color: "#5A584F",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     lineHeight: 1.2,
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
                   }}
                 >
                   Compliance &bull; Root
@@ -385,29 +411,32 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
               </div>
             </div>
 
-            <Link
-              href="/login"
+            <button
+              type="button"
               onClick={async (e) => {
                 e.preventDefault();
                 await logout();
-                router.push("/login");
               }}
               title="Logout of Admin Console"
+              aria-label="Logout of Admin Console"
               style={{
-                color: "#a3acc2",
-                padding: "6px",
-                borderRadius: "6px",
+                color: "#5A584F",
+                width: "36px",
+                height: "36px",
+                borderRadius: "8px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "all var(--transition)",
-                textDecoration: "none",
+                transition: "all 0.16s ease",
+                backgroundColor: "transparent",
+                border: "none",
+                cursor: "pointer",
                 flexShrink: 0,
               }}
               className="admin-logout-btn"
             >
-              <LogOut size={15} />
-            </Link>
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </aside>
@@ -417,13 +446,13 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
           width: 4px;
         }
         .admin-sidebar-scroll::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.12);
+          background: #E8E2D4;
           border-radius: 4px;
         }
         @media (max-width: 1024px) {
           .admin-sidebar {
             transform: translateX(-100%);
-            box-shadow: 8px 0 32px rgba(0, 0, 0, 0.6);
+            box-shadow: 8px 0 32px rgba(43, 45, 42, 0.18);
           }
           .admin-sidebar.sidebar-open {
             transform: translateX(0);
@@ -438,15 +467,14 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
           }
         }
         .admin-nav-item:hover:not(.admin-nav-active) {
-          background-color: rgba(255, 255, 255, 0.06) !important;
-          color: #eceaf5 !important;
+          background-color: #F3EFE6 !important;
+          color: #2B2D2A !important;
         }
         .admin-logout-btn:hover {
-          color: var(--gold) !important;
-          background-color: rgba(255, 255, 255, 0.08);
+          color: #8A6B2E !important;
+          background-color: #F3EFE6;
         }
       `}</style>
     </>
   );
 }
-

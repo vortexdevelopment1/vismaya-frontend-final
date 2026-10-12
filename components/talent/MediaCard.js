@@ -1,95 +1,151 @@
 "use client";
 
 import React, { useState } from "react";
-import { Play, Eye, Trash2, Image as ImageIcon, Video, Mic, ShieldAlert } from "lucide-react";
+import { Play, Eye, Trash2, Image as ImageIcon, Video, Mic, ShieldAlert, Sparkles } from "lucide-react";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
+import { optimizeCloudinaryUrl, getCloudinaryVideoThumbnail } from "@/lib/api/uploadMedia";
 
 export default function MediaCard({ media, onDelete }) {
   const [showPreview, setShowPreview] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const isVideo =
+    media.type === "Showreel" ||
+    media.type === "Audition Clip" ||
+    media.mediaType === "video" ||
+    (media.mimeType && media.mimeType.startsWith("video/")) ||
+    (typeof media.url === "string" && (media.url.endsWith(".mp4") || media.url.endsWith(".webm") || media.url.endsWith(".mov")));
+
   const getMediaIcon = () => {
-    if (media.type === "Showreel") return Video;
-    if (media.type === "Audition Clip") return Play;
+    if (isVideo) return Video;
     if (media.type === "Voice Reel") return Mic;
     return ImageIcon;
   };
 
   const Icon = getMediaIcon();
+  const optimizedImgUrl = optimizeCloudinaryUrl(media.url, { width: 640, quality: "auto" });
+  const videoThumbUrl = isVideo ? getCloudinaryVideoThumbnail(media.url, 640) : null;
 
   return (
     <>
       <div
         className="card-surface"
         style={{
-          border: `1px solid ${media.status === "Rejected" ? "rgba(255, 107, 107, 0.4)" : "var(--glass-border)"}`,
-          borderRadius: "20px",
-          backgroundColor: "var(--glass-bg)",
-          boxShadow: "var(--shadow-sm)",
+          border: media.status === "Rejected" ? "1px solid rgba(180, 35, 24, 0.35)" : "1px solid #E8E2D4",
+          borderRadius: "16px",
+          backgroundColor: "#FFFFFF",
+          boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 10px 24px rgba(43, 45, 42, 0.05)",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
           position: "relative",
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
         }}
       >
-        {/* Media Thumbnail / Preview Area */}
+        {/* Media Thumbnail / Preview Area (Aspect ~ 4/3 or clamp) */}
         <div
           style={{
-            height: "clamp(140px, 22vw, 190px)",
+            height: "200px",
             width: "100%",
-            background: media.gradient || "linear-gradient(135deg, #0f1626 0%, #070b12 100%)",
-            backgroundImage: media.url ? `url(${media.url})` : undefined,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+            backgroundColor: "#2B2D2A",
             position: "relative",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            overflow: "hidden",
           }}
         >
-          {/* Subtle Overlay */}
+          {isVideo ? (
+            <>
+              {videoThumbUrl && videoThumbUrl !== media.url ? (
+                // Cloudinary generated video poster frame
+                <img
+                  src={videoThumbUrl}
+                  alt={media.title}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                  loading="lazy"
+                />
+              ) : (
+                // HTML5 video metadata preview
+                <video
+                  src={media.url}
+                  preload="metadata"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    pointerEvents: "none",
+                  }}
+                />
+              )}
+
+              {/* Play Overlay Button */}
+              <button
+                type="button"
+                onClick={() => setShowPreview(true)}
+                aria-label={`Play ${media.title}`}
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  borderRadius: "50%",
+                  backgroundColor: "#8A6B2E",
+                  border: "2px solid #FAF9F7",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#FAF9F7",
+                  boxShadow: "0 4px 14px rgba(43, 45, 42, 0.4)",
+                  cursor: "pointer",
+                  position: "absolute",
+                  zIndex: 2,
+                  transition: "transform 0.2s ease, background-color 0.2s ease",
+                }}
+                className="media-play-icon"
+              >
+                <Play size={20} fill="#FAF9F7" style={{ marginLeft: "3px" }} />
+              </button>
+            </>
+          ) : (
+            // Photo thumbnail with Cloudinary optimization
+            <img
+              src={optimizedImgUrl}
+              alt={media.title}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+              loading="lazy"
+            />
+          )}
+
+          {/* Subtle Top Gradient for Badge Readability */}
           <div
             style={{
               position: "absolute",
-              inset: 0,
-              background: "linear-gradient(180deg, rgba(7, 11, 18, 0.2) 0%, rgba(7, 11, 18, 0.75) 100%)",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "50px",
+              background: "linear-gradient(180deg, rgba(43, 45, 42, 0.6) 0%, rgba(43, 45, 42, 0) 100%)",
+              pointerEvents: "none",
+              zIndex: 2,
             }}
           />
 
-          {/* Type Icon if Video or Audio */}
-          {(media.type === "Showreel" || media.type === "Audition Clip") && (
-            <div
-              onClick={() => setShowPreview(true)}
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
-                backgroundColor: "rgba(255, 188, 0, 0.9)",
-                border: "2px solid rgba(255, 255, 255, 0.6)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#1a1300",
-                boxShadow: "0 0 16px rgba(255, 188, 0, 0.4)",
-                cursor: "pointer",
-                position: "relative",
-                zIndex: 2,
-                transition: "transform var(--transition)",
-              }}
-              className="media-play-icon"
-            >
-              <Play size={20} fill="#1a1300" style={{ marginLeft: "3px" }} />
-            </div>
-          )}
-
-          {/* Top Badges: Translucent Type & Moderation Status */}
+          {/* Top Badges: Type & Moderation Status */}
           <div
             style={{
               position: "absolute",
-              top: "12px",
-              left: "12px",
-              right: "12px",
+              top: "10px",
+              left: "10px",
+              right: "10px",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
@@ -100,40 +156,38 @@ export default function MediaCard({ media, onDelete }) {
               style={{
                 fontSize: "0.72rem",
                 fontWeight: "700",
-                padding: "4px 12px",
-                borderRadius: "99px",
-                backgroundColor: "rgba(7, 11, 18, 0.8)",
-                backdropFilter: "blur(6px)",
-                color: "#eceaf5",
+                padding: "4px 10px",
+                borderRadius: "6px",
+                backgroundColor: "rgba(43, 45, 42, 0.85)",
+                color: "#FAF9F7",
                 border: "1px solid rgba(255, 255, 255, 0.20)",
                 display: "flex",
                 alignItems: "center",
                 gap: "5px",
-                letterSpacing: "0.04em",
+                letterSpacing: "0.03em",
                 textTransform: "uppercase",
               }}
             >
-              <Icon size={12} style={{ color: "var(--gold)" }} />
-              {media.type}
+              <Icon size={12} style={{ color: "#C9A55C" }} />
+              {media.type || (isVideo ? "Showreel" : "Photo")}
             </span>
 
-            <StatusBadge status={media.status} size="xs" />
+            <StatusBadge status={media.status || "Pending"} size="xs" />
           </div>
 
-          {/* Duration or Resolution indicator */}
+          {/* Bottom Duration or Resolution */}
           {(media.duration || media.resolution) && (
             <span
               style={{
                 position: "absolute",
                 bottom: "10px",
-                right: "12px",
+                right: "10px",
                 fontSize: "0.7rem",
                 fontWeight: "700",
                 padding: "2px 8px",
-                borderRadius: "99px",
-                backgroundColor: "rgba(7, 11, 18, 0.8)",
-                backdropFilter: "blur(4px)",
-                color: "#eceaf5",
+                borderRadius: "4px",
+                backgroundColor: "rgba(43, 45, 42, 0.85)",
+                color: "#FAF9F7",
                 border: "1px solid rgba(255, 255, 255, 0.15)",
                 zIndex: 3,
               }}
@@ -146,12 +200,12 @@ export default function MediaCard({ media, onDelete }) {
         {/* Media Details */}
         <div
           style={{
-            padding: "clamp(12px, 2.5vw, 16px) clamp(12px, 3vw, 18px)",
+            padding: "16px 18px",
             display: "flex",
             flexDirection: "column",
             gap: "10px",
             flex: 1,
-            backgroundColor: "transparent",
+            backgroundColor: "#FFFFFF",
             minWidth: 0,
           }}
         >
@@ -160,16 +214,17 @@ export default function MediaCard({ media, onDelete }) {
               style={{
                 fontSize: "0.95rem",
                 fontWeight: "700",
-                color: "var(--text-primary)",
+                color: "#2B2D2A",
                 margin: 0,
-                lineHeight: 1.3,
+                lineHeight: 1.35,
                 overflowWrap: "anywhere",
+                fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
               }}
             >
-              {media.title}
+              {media.title || "Untitled Media"}
             </h4>
-            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-              Uploaded on {media.date} • {media.fileSize || "2.5 MB"}
+            <span style={{ fontSize: "0.78rem", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              Uploaded on {media.date || "Today"} &bull; {media.fileSize || "2.5 MB"}
             </span>
           </div>
 
@@ -177,9 +232,9 @@ export default function MediaCard({ media, onDelete }) {
           {media.status === "Rejected" && media.reason && (
             <div
               style={{
-                backgroundColor: "var(--danger-bg)",
-                border: "1px solid var(--danger-border)",
-                borderRadius: "var(--radius-md)",
+                backgroundColor: "#FEF3F2",
+                border: "1px solid #FECDCA",
+                borderRadius: "8px",
                 padding: "10px 12px",
                 display: "flex",
                 alignItems: "flex-start",
@@ -187,12 +242,12 @@ export default function MediaCard({ media, onDelete }) {
                 marginTop: "4px",
               }}
             >
-              <ShieldAlert size={16} style={{ color: "var(--danger)", flexShrink: 0, marginTop: "2px" }} />
+              <ShieldAlert size={16} style={{ color: "#B42318", flexShrink: 0, marginTop: "2px" }} />
               <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                <span style={{ fontSize: "0.75rem", fontWeight: "700", color: "var(--danger)" }}>
-                  Admin Moderation Reason:
+                <span style={{ fontSize: "0.75rem", fontWeight: "700", color: "#B42318" }}>
+                  Moderation Feedback:
                 </span>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.4, overflowWrap: "anywhere" }}>
+                <span style={{ fontSize: "0.75rem", color: "#5A584F", lineHeight: 1.4, overflowWrap: "anywhere" }}>
                   {media.reason}
                 </span>
               </div>
@@ -204,7 +259,7 @@ export default function MediaCard({ media, onDelete }) {
             style={{
               marginTop: "auto",
               paddingTop: "12px",
-              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+              borderTop: "1px solid #E8E2D4",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
@@ -212,29 +267,40 @@ export default function MediaCard({ media, onDelete }) {
             }}
           >
             <button
+              type="button"
               onClick={() => setShowPreview(true)}
               className="btn-secondary"
-              style={{ fontSize: "0.8rem", padding: "8px 16px", minHeight: "40px", borderRadius: "12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+              style={{
+                fontSize: "0.82rem",
+                padding: "8px 16px",
+                minHeight: "36px",
+                borderRadius: "8px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                fontWeight: "600",
+              }}
             >
               <Eye size={14} />
               <span>Preview</span>
             </button>
 
             <button
+              type="button"
               onClick={() => setShowDeleteConfirm(true)}
               style={{
-                color: "var(--text-muted)",
+                color: "#5A584F",
                 padding: "8px",
-                minHeight: "40px",
-                minWidth: "40px",
-                borderRadius: "var(--radius-pill)",
+                minHeight: "36px",
+                minWidth: "36px",
+                borderRadius: "8px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "color var(--transition), background-color var(--transition)",
                 cursor: "pointer",
                 background: "transparent",
                 border: "none",
+                transition: "color 0.15s ease, background-color 0.15s ease",
               }}
               title="Delete Media"
               className="delete-icon-btn"
@@ -249,11 +315,16 @@ export default function MediaCard({ media, onDelete }) {
       <Modal
         isOpen={showPreview}
         onClose={() => setShowPreview(false)}
-        title={media.title}
-        subtitle={`${media.type} • Uploaded ${media.date}`}
-        maxWidth="640px"
+        title={media.title || "Media Preview"}
+        subtitle={`${media.type || (isVideo ? "Showreel" : "Photo")} • Uploaded ${media.date || "Recently"}`}
+        maxWidth="720px"
         footer={
-          <button onClick={() => setShowPreview(false)} className="btn-secondary" style={{ padding: "8px 20px" }}>
+          <button
+            type="button"
+            onClick={() => setShowPreview(false)}
+            className="btn-secondary"
+            style={{ padding: "8px 20px", borderRadius: "8px" }}
+          >
             Close Preview
           </button>
         }
@@ -262,44 +333,49 @@ export default function MediaCard({ media, onDelete }) {
           <div
             style={{
               width: "100%",
-              height: "clamp(200px, 45vh, 360px)",
-              borderRadius: "var(--radius-lg)",
-              backgroundImage: `url(${media.url})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundColor: "var(--bg-surface-elevated)",
-              border: "1px solid var(--border-color)",
+              backgroundColor: "#1C1D1A",
+              borderRadius: "12px",
+              border: "1px solid #E8E2D4",
+              overflow: "hidden",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              position: "relative",
+              minHeight: "260px",
             }}
           >
-            {(media.type === "Showreel" || media.type === "Audition Clip") && (
-              <div
+            {isVideo ? (
+              <video
+                src={media.url}
+                controls
+                autoPlay
+                playsInline
                 style={{
-                  width: "64px",
-                  height: "64px",
-                  borderRadius: "50%",
-                  backgroundColor: "rgba(255, 188, 0, 0.9)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#1a1300",
-                  boxShadow: "0 0 20px rgba(255, 188, 0, 0.5)",
+                  width: "100%",
+                  maxHeight: "440px",
+                  display: "block",
+                  backgroundColor: "#000",
                 }}
-              >
-                <Play size={28} fill="#1a1300" style={{ marginLeft: "4px" }} />
-              </div>
+              />
+            ) : (
+              <img
+                src={optimizeCloudinaryUrl(media.url, { width: 1200, quality: "auto" })}
+                alt={media.title}
+                style={{
+                  width: "100%",
+                  maxHeight: "480px",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
             )}
           </div>
 
           <div
             style={{
-              backgroundColor: "var(--bg-surface-elevated)",
+              backgroundColor: "#F3EFE6",
               padding: "14px 18px",
-              borderRadius: "var(--radius-md)",
-              border: "1px solid var(--border-color)",
+              borderRadius: "10px",
+              border: "1px solid #E8E2D4",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -309,18 +385,18 @@ export default function MediaCard({ media, onDelete }) {
             }}
           >
             <div>
-              <span style={{ color: "var(--text-muted)", display: "block", fontSize: "0.75rem" }}>
+              <span style={{ color: "#5A584F", display: "block", fontSize: "0.75rem", marginBottom: "4px" }}>
                 Moderation Status
               </span>
-              <StatusBadge status={media.status} size="sm" />
+              <StatusBadge status={media.status || "Pending"} size="sm" />
             </div>
 
             <div>
-              <span style={{ color: "var(--text-muted)", display: "block", fontSize: "0.75rem" }}>
-                Specs &amp; Resolution
+              <span style={{ color: "#5A584F", display: "block", fontSize: "0.75rem", marginBottom: "4px" }}>
+                Specs &amp; File Size
               </span>
-              <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>
-                {media.resolution || "1080p"} • {media.fileSize || "2.5 MB"}
+              <span style={{ color: "#2B2D2A", fontWeight: "600" }}>
+                {media.resolution || (isVideo ? "1080p Full HD" : "High Resolution")} &bull; {media.fileSize || "2.5 MB"}
               </span>
             </div>
           </div>
@@ -331,28 +407,35 @@ export default function MediaCard({ media, onDelete }) {
       <Modal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
-        title="Delete Media Item?"
+        title="Delete Portfolio Media?"
         subtitle="This action cannot be undone."
         maxWidth="440px"
         footer={
           <div style={{ display: "flex", gap: "10px" }}>
-            <button onClick={() => setShowDeleteConfirm(false)} className="btn-secondary" style={{ padding: "8px 18px", borderRadius: "12px" }}>
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="btn-secondary"
+              style={{ padding: "8px 18px", borderRadius: "8px" }}
+            >
               Cancel
             </button>
             <button
+              type="button"
               onClick={() => {
-                onDelete(media.id);
+                onDelete(media.id || media._id);
                 setShowDeleteConfirm(false);
               }}
               style={{
                 padding: "8px 18px",
-                borderRadius: "12px",
-                backgroundColor: "var(--danger)",
+                borderRadius: "8px",
+                backgroundColor: "#B42318",
                 color: "#ffffff",
                 fontWeight: "600",
                 fontSize: "0.875rem",
                 cursor: "pointer",
                 border: "none",
+                transition: "background-color 0.15s ease",
               }}
             >
               Confirm Delete
@@ -360,19 +443,20 @@ export default function MediaCard({ media, onDelete }) {
           </div>
         }
       >
-        <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: 1.6 }}>
-          Are you sure you want to delete <strong style={{ color: "var(--text-primary)" }}>&quot;{media.title}&quot;</strong>?
-          It will be permanently removed from your verified talent portfolio.
+        <p style={{ color: "#5A584F", fontSize: "0.9rem", lineHeight: 1.6, margin: 0 }}>
+          Are you sure you want to delete <strong style={{ color: "#2B2D2A" }}>&quot;{media.title}&quot;</strong>?
+          It will be permanently removed from your talent portfolio.
         </p>
       </Modal>
 
       <style jsx>{`
         .delete-icon-btn:hover {
-          color: var(--danger) !important;
-          background-color: var(--danger-bg) !important;
+          color: #b42318 !important;
+          background-color: #fef3f2 !important;
         }
         .media-play-icon:hover {
-          transform: scale(1.08);
+          transform: scale(1.1);
+          background-color: #6e5420 !important;
         }
       `}</style>
     </>

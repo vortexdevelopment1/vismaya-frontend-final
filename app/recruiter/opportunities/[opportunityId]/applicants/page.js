@@ -196,15 +196,14 @@ export default function OpportunityApplicantsPage() {
   }
 
   const selectStyle = {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.14)",
+    backgroundColor: "#FFFFFF",
+    border: "1px solid #D9D2C0",
     borderRadius: "10px",
     padding: "8px 12px",
     fontSize: "0.825rem",
-    color: "#eceaf5",
+    color: "#2B2D2A",
     outline: "none",
     cursor: "pointer",
-    colorScheme: "dark",
   };
 
   return (
@@ -445,9 +444,9 @@ export default function OpportunityApplicantsPage() {
             onChange={(e) => setCityFilter(e.target.value)}
             style={selectStyle}
           >
-            <option value="ALL" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>All Cities</option>
+            <option value="ALL">All Cities</option>
             {cities.map((city) => (
-              <option key={city} value={city} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+              <option key={city} value={city}>
                 {city}
               </option>
             ))}
@@ -456,17 +455,17 @@ export default function OpportunityApplicantsPage() {
 
         {/* Age Range Filter */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "0.8rem", color: "#a3acc2", fontWeight: "600" }}>Age:</span>
+          <span style={{ fontSize: "0.8rem", color: "#5A584F", fontWeight: "600" }}>Age:</span>
           <select
             value={ageRangeFilter}
             onChange={(e) => setAgeRangeFilter(e.target.value)}
             style={selectStyle}
           >
-            <option value="ALL" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>All Ages</option>
-            <option value="u22" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Under 22</option>
-            <option value="22-25" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>22 - 25 years</option>
-            <option value="26-30" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>26 - 30 years</option>
-            <option value="30+" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>30+ years</option>
+            <option value="ALL">All Ages</option>
+            <option value="u22">Under 22</option>
+            <option value="22-25">22 - 25 years</option>
+            <option value="26-30">26 - 30 years</option>
+            <option value="30+">30+ years</option>
           </select>
         </div>
 
@@ -530,11 +529,11 @@ export default function OpportunityApplicantsPage() {
         >
           <div style={{ overflowX: "auto" }} className="desktop-applicants-table">
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
-              <thead style={{ position: "sticky", top: 0, zIndex: 2, backgroundColor: "#0d1424" }}>
+              <thead style={{ position: "sticky", top: 0, zIndex: 2, backgroundColor: "#FAF9F7" }}>
                 <tr
                   style={{
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-                    color: "#a3acc2",
+                    borderBottom: "1px solid #E8E2D4",
+                    color: "#5A584F",
                     fontWeight: "600",
                     fontSize: "0.8rem",
                     textTransform: "uppercase",
@@ -561,11 +560,11 @@ export default function OpportunityApplicantsPage() {
                       key={app.id}
                       onClick={() => router.push(profileUrl)}
                       style={{
-                        borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+                        borderBottom: "1px solid #E8E2D4",
                         cursor: "pointer",
                         transition: "background-color 0.15s ease",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.04)")}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(138, 107, 46, 0.04)")}
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                     >
                       {/* Talent Info */}
@@ -589,9 +588,9 @@ export default function OpportunityApplicantsPage() {
                                 width: "42px",
                                 height: "42px",
                                 borderRadius: "12px",
-                                background: "linear-gradient(135deg, #0f1626 0%, #070b12 100%)",
-                                color: "var(--gold)",
-                                border: "1px solid rgba(255, 188, 0, 0.3)",
+                                backgroundColor: "#F3EFE6",
+                                color: "#8A6B2E",
+                                border: "1px solid #E8E2D4",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyCenter: "center",
@@ -603,11 +602,11 @@ export default function OpportunityApplicantsPage() {
                             </div>
                           )}
                           <div>
-                            <div style={{ fontWeight: "700", color: "#eceaf5" }}>
+                            <div style={{ fontWeight: "700", color: "#2B2D2A" }}>
                               {app.talentName || "Talent"}
                             </div>
                             {prof.stageName && prof.stageName !== app.talentName && (
-                              <div style={{ fontSize: "0.75rem", color: "#a3acc2" }}>
+                              <div style={{ fontSize: "0.75rem", color: "#5A584F" }}>
                                 aka {prof.stageName}
                               </div>
                             )}
@@ -619,9 +618,9 @@ export default function OpportunityApplicantsPage() {
                                     fontSize: "0.7rem",
                                     padding: "2px 6px",
                                     borderRadius: "6px",
-                                    backgroundColor: "rgba(255, 188, 0, 0.12)",
-                                    color: "var(--gold)",
-                                    border: "1px solid rgba(255, 188, 0, 0.28)",
+                                    backgroundColor: "rgba(138, 107, 46, 0.12)",
+                                    color: "#6E5420",
+                                    border: "1px solid rgba(138, 107, 46, 0.25)",
                                     fontWeight: "600",
                                   }}
                                 >
@@ -635,7 +634,7 @@ export default function OpportunityApplicantsPage() {
 
                       {/* Applied Role */}
                       <td style={{ padding: "16px 20px" }}>
-                        <div style={{ fontWeight: "600", color: "#eceaf5" }}>
+                        <div style={{ fontWeight: "600", color: "#2B2D2A" }}>
                           {app.roleApplied || "Lead Role"}
                         </div>
                       </td>
@@ -643,26 +642,26 @@ export default function OpportunityApplicantsPage() {
                       {/* Age & Location */}
                       <td style={{ padding: "16px 20px" }}>
                         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                          <span style={{ color: "#eceaf5", fontWeight: "500" }}>
+                          <span style={{ color: "#2B2D2A", fontWeight: "500" }}>
                             {prof.age ? `${prof.age} yrs` : "—"} • {prof.gender || "—"}
                           </span>
                           <span
                             style={{
                               fontSize: "0.785rem",
-                              color: "#a3acc2",
+                              color: "#5A584F",
                               display: "inline-flex",
                               alignItems: "center",
                               gap: "4px",
                             }}
                           >
-                            <MapPin size={12} style={{ color: "var(--gold)" }} />
+                            <MapPin size={12} style={{ color: "#8A6B2E" }} />
                             {prof.city || "Mumbai"}
                           </span>
                         </div>
                       </td>
 
                       {/* Applied Date */}
-                      <td style={{ padding: "16px 20px", color: "#a3acc2", fontSize: "0.825rem" }}>
+                      <td style={{ padding: "16px 20px", color: "#5A584F", fontSize: "0.825rem" }}>
                         {formatDate(app.appliedAt)}
                       </td>
 
@@ -742,8 +741,8 @@ export default function OpportunityApplicantsPage() {
                   style={{
                     padding: "16px",
                     borderRadius: "14px",
-                    backgroundColor: "rgba(255, 255, 255, 0.04)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #E8E2D4",
                     display: "flex",
                     flexDirection: "column",
                     gap: "10px",
@@ -764,8 +763,9 @@ export default function OpportunityApplicantsPage() {
                             width: "40px",
                             height: "40px",
                             borderRadius: "10px",
-                            backgroundColor: "rgba(255, 188, 0, 0.12)",
-                            color: "var(--gold)",
+                            backgroundColor: "#F3EFE6",
+                            color: "#8A6B2E",
+                            border: "1px solid #E8E2D4",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -776,18 +776,18 @@ export default function OpportunityApplicantsPage() {
                         </div>
                       )}
                       <div>
-                        <div style={{ fontWeight: 700, color: "#eceaf5", fontSize: "0.95rem" }}>
+                        <div style={{ fontWeight: 700, color: "#2B2D2A", fontSize: "0.95rem" }}>
                           {app.talentName}
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-                          Role: <strong style={{ color: "var(--gold)" }}>{app.roleApplied}</strong>
+                        <div style={{ fontSize: "0.75rem", color: "#5A584F" }}>
+                          Role: <strong style={{ color: "#8A6B2E" }}>{app.roleApplied}</strong>
                         </div>
                       </div>
                     </div>
                     {getStatusBadge(app.status)}
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--text-muted)", borderTop: "1px solid rgba(255, 255, 255, 0.06)", paddingTop: "8px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#5A584F", borderTop: "1px solid #E8E2D4", paddingTop: "8px" }}>
                     <span>{prof.age ? `${prof.age} yrs` : ""} • {prof.city || "Mumbai"}</span>
                     <span>Applied: {formatDate(app.appliedAt)}</span>
                   </div>

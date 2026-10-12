@@ -74,9 +74,9 @@ export default function TalentOpportunityDetailsPage() {
         style={{
           padding: "48px 32px",
           textAlign: "center",
-          backgroundColor: "rgba(255, 255, 255, 0.07)",
-          borderRadius: "16px",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
+          backgroundColor: "var(--bg-surface)",
+          borderRadius: "6px",
+          border: "1px solid var(--border-color)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -84,13 +84,13 @@ export default function TalentOpportunityDetailsPage() {
         }}
       >
         <AlertCircle size={44} style={{ color: "var(--warning)" }} />
-        <h2 style={{ fontSize: "1.3rem", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+        <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.3rem", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
           Opportunity Not Found
         </h2>
-        <p style={{ color: "#a3acc2", fontSize: "0.9rem", maxWidth: "460px", margin: 0 }}>
+        <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", maxWidth: "460px", margin: 0 }}>
           The requested opportunity brief may have been archived, completed, or is no longer available.
         </p>
-        <Link href="/talent/opportunities" className="btn-primary" style={{ padding: "10px 24px", borderRadius: "12px" }}>
+        <Link href="/talent/opportunities" className="btn-primary" style={{ padding: "10px 24px", borderRadius: "4px" }}>
           <ArrowLeft size={16} />
           <span>Back to Live Opportunities</span>
         </Link>
@@ -147,12 +147,12 @@ export default function TalentOpportunityDetailsPage() {
             <span
               style={{
                 fontSize: "0.75rem",
-                fontWeight: "800",
+                fontWeight: "700",
                 padding: "4px 12px",
-                borderRadius: "12px",
-                backgroundColor: "rgba(255, 107, 107, 0.22)",
-                color: "#ff6b6b",
-                border: "1px solid rgba(255, 107, 107, 0.45)",
+                borderRadius: "4px",
+                backgroundColor: "var(--bg-alt)",
+                color: "var(--danger)",
+                border: "1px solid var(--border-color)",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
@@ -171,11 +171,11 @@ export default function TalentOpportunityDetailsPage() {
       <div
         className="card-surface"
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.07)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
-          borderRadius: "16px",
+          backgroundColor: "var(--bg-surface)",
+          border: "1px solid var(--border-color)",
+          borderRadius: "6px",
           padding: "32px",
-          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+          boxShadow: "var(--shadow-card)",
           display: "flex",
           flexDirection: "column",
           gap: "20px",
@@ -190,10 +190,10 @@ export default function TalentOpportunityDetailsPage() {
                 fontSize: "0.75rem",
                 fontWeight: "700",
                 padding: "4px 12px",
-                borderRadius: "12px",
-                backgroundColor: "rgba(255, 188, 0, 0.12)",
+                borderRadius: "4px",
+                backgroundColor: "var(--bg-alt)",
                 color: "var(--gold)",
-                border: "1px solid rgba(255, 188, 0, 0.28)",
+                border: "1px solid var(--border-color)",
                 textTransform: "uppercase",
                 letterSpacing: "0.06em",
               }}
@@ -202,13 +202,13 @@ export default function TalentOpportunityDetailsPage() {
             </span>
 
             {project && (
-              <span style={{ fontSize: "0.85rem", color: "#a3acc2", fontWeight: "600" }}>
-                Project: <strong style={{ color: "#eceaf5" }}>{project.title}</strong>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: "600" }}>
+                Project: <strong style={{ color: "var(--text-primary)" }}>{project.title}</strong>
               </span>
             )}
 
             {organization && (
-              <span style={{ fontSize: "0.85rem", color: "#a3acc2" }}>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
                 &bull; Org: <strong style={{ color: "var(--gold)" }}>{organization.name}</strong>
               </span>
             )}
@@ -216,9 +216,10 @@ export default function TalentOpportunityDetailsPage() {
 
           <h1
             style={{
+              fontFamily: "Georgia, serif",
               fontSize: "1.85rem",
-              fontWeight: "800",
-              color: "#eceaf5",
+              fontWeight: "700",
+              color: "var(--text-primary)",
               letterSpacing: "-0.02em",
               margin: 0,
               lineHeight: 1.3,
@@ -227,7 +228,7 @@ export default function TalentOpportunityDetailsPage() {
             {opportunity.title}
           </h1>
 
-          <p style={{ fontSize: "0.975rem", color: "#a3acc2", lineHeight: 1.6, margin: 0, maxWidth: "900px" }}>
+          <p style={{ fontSize: "0.975rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: 0, maxWidth: "900px" }}>
             {opportunity.summary}
           </p>
         </div>
@@ -239,32 +240,32 @@ export default function TalentOpportunityDetailsPage() {
             gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
             gap: "14px",
             padding: "16px 20px",
-            backgroundColor: "rgba(255, 255, 255, 0.04)",
-            borderRadius: "14px",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            backgroundColor: "var(--bg-alt)",
+            borderRadius: "6px",
+            border: "1px solid var(--border-color)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <MapPin size={20} style={{ color: "var(--gold)", flexShrink: 0 }} />
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: "0.72rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: "700" }}>Location</span>
-              <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "#eceaf5" }}>{opportunity.location || "Mumbai"}</span>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "700" }}>Location</span>
+              <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>{opportunity.location || "Mumbai"}</span>
             </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Banknote size={20} style={{ color: "var(--gold)", flexShrink: 0 }} />
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: "0.72rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: "700" }}>Remuneration</span>
-              <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "#eceaf5" }}>{opportunity.remuneration || "Negotiable"}</span>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "700" }}>Remuneration</span>
+              <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>{opportunity.remuneration || "Negotiable"}</span>
             </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Calendar size={20} style={{ color: "var(--gold)", flexShrink: 0 }} />
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: "0.72rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: "700" }}>Application Deadline</span>
-              <span style={{ fontSize: "0.875rem", fontWeight: "700", color: isUrgent ? "var(--danger)" : "#eceaf5" }}>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "700" }}>Application Deadline</span>
+              <span style={{ fontSize: "0.875rem", fontWeight: "700", color: isUrgent ? "var(--danger)" : "var(--text-primary)" }}>
                 {opportunity.deadline}
               </span>
             </div>
@@ -273,8 +274,8 @@ export default function TalentOpportunityDetailsPage() {
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Users size={20} style={{ color: "var(--gold)", flexShrink: 0 }} />
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: "0.72rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: "700" }}>Open Roles</span>
-              <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "#eceaf5" }}>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "700" }}>Open Roles</span>
+              <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>
                 {opportunity.roles ? opportunity.roles.length : 1} Character Role{opportunity.roles?.length > 1 ? "s" : ""}
               </span>
             </div>
@@ -294,7 +295,7 @@ export default function TalentOpportunityDetailsPage() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <ShieldCheck size={18} style={{ color: "var(--gold)" }} />
-            <span style={{ fontSize: "0.85rem", color: "#a3acc2" }}>
+            <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
               Verified opportunity by Vismaya Casting Desk. Application submissions are profile-only.
             </span>
           </div>
@@ -304,23 +305,23 @@ export default function TalentOpportunityDetailsPage() {
               <button
                 disabled
                 style={{
-                  padding: "12px 28px",
-                  borderRadius: "12px",
-                  backgroundColor: "rgba(52, 211, 153, 0.16)",
-                  color: "var(--status-green)",
-                  border: "1px solid rgba(52, 211, 153, 0.35)",
+                  padding: "10px 24px",
+                  borderRadius: "4px",
+                  backgroundColor: "#EFF2EC",
+                  color: "var(--text-primary)",
+                  border: "1px solid #D1DCC8",
                   fontWeight: "700",
-                  fontSize: "0.95rem",
+                  fontSize: "0.9rem",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "8px",
                   cursor: "default",
                 }}
               >
-                <CheckCircle2 size={18} />
+                <CheckCircle2 size={18} style={{ color: "var(--gold)" }} />
                 <span>Applied ({userApplication.status})</span>
               </button>
-              <Link href="/talent/applications" className="btn-secondary" style={{ padding: "11px 20px", fontSize: "0.875rem", borderRadius: "12px" }}>
+              <Link href="/talent/applications" className="btn-secondary" style={{ padding: "10px 20px", fontSize: "0.875rem", borderRadius: "4px" }}>
                 <span>Track Application</span>
               </Link>
             </div>
@@ -328,13 +329,13 @@ export default function TalentOpportunityDetailsPage() {
             <button
               disabled
               style={{
-                padding: "12px 28px",
-                borderRadius: "12px",
-                backgroundColor: "rgba(255, 255, 255, 0.05)",
-                color: "#7e89a3",
-                border: "1px solid rgba(255, 255, 255, 0.10)",
+                padding: "10px 24px",
+                borderRadius: "4px",
+                backgroundColor: "var(--bg-alt)",
+                color: "var(--text-muted)",
+                border: "1px solid var(--border-color)",
                 fontWeight: "700",
-                fontSize: "0.95rem",
+                fontSize: "0.9rem",
                 cursor: "not-allowed",
               }}
             >
@@ -344,7 +345,7 @@ export default function TalentOpportunityDetailsPage() {
             <button
               onClick={() => setShowApplyModal(true)}
               className="btn-primary"
-              style={{ padding: "12px 32px", fontSize: "0.975rem", borderRadius: "12px" }}
+              style={{ padding: "10px 28px", fontSize: "0.95rem", borderRadius: "4px" }}
             >
               <span>Apply Now</span>
               <Send size={16} />
@@ -357,25 +358,25 @@ export default function TalentOpportunityDetailsPage() {
       <div
         className="card-surface"
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.07)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
-          borderRadius: "16px",
+          backgroundColor: "var(--bg-surface)",
+          border: "1px solid var(--border-color)",
+          borderRadius: "6px",
           padding: "clamp(16px, 3vw, 26px) clamp(16px, 3.5vw, 30px)",
           display: "flex",
           flexDirection: "column",
           gap: "18px",
-          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+          boxShadow: "var(--shadow-card)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <Sparkles size={18} style={{ color: "var(--gold)" }} />
-              <h2 style={{ fontSize: "1.15rem", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
                 Profile Eligibility Guidance
               </h2>
             </div>
-            <span style={{ fontSize: "0.825rem", color: "#a3acc2", marginTop: "4px", display: "block" }}>
+            <span style={{ fontSize: "0.825rem", color: "var(--text-secondary)", marginTop: "4px", display: "block" }}>
               Guidance match analysis against your verified artist profile ({profile.personal.fullName}). Criteria do not block application submission.
             </span>
           </div>
@@ -385,24 +386,24 @@ export default function TalentOpportunityDetailsPage() {
               fontSize: "0.75rem",
               fontWeight: "700",
               padding: "4px 12px",
-              borderRadius: "12px",
-              backgroundColor: "rgba(255, 188, 0, 0.12)",
+              borderRadius: "4px",
+              backgroundColor: "var(--bg-alt)",
               color: "var(--gold)",
-              border: "1px solid rgba(255, 188, 0, 0.28)",
+              border: "1px solid var(--border-color)",
             }}
           >
             Guidance Only
           </span>
         </div>
 
-        {/* 4 Eligibility Guidance Chips Grid (4 cols >= 1180px, 2 cols 600-1179px, 1 col < 600px) */}
+        {/* 4 Eligibility Guidance Chips Grid */}
         <div className="talent-stat-grid">
           {/* Age Chip */}
           <div
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: `1px solid ${isAgeMatch ? "rgba(52, 211, 153, 0.35)" : "rgba(255, 188, 0, 0.35)"}`,
-              borderRadius: "14px",
+              backgroundColor: "var(--bg-alt)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "6px",
               padding: "14px 16px",
               display: "flex",
               flexDirection: "column",
@@ -410,9 +411,9 @@ export default function TalentOpportunityDetailsPage() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "0.75rem", color: "#7e89a3", fontWeight: "700", textTransform: "uppercase" }}>Age Criteria</span>
+              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: "700", textTransform: "uppercase" }}>Age Criteria</span>
               {isAgeMatch ? (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.75rem", color: "var(--success)", fontWeight: "700" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.75rem", color: "var(--gold)", fontWeight: "700" }}>
                   <CheckCircle2 size={13} /> Match
                 </span>
               ) : (
@@ -421,10 +422,10 @@ export default function TalentOpportunityDetailsPage() {
                 </span>
               )}
             </div>
-            <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "#eceaf5" }}>
+            <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>
               {elAgeMin} - {elAgeMax} years
             </span>
-            <span style={{ fontSize: "0.785rem", color: "#a3acc2" }}>
+            <span style={{ fontSize: "0.785rem", color: "var(--text-secondary)" }}>
               Your profile: <strong>{talentAge} yrs</strong>
             </span>
           </div>
@@ -432,9 +433,9 @@ export default function TalentOpportunityDetailsPage() {
           {/* Gender Chip */}
           <div
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: `1px solid ${isGenderMatch ? "rgba(52, 211, 153, 0.35)" : "rgba(255, 188, 0, 0.35)"}`,
-              borderRadius: "14px",
+              backgroundColor: "var(--bg-alt)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "6px",
               padding: "14px 16px",
               display: "flex",
               flexDirection: "column",
@@ -442,9 +443,9 @@ export default function TalentOpportunityDetailsPage() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "0.75rem", color: "#7e89a3", fontWeight: "700", textTransform: "uppercase" }}>Gender</span>
+              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: "700", textTransform: "uppercase" }}>Gender</span>
               {isGenderMatch ? (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.75rem", color: "var(--success)", fontWeight: "700" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.75rem", color: "var(--gold)", fontWeight: "700" }}>
                   <CheckCircle2 size={13} /> Match
                 </span>
               ) : (
@@ -453,10 +454,10 @@ export default function TalentOpportunityDetailsPage() {
                 </span>
               )}
             </div>
-            <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "#eceaf5" }}>
+            <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>
               {elGender}
             </span>
-            <span style={{ fontSize: "0.785rem", color: "#a3acc2" }}>
+            <span style={{ fontSize: "0.785rem", color: "var(--text-secondary)" }}>
               Your profile: <strong>{talentGender}</strong>
             </span>
           </div>
@@ -464,9 +465,9 @@ export default function TalentOpportunityDetailsPage() {
           {/* Language Chip */}
           <div
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: `1px solid ${isLangMatch ? "rgba(52, 211, 153, 0.35)" : "rgba(255, 188, 0, 0.35)"}`,
-              borderRadius: "14px",
+              backgroundColor: "var(--bg-alt)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "6px",
               padding: "14px 16px",
               display: "flex",
               flexDirection: "column",
@@ -474,9 +475,9 @@ export default function TalentOpportunityDetailsPage() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "0.75rem", color: "#7e89a3", fontWeight: "700", textTransform: "uppercase" }}>Language</span>
+              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: "700", textTransform: "uppercase" }}>Language</span>
               {isLangMatch ? (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.75rem", color: "var(--success)", fontWeight: "700" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.75rem", color: "var(--gold)", fontWeight: "700" }}>
                   <CheckCircle2 size={13} /> Match
                 </span>
               ) : (
@@ -485,10 +486,10 @@ export default function TalentOpportunityDetailsPage() {
                 </span>
               )}
             </div>
-            <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "#eceaf5" }}>
+            <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>
               {Array.isArray(elLanguages) ? elLanguages.join(", ") : "Hindi, English"}
             </span>
-            <span style={{ fontSize: "0.785rem", color: "#a3acc2" }}>
+            <span style={{ fontSize: "0.785rem", color: "var(--text-secondary)" }}>
               Your profile: <strong>{Array.isArray(talentLanguages) ? talentLanguages.slice(0, 2).join(", ") : "Hindi"}</strong>
             </span>
           </div>
@@ -496,9 +497,9 @@ export default function TalentOpportunityDetailsPage() {
           {/* Location Chip */}
           <div
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: `1px solid ${isLocMatch ? "rgba(52, 211, 153, 0.35)" : "rgba(255, 188, 0, 0.35)"}`,
-              borderRadius: "14px",
+              backgroundColor: "var(--bg-alt)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "6px",
               padding: "14px 16px",
               display: "flex",
               flexDirection: "column",
@@ -506,9 +507,9 @@ export default function TalentOpportunityDetailsPage() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "0.75rem", color: "#7e89a3", fontWeight: "700", textTransform: "uppercase" }}>Location Match</span>
+              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: "700", textTransform: "uppercase" }}>Location Match</span>
               {isLocMatch ? (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.75rem", color: "var(--success)", fontWeight: "700" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.75rem", color: "var(--gold)", fontWeight: "700" }}>
                   <CheckCircle2 size={13} /> Match
                 </span>
               ) : (
@@ -517,42 +518,42 @@ export default function TalentOpportunityDetailsPage() {
                 </span>
               )}
             </div>
-            <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "#eceaf5" }}>
+            <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>
               {elLocation}
             </span>
-            <span style={{ fontSize: "0.785rem", color: "#a3acc2" }}>
+            <span style={{ fontSize: "0.785rem", color: "var(--text-secondary)" }}>
               Your base: <strong>{talentCity}</strong>
             </span>
           </div>
         </div>
       </div>
 
-      {/* Main Split: Left Column (Full Brief & Roles) & Right Column (Project & Organization Info) - stacks below 1024px */}
+      {/* Main Split: Left Column (Full Brief & Roles) & Right Column (Project & Organization Info) */}
       <div className="talent-split-grid">
         {/* Left Column: Full Brief and Roles */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Full Brief Section (Visible to every logged-in talent) */}
+          {/* Full Brief Section */}
           <div
             className="card-surface"
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.07)",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
-              borderRadius: "16px",
+              backgroundColor: "var(--bg-surface)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "6px",
               padding: "clamp(18px, 3vw, 26px) clamp(18px, 3.5vw, 28px)",
               display: "flex",
               flexDirection: "column",
               gap: "14px",
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+              boxShadow: "var(--shadow-card)",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <FileText size={18} style={{ color: "var(--gold)" }} />
-              <h2 style={{ fontSize: "1.15rem", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
                 Full Creative Brief &amp; Synopsis
               </h2>
             </div>
 
-            <p style={{ color: "#a3acc2", fontSize: "0.925rem", lineHeight: 1.7, margin: 0 }}>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.925rem", lineHeight: 1.7, margin: 0 }}>
               {opportunity.fullBrief || opportunity.summary || "Complete brief details provided for verified talent submissions."}
             </p>
           </div>
@@ -561,21 +562,21 @@ export default function TalentOpportunityDetailsPage() {
           <div
             className="card-surface"
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.07)",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
-              borderRadius: "16px",
+              backgroundColor: "var(--bg-surface)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "6px",
               padding: "clamp(18px, 3vw, 26px) clamp(18px, 3.5vw, 28px)",
               display: "flex",
               flexDirection: "column",
               gap: "16px",
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+              boxShadow: "var(--shadow-card)",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h2 style={{ fontSize: "1.15rem", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+              <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
                 Character Roles ({opportunity.roles ? opportunity.roles.length : 1})
               </h2>
-              <span style={{ fontSize: "0.785rem", color: "#7e89a3" }}>
+              <span style={{ fontSize: "0.785rem", color: "var(--text-muted)" }}>
                 Verified Requirement
               </span>
             </div>
@@ -585,9 +586,9 @@ export default function TalentOpportunityDetailsPage() {
                 <div
                   key={idx}
                   style={{
-                    backgroundColor: "rgba(255, 255, 255, 0.04)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                    borderRadius: "14px",
+                    backgroundColor: "var(--bg-alt)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "6px",
                     padding: "18px 20px",
                     display: "flex",
                     flexDirection: "column",
@@ -595,7 +596,7 @@ export default function TalentOpportunityDetailsPage() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
-                    <span style={{ fontSize: "1rem", fontWeight: "700", color: "#eceaf5" }}>
+                    <span style={{ fontSize: "1rem", fontWeight: "700", color: "var(--text-primary)" }}>
                       {role.roleName}
                     </span>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -604,16 +605,16 @@ export default function TalentOpportunityDetailsPage() {
                           fontSize: "0.72rem",
                           fontWeight: "700",
                           padding: "3px 10px",
-                          borderRadius: "12px",
-                          backgroundColor: "rgba(255, 188, 0, 0.12)",
+                          borderRadius: "4px",
+                          backgroundColor: "var(--bg-surface)",
                           color: "var(--gold)",
-                          border: "1px solid rgba(255, 188, 0, 0.28)",
+                          border: "1px solid var(--border-color)",
                         }}
                       >
                         {role.gender || "Any"} &bull; {role.ageRange || "All Ages"}
                       </span>
                       {role.count && (
-                        <span style={{ fontSize: "0.72rem", color: "#7e89a3", fontWeight: "600" }}>
+                        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: "600" }}>
                           ({role.count} opening{role.count > 1 ? "s" : ""})
                         </span>
                       )}
@@ -621,24 +622,24 @@ export default function TalentOpportunityDetailsPage() {
                   </div>
 
                   {role.description && (
-                    <p style={{ color: "#a3acc2", fontSize: "0.85rem", lineHeight: 1.5, margin: 0 }}>
+                    <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", lineHeight: 1.5, margin: 0 }}>
                       {role.description}
                     </p>
                   )}
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.825rem", paddingTop: "6px", borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.825rem", paddingTop: "6px", borderTop: "1px solid var(--border-color)" }}>
                     {role.skills && (
                       <div>
-                        <span style={{ color: "#7e89a3", fontWeight: "600" }}>Key Skills: </span>
-                        <span style={{ color: "#eceaf5", fontWeight: "600" }}>
+                        <span style={{ color: "var(--text-muted)", fontWeight: "600" }}>Key Skills: </span>
+                        <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>
                           {Array.isArray(role.skills) ? role.skills.join(", ") : role.skills}
                         </span>
                       </div>
                     )}
                     {role.language && (
                       <div>
-                        <span style={{ color: "#7e89a3", fontWeight: "600" }}>Dialogue: </span>
-                        <span style={{ color: "#eceaf5", fontWeight: "600" }}>{role.language}</span>
+                        <span style={{ color: "var(--text-muted)", fontWeight: "600" }}>Dialogue: </span>
+                        <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>{role.language}</span>
                       </div>
                     )}
                   </div>
@@ -655,33 +656,33 @@ export default function TalentOpportunityDetailsPage() {
             <div
               className="card-surface"
               style={{
-                backgroundColor: "rgba(255, 255, 255, 0.07)",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
-                borderRadius: "16px",
+                backgroundColor: "var(--bg-surface)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "6px",
                 padding: "clamp(18px, 3vw, 26px) clamp(18px, 3.5vw, 28px)",
                 display: "flex",
                 flexDirection: "column",
                 gap: "14px",
-                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+                boxShadow: "var(--shadow-card)",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <Building2 size={18} style={{ color: "var(--gold)" }} />
-                <h2 style={{ fontSize: "1.15rem", fontWeight: "700", color: "#eceaf5", margin: 0 }}>
+                <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.15rem", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
                   Project Information
                 </h2>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <span style={{ fontSize: "1.05rem", fontWeight: "700", color: "#eceaf5" }}>
+                <span style={{ fontSize: "1.05rem", fontWeight: "700", color: "var(--text-primary)" }}>
                   {project.title}
                 </span>
-                <span style={{ fontSize: "0.8rem", color: "#7e89a3" }}>
-                  Type: <strong style={{ color: "var(--gold)" }}>{project.type}</strong> &bull; Status: <strong style={{ color: "#eceaf5" }}>{project.status}</strong>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                  Type: <strong style={{ color: "var(--gold)" }}>{project.type}</strong> &bull; Status: <strong style={{ color: "var(--text-primary)" }}>{project.status}</strong>
                 </span>
               </div>
 
-              <p style={{ color: "#a3acc2", fontSize: "0.875rem", lineHeight: 1.55, margin: 0 }}>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", lineHeight: 1.55, margin: 0 }}>
                 {project.description}
               </p>
             </div>
@@ -692,17 +693,17 @@ export default function TalentOpportunityDetailsPage() {
             <div
               className="card-surface"
               style={{
-                backgroundColor: "rgba(255, 255, 255, 0.07)",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
-                borderRadius: "16px",
+                backgroundColor: "var(--bg-surface)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "6px",
                 padding: "clamp(18px, 3vw, 26px) clamp(18px, 3.5vw, 28px)",
                 display: "flex",
                 flexDirection: "column",
                 gap: "14px",
-                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+                boxShadow: "var(--shadow-card)",
               }}
             >
-              <span style={{ fontSize: "0.75rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: "700", letterSpacing: "0.06em" }}>
+              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "700", letterSpacing: "0.06em" }}>
                 Casting Organization
               </span>
 
@@ -712,26 +713,26 @@ export default function TalentOpportunityDetailsPage() {
                     style={{
                       width: "48px",
                       height: "48px",
-                      borderRadius: "14px",
+                      borderRadius: "6px",
                       backgroundImage: `url(${organization.avatar})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
-                      border: "1px solid rgba(255, 255, 255, 0.14)",
+                      border: "1px solid var(--border-color)",
                       flexShrink: 0,
                     }}
                   />
                 )}
                 <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <span style={{ fontSize: "1rem", fontWeight: "700", color: "#eceaf5" }}>
+                  <span style={{ fontSize: "1rem", fontWeight: "700", color: "var(--text-primary)" }}>
                     {organization.name}
                   </span>
-                  <span style={{ fontSize: "0.8rem", color: "#a3acc2" }}>
+                  <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
                     {organization.type} &bull; Verified Partner
                   </span>
                 </div>
               </div>
 
-              <span style={{ fontSize: "0.8rem", color: "#a3acc2", lineHeight: 1.45 }}>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
                 Submissions are screened directly by {organization.name}&apos;s verified casting team on Vismaya.
               </span>
             </div>

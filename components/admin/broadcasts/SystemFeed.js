@@ -40,21 +40,21 @@ export default function SystemFeed({
 
   const getSystemFeedIcon = (type, categoryName) => {
     if (categoryName === "Approvals" || type === "review") {
-      return <FileText size={18} style={{ color: "var(--gold, #ffbc00)" }} />;
+      return <FileText size={18} style={{ color: "#8A6B2E" }} />;
     }
     if (categoryName === "Media" || type === "media") {
-      return <ImageIcon size={18} style={{ color: "var(--gold2, #ffd54a)" }} />;
+      return <ImageIcon size={18} style={{ color: "#C9A55C" }} />;
     }
     if (categoryName === "Auditions" || type === "audition") {
-      return <Video size={18} style={{ color: "var(--blue, #8ab4ff)" }} />;
+      return <Video size={18} style={{ color: "#8A6B2E" }} />;
     }
     if (categoryName === "Cancellations" || type === "cancellation") {
-      return <AlertTriangle size={18} style={{ color: "var(--red, #ff6b6b)" }} />;
+      return <AlertTriangle size={18} style={{ color: "#B42318" }} />;
     }
     if (categoryName === "Payments" || type === "payment") {
-      return <CreditCard size={18} style={{ color: "var(--ok, #34d399)" }} />;
+      return <CreditCard size={18} style={{ color: "#8A6B2E" }} />;
     }
-    return <Bell size={18} style={{ color: "var(--gold, #ffbc00)" }} />;
+    return <Bell size={18} style={{ color: "#8A6B2E" }} />;
   };
 
   const formatDate = (isoStr) => {
@@ -120,7 +120,9 @@ export default function SystemFeed({
                 height: "32px",
                 fontSize: "12px",
                 borderRadius: "8px",
-                backgroundColor: isSelected ? undefined : "rgba(255, 255, 255, 0.04)",
+                backgroundColor: isSelected ? "#8A6B2E" : "#FFFFFF",
+                borderColor: isSelected ? "#8A6B2E" : "#E8E2D4",
+                color: isSelected ? "#FFFFFF" : "#5A584F",
               }}
               onClick={() => setFeedFilter(f.key)}
             >
@@ -133,7 +135,7 @@ export default function SystemFeed({
       {/* Feed List */}
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         {filteredFeed.length === 0 ? (
-          <div style={{ padding: "40px 0", textAlign: "center", color: "var(--mu, #a3acc2)" }}>
+          <div style={{ padding: "40px 0", textAlign: "center", color: "#5A584F" }}>
             No system notifications matching this filter.
           </div>
         ) : (
@@ -145,19 +147,20 @@ export default function SystemFeed({
                   display: "flex",
                   alignItems: "flex-start",
                   gap: "14px",
-                  padding: "14px 16px",
-                  borderRadius: "12px",
-                  backgroundColor: n.read ? "rgba(255, 255, 255, 0.02)" : "rgba(255, 255, 255, 0.05)",
-                  border: `1px solid ${n.read ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 188, 0, 0.25)"}`,
+                  padding: "16px 18px",
+                  borderRadius: "14px",
+                  backgroundColor: n.read ? "#FAF9F7" : "#FFFFFF",
+                  border: `1px solid ${n.read ? "#E8E2D4" : "rgba(138, 107, 46, 0.35)"}`,
+                  boxShadow: n.read ? "none" : "0 2px 8px rgba(138, 107, 46, 0.06)",
                   transition: "all 0.15s ease",
                 }}
               >
                 <div
                   style={{
-                    width: "36px",
-                    height: "36px",
+                    width: "40px",
+                    height: "40px",
                     borderRadius: "10px",
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    backgroundColor: "#F3EFE6",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -170,22 +173,22 @@ export default function SystemFeed({
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                      <span style={{ fontWeight: "600", fontSize: "14px", color: "var(--tx, #eceaf5)" }}>
+                      <span style={{ fontWeight: "600", fontSize: "14px", color: "#2B2D2A" }}>
                         {n.title || n.message}
                       </span>
                       {n.category && (
-                        <span className={styles.chip} style={{ height: "20px", fontSize: "11px", "--c": "var(--gold, #ffbc00)" }}>
+                        <span className={styles.chip} style={{ height: "20px", fontSize: "11px" }}>
                           {n.category}
                         </span>
                       )}
                     </div>
-                    <span style={{ fontSize: "12px", color: "var(--mu, #a3acc2)", whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap" }}>
                       {formatDate(n.createdAt || n.timestamp)}
                     </span>
                   </div>
 
                   {n.title && n.message && n.title !== n.message && (
-                    <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--mu, #a3acc2)", lineHeight: "1.4" }}>
+                    <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#5A584F", lineHeight: "1.4" }}>
                       {n.message}
                     </p>
                   )}

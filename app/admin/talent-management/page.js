@@ -80,20 +80,20 @@ export default function TalentManagementPage() {
             src={row.avatar}
             alt={row.name}
             style={{
-              width: "36px",
-              height: "36px",
-              borderRadius: "10px",
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
               objectFit: "cover",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
+              border: "1px solid #E8E2D4",
               flexShrink: 0,
             }}
           />
           <div style={{ minWidth: 0, flex: 1 }}>
             <div
               style={{
-                fontSize: "0.85rem",
-                fontWeight: 700,
-                color: "var(--text-primary)",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#2B2D2A",
                 display: "flex",
                 alignItems: "center",
                 gap: "6px",
@@ -104,16 +104,16 @@ export default function TalentManagementPage() {
                 <span
                   title="Minor artist (Guardian consent verified)"
                   style={{
-                    fontSize: "0.68rem",
+                    fontSize: "11px",
                     fontWeight: 700,
                     padding: "2px 8px",
                     borderRadius: "999px",
-                    backgroundColor: "rgba(251, 191, 36, 0.15)",
-                    color: "#fbbf24",
+                    backgroundColor: "rgba(138, 107, 46, 0.12)",
+                    color: "#6E5420",
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "3px",
-                    border: "1px solid rgba(251, 191, 36, 0.35)",
+                    border: "1px solid rgba(138, 107, 46, 0.25)",
                     flexShrink: 0,
                     whiteSpace: "nowrap",
                   }}
@@ -124,8 +124,8 @@ export default function TalentManagementPage() {
             </div>
             <div
               style={{
-                fontSize: "0.725rem",
-                color: "var(--text-secondary)",
+                fontSize: "12px",
+                color: "#5A584F",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -144,8 +144,8 @@ export default function TalentManagementPage() {
       minWidth: "140px",
       render: (val, row) => (
         <div style={{ whiteSpace: "nowrap" }}>
-          <div style={{ fontSize: "0.825rem", fontWeight: 600, color: "var(--text-primary)" }}>{row.city}</div>
-          <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>{row.state}</div>
+          <div style={{ fontSize: "14px", fontWeight: 600, color: "#2B2D2A" }}>{row.city}</div>
+          <div style={{ fontSize: "12px", color: "#5A584F" }}>{row.state}</div>
         </div>
       ),
     },
@@ -154,7 +154,7 @@ export default function TalentManagementPage() {
       label: "Age / Gender",
       minWidth: "120px",
       render: (val, row) => (
-        <div style={{ fontSize: "0.825rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+        <div style={{ fontSize: "13px", color: "#5A584F", whiteSpace: "nowrap" }}>
           {row.age} yrs &bull; {row.gender}
         </div>
       ),
@@ -166,13 +166,13 @@ export default function TalentManagementPage() {
       render: (val, row) => (
         <span
           style={{
-            fontSize: "0.75rem",
-            fontWeight: 700,
+            fontSize: "12px",
+            fontWeight: 600,
             padding: "3px 10px",
             borderRadius: "999px",
-            backgroundColor: "rgba(255, 188, 0, 0.14)",
-            color: "#ffbc00",
-            border: "1px solid rgba(255, 188, 0, 0.3)",
+            backgroundColor: "rgba(201, 165, 92, 0.16)",
+            color: "#6E5420",
+            border: "1px solid rgba(201, 165, 92, 0.3)",
             display: "inline-flex",
             alignItems: "center",
             width: "fit-content",
@@ -188,7 +188,7 @@ export default function TalentManagementPage() {
       label: "Joined Date",
       minWidth: "120px",
       render: (val) => (
-        <span style={{ fontSize: "0.825rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+        <span style={{ fontSize: "13px", color: "#5A584F", whiteSpace: "nowrap" }}>
           {val}
         </span>
       ),
@@ -206,20 +206,26 @@ export default function TalentManagementPage() {
       render: (_, row) => (
         <button
           onClick={() => handleOpenReview(row)}
-          className="btn-primary"
           style={{
-            padding: "4px 10px",
-            fontSize: "0.725rem",
-            gap: "4px",
+            padding: "6px 14px",
+            fontSize: "13px",
+            fontWeight: "600",
+            gap: "6px",
             borderRadius: "8px",
-            minHeight: "28px",
-            height: "28px",
+            height: "36px",
             display: "inline-flex",
             alignItems: "center",
             whiteSpace: "nowrap",
+            backgroundColor: "#8A6B2E",
+            color: "#FFFFFF",
+            border: "none",
+            cursor: "pointer",
+            transition: "background-color 0.15s ease",
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#6E5420")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#8A6B2E")}
         >
-          <Eye size={12} /> Review
+          <Eye size={13} /> Review
         </button>
       ),
     },
@@ -229,15 +235,16 @@ export default function TalentManagementPage() {
     return (
       <div
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.04)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-          borderRadius: "14px",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
+          borderRadius: "16px",
           padding: "16px",
           display: "flex",
           flexDirection: "column",
           gap: "12px",
           width: "100%",
           boxSizing: "border-box",
+          boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
         }}
       >
         {/* Card Header: Avatar, Name, Minor, ID & Status */}
@@ -249,9 +256,9 @@ export default function TalentManagementPage() {
               style={{
                 width: "40px",
                 height: "40px",
-                borderRadius: "10px",
+                borderRadius: "50%",
                 objectFit: "cover",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
+                border: "1px solid #E8E2D4",
                 flexShrink: 0,
               }}
             />
@@ -259,9 +266,9 @@ export default function TalentManagementPage() {
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span
                   style={{
-                    fontSize: "0.9rem",
-                    fontWeight: 700,
-                    color: "var(--text-primary)",
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    color: "#2B2D2A",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -273,16 +280,16 @@ export default function TalentManagementPage() {
                 {row.age < 18 && (
                   <span
                     style={{
-                      fontSize: "0.68rem",
+                      fontSize: "11px",
                       fontWeight: 700,
                       padding: "2px 8px",
                       borderRadius: "999px",
-                      backgroundColor: "rgba(251, 191, 36, 0.15)",
-                      color: "#fbbf24",
+                      backgroundColor: "rgba(138, 107, 46, 0.12)",
+                      color: "#6E5420",
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "3px",
-                      border: "1px solid rgba(251, 191, 36, 0.35)",
+                      border: "1px solid rgba(138, 107, 46, 0.25)",
                       flexShrink: 0,
                     }}
                   >
@@ -292,8 +299,8 @@ export default function TalentManagementPage() {
               </div>
               <div
                 style={{
-                  fontSize: "0.725rem",
-                  color: "var(--text-secondary)",
+                  fontSize: "12px",
+                  color: "#5A584F",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -307,38 +314,38 @@ export default function TalentManagementPage() {
         </div>
 
         {/* Small Fields Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "0.785rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "13px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontSize: "0.68rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: 700 }}>
+            <span style={{ fontSize: "11px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
               Location
             </span>
-            <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+            <span style={{ color: "#2B2D2A", fontWeight: 600 }}>
               {row.city}, {row.state}
             </span>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontSize: "0.68rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: 700 }}>
+            <span style={{ fontSize: "11px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
               Age / Gender
             </span>
-            <span style={{ color: "var(--text-primary)" }}>
+            <span style={{ color: "#2B2D2A" }}>
               {row.age} yrs &bull; {row.gender}
             </span>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontSize: "0.68rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: 700 }}>
+            <span style={{ fontSize: "11px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
               Category
             </span>
             <span
               style={{
-                fontSize: "0.725rem",
-                fontWeight: 700,
+                fontSize: "12px",
+                fontWeight: 600,
                 padding: "2px 8px",
                 borderRadius: "999px",
-                backgroundColor: "rgba(255, 188, 0, 0.14)",
-                color: "#ffbc00",
-                border: "1px solid rgba(255, 188, 0, 0.3)",
+                backgroundColor: "rgba(201, 165, 92, 0.16)",
+                color: "#6E5420",
+                border: "1px solid rgba(201, 165, 92, 0.3)",
                 display: "inline-flex",
                 alignItems: "center",
                 width: "fit-content",
@@ -350,10 +357,10 @@ export default function TalentManagementPage() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontSize: "0.68rem", color: "#7e89a3", textTransform: "uppercase", fontWeight: 700 }}>
+            <span style={{ fontSize: "11px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
               Joined Date
             </span>
-            <span style={{ color: "var(--text-secondary)" }}>
+            <span style={{ color: "#5A584F" }}>
               {row.joinedDate}
             </span>
           </div>
@@ -363,16 +370,21 @@ export default function TalentManagementPage() {
         <button
           type="button"
           onClick={() => handleOpenReview(row)}
-          className="btn-primary"
           style={{
             width: "100%",
             justifyContent: "center",
-            minHeight: "38px",
-            height: "38px",
-            fontSize: "0.8rem",
+            height: "40px",
+            fontSize: "13px",
+            fontWeight: "600",
             gap: "6px",
             borderRadius: "10px",
             marginTop: "4px",
+            backgroundColor: "#8A6B2E",
+            color: "#FFFFFF",
+            border: "none",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
           }}
         >
           <Eye size={14} />

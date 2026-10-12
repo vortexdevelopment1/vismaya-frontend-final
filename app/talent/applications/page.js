@@ -111,15 +111,15 @@ export default function TalentApplicationsPage() {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "6px",
-                  minHeight: "44px",
-                  padding: "8px 16px",
-                  borderRadius: "12px",
+                  minHeight: "38px",
+                  padding: "6px 14px",
+                  borderRadius: "6px",
                   fontSize: "0.825rem",
                   fontWeight: isActive ? "700" : "500",
-                  color: isActive ? "#1a1300" : "var(--text-secondary)",
-                  backgroundColor: isActive ? "var(--gold)" : "rgba(255, 255, 255, 0.06)",
-                  border: `1px solid ${isActive ? "var(--gold)" : "rgba(255, 255, 255, 0.12)"}`,
-                  boxShadow: isActive ? "0 4px 14px rgba(255, 188, 0, 0.25)" : "none",
+                  color: isActive ? "#FFFFFF" : "var(--text-primary)",
+                  backgroundColor: isActive ? "var(--gold)" : "var(--bg-alt)",
+                  border: `1px solid ${isActive ? "var(--gold)" : "var(--border-color)"}`,
+                  boxShadow: isActive ? "0 2px 6px rgba(155, 122, 63, 0.2)" : "none",
                   transition: "all 0.2s ease",
                   cursor: "pointer",
                   whiteSpace: "nowrap",
@@ -131,9 +131,9 @@ export default function TalentApplicationsPage() {
                     fontSize: "0.7rem",
                     fontWeight: "700",
                     padding: "2px 7px",
-                    borderRadius: "8px",
-                    backgroundColor: isActive ? "rgba(26, 19, 0, 0.2)" : "rgba(255, 255, 255, 0.1)",
-                    color: isActive ? "#1a1300" : "var(--text-muted)",
+                    borderRadius: "4px",
+                    backgroundColor: isActive ? "rgba(255, 255, 255, 0.25)" : "rgba(41, 44, 41, 0.08)",
+                    color: isActive ? "#FFFFFF" : "var(--text-secondary)",
                   }}
                 >
                   {chip.count}
@@ -152,18 +152,18 @@ export default function TalentApplicationsPage() {
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
             style={{
-              minHeight: "44px",
-              padding: "8px 14px",
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
-              borderRadius: "12px",
+              minHeight: "38px",
+              padding: "6px 14px",
+              backgroundColor: "var(--bg-surface)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "6px",
               color: "var(--text-primary)",
               fontSize: "0.825rem",
               outline: "none",
             }}
           >
-            <option value="newest" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Newest First</option>
-            <option value="oldest" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Oldest First</option>
+            <option value="newest" style={{ backgroundColor: "#FFFFFF", color: "#292C29" }}>Newest First</option>
+            <option value="oldest" style={{ backgroundColor: "#FFFFFF", color: "#292C29" }}>Oldest First</option>
           </select>
         </div>
       </div>

@@ -328,14 +328,13 @@ export default function ApplicationDetailPage() {
   const isWithdrawn = application.status === "Withdrawn";
 
   const inputStyle = {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.14)",
+    backgroundColor: "#FFFFFF",
+    border: "1px solid #D9D2C0",
     borderRadius: "12px",
     padding: "10px 14px",
-    color: "#eceaf5",
+    color: "#2B2D2A",
     fontSize: "0.875rem",
     outline: "none",
-    colorScheme: "dark",
     width: "100%",
   };
 
@@ -350,9 +349,9 @@ export default function ApplicationDetailPage() {
             display: "inline-flex",
             alignItems: "center",
             gap: "8px",
-            background: "rgba(255, 255, 255, 0.04)",
-            color: "#a3acc2",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
+            background: "#FAF9F7",
+            color: "#5A584F",
+            border: "1px solid #E8E2D4",
             borderRadius: "10px",
             height: "40px",
             minHeight: "40px",
@@ -364,14 +363,14 @@ export default function ApplicationDetailPage() {
             transition: "all 0.18s ease",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.08)";
-            e.currentTarget.style.color = "#eceaf5";
-            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.24)";
+            e.currentTarget.style.backgroundColor = "#F3EFE6";
+            e.currentTarget.style.color = "#2B2D2A";
+            e.currentTarget.style.borderColor = "#8A6B2E";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.04)";
-            e.currentTarget.style.color = "#a3acc2";
-            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.12)";
+            e.currentTarget.style.backgroundColor = "#FAF9F7";
+            e.currentTarget.style.color = "#5A584F";
+            e.currentTarget.style.borderColor = "#E8E2D4";
           }}
         >
           <ArrowLeft size={16} />
@@ -431,9 +430,9 @@ export default function ApplicationDetailPage() {
                   width: "80px",
                   height: "80px",
                   borderRadius: "16px",
-                  background: "linear-gradient(135deg, #0f1626 0%, #070b12 100%)",
-                  color: "var(--gold)",
-                  border: "1px solid rgba(255, 188, 0, 0.3)",
+                  backgroundColor: "#F3EFE6",
+                  color: "#8A6B2E",
+                  border: "1px solid #E8E2D4",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1236,8 +1235,8 @@ export default function ApplicationDetailPage() {
                   cursor: "pointer",
                 }}
               >
-                <option value="Audition" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>Self-Tape Audition (Video Submission)</option>
-                <option value="Interview" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>1-on-1 Virtual Interview</option>
+                <option value="Audition">Self-Tape Audition (Video Submission)</option>
+                <option value="Interview">1-on-1 Virtual Interview</option>
               </select>
             </div>
 

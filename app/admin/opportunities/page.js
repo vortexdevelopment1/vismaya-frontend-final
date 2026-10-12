@@ -108,8 +108,8 @@ export default function AdminOpportunitiesPage() {
   if (!isHydrated) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        <div style={{ height: "48px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "12px", width: "40%" }} />
-        <div style={{ height: "400px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "16px" }} />
+        <div style={{ height: "48px", background: "#F3EFE6", borderRadius: "12px", width: "40%" }} />
+        <div style={{ height: "400px", background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "16px" }} />
       </div>
     );
   }
@@ -120,6 +120,7 @@ export default function AdminOpportunitiesPage() {
       <PageHeader
         title="Opportunities Directory"
         subtitle="Platform-wide directory of casting opportunities, application metrics, auto-closing schedules, and statuses."
+        badge={`${opportunities.length} Total Opportunities`}
         breadcrumbs={[
           { label: "Dashboard", href: "/admin/dashboard" },
           { label: "Opportunities" },
@@ -127,7 +128,7 @@ export default function AdminOpportunitiesPage() {
       />
 
       {/* Filter Tabs */}
-      <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         {[
           { key: "ALL", label: "All Opportunities", count: statusCounts.ALL },
           { key: "Published", label: "Published Live", count: statusCounts.Published },
@@ -145,13 +146,15 @@ export default function AdminOpportunitiesPage() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
-                padding: "8px 16px",
-                borderRadius: "12px",
-                fontSize: "0.825rem",
-                fontWeight: isActive ? "700" : "500",
-                backgroundColor: isActive ? "#ffbc00" : "rgba(255, 255, 255, 0.06)",
-                color: isActive ? "#1a1300" : "#a3acc2",
-                border: `1px solid ${isActive ? "#ffbc00" : "rgba(255, 255, 255, 0.14)"}`,
+                height: "40px",
+                padding: "0 16px",
+                borderRadius: "999px",
+                fontSize: "14px",
+                fontWeight: 600,
+                fontFamily: "Inter, sans-serif",
+                backgroundColor: isActive ? "#8A6B2E" : "#FFFFFF",
+                color: isActive ? "#FFFFFF" : "#5A584F",
+                border: `1px solid ${isActive ? "#8A6B2E" : "#E8E2D4"}`,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 transition: "all 0.15s ease",
@@ -160,12 +163,17 @@ export default function AdminOpportunitiesPage() {
               <span>{tab.label}</span>
               <span
                 style={{
-                  padding: "2px 7px",
+                  minWidth: "22px",
+                  height: "22px",
+                  padding: "0 6px",
                   borderRadius: "999px",
-                  fontSize: "0.75rem",
-                  fontWeight: "700",
-                  backgroundColor: isActive ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.1)",
-                  color: isActive ? "#1a1300" : "#eceaf5",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: isActive ? "rgba(255, 255, 255, 0.22)" : "#F3EFE6",
+                  color: isActive ? "#FFFFFF" : "#2B2D2A",
                 }}
               >
                 {tab.count}
@@ -175,36 +183,35 @@ export default function AdminOpportunitiesPage() {
         })}
       </div>
 
-      {/* Search & Organization Dropdown Filter */}
+      {/* Search & Organization Dropdown Filter Card */}
       <div
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.07)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
           borderRadius: "16px",
           padding: "16px 20px",
           display: "flex",
           flexWrap: "wrap",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: "14px",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+          gap: "16px",
+          boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
         }}
       >
         <div
           style={{
-            flex: "1 1 260px",
+            flex: "1 1 280px",
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            backgroundColor: "rgba(255, 255, 255, 0.06)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
-            borderRadius: "12px",
-            padding: "8px 14px",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #D9D2C0",
+            borderRadius: "10px",
+            padding: "0 14px",
+            height: "44px",
           }}
         >
-          <Search size={16} style={{ color: "#7c869e" }} />
+          <Search size={16} style={{ color: "#5A584F" }} />
           <input
             type="text"
             placeholder="Search opportunity title, studio, project..."
@@ -214,32 +221,35 @@ export default function AdminOpportunitiesPage() {
               border: "none",
               background: "transparent",
               outline: "none",
-              fontSize: "0.85rem",
-              color: "#eceaf5",
+              fontSize: "14px",
+              color: "#2B2D2A",
               width: "100%",
+              fontFamily: "Inter, sans-serif",
             }}
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "0.825rem", fontWeight: "600", color: "#a3acc2" }}>Organization:</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", whiteSpace: "nowrap" }}>Organization:</span>
           <select
             value={orgFilter}
             onChange={(e) => setOrgFilter(e.target.value)}
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
-              borderRadius: "12px",
-              padding: "8px 14px",
-              fontSize: "0.825rem",
-              color: "#eceaf5",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #D9D2C0",
+              borderRadius: "10px",
+              height: "44px",
+              padding: "0 14px",
+              fontSize: "14px",
+              color: "#2B2D2A",
               outline: "none",
               cursor: "pointer",
+              fontFamily: "Inter, sans-serif",
             }}
           >
-            <option value="ALL" style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>All Organizations</option>
+            <option value="ALL">All Organizations</option>
             {organizations.map((org) => (
-              <option key={org.id} value={org.id} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+              <option key={org.id} value={org.id}>
                 {org.name}
               </option>
             ))}
@@ -251,48 +261,44 @@ export default function AdminOpportunitiesPage() {
       {filteredOpportunities.length === 0 ? (
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
             borderRadius: "16px",
             padding: "48px 20px",
             textAlign: "center",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
           }}
         >
-          <Megaphone size={40} style={{ color: "#ffbc00", marginBottom: "12px" }} />
-          <h3 style={{ fontSize: "1.05rem", color: "#eceaf5", marginBottom: "6px" }}>
+          <Megaphone size={40} style={{ color: "#8A6B2E", marginBottom: "12px" }} />
+          <h3 style={{ fontSize: "18px", fontFamily: "var(--font-playfair), serif", color: "#2B2D2A", marginBottom: "6px" }}>
             No Opportunities Found
           </h3>
-          <p style={{ color: "#a3acc2", fontSize: "0.85rem", margin: 0 }}>
+          <p style={{ color: "#5A584F", fontSize: "14px", margin: 0 }}>
             No opportunities match your filter criteria.
           </p>
         </div>
       ) : (
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.07)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
             borderRadius: "16px",
             overflow: "hidden",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.35)",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
           }}
         >
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px", minWidth: "960px" }}>
               <thead>
                 <tr
                   style={{
-                    backgroundColor: "#0f1626",
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.14)",
-                    color: "#ffbc00",
+                    backgroundColor: "#F3EFE6",
+                    borderBottom: "1px solid #E8E2D4",
+                    color: "#5A584F",
                     fontWeight: "700",
-                    fontSize: "0.75rem",
+                    fontSize: "12px",
                     textTransform: "uppercase",
-                    letterSpacing: "0.06em",
+                    letterSpacing: "0.14em",
                   }}
                 >
                   <th style={{ padding: "16px 20px" }}>Opportunity</th>
@@ -300,7 +306,7 @@ export default function AdminOpportunitiesPage() {
                   <th style={{ padding: "16px 20px" }}>Application Deadline</th>
                   <th style={{ padding: "16px 20px" }}>Applicants</th>
                   <th style={{ padding: "16px 20px" }}>Status</th>
-                  <th style={{ padding: "16px 20px", textAlign: "right" }}>Action</th>
+                  <th style={{ padding: "16px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "110px" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -314,54 +320,55 @@ export default function AdminOpportunitiesPage() {
                     <tr
                       key={opp.id}
                       style={{
-                        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+                        borderBottom: "1px solid #E8E2D4",
                         transition: "background-color 0.15s ease",
                       }}
                     >
                       {/* Opportunity Title & Type */}
-                      <td style={{ padding: "16px 20px" }}>
-                        <div style={{ fontWeight: "700", color: "#eceaf5" }}>
+                      <td style={{ padding: "18px 20px" }}>
+                        <div style={{ fontWeight: 600, fontSize: "15px", color: "#2B2D2A" }}>
                           {opp.title}
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "#ffbc00", fontWeight: "600" }}>
+                        <div style={{ fontSize: "13px", color: "#6E5420", fontWeight: "600", marginTop: "2px" }}>
                           {opp.opportunityType} &bull; {opp.location}
                         </div>
                       </td>
 
                       {/* Project & Organization */}
-                      <td style={{ padding: "16px 20px" }}>
-                        <div style={{ fontWeight: "600", color: "#eceaf5" }}>
+                      <td style={{ padding: "18px 20px" }}>
+                        <div style={{ fontWeight: 600, color: "#2B2D2A" }}>
                           {proj?.title || "Project"}
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "#a3acc2", display: "flex", alignItems: "center", gap: "4px" }}>
-                          <Building2 size={12} />
+                        <div style={{ fontSize: "13px", color: "#5A584F", display: "flex", alignItems: "center", gap: "4px", marginTop: "2px" }}>
+                          <Building2 size={13} />
                           <span>{org?.name || "Organization"}</span>
                         </div>
                       </td>
 
                       {/* Deadline & Auto-close indicator */}
-                      <td style={{ padding: "16px 20px" }}>
+                      <td style={{ padding: "18px 20px" }}>
                         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                          <span style={{ fontWeight: "600", color: "#eceaf5" }}>
+                          <span style={{ fontWeight: 600, color: "#2B2D2A", fontVariantNumeric: "tabular-nums" }}>
                             {opp.deadline}
                           </span>
                           {isClosed ? (
                             <span
                               style={{
-                                fontSize: "0.725rem",
-                                fontWeight: "700",
-                                color: "#fbbf24",
-                                backgroundColor: "rgba(251, 191, 36, 0.15)",
-                                border: "1px solid rgba(251, 191, 36, 0.35)",
-                                padding: "2px 6px",
-                                borderRadius: "4px",
+                                fontSize: "11px",
+                                fontWeight: 700,
+                                color: "#6E5420",
+                                backgroundColor: "rgba(138, 107, 46, 0.12)",
+                                border: "1px solid rgba(138, 107, 46, 0.25)",
+                                padding: "2px 8px",
+                                borderRadius: "999px",
                                 width: "fit-content",
+                                whiteSpace: "nowrap",
                               }}
                             >
                               Auto-closed
                             </span>
                           ) : (
-                            <span style={{ fontSize: "0.725rem", color: "#7c869e" }}>
+                            <span style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap" }}>
                               Auto-closes on {opp.deadline}
                             </span>
                           )}
@@ -369,7 +376,7 @@ export default function AdminOpportunitiesPage() {
                       </td>
 
                       {/* Applicants Count */}
-                      <td style={{ padding: "16px 20px" }}>
+                      <td style={{ padding: "18px 20px" }}>
                         <span
                           style={{
                             display: "inline-flex",
@@ -377,11 +384,11 @@ export default function AdminOpportunitiesPage() {
                             gap: "6px",
                             padding: "4px 10px",
                             borderRadius: "999px",
-                            backgroundColor: apps.length > 0 ? "rgba(255, 188, 0, 0.14)" : "rgba(255, 255, 255, 0.06)",
-                            color: apps.length > 0 ? "#ffbc00" : "#7c869e",
-                            border: apps.length > 0 ? "1px solid rgba(255, 188, 0, 0.3)" : "1px solid rgba(255, 255, 255, 0.1)",
-                            fontWeight: "700",
-                            fontSize: "0.8rem",
+                            backgroundColor: apps.length > 0 ? "rgba(138, 107, 46, 0.12)" : "#F3EFE6",
+                            color: apps.length > 0 ? "#6E5420" : "#5A584F",
+                            border: apps.length > 0 ? "1px solid rgba(138, 107, 46, 0.25)" : "1px solid #E8E2D4",
+                            fontWeight: 700,
+                            fontSize: "12px",
                           }}
                         >
                           <Users size={13} />
@@ -390,25 +397,29 @@ export default function AdminOpportunitiesPage() {
                       </td>
 
                       {/* Status */}
-                      <td style={{ padding: "16px 20px" }}>
+                      <td style={{ padding: "18px 20px" }}>
                         <StatusBadge status={opp.status} size="sm" />
                       </td>
 
                       {/* Action */}
-                      <td style={{ padding: "16px 20px", textAlign: "right" }}>
+                      <td style={{ padding: "18px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "110px" }}>
                         <button
                           type="button"
                           onClick={() => setViewModalOpp(opp)}
-                          className="btn-ghost"
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
-                            gap: "4px",
-                            fontSize: "0.8rem",
-                            color: "#ffbc00",
-                            fontWeight: "600",
-                            borderRadius: "8px",
+                            gap: "6px",
+                            fontSize: "13px",
+                            color: "#8A6B2E",
+                            fontWeight: 600,
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            textDecoration: "none",
                           }}
+                          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
                         >
                           <Eye size={14} />
                           <span>Details</span>
@@ -433,48 +444,48 @@ export default function AdminOpportunitiesPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div
               style={{
-                backgroundColor: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "12px",
+                backgroundColor: "#FAF9F7",
+                border: "1px solid #E8E2D4",
+                borderRadius: "14px",
                 padding: "16px",
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: "12px",
+                gap: "14px",
               }}
             >
               <div>
-                <span style={{ fontSize: "0.75rem", color: "#7c869e", display: "block" }}>Organization</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>
+                <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Organization</span>
+                <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
                   {getOrgForOpp(viewModalOpp.orgId)?.name || "Zee Films"}
                 </strong>
               </div>
               <div>
-                <span style={{ fontSize: "0.75rem", color: "#7c869e", display: "block" }}>Project</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>
+                <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Project</span>
+                <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
                   {getProjectForOpp(viewModalOpp.projectId)?.title || "Project"}
                 </strong>
               </div>
               <div>
-                <span style={{ fontSize: "0.75rem", color: "#7c869e", display: "block" }}>Remuneration</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>{viewModalOpp.remuneration}</strong>
+                <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Remuneration</span>
+                <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>{viewModalOpp.remuneration}</strong>
               </div>
               <div>
-                <span style={{ fontSize: "0.75rem", color: "#7c869e", display: "block" }}>Deadline</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>{viewModalOpp.deadline}</strong>
+                <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Deadline</span>
+                <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>{viewModalOpp.deadline}</strong>
               </div>
             </div>
 
             <div>
-              <strong style={{ fontSize: "0.85rem", color: "#eceaf5", display: "block", marginBottom: "6px" }}>
+              <strong style={{ fontSize: "14px", color: "#2B2D2A", display: "block", marginBottom: "6px" }}>
                 Full Brief &amp; Synopsis:
               </strong>
-              <p style={{ fontSize: "0.85rem", color: "#a3acc2", margin: 0, lineHeight: "1.5" }}>
+              <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
                 {viewModalOpp.fullBrief || viewModalOpp.summary}
               </p>
             </div>
 
             <div>
-              <strong style={{ fontSize: "0.85rem", color: "#eceaf5", display: "block", marginBottom: "8px" }}>
+              <strong style={{ fontSize: "14px", color: "#2B2D2A", display: "block", marginBottom: "8px" }}>
                 Roles Required:
               </strong>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -482,12 +493,12 @@ export default function AdminOpportunitiesPage() {
                   <div
                     key={i}
                     style={{
-                      backgroundColor: "rgba(255, 255, 255, 0.04)",
-                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      backgroundColor: "#FAF9F7",
+                      border: "1px solid #E8E2D4",
                       borderRadius: "10px",
-                      padding: "10px 14px",
-                      fontSize: "0.825rem",
-                      color: "#eceaf5",
+                      padding: "12px 14px",
+                      fontSize: "13px",
+                      color: "#2B2D2A",
                     }}
                   >
                     <strong>{r.roleName}</strong> ({r.gender}, {r.ageRange}) &bull; {r.language}
@@ -498,12 +509,12 @@ export default function AdminOpportunitiesPage() {
 
             <div
               style={{
-                backgroundColor: "rgba(255, 188, 0, 0.1)",
-                border: "1px solid rgba(255, 188, 0, 0.25)",
+                backgroundColor: "#F3EFE6",
+                border: "1px solid #E8E2D4",
                 borderRadius: "10px",
-                padding: "12px",
-                fontSize: "0.775rem",
-                color: "#ffbc00",
+                padding: "12px 14px",
+                fontSize: "13px",
+                color: "#6E5420",
               }}
             >
               Note: Organizations manage and edit their opportunity briefs directly. Admin holds publishing authorization and unpublish controls.
@@ -513,8 +524,16 @@ export default function AdminOpportunitiesPage() {
               <button
                 type="button"
                 onClick={() => setViewModalOpp(null)}
-                className="btn-primary"
-                style={{ padding: "8px 20px", borderRadius: "12px" }}
+                style={{
+                  padding: "10px 22px",
+                  borderRadius: "10px",
+                  backgroundColor: "#8A6B2E",
+                  color: "#FFFFFF",
+                  border: "none",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
               >
                 Close View
               </button>

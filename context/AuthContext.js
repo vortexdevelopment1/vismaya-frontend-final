@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { authService } from "@/lib/api/services/authService";
 import { getAuthToken, setAuthToken, removeAuthToken } from "@/lib/api/client";
 import { toFrontendRole, getDashboardPath, isTalent, isRecruiter, isAdmin } from "@/lib/api/roles";
@@ -11,9 +12,11 @@ const AuthContext = createContext(null);
 const STORAGE_USER_KEY = "vismaya_user_data";
 
 export function AuthProvider({ children }) {
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [error, setError] = useState(null);
 
   // Restore session on mount (SSR safe)
@@ -52,6 +55,18 @@ export function AuthProvider({ children }) {
         localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(newUser));
       } catch {}
     }
+  }, []);
+
+  const updateUser = useCallback((partialUser) => {
+    setUser((prev) => {
+      const updated = { ...(prev || {}), ...partialUser };
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
   }, []);
 
   const clearSession = useCallback(() => {
@@ -109,7 +124,30 @@ export function AuthProvider({ children }) {
     }
   }, [saveSession]);
 
+  const loginWithGoogle = useCallback(async (idToken, role) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await authService.loginWithGoogle(idToken, role);
+      if (res.success && res.user) {
+        saveSession(res.user, res.token);
+        return { success: true, user: res.user, token: res.token };
+      } else {
+        const msg = res.message || "Google sign-in is not available yet. Please use email and password.";
+        setError(msg);
+        return { success: false, error: msg };
+      }
+    } catch (err) {
+      const msg = "Google sign-in is not available yet. Please use email and password.";
+      setError(msg);
+      return { success: false, error: msg };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [saveSession]);
+
   const logout = useCallback(async () => {
+    setIsLoggingOut(true);
     setIsLoading(true);
     try {
       await authService.logout();
@@ -118,8 +156,14 @@ export function AuthProvider({ children }) {
     } finally {
       clearSession();
       setIsLoading(false);
+      if (typeof window !== "undefined") {
+        router.replace("/");
+      }
+      setTimeout(() => {
+        setIsLoggingOut(false);
+      }, 800);
     }
-  }, [clearSession]);
+  }, [clearSession, router]);
 
   const normalizedRole = user?.role ? toFrontendRole(user.role) : null;
   const isAuthenticated = Boolean(user && (USE_MOCK || token));
@@ -130,17 +174,20 @@ export function AuthProvider({ children }) {
     role: normalizedRole,
     rawRole: user?.role || null,
     isLoading,
+    isLoggingOut,
     isAuthenticated,
     error,
     login,
+    loginWithGoogle,
     register,
     logout,
     clearSession,
     saveSession,
+    updateUser,
     isTalent: isTalent(user?.role),
     isRecruiter: isRecruiter(user?.role),
     isAdmin: isAdmin(user?.role),
-    getDashboardPath: () => getDashboardPath(user?.role),
+    getDashboardPath: (overrideRole) => getDashboardPath(overrideRole || user?.role),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

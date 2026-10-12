@@ -63,12 +63,12 @@ export default function ErrorState({
         flexDirection: "column",
         alignItems: "center",
         gap: "16px",
-        background: "rgba(15, 22, 38, 0.85)",
-        border: "1px solid rgba(255, 255, 255, 0.12)",
-        boxShadow: "0 20px 50px rgba(0, 0, 0, 0.55)",
+        background: "var(--bg-surface, #FFFFFF)",
+        border: "1px solid var(--border-color, #E8E2D4)",
+        boxShadow: "0 10px 30px rgba(43, 45, 42, 0.08)",
         margin: "0 auto",
         boxSizing: "border-box",
-        color: "#eceaf5",
+        color: "var(--text-primary, #2B2D2A)",
       }}
     >
       <div
@@ -76,8 +76,8 @@ export default function ErrorState({
           width: compact ? "48px" : "64px",
           height: compact ? "48px" : "64px",
           borderRadius: "16px",
-          backgroundColor: "rgba(255, 255, 255, 0.05)",
-          border: "1px solid rgba(255, 255, 255, 0.10)",
+          backgroundColor: "var(--bg-alt, #F3EFE6)",
+          border: "1px solid var(--border-color, #E8E2D4)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -93,12 +93,12 @@ export default function ErrorState({
             fontSize: compact ? "18px" : "22px",
             fontWeight: 700,
             margin: 0,
-            color: "#eceaf5",
+            color: "var(--text-primary, #2B2D2A)",
           }}
         >
           {getHeading()}
         </h3>
-        <p style={{ fontSize: "13px", color: "#a3acc2", margin: 0, lineHeight: 1.5, maxWidth: "420px" }}>
+        <p style={{ fontSize: "13px", color: "var(--text-secondary, #5A584F)", margin: 0, lineHeight: 1.5, maxWidth: "420px" }}>
           {getDescription()}
         </p>
       </div>

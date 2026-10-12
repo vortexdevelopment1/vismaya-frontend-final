@@ -175,7 +175,7 @@ export default function TalentOpportunitiesPage() {
           style={selectStyle}
         >
           {types.map((t) => (
-            <option key={t} value={t} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+            <option key={t} value={t} style={{ backgroundColor: "#FFFFFF", color: "#292C29" }}>
               {t === "all" ? "All Types" : t}
             </option>
           ))}
@@ -191,7 +191,7 @@ export default function TalentOpportunitiesPage() {
           style={selectStyle}
         >
           {cities.map((c) => (
-            <option key={c} value={c} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+            <option key={c} value={c} style={{ backgroundColor: "#FFFFFF", color: "#292C29" }}>
               {c === "all" ? "All Locations" : c}
             </option>
           ))}
@@ -207,7 +207,7 @@ export default function TalentOpportunitiesPage() {
           style={selectStyle}
         >
           {ageBrackets.map((b) => (
-            <option key={b.key} value={b.key} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+            <option key={b.key} value={b.key} style={{ backgroundColor: "#FFFFFF", color: "#292C29" }}>
               {b.label}
             </option>
           ))}
@@ -223,7 +223,7 @@ export default function TalentOpportunitiesPage() {
           style={selectStyle}
         >
           {genders.map((g) => (
-            <option key={g} value={g} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+            <option key={g} value={g} style={{ backgroundColor: "#FFFFFF", color: "#292C29" }}>
               {g === "all" ? "All Genders" : g}
             </option>
           ))}
@@ -239,7 +239,7 @@ export default function TalentOpportunitiesPage() {
           style={selectStyle}
         >
           {languages.map((l) => (
-            <option key={l} value={l} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+            <option key={l} value={l} style={{ backgroundColor: "#FFFFFF", color: "#292C29" }}>
               {l === "all" ? "All Languages" : l}
             </option>
           ))}
@@ -255,7 +255,7 @@ export default function TalentOpportunitiesPage() {
           style={selectStyle}
         >
           {paymentOptions.map((p) => (
-            <option key={p} value={p} style={{ backgroundColor: "#0f1626", color: "#eceaf5" }}>
+            <option key={p} value={p} style={{ backgroundColor: "#FFFFFF", color: "#292C29" }}>
               {p === "all" ? "All Comp Types" : p}
             </option>
           ))}
@@ -280,14 +280,14 @@ export default function TalentOpportunitiesPage() {
       <div
         className="card-surface"
         style={{
-          backgroundColor: "rgba(255, 255, 255, 0.07)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
-          borderRadius: "16px",
+          backgroundColor: "var(--bg-surface, #FFFFFF)",
+          border: "1px solid var(--border-color, #E4E1D9)",
+          borderRadius: "var(--radius-card, 6px)",
           padding: "clamp(16px, 3vw, 24px) clamp(16px, 3.5vw, 28px)",
           display: "flex",
           flexDirection: "column",
           gap: "18px",
-          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+          boxShadow: "var(--card-shadow, 0 1px 3px rgba(41, 44, 41, 0.05))",
         }}
       >
         {/* Top Search Input & Mobile Filter Trigger */}
@@ -298,7 +298,7 @@ export default function TalentOpportunitiesPage() {
               style={{
                 position: "absolute",
                 left: "14px",
-                color: "#a3acc2",
+                color: "var(--text-muted, #777970)",
                 pointerEvents: "none",
               }}
             />
@@ -310,10 +310,10 @@ export default function TalentOpportunitiesPage() {
               style={{
                 width: "100%",
                 padding: "12px 16px 12px 42px",
-                backgroundColor: "rgba(255, 255, 255, 0.055)",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
-                borderRadius: "12px",
-                color: "#eceaf5",
+                backgroundColor: "var(--bg-surface, #FFFFFF)",
+                border: "1px solid var(--border-color, #E4E1D9)",
+                borderRadius: "var(--radius-input, 4px)",
+                color: "var(--text-primary, #292C29)",
                 fontSize: "0.925rem",
                 outline: "none",
                 minHeight: "44px",
@@ -325,7 +325,7 @@ export default function TalentOpportunitiesPage() {
                 style={{
                   position: "absolute",
                   right: "12px",
-                  color: "#a3acc2",
+                  color: "var(--text-muted, #777970)",
                   cursor: "pointer",
                   padding: "4px",
                   background: "none",
@@ -344,10 +344,10 @@ export default function TalentOpportunitiesPage() {
             style={{
               minHeight: "44px",
               padding: "0 16px",
-              borderRadius: "12px",
-              backgroundColor: activeDropdownCount > 0 ? "var(--gold)" : "rgba(255, 255, 255, 0.08)",
-              color: activeDropdownCount > 0 ? "#1a1300" : "#eceaf5",
-              border: `1px solid ${activeDropdownCount > 0 ? "var(--gold)" : "rgba(255, 255, 255, 0.16)"}`,
+              borderRadius: "4px",
+              backgroundColor: activeDropdownCount > 0 ? "var(--gold, #9B7A3F)" : "var(--bg-alt, #F0EEE7)",
+              color: activeDropdownCount > 0 ? "#FAF9F6" : "var(--text-primary, #292C29)",
+              border: `1px solid ${activeDropdownCount > 0 ? "var(--gold, #9B7A3F)" : "var(--border-color, #E4E1D9)"}`,
               fontSize: "0.85rem",
               fontWeight: "700",
               display: "none",
@@ -373,15 +373,15 @@ export default function TalentOpportunitiesPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+            borderTop: "1px solid var(--border-color, #E4E1D9)",
             paddingTop: "14px",
             fontSize: "0.85rem",
             flexWrap: "wrap",
             gap: "8px",
           }}
         >
-          <span style={{ color: "#a3acc2" }}>
-            Showing <strong style={{ color: "var(--gold)" }}>{filteredOpportunities.length}</strong> published opportunity{filteredOpportunities.length === 1 ? "" : "s"}
+          <span style={{ color: "var(--text-secondary, #5A5C53)" }}>
+            Showing <strong style={{ color: "var(--gold, #9B7A3F)" }}>{filteredOpportunities.length}</strong> published opportunity{filteredOpportunities.length === 1 ? "" : "s"}
           </span>
 
           {hasActiveFilters && (
@@ -389,7 +389,7 @@ export default function TalentOpportunitiesPage() {
               onClick={clearAllFilters}
               style={{
                 fontSize: "0.8rem",
-                color: "var(--gold)",
+                color: "var(--gold, #9B7A3F)",
                 fontWeight: "700",
                 padding: "6px 12px",
                 minHeight: "36px",
@@ -408,12 +408,12 @@ export default function TalentOpportunitiesPage() {
         </div>
       </div>
 
-      {/* Opportunities Grid (3 cols >= 1180px, 2 cols 768-1179px, 1 col < 768px) */}
+      {/* Opportunities Grid */}
       {!isHydrated ? (
         <div className="talent-cards-grid">
           {[1, 2, 3].map((i) => (
             <div key={i} className="card-surface" style={{ padding: "24px", height: "320px", display: "flex", flexDirection: "column", gap: "16px" }}>
-              <Skeleton width="100%" height="135px" borderRadius="14px" />
+              <Skeleton width="100%" height="135px" borderRadius="4px" />
               <Skeleton width="70%" height="24px" />
               <Skeleton width="90%" height="16px" />
               <Skeleton width="40%" height="16px" />
@@ -455,7 +455,7 @@ export default function TalentOpportunitiesPage() {
                 type="button"
                 onClick={clearAllFilters}
                 className="btn-secondary"
-                style={{ flex: 1, minHeight: "44px", borderRadius: "12px" }}
+                style={{ flex: 1, minHeight: "44px", borderRadius: "4px" }}
               >
                 Reset
               </button>
@@ -464,7 +464,7 @@ export default function TalentOpportunitiesPage() {
               type="button"
               onClick={() => setIsFilterModalOpen(false)}
               className="btn-primary"
-              style={{ flex: 2, minHeight: "44px", borderRadius: "12px" }}
+              style={{ flex: 2, minHeight: "44px", borderRadius: "4px" }}
             >
               Show {filteredOpportunities.length} Result{filteredOpportunities.length === 1 ? "" : "s"}
             </button>
@@ -504,7 +504,7 @@ const filterLabelStyle = {
   display: "block",
   fontSize: "0.75rem",
   fontWeight: "700",
-  color: "#a3acc2",
+  color: "var(--text-muted, #777970)",
   marginBottom: "4px",
   textTransform: "uppercase",
   letterSpacing: "0.06em",
@@ -513,10 +513,10 @@ const filterLabelStyle = {
 const selectStyle = {
   width: "100%",
   padding: "10px 12px",
-  backgroundColor: "rgba(255, 255, 255, 0.055)",
-  border: "1px solid rgba(255, 255, 255, 0.14)",
-  borderRadius: "12px",
-  color: "#eceaf5",
+  backgroundColor: "var(--bg-surface, #FFFFFF)",
+  border: "1px solid var(--border-color, #E4E1D9)",
+  borderRadius: "var(--radius-input, 4px)",
+  color: "var(--text-primary, #292C29)",
   fontSize: "0.85rem",
   outline: "none",
 };
