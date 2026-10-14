@@ -82,14 +82,6 @@ export default function OrganizationDashboardPage() {
         action={
           <div className="recruiter-dash-header-actions" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <Link
-              href="/recruiter/projects"
-              className="btn-secondary dash-action-btn"
-              style={{ fontSize: "13px", fontWeight: "600", height: "36px", padding: "0 16px", gap: "6px", borderRadius: "10px" }}
-            >
-              <FolderKanban size={15} />
-              <span>Projects</span>
-            </Link>
-            <Link
               href="/recruiter/opportunities/new"
               className="btn-primary dash-action-btn"
               style={{ fontSize: "13px", fontWeight: "600", height: "36px", padding: "0 18px", gap: "6px", borderRadius: "10px" }}
@@ -546,10 +538,10 @@ export default function OrganizationDashboardPage() {
             margin-top: 4px !important;
           }
 
-          /* Header Action Buttons (2-column grid) */
+          /* Header Action Buttons */
           .recruiter-dash-header-actions {
             display: grid !important;
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            grid-template-columns: 1fr !important;
             gap: 8px !important;
             width: 100% !important;
           }

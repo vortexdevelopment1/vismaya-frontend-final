@@ -24,8 +24,6 @@ export default function RecruiterTopbar({ onOpenMobile }) {
 
   const getPageTitle = () => {
     if (pathname === "/recruiter/dashboard") return "Organization Overview";
-    if (pathname === "/recruiter/projects") return "Projects Pipeline";
-    if (pathname.startsWith("/recruiter/projects/")) return "Project Workspace";
     if (pathname === "/recruiter/opportunities") return "Opportunities & Briefs";
     if (pathname === "/recruiter/opportunities/new") return "Create Opportunity";
     if (pathname.startsWith("/recruiter/opportunities/")) return "Casting Call Details";

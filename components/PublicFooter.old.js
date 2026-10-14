@@ -62,9 +62,6 @@ export default function PublicFooter() {
                 <Link href="/admin/dashboard" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
                   Vismaya Desk
                 </Link>
-                <Link href="/opportunities" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Active Casting Calls
-                </Link>
               </div>
 
               {/* Company */}

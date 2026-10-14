@@ -432,22 +432,19 @@ export default function MyOpportunitiesPage() {
                         >
                           {opp.title}
                         </Link>
-                        <Link
-                          href={`/recruiter/projects/${opp.projectId}`}
+                        <span
                           style={{
                             fontSize: "13px",
                             color: "#5A584F",
-                            textDecoration: "none",
                             lineHeight: 1.4,
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
-                            transition: "color 0.16s ease",
                           }}
-                          className="v-opp-proj-link"
+                          className="v-opp-proj-text"
                         >
                           Project: {proj?.title || "Assigned Project"}
-                        </Link>
+                        </span>
                         {opp.adminNote && (
                           <span
                             style={{
@@ -736,17 +733,15 @@ export default function MyOpportunitiesPage() {
                         {opp.title}
                       </Link>
 
-                      <Link
-                        href={`/recruiter/projects/${opp.projectId}`}
+                      <span
                         style={{
                           fontSize: "13.5px",
                           color: "#5A584F",
-                          textDecoration: "none",
                         }}
-                        className="v-card-proj-link"
+                        className="v-card-proj-label"
                       >
                         Project: {proj?.title || "Assigned Project"}
-                      </Link>
+                      </span>
                     </div>
 
                     {/* Metadata Grid */}

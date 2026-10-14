@@ -215,7 +215,7 @@ export default function OpportunityApplicantsPage() {
         breadcrumbs={[
           { label: "Dashboard", href: "/recruiter/dashboard" },
           { label: "Opportunities", href: "/recruiter/opportunities" },
-          { label: opportunity.title, href: `/recruiter/projects/${opportunity.projectId}` },
+          { label: opportunity.title, href: "/recruiter/opportunities" },
           { label: "Applicants" },
         ]}
         actions={

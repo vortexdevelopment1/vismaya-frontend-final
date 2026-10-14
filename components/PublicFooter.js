@@ -21,7 +21,6 @@ export default function PublicFooter() {
     { label: "Talent Portal", href: "/talent/dashboard", isHighlight: true },
     { label: "Organization Portal", href: "/recruiter/dashboard" },
     { label: "Vismaya Desk", href: "/admin/dashboard" },
-    { label: "Active Casting Calls", href: "/opportunities" },
   ];
 
   const companyLinks = [

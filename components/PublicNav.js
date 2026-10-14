@@ -68,9 +68,6 @@ export default function PublicNav() {
     if (routeHref === "/") {
       return pathname === "/";
     }
-    if (routeHref === "/opportunities") {
-      return pathname === "/opportunities" || pathname.startsWith("/opportunities/");
-    }
     if (routeHref === "/about") {
       return pathname === "/about" || pathname.startsWith("/about/");
     }
@@ -95,7 +92,6 @@ export default function PublicNav() {
   // Navigation Links definition
   const navLinks = [
     { label: "Home", href: "/" },
-    { label: "Opportunities", href: "/opportunities" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
     user

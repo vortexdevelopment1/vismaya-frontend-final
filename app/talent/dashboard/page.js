@@ -8,7 +8,6 @@ import {
   Megaphone,
   CheckCircle2,
   AlertCircle,
-  ArrowRight,
   Sparkles,
   Calendar,
   Clock,
@@ -22,19 +21,14 @@ import {
 import PageHeader from "@/components/shared/PageHeader";
 import StatCard from "@/components/shared/StatCard";
 import StatusBadge from "@/components/shared/StatusBadge";
-import OpportunityCard from "@/components/talent/OpportunityCard";
-import OpportunityApplyModal from "@/components/talent/OpportunityApplyModal";
 import NotificationItem from "@/components/talent/NotificationItem";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
 
 export default function TalentDashboardPage() {
   const {
-    opportunities,
-    projects,
     applications,
     auditions,
-    getProject,
     getOpportunity,
     getNotificationsForRole,
     isHydrated,
@@ -48,8 +42,6 @@ export default function TalentDashboardPage() {
 
   const currentTalentId = "tal-904";
 
-  const [selectedOppForApply, setSelectedOppForApply] = useState(null);
-
   // Filter entities for current talent
   const myApplications = useMemo(
     () => applications.filter((a) => a.talentId === currentTalentId),
@@ -59,11 +51,6 @@ export default function TalentDashboardPage() {
   const myAuditions = useMemo(
     () => auditions.filter((aud) => aud.talentId === currentTalentId),
     [auditions]
-  );
-
-  const publishedOpportunities = useMemo(
-    () => opportunities.filter((o) => o.status === "Published"),
-    [opportunities]
   );
 
   const talentNotifications = useMemo(
@@ -80,7 +67,6 @@ export default function TalentDashboardPage() {
   ).length;
 
   const recentApplications = myApplications.slice(0, 4);
-  const featuredOpportunities = publishedOpportunities.slice(0, 3);
   const recentNotifications = talentNotifications.slice(0, 3);
 
   // Profile Ring Math
@@ -571,71 +557,7 @@ export default function TalentDashboardPage() {
         </div>
       </div>
 
-      {/* Featured Live Opportunities Section */}
-      <div className="talent-live-section" style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-        <div className="talent-live-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
-          <div>
-            <h2 className="talent-live-title" style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "24px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
-              Live Casting Opportunities
-            </h2>
-            <span className="talent-live-subtitle" style={{ fontSize: "14px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
-              Verified requirements currently accepting talent submissions
-            </span>
-          </div>
 
-          <Link
-            href="/talent/opportunities"
-            style={{
-              height: "40px",
-              padding: "0 18px",
-              borderRadius: "10px",
-              border: "1px solid #8A6B2E",
-              backgroundColor: "#FFFFFF",
-              color: "#8A6B2E",
-              fontSize: "13px",
-              fontWeight: 600,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              textDecoration: "none",
-              transition: "all 0.16s ease",
-              fontFamily: "var(--font-body), 'Inter', sans-serif",
-            }}
-            className="talent-view-all-opps-btn"
-          >
-            <span>View All {publishedOpportunities.length} Live Opportunities</span>
-            <ArrowRight size={14} />
-          </Link>
-        </div>
-
-        <div
-          className="talent-cards-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
-            gap: "24px",
-          }}
-        >
-          {featuredOpportunities.map((opp) => (
-            <OpportunityCard
-              key={opp.id}
-              opportunity={opp}
-              project={getProject(opp.projectId)}
-              onApply={(o) => setSelectedOppForApply(o)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Apply Modal */}
-      {selectedOppForApply && (
-        <OpportunityApplyModal
-          isOpen={!!selectedOppForApply}
-          onClose={() => setSelectedOppForApply(null)}
-          opportunity={selectedOppForApply}
-          project={getProject(selectedOppForApply.projectId)}
-        />
-      )}
 
       <style jsx>{`
         .talent-welcome-section {
@@ -687,8 +609,7 @@ export default function TalentDashboardPage() {
         .talent-browse-btn:hover {
           background-color: #6E5420 !important;
         }
-        .talent-edit-profile-btn:hover,
-        .talent-view-all-opps-btn:hover {
+        .talent-edit-profile-btn:hover {
           background-color: #F3EFE6 !important;
         }
         .profile-checklist-item:hover {
@@ -915,37 +836,6 @@ export default function TalentDashboardPage() {
             white-space: normal !important;
             overflow-wrap: anywhere !important;
           }
-          .recent-app-badge {
-            flex-shrink: 0 !important;
-          }
-
-          /* Live opportunities */
-          .talent-live-section {
-            gap: 14px !important;
-            width: 100% !important;
-          }
-          .talent-live-header {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 10px !important;
-          }
-          .talent-live-title {
-            font-size: 19px !important;
-          }
-          .talent-live-subtitle {
-            font-size: 12px !important;
-          }
-          .talent-view-all-opps-btn {
-            width: 100% !important;
-            height: 40px !important;
-            font-size: 13px !important;
-            justify-content: center !important;
-            box-sizing: border-box !important;
-          }
-          .talent-cards-grid {
-            grid-template-columns: 1fr !important;
-            gap: 12px !important;
-            width: 100% !important;
           }
         }
 

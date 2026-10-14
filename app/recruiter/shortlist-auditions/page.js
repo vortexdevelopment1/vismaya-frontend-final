@@ -12,17 +12,31 @@ import {
   Clock,
   Sparkles,
   ExternalLink,
-  ChevronRight,
   Search,
   MoreHorizontal,
   Eye,
-  Film,
+  ArrowLeft,
+  FolderKanban,
   Calendar,
-  AlertCircle,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import Modal from "@/components/shared/Modal";
 import VideoPlayer from "@/components/shared/VideoPlayer";
+
+function formatPostedDate(dateStr) {
+  if (!dateStr) return "recently";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "recently";
+    return d.toLocaleDateString("en-IN", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch (e) {
+    return "recently";
+  }
+}
 
 export default function ShortlistAuditionsPage() {
   const router = useRouter();
@@ -37,23 +51,43 @@ export default function ShortlistAuditionsPage() {
     isHydrated,
   } = useWorkflow();
 
-  // Read initial filter values from URL query parameters
+  const orgId = "org-1";
+
+  // Filter org opportunities
+  const orgOpportunities = useMemo(() => {
+    return opportunities.filter((o) => o.orgId === orgId || !o.orgId);
+  }, [opportunities]);
+
+  // Read opportunity from URL query parameter (?opportunity=id or ?opp=id)
+  const oppParam = searchParams?.get("opportunity") || searchParams?.get("opp") || null;
+
+  const selectedOpp = useMemo(() => {
+    if (!oppParam || oppParam === "ALL") return null;
+    return orgOpportunities.find((o) => o.id === oppParam) || null;
+  }, [orgOpportunities, oppParam]);
+
+  // Read initial filter values for Level 2
   const initialStage = searchParams?.get("stage") || "all";
-  const initialOpp = searchParams?.get("opp") || "ALL";
   const initialQ = searchParams?.get("q") || "";
 
-  // Filters & Tabs State
-  const [currentTab, setCurrentTab] = useState(initialStage); // all | short | aud | rev | sel | no
-  const [selectedOppId, setSelectedOppId] = useState(initialOpp);
+  const [currentTab, setCurrentTab] = useState(initialStage);
   const [searchQuery, setSearchQuery] = useState(initialQ);
 
-  // Sync filter/search state into URL query params
+  // Sync Level 2 filter/search state into URL query params
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams();
-    if (currentTab && currentTab !== "all") params.set("stage", currentTab);
-    if (selectedOppId && selectedOppId !== "ALL") params.set("opp", selectedOppId);
-    if (searchQuery && searchQuery.trim()) params.set("q", searchQuery.trim());
+    if (typeof window === "undefined" || !selectedOpp) return;
+    const params = new URLSearchParams(window.location.search);
+    params.set("opportunity", selectedOpp.id);
+    if (currentTab && currentTab !== "all") {
+      params.set("stage", currentTab);
+    } else {
+      params.delete("stage");
+    }
+    if (searchQuery && searchQuery.trim()) {
+      params.set("q", searchQuery.trim());
+    } else {
+      params.delete("q");
+    }
 
     const qs = params.toString();
     const newUrl = `/recruiter/shortlist-auditions${qs ? `?${qs}` : ""}`;
@@ -61,16 +95,23 @@ export default function ShortlistAuditionsPage() {
     if (newUrl !== currentUrl) {
       window.history.replaceState(null, "", newUrl);
     }
-  }, [currentTab, selectedOppId, searchQuery]);
+  }, [selectedOpp, currentTab, searchQuery]);
 
-  // Overflow menu state
-  const activeMenuAppIdRef = useRef(null);
-  const [activeMenuAppId, setActiveMenuAppId] = useState(null);
-  const menuRef = useRef(null);
+  // Navigation handlers
+  const handleSelectOpportunity = (oppId) => {
+    setCurrentTab("all");
+    setSearchQuery("");
+    router.push(`/recruiter/shortlist-auditions?opportunity=${encodeURIComponent(oppId)}`);
+  };
+
+  const handleBackToLevel1 = () => {
+    setCurrentTab("all");
+    setSearchQuery("");
+    router.push("/recruiter/shortlist-auditions");
+  };
 
   // Toast feedback state
   const [toastMessage, setToastMessage] = useState(null);
-
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -78,7 +119,10 @@ export default function ShortlistAuditionsPage() {
     }, 3500);
   };
 
-  // Close overflow menu on outside click
+  // Overflow menu state
+  const [activeMenuAppId, setActiveMenuAppId] = useState(null);
+  const menuRef = useRef(null);
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -106,25 +150,36 @@ export default function ShortlistAuditionsPage() {
   const [notSelectedModalApp, setNotSelectedModalApp] = useState(null);
   const [notSelectedReason, setNotSelectedReason] = useState("");
 
-  // Filter org opportunities (org-1)
-  const orgOpportunities = useMemo(() => {
-    return opportunities.filter((o) => o.orgId === "org-1" || !o.orgId);
-  }, [opportunities]);
+  // Helpers for opportunity statistics (Level 1)
+  const getOpportunityStats = (oppId) => {
+    const apps = applications.filter((a) => a.opportunityId === oppId);
+    const auds = auditions.filter(
+      (aud) => aud.opportunityId === oppId || apps.some((a) => a.id === aud.applicationId)
+    );
+    const applied = apps.length;
+    const shortlist = apps.filter(
+      (a) => a.status === "Shortlisted" || a.status === "Selected"
+    ).length;
+    const audition = auds.length;
+    return { applied, shortlist, audition };
+  };
 
-  // Shortlisted, Selected, Not Selected, or Audited applications
-  const relevantApplications = useMemo(() => {
-    return applications.filter((app) => {
-      const hasAud = auditions.some((aud) => aud.applicationId === app.id);
-      const isShortlistedOrFinal =
-        app.status === "Shortlisted" ||
-        app.status === "Selected" ||
-        (app.status === "Not Selected" && hasAud);
+  // Applications belonging to selected opportunity (Level 2)
+  const oppApplications = useMemo(() => {
+    if (!selectedOpp) return [];
+    return applications.filter((app) => app.opportunityId === selectedOpp.id);
+  }, [applications, selectedOpp]);
 
-      return isShortlistedOrFinal || hasAud;
-    });
-  }, [applications, auditions]);
+  // Auditions for selected opportunity (Level 2)
+  const oppAuditions = useMemo(() => {
+    if (!selectedOpp) return [];
+    const appIds = oppApplications.map((a) => a.id);
+    return auditions.filter(
+      (aud) => aud.opportunityId === selectedOpp.id || appIds.includes(aud.applicationId)
+    );
+  }, [auditions, selectedOpp, oppApplications]);
 
-  // Map application to internal stage key: 'rev' | 'short' | 'req' | 'tal' | 'sel' | 'no'
+  // Map application to stage key: 'rev' | 'short' | 'req' | 'tal' | 'sel' | 'no' | 'applied'
   const getAppStage = (app) => {
     if (app.status === "Selected") return "sel";
     if (app.status === "Not Selected") return "no";
@@ -138,14 +193,13 @@ export default function ShortlistAuditionsPage() {
       }
       return "req";
     }
-    return "short";
+    if (app.status === "Shortlisted") return "short";
+    return "applied";
   };
 
-  const STAGE_PRIORITY = ["rev", "short", "req", "tal", "sel", "no"];
+  const STAGE_PRIORITY = ["rev", "short", "req", "tal", "applied", "sel", "no"];
 
-  // Helpers
   const getAuditionForApp = (appId) => auditions.find((a) => a.applicationId === appId);
-  const getOpportunityForApp = (oppId) => opportunities.find((o) => o.id === oppId);
   const getProjectForOpp = (opp) => (opp ? projects.find((p) => p.id === opp.projectId) : null);
 
   const getProjectRoleSubtitle = (proj, opp) => {
@@ -162,91 +216,81 @@ export default function ShortlistAuditionsPage() {
     return `${projTitle} • ${oppTitle}`;
   };
 
-  // Filtered by Opportunity & Search Query
-  const filteredBaseApplications = useMemo(() => {
-    return relevantApplications.filter((app) => {
-      if (selectedOppId !== "ALL" && app.opportunityId !== selectedOppId) {
-        return false;
-      }
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const name = (app.talentName || "").toLowerCase();
-        const role = (app.roleApplied || "").toLowerCase();
-        const city = (app.talentProfile?.city || "").toLowerCase();
-        const opp = opportunities.find((o) => o.id === app.opportunityId);
-        const oppTitle = (opp?.title || "").toLowerCase();
-        const proj = opp ? projects.find((p) => p.id === opp.projectId) : null;
-        const projTitle = (proj?.title || "").toLowerCase();
-
-        if (
-          !name.includes(q) &&
-          !role.includes(q) &&
-          !city.includes(q) &&
-          !oppTitle.includes(q) &&
-          !projTitle.includes(q)
-        ) {
-          return false;
-        }
-      }
-      return true;
-    });
-  }, [relevantApplications, selectedOppId, searchQuery, opportunities, projects]);
-
-  // Tab definitions with dynamic filter functions
+  // Tabs for Level 2
   const TABS = useMemo(
     () => [
       { key: "all", label: "All", filter: () => true },
+      { key: "applied", label: "Applied", filter: (app) => getAppStage(app) === "applied" },
       { key: "short", label: "Shortlisted", filter: (app) => getAppStage(app) === "short" },
       {
         key: "aud",
-        label: "Audition / Interview",
+        label: "Audition",
         filter: (app) => {
           const s = getAppStage(app);
-          return s === "req" || s === "tal";
+          return s === "rev" || s === "req" || s === "tal";
         },
       },
-      { key: "rev", label: "Self-tape ready", filter: (app) => getAppStage(app) === "rev" },
       { key: "sel", label: "Selected", filter: (app) => getAppStage(app) === "sel" },
       { key: "no", label: "Not selected", filter: (app) => getAppStage(app) === "no" },
     ],
     [auditions]
   );
 
-  // Tab counts
+  // Tab counts for Level 2
   const tabCounts = useMemo(() => {
     const counts = {};
     TABS.forEach((t) => {
-      counts[t.key] = filteredBaseApplications.filter(t.filter).length;
+      counts[t.key] = oppApplications.filter(t.filter).length;
     });
     return counts;
-  }, [TABS, filteredBaseApplications]);
+  }, [TABS, oppApplications]);
 
-  // "Need your action" count (Shortlisted + Self-tape ready)
+  // Level 2 "Need action" count
   const needActionCount = useMemo(() => {
-    return filteredBaseApplications.filter((app) => {
+    return oppApplications.filter((app) => {
       const s = getAppStage(app);
-      return s === "short" || s === "rev";
+      return s === "short" || s === "rev" || s === "applied";
     }).length;
-  }, [filteredBaseApplications, auditions]);
+  }, [oppApplications, auditions]);
 
-  // Final filtered & sorted candidate cards for grid
+  // Filtered & sorted candidates for Level 2
   const displayApplications = useMemo(() => {
     const activeTabObj = TABS.find((t) => t.key === currentTab) || TABS[0];
-    const list = filteredBaseApplications.filter(activeTabObj.filter);
+    let list = oppApplications.filter(activeTabObj.filter);
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((app) => {
+        const name = (app.talentName || "").toLowerCase();
+        const role = (app.roleApplied || "").toLowerCase();
+        const city = (app.talentProfile?.city || "").toLowerCase();
+        return name.includes(q) || role.includes(q) || city.includes(q);
+      });
+    }
 
     list.sort((a, b) => {
       const pA = STAGE_PRIORITY.indexOf(getAppStage(a));
       const pB = STAGE_PRIORITY.indexOf(getAppStage(b));
       if (pA !== pB) return pA - pB;
-      const dateA = new Date(a.appliedDate || a.createdAt || 0).getTime();
-      const dateB = new Date(b.appliedDate || b.createdAt || 0).getTime();
+      const dateA = new Date(app.appliedDate || app.appliedAt || app.createdAt || 0).getTime();
+      const dateB = new Date(b.appliedDate || b.appliedAt || b.createdAt || 0).getTime();
       return dateB - dateA;
     });
 
     return list;
-  }, [TABS, currentTab, filteredBaseApplications]);
+  }, [TABS, currentTab, oppApplications, searchQuery, auditions]);
 
-  // Actions
+  // Action handlers
+  const handleShortlistApplicant = (app) => {
+    setApplicationStatus(
+      app.id,
+      "Shortlisted",
+      "Shortlisted for casting callback / audition.",
+      "Zee Films"
+    );
+    showToast(`${app.talentName} has been shortlisted.`);
+  };
+
   const handleOpenAuditionModal = (app) => {
     setActiveMenuAppId(null);
     const opp = opportunities.find((o) => o.id === app.opportunityId);
@@ -310,7 +354,6 @@ export default function ShortlistAuditionsPage() {
     setReviewVideoModalApp(app);
   };
 
-  // Initials generator
   const getInitials = (name) => {
     if (!name) return "T";
     return name
@@ -321,207 +364,65 @@ export default function ShortlistAuditionsPage() {
       .toUpperCase();
   };
 
-  // Render Status Pill for Candidate Card (Strictly light theme tokens)
+  // Status pill renderer
   const renderStatusPill = (stage, app) => {
     if (stage === "rev") {
       return (
-        <span
-          className="v-stage-status-pill"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            fontSize: "12px",
-            fontWeight: 700,
-            borderRadius: "999px",
-            padding: "6px 12px",
-            backgroundColor: "#F3EFE6",
-            color: "#2B2D2A",
-            width: "fit-content",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-          }}
-        >
-          <span
-            style={{
-              width: "7px",
-              height: "7px",
-              borderRadius: "50%",
-              backgroundColor: "#8A6B2E",
-              flexShrink: 0,
-            }}
-          />
+        <span className="v-stage-status-pill rev">
+          <span className="v-pill-dot" />
           <span>Self-tape ready</span>
-          <span
-            style={{
-              color: "#5A584F",
-              fontVariantNumeric: "tabular-nums",
-              fontWeight: 600,
-              fontSize: "11.5px",
-            }}
-          >
-            01:24
-          </span>
+          <span className="v-pill-time">01:24</span>
         </span>
       );
     }
-
     if (stage === "short") {
       return (
-        <span
-          className="v-stage-status-pill"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            fontSize: "12px",
-            fontWeight: 700,
-            borderRadius: "999px",
-            padding: "6px 12px",
-            backgroundColor: "rgba(138, 107, 46, 0.12)",
-            color: "#6E5420",
-            width: "fit-content",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-          }}
-        >
-          <span
-            style={{
-              width: "7px",
-              height: "7px",
-              borderRadius: "50%",
-              backgroundColor: "#8A6B2E",
-              flexShrink: 0,
-            }}
-          />
-          <span>Needs your action</span>
+        <span className="v-stage-status-pill short">
+          <span className="v-pill-dot" />
+          <span>Shortlisted</span>
         </span>
       );
     }
-
     if (stage === "req" || stage === "tal") {
       return (
-        <span
-          className="v-stage-status-pill"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            fontSize: "12px",
-            fontWeight: 700,
-            borderRadius: "999px",
-            padding: "6px 12px",
-            backgroundColor: "rgba(201, 165, 92, 0.18)",
-            color: "#6E5420",
-            width: "fit-content",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-          }}
-        >
-          <span
-            style={{
-              width: "7px",
-              height: "7px",
-              borderRadius: "50%",
-              backgroundColor: "#8A6B2E",
-              flexShrink: 0,
-            }}
-          />
+        <span className="v-stage-status-pill aud">
+          <span className="v-pill-dot" />
           <span>Audition / Interview</span>
         </span>
       );
     }
-
     if (stage === "sel") {
       return (
-        <span
-          className="v-stage-status-pill"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            fontSize: "12px",
-            fontWeight: 700,
-            borderRadius: "999px",
-            padding: "6px 12px",
-            backgroundColor: "rgba(138, 107, 46, 0.14)",
-            color: "#6E5420",
-            width: "fit-content",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-          }}
-        >
-          <CheckCircle2 size={13} style={{ color: "#8A6B2E" }} />
-          <span>Selected</span>
+        <span className="v-stage-status-pill sel">
+          <span className="v-pill-dot" />
+          <span>Selected for role</span>
         </span>
       );
     }
-
     if (stage === "no") {
       return (
-        <span
-          className="v-stage-status-pill"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            fontSize: "12px",
-            fontWeight: 700,
-            borderRadius: "999px",
-            padding: "6px 12px",
-            backgroundColor: "#F3EFE6",
-            color: "#5A584F",
-            width: "fit-content",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-          }}
-        >
-          <span
-            style={{
-              width: "7px",
-              height: "7px",
-              borderRadius: "50%",
-              backgroundColor: "#5A584F",
-              flexShrink: 0,
-            }}
-          />
+        <span className="v-stage-status-pill no">
           <span>Not selected</span>
         </span>
       );
     }
-
     return (
-      <span
-        className="v-stage-status-pill"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "8px",
-          fontSize: "12px",
-          fontWeight: 700,
-          borderRadius: "999px",
-          padding: "6px 12px",
-          backgroundColor: "#F3EFE6",
-          color: "#5A584F",
-          width: "fit-content",
-          lineHeight: 1,
-          whiteSpace: "nowrap",
-        }}
-      >
-        <span>Under Review</span>
+      <span className="v-stage-status-pill applied">
+        <span className="v-pill-dot" />
+        <span>Applied</span>
       </span>
     );
   };
 
-  // Loading skeleton
+  // Skeleton during hydration
   if (!isHydrated) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
         <div style={{ height: "48px", background: "#F3EFE6", borderRadius: "12px", width: "40%" }} />
         <div style={{ height: "120px", background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "16px" }} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px" }}>
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} style={{ height: "300px", background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "20px" }} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ height: "280px", background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "16px" }} />
           ))}
         </div>
       </div>
@@ -532,786 +433,469 @@ export default function ShortlistAuditionsPage() {
     <div className="v-shortlist-page-wrapper">
       {/* Toast Notification */}
       {toastMessage && (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{
-            position: "fixed",
-            bottom: "24px",
-            right: "24px",
-            zIndex: 150,
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #E8E2D4",
-            boxShadow: "0 8px 24px rgba(43, 45, 42, 0.12)",
-            borderRadius: "12px",
-            padding: "14px 20px",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            color: "#2B2D2A",
-            fontSize: "13.5px",
-            fontWeight: 600,
-            animation: "toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-          }}
-        >
+        <div role="status" aria-live="polite" className="v-toast-notification">
           <CheckCircle2 size={18} style={{ color: "#8A6B2E", flexShrink: 0 }} />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Breadcrumb & Main Page Header */}
-      <div
-        className="v-page-header-wrap"
-        style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "24px" }}
-      >
-        <nav
-          aria-label="Breadcrumb"
-          className="v-breadcrumb-nav"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            fontSize: "13px",
-            fontFamily: "var(--font-body), 'Inter', sans-serif",
-          }}
-        >
-          <Link
-            href="/recruiter/dashboard"
-            style={{ color: "#5A584F", textDecoration: "none", transition: "color 0.15s ease" }}
-            className="v-breadcrumb-link"
-          >
-            Dashboard
-          </Link>
-          <span style={{ color: "#E8E2D4" }}>&gt;</span>
-          <span style={{ color: "#8A6B2E", fontWeight: 600 }}>Shortlist & Auditions</span>
-        </nav>
+      {/* =========================================================================
+          LEVEL 1: OPPORTUNITY CARDS (DEFAULT VIEW)
+          ========================================================================= */}
+      {!selectedOpp ? (
+        <div className="v-level1-container">
+          {/* Header */}
+          <div className="v-page-header-wrap">
+            <nav aria-label="Breadcrumb" className="v-breadcrumb-nav">
+              <Link href="/recruiter/dashboard" className="v-breadcrumb-link">
+                Organization Dashboard
+              </Link>
+              <span className="v-breadcrumb-sep">&gt;</span>
+              <span className="v-breadcrumb-active">Shortlist &amp; Auditions</span>
+            </nav>
 
-        <div>
-          <h1
-            className="v-page-title"
-            style={{
-              fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
-              fontSize: "clamp(28px, 4vw, 40px)",
-              lineHeight: 1.2,
-              fontWeight: 600,
-              color: "#2B2D2A",
-              margin: "0 0 8px 0",
-              letterSpacing: "-0.015em",
-            }}
-          >
-            Shortlist & Auditions
-          </h1>
-          <p
-            className="v-page-description"
-            style={{
-              fontSize: "16px",
-              lineHeight: 1.5,
-              color: "#5A584F",
-              margin: 0,
-              maxWidth: "760px",
-              fontFamily: "var(--font-body), 'Inter', sans-serif",
-            }}
-          >
-            Move shortlisted talent through audition and review self-tapes before making the final selection.
-          </p>
-        </div>
-      </div>
-
-      {/* Filter Toolbar Card (Single White Card) */}
-      <div
-        style={{
-          backgroundColor: "#FFFFFF",
-          border: "1px solid #E8E2D4",
-          borderRadius: "16px",
-          padding: "20px 24px",
-          boxShadow: "0 2px 12px rgba(43, 45, 42, 0.03)",
-          marginBottom: "28px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "16px",
-        }}
-        className="v-toolbar-card"
-      >
-        {/* Top Row: Opportunity Select + Search */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            flexWrap: "wrap",
-            width: "100%",
-          }}
-          className="v-toolbar-top"
-        >
-          <select
-            className="v-opp-select"
-            value={selectedOppId}
-            onChange={(e) => setSelectedOppId(e.target.value)}
-            aria-label="Filter Opportunity"
-            style={{
-              width: "280px",
-              height: "44px",
-              borderRadius: "10px",
-              border: "1px solid #E8E2D4",
-              backgroundColor: "#FFFFFF",
-              color: "#2B2D2A",
-              fontSize: "15px",
-              fontWeight: 500,
-              padding: "0 14px",
-              outline: "none",
-              cursor: "pointer",
-              fontFamily: "var(--font-body), 'Inter', sans-serif",
-              transition: "border-color 0.18s ease, box-shadow 0.18s ease",
-            }}
-          >
-            <option value="ALL">All opportunities ({orgOpportunities.length})</option>
-            {orgOpportunities.map((opp) => (
-              <option key={opp.id} value={opp.id}>
-                {opp.title}
-              </option>
-            ))}
-          </select>
-
-          <div
-            style={{
-              flex: "1 1 320px",
-              maxWidth: "460px",
-              marginLeft: "auto",
-              position: "relative",
-              display: "flex",
-              alignItems: "center",
-            }}
-            className="v-search-box"
-          >
-            <Search
-              size={16}
-              style={{
-                position: "absolute",
-                left: "14px",
-                color: "#5A584F",
-                pointerEvents: "none",
-              }}
-            />
-            <input
-              className="v-search-input"
-              type="text"
-              placeholder="Search candidate, role or project"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              aria-label="Search"
-              style={{
-                width: "100%",
-                height: "44px",
-                borderRadius: "10px",
-                border: "1px solid #E8E2D4",
-                backgroundColor: "#FFFFFF",
-                color: "#2B2D2A",
-                fontSize: "14px",
-                padding: "0 14px 0 40px",
-                outline: "none",
-                fontFamily: "var(--font-body), 'Inter', sans-serif",
-                transition: "border-color 0.18s ease, box-shadow 0.18s ease",
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Bottom Row: Pill Tabs + Action Counter */}
-        <div
-          style={{
-            borderTop: "1px solid #E8E2D4",
-            paddingTop: "16px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "16px",
-            flexWrap: "wrap",
-            width: "100%",
-          }}
-          className="v-tabs-row"
-        >
-          <div
-            className="v-tabs-scroll-container"
-            role="tablist"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              flexWrap: "wrap",
-            }}
-          >
-            {TABS.map((tab) => {
-              const isActive = currentTab === tab.key;
-              const count = tabCounts[tab.key] || 0;
-
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setCurrentTab(tab.key)}
-                  style={{
-                    height: "40px",
-                    padding: "0 16px",
-                    borderRadius: "999px",
-                    fontFamily: "var(--font-body), 'Inter', sans-serif",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    border: "1px solid transparent",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    whiteSpace: "nowrap",
-                    transition: "all 0.18s ease",
-                    backgroundColor: isActive ? "#8A6B2E" : "transparent",
-                    color: isActive ? "#FFFFFF" : "#5A584F",
-                    boxShadow: isActive ? "0 2px 6px rgba(138, 107, 46, 0.25)" : "none",
-                  }}
-                  className={`v-tab-btn ${isActive ? "active" : ""}`}
-                >
-                  <span>{tab.label}</span>
-                  <span
-                    style={{
-                      height: "22px",
-                      minWidth: "22px",
-                      padding: "0 7px",
-                      borderRadius: "999px",
-                      backgroundColor: isActive ? "rgba(255, 255, 255, 0.22)" : "#F3EFE6",
-                      color: isActive ? "#FFFFFF" : "#2B2D2A",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      transition: "all 0.18s ease",
-                    }}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Need Action Indicator */}
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              fontSize: "13px",
-              fontWeight: 600,
-              color: "#6E5420",
-              whiteSpace: "nowrap",
-              marginLeft: "auto",
-            }}
-            className="v-need-action-tag"
-          >
-            <span
-              style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                backgroundColor: "#8A6B2E",
-                flexShrink: 0,
-              }}
-            />
-            <span>
-              <strong style={{ color: "#2B2D2A", fontWeight: 700 }}>{needActionCount}</strong> need your action
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Candidate Standalone Grid */}
-      <div className="v-candidate-grid">
-        {displayApplications.length === 0 ? (
-          <div
-            className="v-empty-state-card"
-            style={{
-              gridColumn: "1 / -1",
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #E8E2D4",
-              borderRadius: "20px",
-              padding: "56px 24px",
-              textAlign: "center",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "12px",
-              boxShadow: "0 2px 8px rgba(43, 45, 42, 0.03)",
-            }}
-          >
-            <div
-              style={{
-                width: "64px",
-                height: "64px",
-                borderRadius: "50%",
-                backgroundColor: "#F3EFE6",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#8A6B2E",
-                marginBottom: "4px",
-              }}
-            >
-              <Users size={32} />
+            <div className="v-header-title-row">
+              <h1 className="v-page-title">Shortlist &amp; Auditions</h1>
+              <span className="v-pill-opportunities">{orgOpportunities.length} OPPORTUNITIES</span>
             </div>
-            <h3
-              style={{
-                fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
-                fontSize: "22px",
-                fontWeight: 600,
-                color: "#2B2D2A",
-                margin: 0,
-              }}
-            >
-              No candidates found
-            </h3>
-            <p style={{ color: "#5A584F", fontSize: "14px", margin: 0, maxWidth: "420px", lineHeight: 1.5 }}>
-              Try selecting another stage filter or search term to view candidates.
+
+            <p className="v-page-description">
+              Choose an opportunity to review the talents who applied to it.
             </p>
           </div>
-        ) : (
-          displayApplications.map((app) => {
-            const prof = app.talentProfile || {};
-            const aud = getAuditionForApp(app.id);
-            const opp = getOpportunityForApp(app.opportunityId);
-            const proj = getProjectForOpp(opp);
-            const stage = getAppStage(app);
-            const isClosed = stage === "no";
-            const profileUrl = `/recruiter/applications/${app.id}?from=shortlist&opp=${app.opportunityId}`;
 
-            const isActionShort = stage === "short";
-            const isActionRev = stage === "rev";
+          {/* Cards Grid or Empty State */}
+          {orgOpportunities.length === 0 ? (
+            <div className="v-empty-state-card">
+              <div className="v-empty-icon-wrap">
+                <FolderKanban size={32} />
+              </div>
+              <h3 className="v-empty-title">No Opportunities Found</h3>
+              <p className="v-empty-desc">
+                Post your first casting opportunity to review applicants, manage shortlists, and request self-tape auditions.
+              </p>
+              <Link href="/recruiter/opportunities/new" className="v-empty-action-btn">
+                Post Opportunity
+              </Link>
+            </div>
+          ) : (
+            <div className="v-opportunity-grid">
+              {orgOpportunities.map((opp) => {
+                const stats = getOpportunityStats(opp.id);
+                const isClosed =
+                  opp.status === "Completed" ||
+                  opp.status === "Cancelled" ||
+                  opp.status === "Closed";
+                const typeBadge = (opp.opportunityType || "CASTING CALL").toUpperCase();
+                const city = opp.location || opp.eligibility?.location || "Mumbai";
+                const postedDate = formatPostedDate(opp.publishedAt || opp.createdAt);
 
-            return (
-              <article
-                key={`candidate-card-${app.id}`}
-                className={`v-candidate-card ${isClosed ? "closed-card" : ""}`}
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  border: "1px solid #E8E2D4",
-                  borderRadius: "20px",
-                  padding: "22px",
-                  boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
-                  display: "flex",
-                  flexDirection: "column",
-                  height: "100%",
-                  boxSizing: "border-box",
-                  transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
-                  gap: "14px",
-                }}
-              >
-                {/* 1. Candidate Info: Avatar + Name + Age/City */}
-                <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                  <Link
-                    href={profileUrl}
-                    style={{
-                      display: "flex",
-                      textDecoration: "none",
-                      color: "inherit",
-                      flexShrink: 0,
+                return (
+                  <div
+                    key={`opp-card-${opp.id}`}
+                    className="v-opp-card"
+                    onClick={() => handleSelectOpportunity(opp.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        handleSelectOpportunity(opp.id);
+                      }
                     }}
                   >
-                    {prof.avatar ? (
-                      <img
-                        src={prof.avatar}
-                        alt={app.talentName}
-                        className="v-candidate-avatar"
-                        style={{
-                          width: "52px",
-                          height: "52px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                          border: "1px solid #E8E2D4",
-                          flexShrink: 0,
-                        }}
-                      />
-                    ) : (
-                      <div
-                        className="v-candidate-avatar"
-                        style={{
-                          width: "52px",
-                          height: "52px",
-                          borderRadius: "50%",
-                          backgroundColor: "#F3EFE6",
-                          border: "1px solid #E8E2D4",
-                          color: "#8A6B2E",
-                          fontSize: "16px",
-                          fontWeight: 700,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                          fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
-                        }}
-                      >
-                        {getInitials(app.talentName)}
+                    {/* 1. Top Row: Type Badge + Status Pill */}
+                    <div className="v-opp-card-top-row">
+                      <span className="v-opp-type-badge">{typeBadge}</span>
+                      {isClosed ? (
+                        <span className="v-opp-status-pill closed">CLOSED</span>
+                      ) : (
+                        <span className="v-opp-status-pill open">OPEN</span>
+                      )}
+                    </div>
+
+                    {/* 2. Opportunity Title (Playfair, 2 lines max) */}
+                    <h2 className="v-opp-card-title" title={opp.title}>
+                      {opp.title}
+                    </h2>
+
+                    {/* 3. Meta Line: city + "Posted <date>" */}
+                    <div className="v-opp-card-meta">
+                      <span>{city}</span>
+                      <span className="v-meta-dot">•</span>
+                      <span>Posted {postedDate}</span>
+                    </div>
+
+                    {/* 4. 3 Count Boxes Row: APPLIED, SHORTLIST, AUDITION */}
+                    <div className="v-opp-count-boxes-row">
+                      <div className="v-opp-count-box">
+                        <span className="v-opp-count-num">{stats.applied}</span>
+                        <span className="v-opp-count-lbl">APPLIED</span>
                       </div>
-                    )}
-                  </Link>
+                      <div className="v-opp-count-box">
+                        <span className="v-opp-count-num">{stats.shortlist}</span>
+                        <span className="v-opp-count-lbl">SHORTLIST</span>
+                      </div>
+                      <div className="v-opp-count-box">
+                        <span className="v-opp-count-num">{stats.audition}</span>
+                        <span className="v-opp-count-lbl">AUDITION</span>
+                      </div>
+                    </div>
 
-                  <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
-                    <Link
-                      href={profileUrl}
-                      className="v-candidate-name-link"
-                      style={{
-                        textDecoration: "none",
-                        color: "#2B2D2A",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        maxWidth: "100%",
-                      }}
-                      title={app.talentName}
-                    >
-                      <span
-                        style={{
-                          fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
-                          fontSize: "20px",
-                          fontWeight: 600,
-                          color: "#2B2D2A",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          lineHeight: 1.25,
-                        }}
-                        className="v-candidate-name-text"
-                      >
-                        {app.talentName}
-                      </span>
-                      <ExternalLink
-                        size={13}
-                        style={{ color: "#5A584F", flexShrink: 0, transition: "color 0.15s ease" }}
-                        className="v-link-icon"
-                      />
-                    </Link>
-                    <span
-                      className="v-candidate-meta-text"
-                      style={{
-                        fontSize: "13px",
-                        color: "#5A584F",
-                        lineHeight: 1.3,
-                        fontFamily: "var(--font-body), 'Inter', sans-serif",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {prof.age ? `${prof.age} yrs` : "—"} · {prof.city || "Mumbai"}
-                    </span>
+                    {/* 5. Bottom Full-width Button */}
+                    <div className="v-opp-card-bottom">
+                      {stats.applied > 0 ? (
+                        <button
+                          type="button"
+                          className="v-opp-card-btn filled"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectOpportunity(opp.id);
+                          }}
+                        >
+                          <span>VIEW APPLICANTS</span>
+                          <span className="v-arrow-glyph">→</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="v-opp-card-btn outlined disabled"
+                          disabled
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <span>NO APPLICANTS YET</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* =========================================================================
+            LEVEL 2: APPLICANTS FOR SELECTED OPPORTUNITY
+            ========================================================================= */
+        <div className="v-level2-container">
+          {/* Header */}
+          <div className="v-page-header-wrap">
+            <button
+              type="button"
+              onClick={handleBackToLevel1}
+              className="v-back-btn"
+            >
+              <ArrowLeft size={14} />
+              <span>← BACK TO OPPORTUNITIES</span>
+            </button>
 
-                {/* 2. Role & Project */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-                  <div
-                    className="v-candidate-role-text"
-                    style={{
-                      fontFamily: "var(--font-body), 'Inter', sans-serif",
-                      fontSize: "15px",
-                      fontWeight: 600,
-                      color: "#2B2D2A",
-                      lineHeight: 1.35,
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                    title={app.roleApplied}
-                  >
-                    {app.roleApplied}
-                  </div>
-                  <div
-                    className="v-candidate-proj-text"
-                    style={{
-                      fontSize: "13px",
-                      color: "#5A584F",
-                      lineHeight: 1.35,
-                      fontFamily: "var(--font-body), 'Inter', sans-serif",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                    title={getProjectRoleSubtitle(proj, opp)}
-                  >
-                    {getProjectRoleSubtitle(proj, opp)}
-                  </div>
-                </div>
+            <nav aria-label="Breadcrumb" className="v-breadcrumb-nav">
+              <button
+                type="button"
+                onClick={handleBackToLevel1}
+                className="v-breadcrumb-btn-link"
+              >
+                Shortlist &amp; Auditions
+              </button>
+              <span className="v-breadcrumb-sep">&gt;</span>
+              <span className="v-breadcrumb-active">{selectedOpp.title}</span>
+            </nav>
 
-                {/* 3. Status Line with Colored Pill */}
-                <div style={{ paddingTop: "2px" }}>
-                  {renderStatusPill(stage, app)}
-                </div>
+            <div className="v-header-title-row">
+              <h1 className="v-page-title">{selectedOpp.title}</h1>
+              <span className="v-pill-opp-meta">
+                {selectedOpp.opportunityType || "Opportunity"} · {selectedOpp.status || "Open"}
+              </span>
+            </div>
 
-                {/* 4. Action Row (Pinned to bottom with margin-top: auto) */}
-                <div
-                  style={{
-                    marginTop: "auto",
-                    paddingTop: "18px",
-                    display: "flex",
-                    gap: "10px",
-                    alignItems: "center",
-                    position: "relative",
-                  }}
-                  className="v-card-actions-row"
-                >
-                  {isActionShort ? (
+            <p className="v-page-subtitle">
+              {selectedOpp.roles?.[0]?.roleName || selectedOpp.opportunityType || "All Roles"} · {oppApplications.length} talents applied
+            </p>
+          </div>
+
+          {/* 3 Summary Boxes (APPLIED, SHORTLISTED, AUDITIONS) */}
+          <div className="v-summary-boxes-grid">
+            <div className="v-summary-box">
+              <span className="v-summary-box-lbl">APPLIED</span>
+              <span className="v-summary-box-num">{oppApplications.length}</span>
+              <span className="v-summary-box-desc">Total Submissions</span>
+            </div>
+            <div className="v-summary-box">
+              <span className="v-summary-box-lbl">SHORTLISTED</span>
+              <span className="v-summary-box-num">
+                {oppApplications.filter((a) => a.status === "Shortlisted" || a.status === "Selected").length}
+              </span>
+              <span className="v-summary-box-desc">Under Consideration</span>
+            </div>
+            <div className="v-summary-box">
+              <span className="v-summary-box-lbl">AUDITIONS</span>
+              <span className="v-summary-box-num">{oppAuditions.length}</span>
+              <span className="v-summary-box-desc">Self-tapes &amp; Relays</span>
+            </div>
+          </div>
+
+          {/* Toolbar: Search + Filter Chips */}
+          <div className="v-toolbar-card">
+            <div className="v-toolbar-top">
+              <div className="v-search-box">
+                <Search size={16} className="v-search-icon" />
+                <input
+                  className="v-search-input"
+                  type="text"
+                  placeholder="Search candidates by name, role or city..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search candidates"
+                />
+              </div>
+            </div>
+
+            <div className="v-tabs-row">
+              <div className="v-tabs-scroll-container" role="tablist">
+                {TABS.map((tab) => {
+                  const isActive = currentTab === tab.key;
+                  const count = tabCounts[tab.key] || 0;
+
+                  return (
                     <button
+                      key={tab.key}
                       type="button"
-                      onClick={() => handleOpenAuditionModal(app)}
-                      style={{
-                        flex: 1,
-                        height: "44px",
-                        backgroundColor: "#8A6B2E",
-                        color: "#FFFFFF",
-                        borderRadius: "10px",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        border: "none",
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "6px",
-                        fontFamily: "var(--font-body), 'Inter', sans-serif",
-                        boxShadow: "0 2px 6px rgba(138, 107, 46, 0.20)",
-                        transition: "all 0.18s ease",
-                        whiteSpace: "nowrap",
-                      }}
-                      className="v-card-primary-btn"
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => setCurrentTab(tab.key)}
+                      className={`v-tab-btn ${isActive ? "active" : ""}`}
                     >
-                      Request audition
+                      <span>{tab.label}</span>
+                      <span className="v-tab-count-pill">{count}</span>
                     </button>
-                  ) : isActionRev ? (
-                    <button
-                      type="button"
-                      onClick={() => handleOpenReviewModal(app)}
-                      style={{
-                        flex: 1,
-                        height: "44px",
-                        backgroundColor: "#8A6B2E",
-                        color: "#FFFFFF",
-                        borderRadius: "10px",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        border: "none",
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "6px",
-                        fontFamily: "var(--font-body), 'Inter', sans-serif",
-                        boxShadow: "0 2px 6px rgba(138, 107, 46, 0.20)",
-                        transition: "all 0.18s ease",
-                        whiteSpace: "nowrap",
-                      }}
-                      className="v-card-primary-btn"
-                    >
-                      Review self-tape
-                    </button>
-                  ) : stage === "req" || stage === "tal" ? (
-                    <Link
-                      href={profileUrl}
-                      style={{
-                        flex: 1,
-                        height: "44px",
-                        backgroundColor: "#8A6B2E",
-                        color: "#FFFFFF",
-                        borderRadius: "10px",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        border: "none",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "6px",
-                        textDecoration: "none",
-                        fontFamily: "var(--font-body), 'Inter', sans-serif",
-                        boxShadow: "0 2px 6px rgba(138, 107, 46, 0.20)",
-                        transition: "all 0.18s ease",
-                        whiteSpace: "nowrap",
-                      }}
-                      className="v-card-primary-btn"
-                    >
-                      View audition
-                    </Link>
-                  ) : (
-                    <Link
-                      href={profileUrl}
-                      style={{
-                        flex: 1,
-                        height: "44px",
-                        backgroundColor: "#8A6B2E",
-                        color: "#FFFFFF",
-                        borderRadius: "10px",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        border: "none",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "6px",
-                        textDecoration: "none",
-                        fontFamily: "var(--font-body), 'Inter', sans-serif",
-                        boxShadow: "0 2px 6px rgba(138, 107, 46, 0.20)",
-                        transition: "all 0.18s ease",
-                        whiteSpace: "nowrap",
-                      }}
-                      className="v-card-primary-btn"
-                    >
-                      View profile
-                    </Link>
-                  )}
+                  );
+                })}
+              </div>
 
-                  {/* Overflow "..." Menu Button on all cards */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveMenuAppId(activeMenuAppId === app.id ? null : app.id);
-                    }}
-                    style={{
-                      width: "44px",
-                      height: "44px",
-                      flex: "0 0 44px",
-                      borderRadius: "10px",
-                      border: "1px solid #E8E2D4",
-                      backgroundColor: "#FFFFFF",
-                      color: "#5A584F",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      transition: "all 0.18s ease",
-                    }}
-                    className="v-card-menu-btn"
-                    aria-label="More options"
+              {needActionCount > 0 && (
+                <div className="v-need-action-tag">
+                  <span className="v-action-dot" />
+                  <span>
+                    <strong>{needActionCount}</strong> need your action
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Candidate Cards Grid */}
+          <div className="v-candidate-grid">
+            {displayApplications.length === 0 ? (
+              <div className="v-empty-state-card">
+                <div className="v-empty-icon-wrap">
+                  <Users size={32} />
+                </div>
+                <h3 className="v-empty-title">No candidates found</h3>
+                <p className="v-empty-desc">
+                  {searchQuery
+                    ? `No candidates matching "${searchQuery}" for this filter.`
+                    : "No candidates currently in this stage for this opportunity."}
+                </p>
+              </div>
+            ) : (
+              displayApplications.map((app) => {
+                const prof = app.talentProfile || {};
+                const aud = getAuditionForApp(app.id);
+                const proj = getProjectForOpp(selectedOpp);
+                const stage = getAppStage(app);
+                const isClosed = stage === "no";
+                const profileUrl = `/recruiter/applications/${app.id}?from=shortlist&opp=${app.opportunityId}`;
+
+                const isActionShort = stage === "short";
+                const isActionRev = stage === "rev";
+                const isApplied = stage === "applied";
+
+                return (
+                  <article
+                    key={`candidate-card-${app.id}`}
+                    className={`v-candidate-card ${isClosed ? "closed-card" : ""}`}
                   >
-                    <MoreHorizontal size={18} />
-                  </button>
+                    {/* Top: Avatar + Name + Age/City */}
+                    <div className="v-candidate-top">
+                      <Link href={profileUrl} className="v-avatar-link">
+                        {prof.avatar ? (
+                          <img
+                            src={prof.avatar}
+                            alt={app.talentName}
+                            className="v-candidate-avatar"
+                          />
+                        ) : (
+                          <div className="v-candidate-avatar initials">
+                            {getInitials(app.talentName)}
+                          </div>
+                        )}
+                      </Link>
 
-                  {/* Dropdown Menu */}
-                  {activeMenuAppId === app.id && (
-                    <div
-                      ref={menuRef}
-                      style={{
-                        position: "absolute",
-                        bottom: "52px",
-                        right: 0,
-                        width: "190px",
-                        backgroundColor: "#FFFFFF",
-                        border: "1px solid #E8E2D4",
-                        borderRadius: "12px",
-                        boxShadow: "0 12px 32px rgba(43, 45, 42, 0.14)",
-                        padding: "6px",
-                        zIndex: 40,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "2px",
-                        textAlign: "left",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveMenuAppId(null);
-                          setSelectedModalApp(app);
-                          setSelectedNote("");
-                        }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          padding: "8px 10px",
-                          borderRadius: "8px",
-                          background: "transparent",
-                          border: "none",
-                          color: "#6E5420",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          fontFamily: "var(--font-body), 'Inter', sans-serif",
-                          cursor: "pointer",
-                          textAlign: "left",
-                          transition: "background-color 0.15s ease",
-                        }}
-                        className="v-menu-item-ok"
-                      >
-                        <CheckCircle2 size={14} style={{ color: "#8A6B2E" }} />
-                        <span>Select for role</span>
-                      </button>
+                      <div className="v-candidate-name-col">
+                        <Link
+                          href={profileUrl}
+                          className="v-candidate-name-link"
+                          title={app.talentName}
+                        >
+                          <span className="v-candidate-name-text">
+                            {app.talentName}
+                          </span>
+                          <ExternalLink size={13} className="v-link-icon" />
+                        </Link>
+                        <span className="v-candidate-meta-text">
+                          {prof.age ? `${prof.age} yrs` : "—"} · {prof.city || "Mumbai"}
+                        </span>
+                      </div>
+                    </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveMenuAppId(null);
-                          setNotSelectedModalApp(app);
-                          setNotSelectedReason("");
-                        }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          padding: "8px 10px",
-                          borderRadius: "8px",
-                          background: "transparent",
-                          border: "none",
-                          color: "#B42318",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          fontFamily: "var(--font-body), 'Inter', sans-serif",
-                          cursor: "pointer",
-                          textAlign: "left",
-                          transition: "background-color 0.15s ease",
-                        }}
-                        className="v-menu-item-danger"
-                      >
-                        <XCircle size={14} style={{ color: "#B42318" }} />
-                        <span>Not selected</span>
-                      </button>
+                    {/* Role Applied & Project Subtitle */}
+                    <div className="v-candidate-info-col">
+                      <div className="v-candidate-role-text" title={app.roleApplied}>
+                        {app.roleApplied}
+                      </div>
+                      <div className="v-candidate-applied-date">
+                        Applied on {formatPostedDate(app.appliedDate || app.appliedAt || app.createdAt)}
+                      </div>
+                    </div>
 
-                      <div style={{ height: "1px", backgroundColor: "#E8E2D4", margin: "4px 0" }} />
+                    {/* Status Pill */}
+                    <div className="v-candidate-status-wrap">
+                      {renderStatusPill(stage, app)}
+                    </div>
 
+                    {/* Actions Row */}
+                    <div className="v-card-actions-row">
+                      {/* VIEW button */}
                       <Link
                         href={profileUrl}
-                        onClick={() => setActiveMenuAppId(null)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          padding: "8px 10px",
-                          borderRadius: "8px",
-                          color: "#2B2D2A",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          fontFamily: "var(--font-body), 'Inter', sans-serif",
-                          textDecoration: "none",
-                          transition: "background-color 0.15s ease",
-                        }}
-                        className="v-menu-item-ghost"
+                        className="v-card-view-btn"
+                        title="View talent profile and comp-card"
                       >
-                        <Eye size={14} style={{ color: "#5A584F" }} />
-                        <span>View profile</span>
+                        <Eye size={14} />
+                        <span>VIEW</span>
                       </Link>
-                    </div>
-                  )}
-                </div>
-              </article>
-            );
-          })
-        )}
-      </div>
 
-      {/* MODAL 1: Review Self-Tape Modal (Light Theme) */}
+                      {/* Primary contextual action */}
+                      {isApplied ? (
+                        <button
+                          type="button"
+                          onClick={() => handleShortlistApplicant(app)}
+                          className="v-card-action-btn primary"
+                        >
+                          <Sparkles size={14} />
+                          <span>SHORTLIST</span>
+                        </button>
+                      ) : isActionShort ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAuditionModal(app)}
+                          className="v-card-action-btn primary"
+                        >
+                          <Video size={14} />
+                          <span>INVITE</span>
+                        </button>
+                      ) : isActionRev ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenReviewModal(app)}
+                          className="v-card-action-btn primary"
+                        >
+                          <Play size={14} />
+                          <span>TAPE</span>
+                        </button>
+                      ) : stage === "req" || stage === "tal" ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAuditionModal(app)}
+                          className="v-card-action-btn secondary"
+                        >
+                          <Clock size={14} />
+                          <span>AUDITION</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedModalApp(app);
+                            setSelectedNote("");
+                          }}
+                          className="v-card-action-btn secondary"
+                        >
+                          <CheckCircle2 size={14} />
+                          <span>SELECT</span>
+                        </button>
+                      )}
+
+                      {/* More Options Dropdown Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuAppId(activeMenuAppId === app.id ? null : app.id);
+                        }}
+                        className="v-card-menu-btn"
+                        aria-label="More options"
+                      >
+                        <MoreHorizontal size={17} />
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      {activeMenuAppId === app.id && (
+                        <div ref={menuRef} className="v-card-dropdown-menu">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuAppId(null);
+                              setSelectedModalApp(app);
+                              setSelectedNote("");
+                            }}
+                            className="v-menu-item-ok"
+                          >
+                            <CheckCircle2 size={14} />
+                            <span>Select for role</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuAppId(null);
+                              setNotSelectedModalApp(app);
+                              setNotSelectedReason("");
+                            }}
+                            className="v-menu-item-danger"
+                          >
+                            <XCircle size={14} />
+                            <span>Not selected</span>
+                          </button>
+
+                          <div className="v-menu-divider" />
+
+                          <Link
+                            href={profileUrl}
+                            onClick={() => setActiveMenuAppId(null)}
+                            className="v-menu-item-ghost"
+                          >
+                            <Eye size={14} />
+                            <span>View profile</span>
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODALS PRESERVED WITH SAME LOGIC
+          ========================================================================= */}
+      {/* MODAL 1: Review Self-Tape */}
       {reviewVideoModalApp && (() => {
         const app = reviewVideoModalApp;
         const aud = getAuditionForApp(app.id);
-        const opp = getOpportunityForApp(app.opportunityId);
+        const opp = selectedOpp || opportunities.find((o) => o.id === app.opportunityId);
         const profileUrl = `/recruiter/applications/${app.id}?from=shortlist&opp=${app.opportunityId}`;
 
         return (
@@ -1322,34 +906,8 @@ export default function ShortlistAuditionsPage() {
             subtitle={`Audition for ${app.roleApplied} • ${opp?.title || "Opportunity"}`}
             maxWidth="640px"
             footer={
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  width: "100%",
-                  gap: "10px",
-                  flexWrap: "wrap",
-                }}
-              >
-                <Link
-                  href={profileUrl}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    height: "40px",
-                    padding: "0 14px",
-                    borderRadius: "10px",
-                    backgroundColor: "#FFFFFF",
-                    border: "1px solid #E8E2D4",
-                    color: "#5A584F",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                  }}
-                  className="v-modal-ghost-btn"
-                >
+              <div className="v-modal-footer-row">
+                <Link href={profileUrl} className="v-modal-ghost-btn">
                   <Eye size={15} />
                   <span>View profile</span>
                 </Link>
@@ -1360,20 +918,6 @@ export default function ShortlistAuditionsPage() {
                     onClick={() => {
                       setNotSelectedModalApp(app);
                       setNotSelectedReason("");
-                    }}
-                    style={{
-                      height: "40px",
-                      padding: "0 14px",
-                      borderRadius: "10px",
-                      background: "transparent",
-                      border: "1px solid rgba(180, 35, 24, 0.3)",
-                      color: "#B42318",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px",
                     }}
                     className="v-modal-danger-btn"
                   >
@@ -1386,21 +930,6 @@ export default function ShortlistAuditionsPage() {
                     onClick={() => {
                       setSelectedModalApp(app);
                       setSelectedNote("");
-                    }}
-                    style={{
-                      height: "40px",
-                      padding: "0 18px",
-                      borderRadius: "10px",
-                      backgroundColor: "#8A6B2E",
-                      color: "#FFFFFF",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      border: "none",
-                      boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px",
                     }}
                     className="v-modal-primary-btn"
                   >
@@ -1420,15 +949,7 @@ export default function ShortlistAuditionsPage() {
                 />
               </div>
 
-              <div
-                style={{
-                  backgroundColor: "#F3EFE6",
-                  border: "1px solid #E8E2D4",
-                  borderRadius: "12px",
-                  padding: "16px",
-                  fontSize: "13px",
-                }}
-              >
+              <div className="v-modal-instructions-box">
                 <div style={{ fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
                   Audition Instructions Relayed by Vismaya:
                 </div>
@@ -1441,7 +962,7 @@ export default function ShortlistAuditionsPage() {
         );
       })()}
 
-      {/* MODAL 2: Request Audition Modal (Light Theme) */}
+      {/* MODAL 2: Request Audition */}
       {auditionModalApp && (
         <Modal
           isOpen={!!auditionModalApp}
@@ -1451,57 +972,30 @@ export default function ShortlistAuditionsPage() {
           maxWidth="560px"
         >
           <form onSubmit={handleSubmitAudition} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <p style={{ fontSize: "13.5px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
-              The Vismaya Casting Desk coordinates with the talent and relays instructions directly.
-            </p>
-
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
-                Audition Type *
+                Audition Format *
               </label>
               <select
                 value={auditionType}
                 onChange={(e) => setAuditionType(e.target.value)}
-                style={{
-                  height: "42px",
-                  backgroundColor: "#FFFFFF",
-                  border: "1px solid #E8E2D4",
-                  borderRadius: "10px",
-                  padding: "0 14px",
-                  color: "#2B2D2A",
-                  fontSize: "13.5px",
-                  fontWeight: 500,
-                  outline: "none",
-                  cursor: "pointer",
-                }}
+                className="v-modal-input"
               >
-                <option value="Audition">
-                  Self-Tape Audition (Video Submission)
-                </option>
-                <option value="Interview">
-                  1-on-1 Virtual Interview
-                </option>
+                <option value="Audition">Video Self-Tape (Standard Submission)</option>
+                <option value="Virtual Interview">Live Virtual Audition (Google Meet / Zoom)</option>
+                <option value="Screen Test">Physical Studio Callback</option>
               </select>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
-                Preferred Date (Optional)
+                Deadline / Target Date (Optional)
               </label>
               <input
                 type="date"
                 value={auditionDate}
                 onChange={(e) => setAuditionDate(e.target.value)}
-                style={{
-                  height: "42px",
-                  backgroundColor: "#FFFFFF",
-                  border: "1px solid #E8E2D4",
-                  borderRadius: "10px",
-                  padding: "0 14px",
-                  color: "#2B2D2A",
-                  fontSize: "13.5px",
-                  outline: "none",
-                }}
+                className="v-modal-input"
               />
             </div>
 
@@ -1515,58 +1009,19 @@ export default function ShortlistAuditionsPage() {
                 value={auditionNote}
                 onChange={(e) => setAuditionNote(e.target.value)}
                 placeholder="Specify monologue, scenes, or dialogue directions..."
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  border: "1px solid #E8E2D4",
-                  borderRadius: "10px",
-                  padding: "12px 14px",
-                  color: "#2B2D2A",
-                  fontSize: "13.5px",
-                  outline: "none",
-                  resize: "vertical",
-                  lineHeight: 1.5,
-                  fontFamily: "var(--font-body), 'Inter', sans-serif",
-                }}
+                className="v-modal-textarea"
               />
             </div>
 
-            <div
-              style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}
-              className="v-modal-footer-btns"
-            >
+            <div className="v-modal-footer-btns">
               <button
                 type="button"
                 onClick={() => setAuditionModalApp(null)}
-                style={{
-                  height: "42px",
-                  padding: "0 16px",
-                  borderRadius: "10px",
-                  background: "#FFFFFF",
-                  border: "1px solid #E8E2D4",
-                  color: "#2B2D2A",
-                  fontSize: "13.5px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
+                className="v-modal-cancel-btn"
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                style={{
-                  height: "42px",
-                  padding: "0 20px",
-                  borderRadius: "10px",
-                  backgroundColor: "#8A6B2E",
-                  color: "#FFFFFF",
-                  fontSize: "13.5px",
-                  fontWeight: 600,
-                  border: "none",
-                  boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
-                  cursor: "pointer",
-                }}
-                className="v-modal-primary-btn"
-              >
+              <button type="submit" className="v-modal-submit-btn">
                 Send Request via Vismaya
               </button>
             </div>
@@ -1574,7 +1029,7 @@ export default function ShortlistAuditionsPage() {
         </Modal>
       )}
 
-      {/* MODAL 3: Confirm Role Selection Modal (Light Theme) */}
+      {/* MODAL 3: Confirm Role Selection */}
       {selectedModalApp && (
         <Modal
           isOpen={!!selectedModalApp}
@@ -1583,24 +1038,14 @@ export default function ShortlistAuditionsPage() {
           maxWidth="520px"
         >
           <form onSubmit={handleConfirmSelect} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div
-              style={{
-                backgroundColor: "rgba(138, 107, 46, 0.08)",
-                border: "1px solid rgba(138, 107, 46, 0.22)",
-                borderRadius: "12px",
-                padding: "16px",
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "12px",
-              }}
-            >
+            <div className="v-modal-confirm-banner">
               <CheckCircle2 size={22} style={{ color: "#8A6B2E", flexShrink: 0, marginTop: "2px" }} />
               <div>
                 <strong style={{ fontSize: "14px", color: "#2B2D2A", display: "block" }}>
                   Select {selectedModalApp.talentName} for {selectedModalApp.roleApplied}
                 </strong>
                 <p style={{ fontSize: "12px", color: "#5A584F", margin: "4px 0 0 0", lineHeight: 1.4 }}>
-                  This decision is final and recorded in the audit trail.
+                  This decision will be updated in the talent pipeline.
                 </p>
               </div>
             </div>
@@ -1614,57 +1059,19 @@ export default function ShortlistAuditionsPage() {
                 value={selectedNote}
                 onChange={(e) => setSelectedNote(e.target.value)}
                 placeholder="E.g. Approved by Director for production contracting."
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  border: "1px solid #E8E2D4",
-                  borderRadius: "10px",
-                  padding: "12px 14px",
-                  color: "#2B2D2A",
-                  fontSize: "13.5px",
-                  outline: "none",
-                  resize: "vertical",
-                  fontFamily: "var(--font-body), 'Inter', sans-serif",
-                }}
+                className="v-modal-textarea"
               />
             </div>
 
-            <div
-              style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}
-              className="v-modal-footer-btns"
-            >
+            <div className="v-modal-footer-btns">
               <button
                 type="button"
                 onClick={() => setSelectedModalApp(null)}
-                style={{
-                  height: "42px",
-                  padding: "0 16px",
-                  borderRadius: "10px",
-                  background: "#FFFFFF",
-                  border: "1px solid #E8E2D4",
-                  color: "#2B2D2A",
-                  fontSize: "13.5px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
+                className="v-modal-cancel-btn"
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                style={{
-                  height: "42px",
-                  padding: "0 20px",
-                  borderRadius: "10px",
-                  backgroundColor: "#8A6B2E",
-                  color: "#FFFFFF",
-                  fontSize: "13.5px",
-                  fontWeight: 600,
-                  border: "none",
-                  boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
-                  cursor: "pointer",
-                }}
-                className="v-modal-primary-btn"
-              >
+              <button type="submit" className="v-modal-submit-btn">
                 Confirm Selection
               </button>
             </div>
@@ -1672,7 +1079,7 @@ export default function ShortlistAuditionsPage() {
         </Modal>
       )}
 
-      {/* MODAL 4: Confirm Candidate Not Selected Modal (Light Theme) */}
+      {/* MODAL 4: Confirm Not Selected */}
       {notSelectedModalApp && (
         <Modal
           isOpen={!!notSelectedModalApp}
@@ -1682,7 +1089,7 @@ export default function ShortlistAuditionsPage() {
         >
           <form onSubmit={handleConfirmNotSelected} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
-              Are you sure you want to mark <strong style={{ color: "#2B2D2A" }}>{notSelectedModalApp.talentName}</strong> as Not Selected? This decision is final.
+              Are you sure you want to mark <strong style={{ color: "#2B2D2A" }}>{notSelectedModalApp.talentName}</strong> as Not Selected?
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -1694,56 +1101,19 @@ export default function ShortlistAuditionsPage() {
                 value={notSelectedReason}
                 onChange={(e) => setNotSelectedReason(e.target.value)}
                 placeholder="E.g. Role cast with alternative character reference."
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  border: "1px solid #E8E2D4",
-                  borderRadius: "10px",
-                  padding: "12px 14px",
-                  color: "#2B2D2A",
-                  fontSize: "13.5px",
-                  outline: "none",
-                  resize: "vertical",
-                  fontFamily: "var(--font-body), 'Inter', sans-serif",
-                }}
+                className="v-modal-textarea"
               />
             </div>
 
-            <div
-              style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}
-              className="v-modal-footer-btns"
-            >
+            <div className="v-modal-footer-btns">
               <button
                 type="button"
                 onClick={() => setNotSelectedModalApp(null)}
-                style={{
-                  height: "42px",
-                  padding: "0 16px",
-                  borderRadius: "10px",
-                  background: "#FFFFFF",
-                  border: "1px solid #E8E2D4",
-                  color: "#2B2D2A",
-                  fontSize: "13.5px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
+                className="v-modal-cancel-btn"
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                style={{
-                  height: "42px",
-                  padding: "0 20px",
-                  borderRadius: "10px",
-                  backgroundColor: "#B42318",
-                  color: "#FFFFFF",
-                  fontSize: "13.5px",
-                  fontWeight: 600,
-                  border: "none",
-                  boxShadow: "0 2px 8px rgba(180, 35, 24, 0.22)",
-                  cursor: "pointer",
-                }}
-              >
+              <button type="submit" className="v-modal-danger-submit-btn">
                 Confirm Not Selected
               </button>
             </div>
@@ -1767,448 +1137,1349 @@ export default function ShortlistAuditionsPage() {
         .v-shortlist-page-wrapper {
           display: flex;
           flex-direction: column;
-          gap: 0;
+          width: 100%;
           color: #2B2D2A;
           font-family: var(--font-body), 'Inter', sans-serif;
         }
 
-        .v-shortlist-page-wrapper .v-breadcrumb-link:hover {
-          color: #8A6B2E !important;
+        .v-toast-notification {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          z-index: 150;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          box-shadow: 0 8px 24px rgba(43, 45, 42, 0.12);
+          border-radius: 12px;
+          padding: 14px 20px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: #2B2D2A;
+          font-size: 13.5px;
+          font-weight: 600;
+          animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .v-shortlist-page-wrapper .v-opp-select:focus,
-        .v-shortlist-page-wrapper .v-search-input:focus {
-          border-color: #8A6B2E !important;
-          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
+        /* Header & Breadcrumb */
+        .v-page-header-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-bottom: 24px;
+        }
+        .v-breadcrumb-nav {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 13px;
+          color: #5A584F;
+          font-family: var(--font-body), 'Inter', sans-serif;
+        }
+        .v-breadcrumb-link,
+        .v-breadcrumb-btn-link {
+          color: #5A584F;
+          text-decoration: none;
+          background: none;
+          border: none;
+          padding: 0;
+          font-size: inherit;
+          font-family: inherit;
+          cursor: pointer;
+          transition: color 0.15s ease;
+        }
+        .v-breadcrumb-link:hover,
+        .v-breadcrumb-btn-link:hover {
+          color: #8A6B2E;
+        }
+        .v-breadcrumb-sep {
+          color: #E8E2D4;
+        }
+        .v-breadcrumb-active {
+          color: #8A6B2E;
+          font-weight: 600;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
-        .v-shortlist-page-wrapper .v-tab-btn:not(.active):hover {
-          background-color: #F3EFE6 !important;
-          color: #2B2D2A !important;
+        .v-back-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          align-self: flex-start;
+          height: 32px;
+          padding: 0 12px;
+          border-radius: 8px;
+          background-color: #F3EFE6;
+          border: 1px solid #E8E2D4;
+          color: #8A6B2E;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          cursor: pointer;
+          transition: all 0.18s ease;
+          margin-bottom: 4px;
+        }
+        .v-back-btn:hover {
+          background-color: #E8E2D4;
+          color: #6E5420;
         }
 
-        .v-shortlist-page-wrapper .v-candidate-card:hover {
-          transform: translateY(-3px) !important;
-          border-color: #C9A55C !important;
-          box-shadow: 0 4px 8px rgba(43, 45, 42, 0.06), 0 16px 32px rgba(43, 45, 42, 0.08) !important;
+        .v-header-title-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+        .v-page-title {
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: clamp(26px, 3.5vw, 36px);
+          line-height: 1.2;
+          font-weight: 600;
+          color: "#2B2D2A";
+          margin: 0;
+          letter-spacing: -0.015em;
+        }
+        .v-pill-opportunities {
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          padding: 4px 10px;
+          border-radius: 999px;
+          background-color: #F3EFE6;
+          border: 1px solid #E8E2D4;
+          color: #8A6B2E;
+        }
+        .v-pill-opp-meta {
+          font-size: 12px;
+          font-weight: 600;
+          padding: 4px 12px;
+          border-radius: 999px;
+          background-color: #F3EFE6;
+          border: 1px solid #E8E2D4;
+          color: #8A6B2E;
+        }
+        .v-page-description,
+        .v-page-subtitle {
+          font-size: 15px;
+          line-height: 1.5;
+          color: #5A584F;
+          margin: 0;
+          font-family: var(--font-body), 'Inter', sans-serif;
         }
 
-        .v-shortlist-page-wrapper .v-candidate-card.closed-card {
-          opacity: 0.78;
-        }
-
-        .v-shortlist-page-wrapper .v-candidate-name-link:hover .v-candidate-name-text {
-          color: #8A6B2E !important;
-        }
-        .v-shortlist-page-wrapper .v-candidate-name-link:hover .v-link-icon {
-          color: #8A6B2E !important;
-        }
-
-        .v-shortlist-page-wrapper .v-card-primary-btn:hover {
-          background-color: #6E5420 !important;
-          transform: translateY(-1px);
-        }
-        .v-shortlist-page-wrapper .v-card-primary-btn:active {
-          transform: scale(0.98);
-        }
-
-        .v-shortlist-page-wrapper .v-card-menu-btn:hover {
-          border-color: #8A6B2E !important;
-          background-color: #F3EFE6 !important;
-          color: #8A6B2E !important;
-        }
-
-        .v-shortlist-page-wrapper .v-menu-item-ok:hover {
-          background-color: #F3EFE6 !important;
-        }
-        .v-shortlist-page-wrapper .v-menu-item-danger:hover {
-          background-color: rgba(180, 35, 24, 0.08) !important;
-        }
-        .v-shortlist-page-wrapper .v-menu-item-ghost:hover {
-          background-color: #F3EFE6 !important;
-        }
-
-        .v-modal-ghost-btn:hover {
-          border-color: #8A6B2E !important;
-          background-color: #F3EFE6 !important;
-          color: #2B2D2A !important;
-        }
-        .v-modal-danger-btn:hover {
-          background-color: rgba(180, 35, 24, 0.08) !important;
-        }
-        .v-modal-primary-btn:hover {
-          background-color: #6E5420 !important;
-        }
-
-        /* GRID RESPONSIVE BREAKPOINTS (Desktop & Tablets above 768px untouched) */
-        .v-shortlist-page-wrapper .v-candidate-grid {
+        /* =========================================================================
+           LEVEL 1: OPPORTUNITY GRID & CARDS
+           ========================================================================= */
+        .v-opportunity-grid {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 24px;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 20px;
           align-items: stretch;
           margin-bottom: 32px;
         }
-
-        @media (max-width: 1280px) {
-          .v-shortlist-page-wrapper .v-candidate-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-            gap: 16px !important;
-          }
-          .v-shortlist-page-wrapper .v-candidate-card {
-            padding: 18px 16px !important;
-          }
-          .v-shortlist-page-wrapper .v-candidate-name-text {
-            font-size: 18px !important;
-          }
-          .v-shortlist-page-wrapper .v-card-primary-btn {
-            font-size: 13px !important;
-            padding: 0 8px !important;
-          }
+        .v-opp-card {
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          border-radius: 16px;
+          padding: 22px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          box-shadow: 0 2px 4px rgba(43, 45, 42, 0.03), 0 8px 20px rgba(43, 45, 42, 0.04);
+          cursor: pointer;
+          transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+          outline: none;
+        }
+        .v-opp-card:hover {
+          border-color: #8A6B2E;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(43, 45, 42, 0.05), 0 16px 28px rgba(43, 45, 42, 0.08);
+        }
+        .v-opp-card-top-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .v-opp-type-badge {
+          font-size: 10.5px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #8A6B2E;
+          background-color: rgba(138, 107, 46, 0.08);
+          border: 1px solid rgba(138, 107, 46, 0.22);
+          border-radius: 6px;
+          padding: 3px 8px;
+        }
+        .v-opp-status-pill {
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          padding: 2px 9px;
+          border-radius: 999px;
+        }
+        .v-opp-status-pill.open {
+          border: 1px solid #C9A55C;
+          color: #8A6B2E;
+          background: transparent;
+        }
+        .v-opp-status-pill.closed {
+          border: 1px solid #E8E2D4;
+          color: #5A584F;
+          background: #F3EFE6;
+        }
+        .v-opp-card-title {
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: 19px;
+          line-height: 1.35;
+          font-weight: 600;
+          color: #2B2D2A;
+          margin: 0;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .v-opp-card-meta {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 13px;
+          color: #5A584F;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .v-meta-dot {
+          color: #C9A55C;
+          font-weight: bold;
+        }
+        .v-opp-count-boxes-row {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 8px;
+          margin-top: 2px;
+        }
+        .v-opp-count-box {
+          background-color: #F3EFE6;
+          border: 1px solid #E8E2D4;
+          border-radius: 10px;
+          padding: 10px 6px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          text-align: center;
+        }
+        .v-opp-count-num {
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: 20px;
+          font-weight: 700;
+          color: #2B2D2A;
+          line-height: 1.1;
+        }
+        .v-opp-count-lbl {
+          font-size: 10px;
+          font-weight: 700;
+          color: #6E5420;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+        }
+        .v-opp-card-bottom {
+          margin-top: auto;
+          padding-top: 4px;
+        }
+        .v-opp-card-btn {
+          width: 100%;
+          height: 42px;
+          border-radius: 10px;
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: all 0.18s ease;
+          font-family: var(--font-body), 'Inter', sans-serif;
+        }
+        .v-opp-card-btn.filled {
+          background-color: #8A6B2E;
+          color: #FFFFFF;
+          border: none;
+          box-shadow: 0 2px 6px rgba(138, 107, 46, 0.20);
+        }
+        .v-opp-card-btn.filled:hover {
+          background-color: #6E5420;
+        }
+        .v-opp-card-btn.outlined.disabled {
+          background-color: transparent;
+          border: 1px solid #E8E2D4;
+          color: #5A584F;
+          cursor: default;
+          opacity: 0.85;
+        }
+        .v-arrow-glyph {
+          font-size: 15px;
+          transition: transform 0.18s ease;
+        }
+        .v-opp-card:hover .v-arrow-glyph {
+          transform: translateX(3px);
         }
 
-        @media (max-width: 899.98px) {
-          .v-shortlist-page-wrapper .v-candidate-grid {
+        /* =========================================================================
+           LEVEL 2: SUMMARY BOXES & TOOLBAR
+           ========================================================================= */
+        .v-summary-boxes-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+        .v-summary-box {
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          border-radius: 14px;
+          padding: 16px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          box-shadow: 0 2px 6px rgba(43, 45, 42, 0.02);
+        }
+        .v-summary-box-lbl {
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #6E5420;
+        }
+        .v-summary-box-num {
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: 26px;
+          font-weight: 700;
+          color: #2B2D2A;
+          line-height: 1.15;
+        }
+        .v-summary-box-desc {
+          font-size: 12px;
+          color: #5A584F;
+        }
+
+        /* Toolbar Card */
+        .v-toolbar-card {
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          border-radius: 16px;
+          padding: 18px 22px;
+          box-shadow: 0 2px 10px rgba(43, 45, 42, 0.03);
+          margin-bottom: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+        .v-toolbar-top {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          width: 100%;
+        }
+        .v-search-box {
+          position: relative;
+          display: flex;
+          align-items: center;
+          width: 100%;
+        }
+        .v-search-icon {
+          position: absolute;
+          left: 14px;
+          color: #5A584F;
+          pointer-events: none;
+        }
+        .v-search-input {
+          width: 100%;
+          height: 42px;
+          border-radius: 10px;
+          border: 1px solid #E8E2D4;
+          background-color: #FFFFFF;
+          color: #2B2D2A;
+          font-size: 14px;
+          padding: 0 14px 0 40px;
+          outline: none;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .v-search-input:focus {
+          border-color: #8A6B2E;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18);
+        }
+
+        .v-tabs-row {
+          border-top: 1px solid #E8E2D4;
+          padding-top: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          flex-wrap: wrap;
+          width: 100%;
+        }
+        .v-tabs-scroll-container {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .v-tab-btn {
+          height: 38px;
+          padding: 0 16px;
+          border-radius: 999px;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          font-size: 13.5px;
+          font-weight: 600;
+          cursor: pointer;
+          border: 1px solid transparent;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          white-space: nowrap;
+          transition: all 0.18s ease;
+          background-color: transparent;
+          color: #5A584F;
+        }
+        .v-tab-btn:not(.active):hover {
+          background-color: #F3EFE6;
+          color: #2B2D2A;
+        }
+        .v-tab-btn.active {
+          background-color: #8A6B2E;
+          color: #FFFFFF;
+          box-shadow: 0 2px 6px rgba(138, 107, 46, 0.25);
+        }
+        .v-tab-count-pill {
+          height: 20px;
+          min-width: 20px;
+          padding: 0 6px;
+          border-radius: 999px;
+          font-size: 11.5px;
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .v-tab-btn.active .v-tab-count-pill {
+          background-color: rgba(255, 255, 255, 0.24);
+          color: #FFFFFF;
+        }
+        .v-tab-btn:not(.active) .v-tab-count-pill {
+          background-color: #F3EFE6;
+          color: #2B2D2A;
+        }
+
+        .v-need-action-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #6E5420;
+          white-space: nowrap;
+          margin-left: auto;
+        }
+        .v-action-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: #8A6B2E;
+          flex-shrink: 0;
+        }
+
+        /* =========================================================================
+           LEVEL 2: CANDIDATE GRID & CARDS
+           ========================================================================= */
+        .v-candidate-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 20px;
+          align-items: stretch;
+          margin-bottom: 32px;
+        }
+        .v-candidate-card {
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          border-radius: 18px;
+          padding: 20px;
+          box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04), 0 10px 24px rgba(43, 45, 42, 0.05);
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          box-sizing: border-box;
+          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+          gap: 12px;
+        }
+        .v-candidate-card:hover {
+          transform: translateY(-2px);
+          border-color: #C9A55C;
+          box-shadow: 0 4px 8px rgba(43, 45, 42, 0.06), 0 14px 28px rgba(43, 45, 42, 0.08);
+        }
+        .v-candidate-card.closed-card {
+          opacity: 0.8;
+        }
+
+        .v-candidate-top {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .v-avatar-link {
+          display: flex;
+          text-decoration: none;
+          color: inherit;
+          flex-shrink: 0;
+        }
+        .v-candidate-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 1px solid #E8E2D4;
+          flex-shrink: 0;
+        }
+        .v-candidate-avatar.initials {
+          background-color: #F3EFE6;
+          color: #8A6B2E;
+          font-size: 16px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+        }
+        .v-candidate-name-col {
+          min-width: 0;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .v-candidate-name-link {
+          text-decoration: none;
+          color: #2B2D2A;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          max-width: 100%;
+        }
+        .v-candidate-name-text {
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: 19px;
+          font-weight: 600;
+          color: #2B2D2A;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          line-height: 1.25;
+          transition: color 0.15s ease;
+        }
+        .v-candidate-name-link:hover .v-candidate-name-text {
+          color: #8A6B2E;
+        }
+        .v-link-icon {
+          color: #5A584F;
+          flex-shrink: 0;
+          transition: color 0.15s ease;
+        }
+        .v-candidate-name-link:hover .v-link-icon {
+          color: #8A6B2E;
+        }
+        .v-candidate-meta-text {
+          font-size: 12.5px;
+          color: #5A584F;
+          line-height: 1.3;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .v-candidate-info-col {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .v-candidate-role-text {
+          font-size: 14.5px;
+          font-weight: 600;
+          color: #2B2D2A;
+          line-height: 1.35;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .v-candidate-applied-date {
+          font-size: 12px;
+          color: #5A584F;
+          line-height: 1.3;
+        }
+
+        /* Status Pills */
+        .v-candidate-status-wrap {
+          padding-top: 2px;
+        }
+        .v-stage-status-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11.5px;
+          font-weight: 700;
+          border-radius: 999px;
+          padding: 5px 11px;
+          width: fit-content;
+          line-height: 1;
+          white-space: nowrap;
+        }
+        .v-stage-status-pill .v-pill-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background-color: #8A6B2E;
+          flex-shrink: 0;
+        }
+        .v-stage-status-pill.rev {
+          background-color: #F3EFE6;
+          color: #2B2D2A;
+        }
+        .v-stage-status-pill.short {
+          background-color: rgba(138, 107, 46, 0.12);
+          color: #6E5420;
+        }
+        .v-stage-status-pill.aud {
+          background-color: rgba(201, 165, 92, 0.18);
+          color: #6E5420;
+        }
+        .v-stage-status-pill.sel {
+          background-color: rgba(138, 107, 46, 0.14);
+          color: #6E5420;
+        }
+        .v-stage-status-pill.no {
+          background-color: #F3EFE6;
+          color: #5A584F;
+        }
+        .v-stage-status-pill.applied {
+          background-color: #F3EFE6;
+          color: #5A584F;
+        }
+        .v-pill-time {
+          color: #5A584F;
+          font-variant-numeric: tabular-nums;
+          font-weight: 600;
+          font-size: 11px;
+          margin-left: 2px;
+        }
+
+        /* Action Buttons Row */
+        .v-card-actions-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: auto;
+          padding-top: 14px;
+          position: relative;
+        }
+        .v-card-view-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+          height: 40px;
+          padding: 0 12px;
+          border-radius: 9px;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          color: #5A584F;
+          font-size: 12.5px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: all 0.16s ease;
+        }
+        .v-card-view-btn:hover {
+          background-color: #F3EFE6;
+          color: #2B2D2A;
+          border-color: #8A6B2E;
+        }
+        .v-card-action-btn {
+          flex: 1;
+          height: 40px;
+          border-radius: 9px;
+          font-size: 12.5px;
+          font-weight: 600;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          cursor: pointer;
+          transition: all 0.16s ease;
+          border: none;
+          font-family: var(--font-body), 'Inter', sans-serif;
+        }
+        .v-card-action-btn.primary {
+          background-color: #8A6B2E;
+          color: #FFFFFF;
+          box-shadow: 0 2px 6px rgba(138, 107, 46, 0.20);
+        }
+        .v-card-action-btn.primary:hover {
+          background-color: #6E5420;
+        }
+        .v-card-action-btn.secondary {
+          background-color: #F3EFE6;
+          border: 1px solid #E8E2D4;
+          color: #6E5420;
+        }
+        .v-card-action-btn.secondary:hover {
+          background-color: #E8E2D4;
+          color: #2B2D2A;
+        }
+        .v-card-menu-btn {
+          width: 40px;
+          height: 40px;
+          flex: 0 0 40px;
+          border-radius: 9px;
+          border: 1px solid #E8E2D4;
+          background-color: #FFFFFF;
+          color: #5A584F;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.16s ease;
+        }
+        .v-card-menu-btn:hover {
+          border-color: #8A6B2E;
+          background-color: #F3EFE6;
+          color: #8A6B2E;
+        }
+
+        /* Dropdown Menu */
+        .v-card-dropdown-menu {
+          position: absolute;
+          bottom: 48px;
+          right: 0;
+          width: 180px;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          border-radius: 12px;
+          box-shadow: 0 10px 28px rgba(43, 45, 42, 0.12);
+          padding: 6px;
+          z-index: 40;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .v-menu-item-ok,
+        .v-menu-item-danger,
+        .v-menu-item-ghost {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 10px;
+          border-radius: 8px;
+          background: transparent;
+          border: none;
+          font-size: 13px;
+          font-weight: 600;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          cursor: pointer;
+          text-decoration: none;
+          transition: background-color 0.15s ease;
+        }
+        .v-menu-item-ok {
+          color: #6E5420;
+        }
+        .v-menu-item-ok:hover {
+          background-color: #F3EFE6;
+        }
+        .v-menu-item-danger {
+          color: #B42318;
+        }
+        .v-menu-item-danger:hover {
+          background-color: rgba(180, 35, 24, 0.08);
+        }
+        .v-menu-item-ghost {
+          color: #2B2D2A;
+        }
+        .v-menu-item-ghost:hover {
+          background-color: #F3EFE6;
+        }
+        .v-menu-divider {
+          height: 1px;
+          background-color: #E8E2D4;
+          margin: 4px 0;
+        }
+
+        /* Empty State Card */
+        .v-empty-state-card {
+          grid-column: 1 / -1;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          border-radius: 18px;
+          padding: 48px 24px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          box-shadow: 0 2px 8px rgba(43, 45, 42, 0.02);
+        }
+        .v-empty-icon-wrap {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background-color: #F3EFE6;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #8A6B2E;
+        }
+        .v-empty-title {
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: 20px;
+          font-weight: 600;
+          color: #2B2D2A;
+          margin: 0;
+        }
+        .v-empty-desc {
+          color: #5A584F;
+          font-size: 14px;
+          margin: 0;
+          max-width: 440px;
+          line-height: 1.5;
+        }
+        .v-empty-action-btn {
+          height: 40px;
+          padding: 0 20px;
+          border-radius: 10px;
+          background-color: #8A6B2E;
+          color: #FFFFFF;
+          font-size: 13.5px;
+          font-weight: 600;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          margin-top: 6px;
+          transition: background-color 0.16s ease;
+        }
+        .v-empty-action-btn:hover {
+          background-color: #6E5420;
+        }
+
+        /* Modals Generic Elements */
+        .v-modal-input,
+        .v-modal-textarea {
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          border-radius: 10px;
+          padding: 10px 14px;
+          color: #2B2D2A;
+          font-size: 13.5px;
+          outline: none;
+          font-family: var(--font-body), 'Inter', sans-serif;
+        }
+        .v-modal-input {
+          height: 42px;
+        }
+        .v-modal-textarea {
+          line-height: 1.5;
+          resize: vertical;
+        }
+        .v-modal-footer-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .v-modal-instructions-box {
+          background-color: #F3EFE6;
+          border: 1px solid #E8E2D4;
+          border-radius: 12px;
+          padding: 14px;
+          font-size: 13px;
+        }
+        .v-modal-confirm-banner {
+          background-color: rgba(138, 107, 46, 0.08);
+          border: 1px solid rgba(138, 107, 46, 0.22);
+          border-radius: 12px;
+          padding: 14px;
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+        }
+        .v-modal-footer-btns {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          margin-top: 8px;
+        }
+        .v-modal-cancel-btn {
+          height: 40px;
+          padding: 0 16px;
+          border-radius: 10px;
+          background: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          color: #2B2D2A;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .v-modal-submit-btn {
+          height: 40px;
+          padding: 0 20px;
+          border-radius: 10px;
+          background-color: #8A6B2E;
+          color: #FFFFFF;
+          font-size: 13px;
+          font-weight: 600;
+          border: none;
+          box-shadow: 0 2px 8px rgba(138, 107, 46, 0.22);
+          cursor: pointer;
+        }
+        .v-modal-submit-btn:hover {
+          background-color: #6E5420;
+        }
+        .v-modal-danger-submit-btn {
+          height: 40px;
+          padding: 0 20px;
+          border-radius: 10px;
+          background-color: #B42318;
+          color: #FFFFFF;
+          font-size: 13px;
+          font-weight: 600;
+          border: none;
+          box-shadow: 0 2px 8px rgba(180, 35, 24, 0.22);
+          cursor: pointer;
+        }
+        .v-modal-ghost-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          height: 38px;
+          padding: 0 14px;
+          border-radius: 9px;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          color: #5A584F;
+          font-size: 13px;
+          font-weight: 600;
+          text-decoration: none;
+        }
+        .v-modal-danger-btn {
+          height: 38px;
+          padding: 0 14px;
+          border-radius: 9px;
+          background: transparent;
+          border: 1px solid rgba(180, 35, 24, 0.3);
+          color: #B42318;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .v-modal-primary-btn {
+          height: 38px;
+          padding: 0 18px;
+          border-radius: 9px;
+          background-color: #8A6B2E;
+          color: #FFFFFF;
+          font-size: 13px;
+          font-weight: 600;
+          border: none;
+          box-shadow: 0 2px 8px rgba(138, 107, 46, 0.22);
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        /* =========================================================================
+           TABLET RESPONSIVENESS (641px - 1023.98px)
+           ========================================================================= */
+        @media (max-width: 1023.98px) {
+          .v-opportunity-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: 20px !important;
           }
-          .v-shortlist-page-wrapper .v-candidate-card {
-            padding: 22px !important;
-          }
-          .v-shortlist-page-wrapper .v-candidate-name-text {
-            font-size: 20px !important;
+          .v-candidate-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
           }
         }
 
-        /* MOBILE ONLY REDESIGN (max-width: 640px) */
+        /* =========================================================================
+           MOBILE RESPONSIVENESS (max-width: 640px)
+           - Header title 21px, meta 11-12px
+           - Cards gap 10px, no horizontal scroll
+           - Level 1: 1 column, count box num 15px & label 8.5px, btn 36px
+           - Level 2: action buttons full width equal row, height 36px
+           - Wrap chips onto 2 lines, no single line scroll
+           ========================================================================= */
+        /* =========================================================================
+           MOBILE RESPONSIVENESS (max-width: 640px)
+           - Root cause fix: minmax(0, 1fr) columns, box-sizing, min-width: 0
+           - Page wrapper padding 12px 14px, zero horizontal overflow
+           - Top row badge (9.5px, ellipsis) + status pill (9.5px, flex: none)
+           - Title 16px, line-height 1.25, 2 lines, word-break anywhere
+           - Meta flex-wrap, 11px
+           - 3 count boxes: repeat(3, minmax(0, 1fr)), gap 6px, padding 6px 2px, num 15px, lbl 8.5px
+           - Full-width button: 36px, 10.5px, letter-spacing 0.08em
+           - Header wrap, 21px title, 10px pill, 12px subtitle
+           - Top bar title ellipsis fit with icons
+           ========================================================================= */
         @media (max-width: 640px) {
-          /* D. Outer wrapper */
-          .v-shortlist-page-wrapper {
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
+          .recruiter-main-viewport:has(.v-shortlist-page-wrapper) {
             padding: 0 !important;
+          }
+
+          .v-shortlist-page-wrapper {
+            padding: 12px 14px !important;
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
             overflow-x: hidden !important;
           }
 
-          /* B. Header */
-          .v-shortlist-page-wrapper .v-page-header-wrap {
-            margin-bottom: 12px !important;
-            gap: 4px !important;
+          /* Topbar Title Fit on Mobile */
+          .recruiter-topbar-header {
+            box-sizing: border-box !important;
+            max-width: 100vw !important;
           }
-          .v-shortlist-page-wrapper .v-breadcrumb-nav {
-            font-size: 11.5px !important;
+          .recruiter-topbar-left {
+            min-width: 0 !important;
+            flex: 1 1 auto !important;
+            overflow: hidden !important;
+          }
+          .recruiter-topbar-title-wrap {
+            min-width: 0 !important;
+            flex: 1 1 auto !important;
+            overflow: hidden !important;
+          }
+          .recruiter-topbar-title {
+            font-size: 16px !important;
+            line-height: 1.25 !important;
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
-            gap: 6px !important;
-          }
-          .v-shortlist-page-wrapper .v-page-title {
-            font-size: 22px !important;
-            line-height: 1.25 !important;
-            margin: 0 0 4px 0 !important;
-          }
-          .v-shortlist-page-wrapper .v-page-description {
-            font-size: 13px !important;
-            line-height: 1.5 !important;
-            display: -webkit-box !important;
-            -webkit-line-clamp: 3 !important;
-            -webkit-box-orient: vertical !important;
-            overflow: hidden !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
           }
 
-          /* C. Toolbar card: single compact white card */
-          .v-shortlist-page-wrapper .v-toolbar-card {
+          /* Header */
+          .v-page-header-wrap {
+            margin-bottom: 14px !important;
+            gap: 6px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .v-breadcrumb-nav {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            font-size: 11.5px !important;
+            gap: 4px 6px !important;
+            white-space: normal !important;
+            min-width: 0 !important;
+            width: 100% !important;
+          }
+          .v-header-title-row {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            gap: 6px !important;
+            min-width: 0 !important;
+            width: 100% !important;
+          }
+          .v-page-title {
+            font-size: 21px !important;
+            line-height: 1.25 !important;
+          }
+          .v-pill-opportunities,
+          .v-pill-opp-meta {
+            font-size: 10px !important;
+            padding: 2px 8px !important;
+            white-space: nowrap !important;
+          }
+          .v-page-description,
+          .v-page-subtitle {
+            font-size: 12px !important;
+            line-height: 1.4 !important;
+          }
+
+          /* Back button */
+          .v-back-btn {
+            height: 28px !important;
+            padding: 0 10px !important;
+            font-size: 11px !important;
+          }
+
+          /* LEVEL 1: Container & Grid */
+          .v-level1-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            min-width: 0 !important;
+          }
+          .v-opportunity-grid {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+            gap: 10px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            margin-bottom: 18px !important;
+          }
+          .v-opportunity-grid > * {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+
+          /* LEVEL 1: Opportunity Card */
+          .v-opp-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 12px !important;
+            border-radius: 14px !important;
+            overflow: hidden !important;
+            min-width: 0 !important;
+            gap: 8px !important;
+          }
+          .v-opp-card-top-row {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            gap: 8px !important;
+            min-width: 0 !important;
+            width: 100% !important;
+          }
+          .v-opp-type-badge {
+            font-size: 9.5px !important;
+            padding: 3px 8px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            min-width: 0 !important;
+            flex: 0 1 auto !important;
+          }
+          .v-opp-status-pill {
+            font-size: 9.5px !important;
+            padding: 3px 8px !important;
+            flex: none !important;
+            white-space: nowrap !important;
+          }
+          .v-opp-card-title {
+            font-size: 16px !important;
+            line-height: 1.25 !important;
+            margin-top: 8px !important;
+            margin-bottom: 0 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
+          }
+          .v-opp-card-meta {
+            font-size: 11px !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            white-space: normal !important;
+            gap: 4px 8px !important;
+            min-width: 0 !important;
+          }
+
+          /* LEVEL 1: 3 Count Boxes */
+          .v-opp-count-boxes-row {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 6px !important;
+            margin: 10px 0 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .v-opp-count-box {
+            padding: 6px 2px !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+            text-align: center !important;
+            overflow: hidden !important;
+          }
+          .v-opp-count-num {
+            font-size: 15px !important;
+            line-height: 1.1 !important;
+          }
+          .v-opp-count-lbl {
+            font-size: 8.5px !important;
+            letter-spacing: 0.04em !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            display: block !important;
+          }
+
+          /* LEVEL 1: Button */
+          .v-opp-card-bottom {
+            width: 100% !important;
+            margin-top: auto !important;
+          }
+          .v-opp-card-btn {
+            width: 100% !important;
+            height: 36px !important;
+            min-height: 36px !important;
+            font-size: 10.5px !important;
+            letter-spacing: 0.08em !important;
+            box-sizing: border-box !important;
+            padding: 0 8px !important;
+            border-radius: 8px !important;
+          }
+
+          /* LEVEL 2: Summary Boxes Mobile */
+          .v-summary-boxes-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 6px !important;
+            margin-bottom: 12px !important;
+          }
+          .v-summary-box {
+            padding: 8px 6px !important;
+            border-radius: 10px !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 2px !important;
+          }
+          .v-summary-box-lbl {
+            font-size: 9px !important;
+          }
+          .v-summary-box-num {
+            font-size: 17px !important;
+          }
+          .v-summary-box-desc {
+            display: none !important;
+          }
+
+          /* LEVEL 2: Toolbar Mobile */
+          .v-toolbar-card {
             padding: 12px !important;
             border-radius: 14px !important;
             gap: 10px !important;
-            margin-bottom: 12px !important;
-            border: 1px solid #E8E2D4 !important;
-            box-shadow: 0 2px 8px rgba(43, 45, 42, 0.03) !important;
+            margin-bottom: 14px !important;
           }
-          .v-shortlist-page-wrapper .v-toolbar-top {
+          .v-search-input {
+            height: 38px !important;
+            font-size: 14px !important;
+            padding: 0 12px 0 36px !important;
+          }
+          .v-tabs-row {
+            padding-top: 8px !important;
+            gap: 8px !important;
             flex-direction: column !important;
             align-items: stretch !important;
-            gap: 8px !important;
-            width: 100% !important;
           }
-          .v-shortlist-page-wrapper .v-opp-select {
-            width: 100% !important;
-            height: 40px !important;
-            font-size: 16px !important;
-            border-radius: 8px !important;
-            padding: 0 10px !important;
-            text-overflow: ellipsis !important;
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            background-color: #FFFFFF !important;
-          }
-          .v-shortlist-page-wrapper .v-search-box {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin-left: 0 !important;
-            flex: 1 1 auto !important;
-          }
-          .v-shortlist-page-wrapper .v-search-input {
-            width: 100% !important;
-            height: 40px !important;
-            font-size: 16px !important;
-            padding: 0 12px 0 38px !important;
-            border-radius: 8px !important;
-          }
-          .v-shortlist-page-wrapper .v-search-box :global(svg) {
-            left: 12px !important;
-            width: 16px !important;
-            height: 16px !important;
-          }
-          .v-shortlist-page-wrapper .v-tabs-row {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 8px !important;
-            padding-top: 10px !important;
-            border-top: 1px solid #E8E2D4 !important;
-          }
-          .v-shortlist-page-wrapper .v-tabs-scroll-container {
+          .v-tabs-scroll-container {
             display: flex !important;
             flex-wrap: wrap !important;
             gap: 5px !important;
             overflow: visible !important;
             width: 100% !important;
-            max-width: 100% !important;
-            padding: 0 !important;
           }
-          .v-shortlist-page-wrapper .v-tab-btn {
-            flex: 1 1 auto !important;
+          .v-tab-btn {
             height: 28px !important;
             padding: 0 8px !important;
-            border-radius: 999px !important;
-            font-size: 10.5px !important;
-            font-weight: 600 !important;
-            white-space: nowrap !important;
-            gap: 5px !important;
+            font-size: 11px !important;
+            gap: 4px !important;
+            flex: 1 1 auto !important;
             justify-content: center !important;
           }
-          .v-shortlist-page-wrapper .v-tab-btn:not(.active) {
-            background-color: #FFFFFF !important;
-            border: 1px solid #E8E2D4 !important;
-            color: #5A584F !important;
-            box-shadow: none !important;
-          }
-          .v-shortlist-page-wrapper .v-tab-btn.active {
-            background-color: #8A6B2E !important;
-            border: 1px solid #8A6B2E !important;
-            color: #FFFFFF !important;
-            box-shadow: 0 1px 4px rgba(138, 107, 46, 0.20) !important;
-          }
-          .v-shortlist-page-wrapper .v-tab-btn span:last-child {
-            min-width: 16px !important;
+          .v-tab-count-pill {
             height: 16px !important;
+            min-width: 16px !important;
             font-size: 9.5px !important;
             padding: 0 4px !important;
-            border-radius: 999px !important;
-            line-height: 16px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
           }
-          .v-shortlist-page-wrapper .v-tab-btn.active span:last-child {
-            background-color: rgba(255, 255, 255, 0.24) !important;
-            color: #FFFFFF !important;
-          }
-          .v-shortlist-page-wrapper .v-tab-btn:not(.active) span:last-child {
-            background-color: #F3EFE6 !important;
-            color: #2B2D2A !important;
-          }
-          .v-shortlist-page-wrapper .v-need-action-tag {
-            font-size: 12px !important;
-            margin-top: 8px !important;
+          .v-need-action-tag {
+            font-size: 11.5px !important;
             margin-left: 0 !important;
-            gap: 6px !important;
-            color: #6E5420 !important;
-          }
-          .v-shortlist-page-wrapper .v-need-action-tag span:first-child {
-            width: 7px !important;
-            height: 7px !important;
+            margin-top: 2px !important;
           }
 
-          /* E. Candidate grid & cards */
-          .v-shortlist-page-wrapper .v-candidate-grid {
+          /* LEVEL 2: Candidate Cards Mobile */
+          .v-candidate-grid {
             display: flex !important;
             flex-direction: column !important;
             grid-template-columns: 1fr !important;
-            gap: 11px !important;
+            gap: 10px !important;
             margin-bottom: 20px !important;
-            width: 100% !important;
           }
-          .v-shortlist-page-wrapper .v-candidate-card {
-            background-color: #FFFFFF !important;
-            border: 1px solid #E8E2D4 !important;
+          .v-candidate-card {
+            padding: 14px !important;
             border-radius: 14px !important;
-            padding: 12px 14px !important;
-            height: auto !important;
-            min-height: 0 !important;
-            gap: 8px !important;
-            box-shadow: 0 1px 4px rgba(43, 45, 42, 0.04) !important;
-            transform: none !important;
+            gap: 10px !important;
           }
-          .v-shortlist-page-wrapper .v-candidate-avatar {
-            width: 44px !important;
-            height: 44px !important;
-            min-width: 44px !important;
-            min-height: 44px !important;
-            font-size: 14px !important;
-            border-radius: 50% !important;
+          .v-candidate-avatar {
+            width: 42px !important;
+            height: 42px !important;
           }
-          .v-shortlist-page-wrapper .v-candidate-name-text {
+          .v-candidate-name-text {
             font-size: 17px !important;
-            line-height: 1.25 !important;
           }
-          .v-shortlist-page-wrapper .v-candidate-name-link {
-            gap: 5px !important;
-          }
-          .v-shortlist-page-wrapper .v-link-icon {
-            width: 12px !important;
-            height: 12px !important;
-          }
-          .v-shortlist-page-wrapper .v-candidate-meta-text {
-            font-size: 12px !important;
-            color: #5A584F !important;
-            line-height: 1.3 !important;
-          }
-          .v-shortlist-page-wrapper .v-candidate-role-text {
-            font-size: 13.5px !important;
-            font-weight: 600 !important;
-            line-height: 1.35 !important;
-            display: -webkit-box !important;
-            -webkit-line-clamp: 2 !important;
-            -webkit-box-orient: vertical !important;
-            overflow: hidden !important;
-          }
-          .v-shortlist-page-wrapper .v-candidate-proj-text {
+          .v-candidate-meta-text {
             font-size: 11.5px !important;
-            color: #5A584F !important;
-            line-height: 1.35 !important;
-            display: -webkit-box !important;
-            -webkit-line-clamp: 2 !important;
-            -webkit-box-orient: vertical !important;
-            overflow: hidden !important;
           }
-          .v-shortlist-page-wrapper .v-stage-status-pill {
-            font-size: 10.5px !important;
-            padding: 3px 8px !important;
-            gap: 5px !important;
-            border-radius: 999px !important;
+          .v-candidate-role-text {
+            font-size: 13.5px !important;
           }
-          .v-shortlist-page-wrapper .v-card-actions-row {
-            margin-top: 10px !important;
-            padding-top: 0 !important;
-            gap: 8px !important;
-            align-items: center !important;
-            width: 100% !important;
-          }
-          .v-shortlist-page-wrapper .v-card-primary-btn {
-            flex: 1 1 auto !important;
-            height: 38px !important;
-            min-height: 38px !important;
-            font-size: 12.5px !important;
-            padding: 0 10px !important;
-            border-radius: 8px !important;
-            box-shadow: 0 1px 4px rgba(138, 107, 46, 0.18) !important;
-          }
-          .v-shortlist-page-wrapper .v-card-menu-btn {
-            width: 38px !important;
-            height: 38px !important;
-            min-width: 38px !important;
-            min-height: 38px !important;
-            flex: 0 0 38px !important;
-            border-radius: 8px !important;
+          .v-candidate-applied-date {
+            font-size: 11.5px !important;
           }
 
-          /* Empty state */
-          .v-shortlist-page-wrapper .v-empty-state-card {
-            padding: 32px 16px !important;
-            border-radius: 14px !important;
-            gap: 8px !important;
-          }
-
-          /* F. Modals & Drawers on Mobile */
-          .modal-dialog-panel {
-            width: 100% !important;
-            max-width: 100% !important;
-            max-height: 90vh !important;
-            border-radius: 16px 16px 0 0 !important;
-          }
-          .modal-body-content {
-            padding: 16px !important;
-            overflow-y: auto !important;
-            -webkit-overflow-scrolling: touch;
-          }
-          .v-review-modal-actions {
-            flex-direction: column-reverse !important;
-            gap: 8px !important;
-            width: 100% !important;
-          }
-          .v-modal-ghost-btn {
-            width: 100% !important;
-            height: 42px !important;
-            min-height: 42px !important;
-            border-radius: 8px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-          }
-          .v-review-modal-btn-group {
-            width: 100% !important;
+          /* Level 2 actions: full width row, equal width, height 36px */
+          .v-card-actions-row {
             display: flex !important;
-            gap: 8px !important;
-          }
-          .v-review-modal-btn-group button {
-            flex: 1 !important;
-            height: 42px !important;
-            min-height: 42px !important;
-            border-radius: 8px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            font-size: 12.5px !important;
-          }
-          .v-modal-footer-btns {
-            display: flex !important;
-            gap: 8px !important;
             width: 100% !important;
-            margin-top: 8px !important;
+            gap: 6px !important;
+            margin-top: 6px !important;
+            padding-top: 8px !important;
           }
-          .v-modal-footer-btns button {
-            flex: 1 !important;
-            height: 42px !important;
-            min-height: 42px !important;
-            border-radius: 8px !important;
-            font-size: 13px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-          }
-        }
-
-        /* Screen tweak under 380px */
-        @media (max-width: 380px) {
-          .v-shortlist-page-wrapper .v-tabs-scroll-container {
-            gap: 4px !important;
-          }
-          .v-shortlist-page-wrapper .v-tab-btn {
-            font-size: 10px !important;
+          .v-card-actions-row .v-card-view-btn,
+          .v-card-actions-row .v-card-action-btn {
+            flex: 1 1 0 !important;
+            width: 100% !important;
+            height: 36px !important;
+            min-height: 36px !important;
+            font-size: 11.5px !important;
             padding: 0 6px !important;
-            gap: 4px !important;
-            height: 27px !important;
+            justify-content: center !important;
+            border-radius: 8px !important;
+            white-space: nowrap !important;
           }
-          .v-shortlist-page-wrapper .v-tab-btn span:last-child {
-            min-width: 15px !important;
-            height: 15px !important;
-            font-size: 9px !important;
-            padding: 0 3px !important;
-            line-height: 15px !important;
+          .v-card-actions-row .v-card-menu-btn {
+            flex: 0 0 36px !important;
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
+            border-radius: 8px !important;
+          }
+
+          .v-empty-state-card {
+            padding: 28px 16px !important;
+            border-radius: 14px !important;
           }
         }
       `}</style>

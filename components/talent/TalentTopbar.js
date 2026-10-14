@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Bell, ExternalLink } from "lucide-react";
+import { Menu, Bell } from "lucide-react";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 
@@ -123,37 +123,8 @@ export default function TalentTopbar({ onOpenMobile }) {
         </div>
       </div>
 
-      {/* Right Actions: LIVE BOARD button, Bell & Avatar */}
+      {/* Right Actions: Bell & Avatar */}
       <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
-        {/* Live Opportunities Directory Link */}
-        <Link
-          href="/opportunities"
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Browse Live Public Casting Board"
-          style={{
-            height: "40px",
-            padding: "0 16px",
-            borderRadius: "10px",
-            border: "1px solid #E8E2D4",
-            backgroundColor: "#FFFFFF",
-            color: "#5A584F",
-            fontSize: "13px",
-            fontWeight: "600",
-            fontFamily: "var(--font-body), 'Inter', sans-serif",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            textDecoration: "none",
-            transition: "all 0.16s ease",
-            whiteSpace: "nowrap",
-          }}
-          className="talent-live-board-btn"
-        >
-          <span>LIVE BOARD</span>
-          <ExternalLink size={14} style={{ color: "#8A6B2E" }} />
-        </Link>
-
         {/* Notifications Bell */}
         <div style={{ position: "relative" }}>
           <button
@@ -352,16 +323,6 @@ export default function TalentTopbar({ onOpenMobile }) {
             height: 36px !important;
             font-size: 12px !important;
           }
-        }
-        @media (max-width: 480px) {
-          .talent-live-board-btn {
-            display: none !important;
-          }
-        }
-        .talent-live-board-btn:hover {
-          border-color: #8A6B2E !important;
-          color: #8A6B2E !important;
-          background-color: #F3EFE6 !important;
         }
         .talent-bell-btn:hover {
           background-color: #F3EFE6 !important;
