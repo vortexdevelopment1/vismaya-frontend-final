@@ -93,6 +93,7 @@ export default function PublicNav() {
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
+    { label: "Pricing", href: "/pricing" },
     { label: "Contact", href: "/contact" },
     user
       ? { label: "Dashboard", href: dashboardUrl }

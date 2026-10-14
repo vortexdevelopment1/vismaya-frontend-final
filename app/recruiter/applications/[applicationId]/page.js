@@ -34,6 +34,9 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
 import Modal from "@/components/shared/Modal";
 import VideoPlayer from "@/components/shared/VideoPlayer";
+import PaymentCard from "@/components/payment/PaymentCard";
+import { paymentService } from "@/lib/api/services/paymentService";
+import { PRICING_CONFIG } from "@/lib/config/pricing";
 
 // Constant to hide talent phone and email directly as per platform requirement
 const HIDE_TALENT_CONTACT = true;
@@ -118,6 +121,40 @@ export default function ApplicationDetailPage() {
 
   const [isSelectedModalOpen, setIsSelectedModalOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState("");
+
+  // Credits gating state
+  const [creditStatus, setCreditStatus] = useState(null);
+  const [showLowBalanceModal, setShowLowBalanceModal] = useState(false);
+  const [showZeroCreditsModal, setShowZeroCreditsModal] = useState(false);
+  const [showBuyModal, setShowBuyModal] = useState(false);
+
+  const checkProfileAccess = async (confirmed = false) => {
+    if (!application) return;
+    const tId = application.talentId || applicationId;
+    const tInfo = {
+      name: application.talentName || "Talent Candidate",
+      avatar: application.avatar || application.talentProfile?.avatar,
+      role: application.roleApplied || "Artist",
+    };
+    const res = await paymentService.viewTalentProfile(tId, tInfo, confirmed);
+    setCreditStatus(res);
+    if (!res.allowed) {
+      if (res.reason === "zero_credits") {
+        setShowZeroCreditsModal(true);
+      } else if (res.reason === "low_balance_confirm") {
+        setShowLowBalanceModal(true);
+      }
+    } else {
+      setShowLowBalanceModal(false);
+      setShowZeroCreditsModal(false);
+    }
+  };
+
+  useEffect(() => {
+    if (application) {
+      checkProfileAccess(false);
+    }
+  }, [application?.id]);
 
   // Action Handlers
   const handleShortlist = () => {
@@ -377,6 +414,35 @@ export default function ApplicationDetailPage() {
           <span>{backLabel}</span>
         </button>
       </div>
+
+      {/* Credit Status Notice Badge */}
+      {creditStatus && creditStatus.allowed && (
+        <div
+          style={{
+            backgroundColor: "#F3EFE6",
+            border: "1px solid #E8E2D4",
+            borderRadius: "8px",
+            padding: "8px 14px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: "12.5px",
+            color: "#8A6B2E",
+            fontWeight: "600",
+            flexWrap: "wrap",
+            gap: "8px",
+          }}
+        >
+          <span>
+            {creditStatus.free
+              ? `✓ Free Repeat View Active (Free until ${new Date(creditStatus.freeUntil).toLocaleDateString("en-IN", { day: "numeric", month: "short" })})`
+              : `✓ 1 Profile-View Credit Used • ${creditStatus.remainingBalance} Remaining • Free for 7 Days`}
+          </span>
+          <Link href="/recruiter/credits" style={{ color: "#8A6B2E", textDecoration: "underline", fontSize: "12px" }}>
+            View Credits Ledger
+          </Link>
+        </div>
+      )}
 
       {/* Navigation Header */}
       <PageHeader
@@ -1414,6 +1480,99 @@ export default function ApplicationDetailPage() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Zero Credits Block Modal */}
+      {showZeroCreditsModal && (
+        <Modal
+          isOpen={showZeroCreditsModal}
+          onClose={() => router.back()}
+          title="Credits Exhausted (0 Remaining)"
+          subtitle="Unlocking candidate full profile, contact, and showreels requires 1 credit"
+          maxWidth="480px"
+          footer={
+            <div style={{ display: "flex", gap: "10px", width: "100%", justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => router.back()} className="btn-secondary" style={{ padding: "0 16px", height: "40px" }}>
+                Return to Applicants
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowBuyModal(true)}
+                className="btn-primary"
+                style={{ padding: "0 18px", height: "40px" }}
+              >
+                <span>Buy More Views</span>
+              </button>
+            </div>
+          }
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "8px 0" }}>
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
+              Your studio has used all available profile-view credits. To access verified candidate showreels, high-resolution comp-cards, and contact channels, please top up your studio balance.
+            </p>
+            <div style={{ backgroundColor: "#FAF9F7", border: "1px solid #E8E2D4", borderRadius: "8px", padding: "12px 14px", fontSize: "12.5px", color: "#8A6B2E" }}>
+              ⭐ Once unlocked, profiles remain 100% free for repeat reviews for 7 days.
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Low Balance Confirmation Modal (< 10 credits) */}
+      {showLowBalanceModal && (
+        <Modal
+          isOpen={showLowBalanceModal}
+          onClose={() => router.back()}
+          title="Confirm Profile Unlock"
+          subtitle={`You have ${creditStatus?.balance} credits remaining`}
+          maxWidth="480px"
+          footer={
+            <div style={{ display: "flex", gap: "10px", width: "100%", justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => router.back()} className="btn-secondary" style={{ padding: "0 16px", height: "40px" }}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => checkProfileAccess(true)}
+                className="btn-primary"
+                style={{ padding: "0 18px", height: "40px" }}
+              >
+                <span>Confirm &amp; Deduct 1 Credit</span>
+              </button>
+            </div>
+          }
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "8px 0" }}>
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
+              Unlocking <strong>{application?.talentName}</strong>&apos;s full profile will consume <strong>1 credit</strong> from your remaining balance of <strong>{creditStatus?.balance} credits</strong>.
+            </p>
+            <div style={{ backgroundColor: "#FAF9F7", border: "1px solid #E8E2D4", borderRadius: "8px", padding: "12px 14px", fontSize: "12.5px", color: "#8A6B2E" }}>
+              ✓ You will have unlimited free repeat access to this artist&apos;s profile for the next 7 days.
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Buy More Views Checkout Modal */}
+      {showBuyModal && (
+        <Modal
+          isOpen={showBuyModal}
+          onClose={() => setShowBuyModal(false)}
+          title="Buy Profile Views"
+          subtitle="25 Views Pack (₹2,000)"
+          maxWidth="520px"
+        >
+          <PaymentCard
+            type="bundle_views"
+            userName="Zee Films Casting Desk"
+            userEmail="casting@zeefilms.com"
+            onSuccess={() => {
+              setShowBuyModal(false);
+              checkProfileAccess(true);
+            }}
+            onCancel={() => setShowBuyModal(false)}
+            isModal={true}
+          />
         </Modal>
       )}
 

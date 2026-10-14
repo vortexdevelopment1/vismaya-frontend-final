@@ -2,15 +2,20 @@
 
 import React, { useState } from "react";
 import { Send, CheckCircle2, AlertCircle, ShieldCheck, User, Mail, Phone, MapPin } from "lucide-react";
+import Link from "next/link";
 import Modal from "@/components/shared/Modal";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { paymentService } from "@/lib/api/services/paymentService";
+import { PRICING_CONFIG } from "@/lib/config/pricing";
+import PaymentCard from "@/components/payment/PaymentCard";
 
 export default function OpportunityApplyModal({ isOpen, onClose, opportunity, project, onAppliedSuccess }) {
-  const { profile, addToast } = useTalent();
+  const { profile, addToast, profileCompletionScore } = useTalent();
   const { applyToOpportunity, applications } = useWorkflow();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPaid, setIsPaid] = useState(() => paymentService.isTalentPaid());
 
   if (!opportunity) return null;
 
@@ -65,6 +70,91 @@ export default function OpportunityApplyModal({ isOpen, onClose, opportunity, pr
       setIsSubmitting(false);
     }
   };
+
+  // 1. Payment Gate
+  if (!isPaid) {
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Registration Payment Required"
+        subtitle="Complete your one-time registration to submit applications"
+        maxWidth="520px"
+      >
+        <PaymentCard
+          type="talent_registration"
+          userName={profile?.personal?.fullName || "Talent Member"}
+          userEmail={profile?.personal?.email || "user@vismaya.io"}
+          onSuccess={() => {
+            setIsPaid(true);
+            addToast({
+              type: "success",
+              title: "Payment Confirmed",
+              message: "One-time registration fee paid. You can now apply for verified roles.",
+            });
+          }}
+          onCancel={onClose}
+          isModal={true}
+        />
+      </Modal>
+    );
+  }
+
+  // 2. Profile Completion < 60% Gate
+  if ((profileCompletionScore || 0) < PRICING_CONFIG.MIN_PROFILE_COMPLETION) {
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Complete your profile to apply"
+        subtitle="Profile completion threshold requirement"
+        maxWidth="500px"
+        footer={
+          <div style={{ display: "flex", gap: "10px", width: "100%", justifyContent: "flex-end" }}>
+            <button type="button" onClick={onClose} className="btn-secondary" style={{ padding: "10px 18px", minHeight: "42px" }}>
+              Cancel
+            </button>
+            <Link
+              href="/talent/profile"
+              className="btn-primary"
+              style={{ padding: "10px 20px", minHeight: "42px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }}
+            >
+              <span>Complete Profile</span>
+            </Link>
+          </div>
+        }
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "8px 0" }}>
+          <div
+            style={{
+              backgroundColor: "#FAF9F7",
+              border: "1px solid #E8E2D4",
+              borderRadius: "10px",
+              padding: "16px 18px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "14px", fontWeight: "600", color: "#2B2D2A" }}>Current Profile Completion</span>
+              <span style={{ fontSize: "16px", fontWeight: "700", color: "#8A6B2E" }}>{profileCompletionScore || 0}%</span>
+            </div>
+            <div style={{ width: "100%", height: "8px", backgroundColor: "#E8E2D4", borderRadius: "4px", overflow: "hidden" }}>
+              <div style={{ width: `${Math.min(profileCompletionScore || 0, 100)}%`, height: "100%", backgroundColor: "#8A6B2E" }} />
+            </div>
+            <div style={{ fontSize: "12.5px", color: "#5A584F" }}>
+              Required: <strong>{PRICING_CONFIG.MIN_PROFILE_COMPLETION}% or higher</strong> to submit applications to verified opportunities.
+            </div>
+          </div>
+
+          <p style={{ fontSize: "13.5px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
+            Production houses and casting directors require detailed personal and craft information to review candidates. Please fill in your basic details, looks, skills, and portfolio before applying.
+          </p>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal

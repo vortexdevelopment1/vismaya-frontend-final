@@ -18,13 +18,29 @@ import {
   Users,
   ShieldCheck,
   Eye,
+  CreditCard,
 } from "lucide-react";
 import PageHeader from "@/components/shared/PageHeader";
 import StatCard from "@/components/shared/StatCard";
 import StatusBadge from "@/components/shared/StatusBadge";
+import Modal from "@/components/shared/Modal";
+import PaymentCard from "@/components/payment/PaymentCard";
+import { paymentService } from "@/lib/api/services/paymentService";
+import { PRICING_CONFIG } from "@/lib/config/pricing";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 
 export default function OrganizationDashboardPage() {
+  const [credits, setCredits] = React.useState({ balance: 100, lowBalanceWarning: false });
+  const [buyPlan, setBuyPlan] = React.useState(null);
+
+  const loadCredits = React.useCallback(async () => {
+    const res = await paymentService.getCredits("org-1");
+    setCredits(res);
+  }, []);
+
+  React.useEffect(() => {
+    loadCredits();
+  }, [loadCredits]);
   const {
     projects,
     opportunities,
@@ -81,6 +97,15 @@ export default function OrganizationDashboardPage() {
         badge="Zee Films • Verified Production House"
         action={
           <div className="recruiter-dash-header-actions" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() => setBuyPlan("bundle_views")}
+              className="btn-secondary"
+              style={{ fontSize: "13px", fontWeight: "600", height: "36px", padding: "0 14px", gap: "6px", borderRadius: "10px" }}
+            >
+              <CreditCard size={15} />
+              <span>{credits.balance} Credits</span>
+            </button>
             <Link
               href="/recruiter/opportunities/new"
               className="btn-primary dash-action-btn"
@@ -92,6 +117,98 @@ export default function OrganizationDashboardPage() {
           </div>
         }
       />
+
+      {/* Organization Credits Overview Card */}
+      <div
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: credits.balance < PRICING_CONFIG.LOW_BALANCE ? "2px solid #8A6B2E" : "1px solid #E8E2D4",
+          borderRadius: "12px",
+          padding: "18px 24px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "16px",
+          flexWrap: "wrap",
+          boxShadow: "0 2px 10px rgba(43, 45, 42, 0.02)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "12px",
+              backgroundColor: "#F3EFE6",
+              color: "#8A6B2E",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <CreditCard size={24} />
+          </div>
+          <div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-heading), Georgia, serif",
+                  fontSize: "28px",
+                  fontWeight: "700",
+                  color: "#8A6B2E",
+                }}
+              >
+                {credits.balance}
+              </span>
+              <span style={{ fontSize: "15px", fontWeight: "600", color: "#2B2D2A" }}>
+                Profile-View Credits Available
+              </span>
+              {credits.balance < PRICING_CONFIG.LOW_BALANCE && (
+                <span style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", backgroundColor: "#F3EFE6", padding: "2px 8px", borderRadius: "12px" }}>
+                  LOW BALANCE
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: "13px", color: "#5A584F", marginTop: "2px" }}>
+              1 credit per full candidate unlock • 7-day repeat view free • Credits never expire
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <Link
+            href="/recruiter/credits"
+            className="btn-secondary"
+            style={{
+              height: "38px",
+              padding: "0 16px",
+              fontSize: "13px",
+              fontWeight: "600",
+              borderRadius: "8px",
+              textDecoration: "none",
+            }}
+          >
+            <span>View Ledger &amp; History</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => setBuyPlan("bundle_views")}
+            className="btn-primary"
+            style={{
+              height: "38px",
+              padding: "0 18px",
+              fontSize: "13px",
+              fontWeight: "600",
+              borderRadius: "8px",
+              gap: "6px",
+            }}
+          >
+            <PlusCircle size={15} />
+            <span>Buy More Views</span>
+          </button>
+        </div>
+      </div>
 
       {/* 4 Stat Cards */}
       <div
@@ -773,6 +890,29 @@ export default function OrganizationDashboardPage() {
           }
         }
       `}</style>
+
+      {/* Buy More Views Modal */}
+      {buyPlan && (
+        <Modal
+          isOpen={!!buyPlan}
+          onClose={() => setBuyPlan(null)}
+          title="Buy Profile Views"
+          subtitle={buyPlan === "bundle_views" ? "25 Views Pack (₹2,000)" : "Single Profile View (₹100)"}
+          maxWidth="520px"
+        >
+          <PaymentCard
+            type={buyPlan}
+            userName="Zee Films Casting Desk"
+            userEmail="casting@zeefilms.com"
+            onSuccess={() => {
+              loadCredits();
+              setBuyPlan(null);
+            }}
+            onCancel={() => setBuyPlan(null)}
+            isModal={true}
+          />
+        </Modal>
+      )}
     </div>
   );
 }

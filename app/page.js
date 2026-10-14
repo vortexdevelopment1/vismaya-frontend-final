@@ -11,6 +11,7 @@ import WorkflowSection from "@/components/home/WorkflowSection";
 // Switch between new light roster trial and backup old design
 const USE_NEW_ROSTER = true;
 import CtaBannerSection from "@/components/home/CtaBannerSection";
+import HomePricingSection from "@/components/home/HomePricingSection";
 import PublicFooter from "@/components/PublicFooter";
 
 export default function Home() {
@@ -36,6 +37,9 @@ export default function Home() {
 
       {/* 6. Final Call to Action Banner */}
       <CtaBannerSection />
+
+      {/* 6.5. Compact Pricing Overview */}
+      <HomePricingSection />
 
       {/* 7. Public Footer */}
       <PublicFooter />

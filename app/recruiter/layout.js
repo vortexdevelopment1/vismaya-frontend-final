@@ -30,6 +30,7 @@ function RecruiterLayoutContent({ children }) {
         color: "#2B2D2A",
         position: "relative",
       }}
+      className="recruiter-layout-root"
     >
       {/* Recruiter Sidebar with Suspense boundary for search params */}
       <Suspense fallback={null}>
@@ -157,10 +158,17 @@ function RecruiterLayoutContent({ children }) {
           :root {
             --topbar-height: 56px;
           }
+          .recruiter-layout-root {
+            min-height: 0 !important;
+            height: auto !important;
+          }
           .recruiter-main-container {
             width: 100% !important;
             max-width: 100% !important;
             overflow-x: hidden !important;
+            min-height: 0 !important;
+            height: auto !important;
+            flex: none !important;
           }
           .recruiter-main-viewport {
             padding-inline: 16px !important;
@@ -169,6 +177,9 @@ function RecruiterLayoutContent({ children }) {
             max-width: 100% !important;
             box-sizing: border-box !important;
             overflow-x: hidden !important;
+            min-height: 0 !important;
+            height: auto !important;
+            flex: none !important;
           }
         }
       `}</style>

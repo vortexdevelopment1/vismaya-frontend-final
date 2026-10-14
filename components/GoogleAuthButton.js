@@ -17,11 +17,8 @@ export default function GoogleAuthButton({
   const [toastMessage, setToastMessage] = useState(null);
   const toastTimeoutRef = useRef(null);
 
-  // Feature Flag & Mock Mode check
-  // Hidden if NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'true' OR NEXT_PUBLIC_USE_MOCK === 'true'
-  const isEnabled =
-    process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" &&
-    process.env.NEXT_PUBLIC_USE_MOCK !== "true";
+  // Feature Flag check: visible when NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === 'true'
+  const isEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
   const isPlaceholderClientId =

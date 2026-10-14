@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   CreditCard,
   DollarSign,
@@ -11,6 +11,12 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
+  FileText,
+  X,
+  Filter,
+  Users,
+  Building2,
+  Sparkles,
 } from "lucide-react";
 import { useAdmin } from "@/lib/admin/AdminContext";
 import PageHeader from "@/components/shared/PageHeader";
@@ -19,6 +25,7 @@ import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import StatCard from "@/components/shared/StatCard";
 import PaymentEntryModal from "@/components/admin/PaymentEntryModal";
+import { paymentService } from "@/lib/api/services/paymentService";
 
 export default function AdminPaymentsPage() {
   const {
@@ -31,11 +38,56 @@ export default function AdminPaymentsPage() {
     addToast,
   } = useAdmin();
 
-  const [activeSection, setActiveSection] = useState("ledger"); // "ledger" | "subscriptions"
+  const [activeSection, setActiveSection] = useState("platform"); // "platform" | "ledger" | "subscriptions"
+  const [platformTransactions, setPlatformTransactions] = useState([]);
+  const [platformStatusTab, setPlatformStatusTab] = useState("all");
+  const [platformTypeFilter, setPlatformTypeFilter] = useState("all");
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
+
   const [activeStatusTab, setActiveStatusTab] = useState("all");
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+  // Load platform transactions
+  useEffect(() => {
+    async function loadTransactions() {
+      const txs = await paymentService.getAdminTransactions();
+      setPlatformTransactions(txs || []);
+    }
+    loadTransactions();
+  }, []);
+
+  // Platform Metrics
+  const totalPlatformRevenue = platformTransactions
+    .filter((tx) => tx.status === "Successful")
+    .reduce((acc, tx) => acc + (tx.amount || 0), 0);
+  const totalTalentRegistrations = platformTransactions.filter(
+    (tx) => tx.type === "talent_registration" && tx.status === "Successful"
+  ).length;
+  const totalOrgRegistrations = platformTransactions.filter(
+    (tx) => tx.type === "organization_registration" && tx.status === "Successful"
+  ).length;
+  const totalViewPurchases = platformTransactions.filter(
+    (tx) => (tx.type === "bundle_views" || tx.type === "single_view") && tx.status === "Successful"
+  ).length;
+
+  const platformSuccessfulCount = platformTransactions.filter((tx) => tx.status === "Successful").length;
+  const platformFailedCount = platformTransactions.filter((tx) => tx.status === "Failed").length;
+  const platformPendingCount = platformTransactions.filter((tx) => tx.status === "Pending").length;
+
+  const platformStatusTabs = [
+    { key: "all", label: "All Platform Fees", count: platformTransactions.length },
+    { key: "Successful", label: "Successful", count: platformSuccessfulCount },
+    { key: "Failed", label: "Failed", count: platformFailedCount },
+    { key: "Pending", label: "Pending", count: platformPendingCount },
+  ];
+
+  const filteredPlatformTransactions = platformTransactions.filter((tx) => {
+    if (platformStatusTab !== "all" && tx.status !== platformStatusTab) return false;
+    if (platformTypeFilter !== "all" && tx.type !== platformTypeFilter) return false;
+    return true;
+  });
 
   // Live Calculated Financial Metrics
   const totalGrossReceived = payments
@@ -95,6 +147,205 @@ export default function AdminPaymentsPage() {
     deletePaymentEntry(id);
     setDeleteConfirmId(null);
   };
+
+  // Platform Fee Transactions Columns
+  const platformColumns = [
+    {
+      key: "userName",
+      label: "User / Account",
+      render: (val, row) => (
+        <div>
+          <div style={{ fontSize: "14.5px", fontWeight: 600, color: "#2B2D2A", fontFamily: "var(--font-heading), 'Playfair Display', serif" }}>
+            {val || "—"}
+          </div>
+          <div style={{ fontSize: "12.5px", color: "#5A584F", marginTop: "2px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+            {row.userEmail || "—"}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "type",
+      label: "Fee / Service Type",
+      render: (val, row) => {
+        let label = row.typeLabel || val;
+        if (val === "talent_registration") {
+          label = "Talent Registration (₹999)";
+        } else if (val === "organization_registration") {
+          label = "Industry Registration (₹4,999)";
+        } else if (val === "bundle_views") {
+          label = "25 Profile Views (₹2,000)";
+        } else if (val === "single_view") {
+          label = "Single Profile View (₹100)";
+        }
+        return (
+          <span
+            style={{
+              fontSize: "12px",
+              fontWeight: 600,
+              padding: "4px 10px",
+              borderRadius: "999px",
+              backgroundColor: "#F3EFE6",
+              color: "#6E5420",
+              border: "1px solid #E8E2D4",
+              display: "inline-block",
+            }}
+          >
+            {label}
+          </span>
+        );
+      },
+    },
+    {
+      key: "amount",
+      label: "Amount (INR)",
+      render: (val) => (
+        <span style={{ fontSize: "15px", fontWeight: 700, color: "#2B2D2A", fontVariantNumeric: "tabular-nums" }}>
+          ₹{(val || 0).toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      label: "Payment Status",
+      render: (val) => (
+        <span
+          style={{
+            fontSize: "11px",
+            fontWeight: 700,
+            padding: "3px 8px",
+            borderRadius: "6px",
+            backgroundColor: val === "Successful" ? "#F3EFE6" : "rgba(180, 35, 24, 0.08)",
+            color: val === "Successful" ? "#8A6B2E" : "#B42318",
+            border: `1px solid ${val === "Successful" ? "#E8E2D4" : "rgba(180, 35, 24, 0.25)"}`,
+            display: "inline-block",
+          }}
+        >
+          {val}
+        </span>
+      ),
+    },
+    {
+      key: "date",
+      label: "Transaction Date",
+      render: (val) => (
+        <span style={{ fontSize: "13px", color: "#5A584F" }}>
+          {val || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "invoiceNumber",
+      label: "Invoice & Receipt",
+      render: (val, row) => (
+        <div>
+          <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#2B2D2A", fontFamily: "monospace" }}>
+            {val || "Pending"}
+          </div>
+          <div style={{ fontSize: "11px", color: row.status === "Successful" ? "#8A6B2E" : "#B42318" }}>
+            {row.status === "Successful" ? "Digital Receipt Sent" : "Payment Pending"}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "actions",
+      label: "Receipt",
+      render: (_, row) => (
+        <button
+          onClick={() => setSelectedReceipt(row)}
+          title="View Digital Invoice"
+          style={{
+            height: "32px",
+            padding: "0 12px",
+            borderRadius: "6px",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            color: "#8A6B2E",
+            fontSize: "12px",
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "5px",
+            transition: "all 0.16s ease",
+          }}
+          className="action-icon-btn"
+        >
+          <FileText size={13} /> View Invoice
+        </button>
+      ),
+    },
+  ];
+
+  const renderPlatformMobileCard = (row) => (
+    <div className="admin-payment-mobile-card">
+      <div className="admin-payment-card-top">
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div className="admin-payment-amount">
+            ₹{(row.amount || 0).toLocaleString()}
+          </div>
+          <div className="admin-payment-project">
+            {row.userName || "User"}
+          </div>
+        </div>
+        <span
+          style={{
+            fontSize: "11px",
+            fontWeight: 700,
+            padding: "3px 8px",
+            borderRadius: "6px",
+            backgroundColor: row.status === "Successful" ? "#F3EFE6" : "rgba(180, 35, 24, 0.08)",
+            color: row.status === "Successful" ? "#8A6B2E" : "#B42318",
+            border: `1px solid ${row.status === "Successful" ? "#E8E2D4" : "rgba(180, 35, 24, 0.25)"}`,
+          }}
+        >
+          {row.status}
+        </span>
+      </div>
+
+      <div className="admin-payment-meta-line">
+        <span className="admin-payment-meta-label">Email:</span> {row.userEmail || "—"}
+      </div>
+
+      <div className="admin-payment-details-grid">
+        <div className="admin-payment-detail-item">
+          <span className="admin-payment-detail-label">Type</span>
+          <span className="admin-payment-detail-val" style={{ color: "#8A6B2E" }}>
+            {row.typeLabel || row.type}
+          </span>
+        </div>
+        <div className="admin-payment-detail-item">
+          <span className="admin-payment-detail-label">Invoice</span>
+          <span className="admin-payment-detail-val admin-payment-mono">
+            {row.invoiceNumber || "Pending"}
+          </span>
+        </div>
+        <div className="admin-payment-detail-item">
+          <span className="admin-payment-detail-label">Date</span>
+          <span className="admin-payment-detail-val">
+            {row.date}
+          </span>
+        </div>
+        <div className="admin-payment-detail-item">
+          <span className="admin-payment-detail-label">Gateway</span>
+          <span className="admin-payment-detail-val">
+            {row.paymentGateway || "Mock Gateway"}
+          </span>
+        </div>
+      </div>
+
+      <div className="admin-payment-card-actions">
+        <button
+          onClick={() => setSelectedReceipt(row)}
+          className="admin-payment-action-btn"
+          style={{ gridColumn: "span 2" }}
+        >
+          <FileText size={14} /> View Digital Invoice
+        </button>
+      </div>
+    </div>
+  );
 
   // Payment Table Columns
   const paymentColumns = [
@@ -509,7 +760,7 @@ export default function AdminPaymentsPage() {
         }
       />
 
-      {/* 4 Financial Stat Cards - Numbers all charcoal/gold-brown */}
+      {/* Financial Stat Cards */}
       <div
         className="admin-stat-grid"
         style={{
@@ -519,38 +770,77 @@ export default function AdminPaymentsPage() {
           alignItems: "stretch",
         }}
       >
-        <StatCard
-          title="Total Received"
-          value={`₹${totalGrossReceived.toLocaleString()}`}
-          change="Gross Invoices"
-          isPositive={true}
-          description="Total client payments logged"
-          icon={CreditCard}
-        />
-        <StatCard
-          title="Total Commission"
-          value={`₹${totalCommission.toLocaleString()}`}
-          change="Platform Net"
-          isPositive={true}
-          description="Vismaya retained commission"
-          icon={DollarSign}
-        />
-        <StatCard
-          title="Talent Payouts"
-          value={`₹${totalTalentPayouts.toLocaleString()}`}
-          change="Disbursed"
-          isPositive={true}
-          description="Net payouts transferred to artists"
-          icon={CheckCircle2}
-        />
-        <StatCard
-          title="Pending Payouts"
-          value={`₹${pendingPayouts.toLocaleString()}`}
-          change="Action required"
-          isPositive={pendingPayouts === 0}
-          description="Awaiting shoot wrap confirmation"
-          icon={Clock}
-        />
+        {activeSection === "platform" ? (
+          <>
+            <StatCard
+              title="Platform Fee Revenue"
+              value={`₹${totalPlatformRevenue.toLocaleString()}`}
+              change="Total Collections"
+              isPositive={true}
+              description="One-time registrations and view top-ups"
+              icon={CreditCard}
+            />
+            <StatCard
+              title="Talent Registrations"
+              value={totalTalentRegistrations}
+              change="₹999 fee paid"
+              isPositive={true}
+              description="Verified paid talent profiles"
+              icon={Users}
+            />
+            <StatCard
+              title="Industry Registrations"
+              value={totalOrgRegistrations}
+              change="₹4,999 fee paid"
+              isPositive={true}
+              description="Studios with 100 included views"
+              icon={Building2}
+            />
+            <StatCard
+              title="Profile Views & Bundles"
+              value={totalViewPurchases}
+              change="Top-ups purchased"
+              isPositive={true}
+              description="Extra bundle (25) & single views"
+              icon={Sparkles}
+            />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="Total Received"
+              value={`₹${totalGrossReceived.toLocaleString()}`}
+              change="Gross Invoices"
+              isPositive={true}
+              description="Total client payments logged"
+              icon={CreditCard}
+            />
+            <StatCard
+              title="Total Commission"
+              value={`₹${totalCommission.toLocaleString()}`}
+              change="Platform Net"
+              isPositive={true}
+              description="Vismaya retained commission"
+              icon={DollarSign}
+            />
+            <StatCard
+              title="Talent Payouts"
+              value={`₹${totalTalentPayouts.toLocaleString()}`}
+              change="Disbursed"
+              isPositive={true}
+              description="Net payouts transferred to artists"
+              icon={CheckCircle2}
+            />
+            <StatCard
+              title="Pending Payouts"
+              value={`₹${pendingPayouts.toLocaleString()}`}
+              change="Action required"
+              isPositive={pendingPayouts === 0}
+              description="Awaiting shoot wrap confirmation"
+              icon={Clock}
+            />
+          </>
+        )}
       </div>
 
       {/* Two-Level Tabs: Top level segmented control */}
@@ -569,6 +859,26 @@ export default function AdminPaymentsPage() {
             overflowX: "auto",
           }}
         >
+          <button
+            onClick={() => setActiveSection("platform")}
+            style={{
+              padding: "8px 18px",
+              borderRadius: "10px",
+              backgroundColor: activeSection === "platform" ? "#FFFFFF" : "transparent",
+              color: activeSection === "platform" ? "#8A6B2E" : "#5A584F",
+              border: `1px solid ${activeSection === "platform" ? "#E8E2D4" : "transparent"}`,
+              boxShadow: activeSection === "platform" ? "0 1px 3px rgba(43, 45, 42, 0.06)" : "none",
+              fontSize: "14px",
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.16s ease",
+              whiteSpace: "nowrap",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+            }}
+          >
+            Platform Registration &amp; Views ({platformTransactions.length})
+          </button>
+
           <button
             onClick={() => setActiveSection("ledger")}
             style={{
@@ -609,6 +919,54 @@ export default function AdminPaymentsPage() {
             Subscriptions &amp; Membership Fees ({subscriptions.length})
           </button>
         </div>
+
+        {/* SECTION 0: Platform Fees & Registrations Table */}
+        {activeSection === "platform" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+              {/* Lower-level Status Tabs */}
+              <Tabs tabs={platformStatusTabs} activeTab={platformStatusTab} onChange={setPlatformStatusTab} />
+
+              {/* Type Filter */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#5A584F" }}>Filter Type:</span>
+                <select
+                  value={platformTypeFilter}
+                  onChange={(e) => setPlatformTypeFilter(e.target.value)}
+                  style={{
+                    height: "36px",
+                    padding: "0 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #E8E2D4",
+                    backgroundColor: "#FFFFFF",
+                    fontSize: "13px",
+                    color: "#2B2D2A",
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
+                    cursor: "pointer",
+                  }}
+                >
+                  <option value="all">All Service Types</option>
+                  <option value="talent_registration">Talent Registration (₹999)</option>
+                  <option value="organization_registration">Industry Registration (₹4,999)</option>
+                  <option value="bundle_views">25 Profile Views (₹2,000)</option>
+                  <option value="single_view">Single Profile View (₹100)</option>
+                </select>
+              </div>
+            </div>
+
+            <DataTable
+              title={`Platform Registration & Fee Transactions (${filteredPlatformTransactions.length})`}
+              columns={platformColumns}
+              data={filteredPlatformTransactions}
+              searchable={true}
+              searchPlaceholder="Search by user, email, invoice #..."
+              pageSize={6}
+              emptyTitle="No platform transactions found"
+              emptyDescription="There are no payment entries matching the selected filter."
+              renderMobileCard={renderPlatformMobileCard}
+            />
+          </div>
+        )}
 
         {/* SECTION 1: Production Ledger Table */}
         {activeSection === "ledger" && (
@@ -751,6 +1109,158 @@ export default function AdminPaymentsPage() {
                 className="action-delete-btn"
               >
                 Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Platform Digital Invoice / Receipt Modal */}
+      {selectedReceipt && (
+        <div
+          className="admin-receipt-modal-overlay"
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(43, 45, 42, 0.55)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+            zIndex: 120,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            className="admin-receipt-modal-content"
+            style={{
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E8E2D4",
+              borderRadius: "20px",
+              padding: "28px",
+              maxWidth: "520px",
+              width: "100%",
+              boxShadow: "0 24px 60px rgba(43, 45, 42, 0.18)",
+              position: "relative",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", borderBottom: "1px solid #E8E2D4", paddingBottom: "16px" }}>
+              <div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#F3EFE6", padding: "4px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, color: "#8A6B2E", marginBottom: "6px" }}>
+                  <FileText size={12} /> OFFICIAL TAX RECEIPT
+                </div>
+                <h3 style={{ fontSize: "20px", fontWeight: 700, color: "#2B2D2A", margin: 0, fontFamily: "var(--font-heading), 'Playfair Display', serif" }}>
+                  Receipt #{selectedReceipt.invoiceNumber || selectedReceipt.id}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedReceipt(null)}
+                style={{
+                  background: "#FAF9F7",
+                  border: "1px solid #E8E2D4",
+                  borderRadius: "8px",
+                  padding: "6px",
+                  cursor: "pointer",
+                  color: "#5A584F",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Receipt Body */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13.5px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
+                <span>Date &amp; Time:</span>
+                <span style={{ fontWeight: 600, color: "#2B2D2A" }}>{selectedReceipt.paidAt || selectedReceipt.date}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
+                <span>Payer Name:</span>
+                <span style={{ fontWeight: 600, color: "#2B2D2A" }}>{selectedReceipt.userName}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
+                <span>Payer Email:</span>
+                <span style={{ fontWeight: 600, color: "#2B2D2A" }}>{selectedReceipt.userEmail}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
+                <span>Order Reference:</span>
+                <span style={{ fontFamily: "monospace", fontSize: "12px", color: "#2B2D2A" }}>{selectedReceipt.orderId || selectedReceipt.id}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
+                <span>Payment Mode:</span>
+                <span style={{ fontWeight: 600, color: "#2B2D2A" }}>{selectedReceipt.paymentGateway || "Online (UPI / Cards / NetBanking)"}</span>
+              </div>
+
+              <div style={{ borderTop: "1px dashed #E8E2D4", margin: "8px 0" }} />
+
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
+                <span>Description:</span>
+                <span style={{ fontWeight: 600, color: "#2B2D2A" }}>{selectedReceipt.typeLabel || selectedReceipt.type}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
+                <span>Base Amount:</span>
+                <span style={{ fontWeight: 600, color: "#2B2D2A" }}>₹{selectedReceipt.amount?.toLocaleString()}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
+                <span>Tax / GST:</span>
+                <span style={{ fontWeight: 500, color: "#5A584F" }}>Included in pricing</span>
+              </div>
+
+              <div style={{ backgroundColor: "#FAF9F7", border: "1px solid #E8E2D4", borderRadius: "10px", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "4px" }}>
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#2B2D2A" }}>Total Paid (INR):</span>
+                <span style={{ fontSize: "18px", fontWeight: 700, color: "#8A6B2E", fontFamily: "var(--font-heading), 'Playfair Display', serif" }}>
+                  ₹{selectedReceipt.amount?.toLocaleString()}
+                </span>
+              </div>
+
+              <div style={{ fontSize: "12px", color: "#5A584F", textAlign: "center", marginTop: "8px" }}>
+                We do not store card details. This digital receipt was generated and confirmation dispatched to {selectedReceipt.userEmail}.
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+              <button
+                onClick={() => {
+                  if (typeof window !== "undefined") window.print();
+                }}
+                style={{
+                  height: "40px",
+                  padding: "0 16px",
+                  borderRadius: "10px",
+                  backgroundColor: "#FAF9F7",
+                  border: "1px solid #E8E2D4",
+                  color: "#2B2D2A",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <Download size={14} /> Print / Save
+              </button>
+              <button
+                onClick={() => setSelectedReceipt(null)}
+                style={{
+                  height: "40px",
+                  padding: "0 20px",
+                  borderRadius: "10px",
+                  backgroundColor: "#8A6B2E",
+                  border: "1px solid #8A6B2E",
+                  color: "#FFFFFF",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Close
               </button>
             </div>
           </div>
@@ -983,6 +1493,17 @@ export default function AdminPaymentsPage() {
             width: 100% !important;
             height: 42px !important;
             font-size: 13px !important;
+          }
+
+          /* Receipt Modal Mobile */
+          .admin-receipt-modal-overlay {
+            padding: 16px !important;
+            align-items: flex-end !important;
+          }
+          .admin-receipt-modal-content {
+            border-radius: 16px 16px 0 0 !important;
+            padding: 20px 16px !important;
+            max-width: 100vw !important;
           }
         }
       `}</style>

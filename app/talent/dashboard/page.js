@@ -22,6 +22,10 @@ import PageHeader from "@/components/shared/PageHeader";
 import StatCard from "@/components/shared/StatCard";
 import StatusBadge from "@/components/shared/StatusBadge";
 import NotificationItem from "@/components/talent/NotificationItem";
+import Modal from "@/components/shared/Modal";
+import PaymentCard from "@/components/payment/PaymentCard";
+import { paymentService } from "@/lib/api/services/paymentService";
+import { PRICING_CONFIG } from "@/lib/config/pricing";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
 
@@ -39,6 +43,10 @@ export default function TalentDashboardPage() {
     profileCompletionScore,
     profileChecklist,
   } = useTalent();
+
+  const [isPaid, setIsPaid] = useState(() => paymentService.isTalentPaid());
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const isUnder60 = (profileCompletionScore || 0) < PRICING_CONFIG.MIN_PROFILE_COMPLETION;
 
   const currentTalentId = "tal-904";
 
@@ -76,6 +84,151 @@ export default function TalentDashboardPage() {
 
   return (
     <div className="talent-dashboard-root" style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+      {/* 0. Gate Banners: Payment or Profile Completion */}
+      {!isPaid ? (
+        <div
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            borderLeft: "4px solid #8A6B2E",
+            borderRadius: "10px",
+            padding: "16px 20px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "16px",
+            flexWrap: "wrap",
+            boxShadow: "0 4px 12px rgba(43, 45, 42, 0.03)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                backgroundColor: "#F3EFE6",
+                color: "#8A6B2E",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: "14.5px", fontWeight: "600", color: "#2B2D2A" }}>
+                Complete your one-time registration payment (₹999)
+              </div>
+              <div style={{ fontSize: "13px", color: "#5A584F", marginTop: "2px" }}>
+                Make your comp-card searchable and activate direct application privileges for verified roles.
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPaymentModal(true)}
+            className="btn-primary"
+            style={{
+              padding: "0 18px",
+              height: "40px",
+              fontSize: "13px",
+              fontWeight: "600",
+              borderRadius: "6px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span>Pay ₹999 Now</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      ) : isUnder60 ? (
+        <div
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            borderLeft: "4px solid #C9A55C",
+            borderRadius: "10px",
+            padding: "16px 20px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "16px",
+            flexWrap: "wrap",
+            boxShadow: "0 4px 12px rgba(43, 45, 42, 0.03)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                backgroundColor: "#F3EFE6",
+                color: "#8A6B2E",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <AlertCircle size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: "14.5px", fontWeight: "600", color: "#2B2D2A" }}>
+                Profile 60% complete karo (Currently at {profileCompletionScore || 0}%)
+              </div>
+              <div style={{ fontSize: "13px", color: "#5A584F", marginTop: "2px" }}>
+                A minimum of 60% profile completion is required to submit applications to verified casting opportunities.
+              </div>
+            </div>
+          </div>
+          <Link
+            href="/talent/profile"
+            className="btn-primary"
+            style={{
+              padding: "0 18px",
+              height: "40px",
+              fontSize: "13px",
+              fontWeight: "600",
+              borderRadius: "6px",
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <span>Complete Profile</span>
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+      ) : null}
+
+      {/* Payment Modal for unpaid talent */}
+      {showPaymentModal && (
+        <Modal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          title="Talent Registration Payment"
+          subtitle="One-time fee to activate application submission"
+          maxWidth="520px"
+        >
+          <PaymentCard
+            type="talent_registration"
+            userName={profile?.personal?.fullName || "Talent Member"}
+            userEmail={profile?.personal?.email || "user@vismaya.io"}
+            onSuccess={() => {
+              setIsPaid(true);
+              setShowPaymentModal(false);
+            }}
+            onCancel={() => setShowPaymentModal(false)}
+            isModal={true}
+          />
+        </Modal>
+      )}
+
       {/* Welcome & Overview Header */}
       <div className="talent-welcome-section">
         <div className="talent-welcome-left">
