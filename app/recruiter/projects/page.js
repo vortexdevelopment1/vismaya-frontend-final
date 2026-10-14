@@ -112,7 +112,7 @@ export default function OrganizationProjectsPage() {
         }}
       >
         {/* Status Filter Tabs */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <div className="v-projects-tabs-row" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           {["all", "active", "completed"].map((tab) => {
             const isActive = activeFilter === tab;
             const count =
@@ -125,6 +125,7 @@ export default function OrganizationProjectsPage() {
                 key={tab}
                 type="button"
                 onClick={() => setActiveFilter(tab)}
+                className={`v-projects-tab-btn ${isActive ? "active" : ""}`}
                 style={{
                   padding: "6px 14px",
                   borderRadius: "12px",
@@ -145,7 +146,7 @@ export default function OrganizationProjectsPage() {
         </div>
 
         {/* Search Input */}
-        <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "1 1 200px", maxWidth: "280px" }}>
+        <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "1 1 200px", maxWidth: "280px" }} className="projects-search-box">
           <Search size={15} style={{ position: "absolute", left: "12px", color: "var(--text-muted)" }} />
           <input
             type="text"
@@ -424,9 +425,47 @@ export default function OrganizationProjectsPage() {
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
           }
         }
-        @media (max-width: 599.98px) {
+        @media (max-width: 640px) {
           .projects-grid {
             grid-template-columns: 1fr !important;
+          }
+          .projects-search-box {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          .v-projects-tabs-row {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            width: 100% !important;
+          }
+          .v-projects-tab-btn {
+            flex: 1 1 auto !important;
+            height: 28px !important;
+            padding: 0 8px !important;
+            border-radius: 999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .v-projects-tab-btn.active {
+            background-color: #8A6B2E !important;
+            color: #FFFFFF !important;
+            border: 1px solid #8A6B2E !important;
+          }
+          .v-projects-tab-btn:not(.active) {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #5A584F !important;
+          }
+        }
+        @media (max-width: 380px) {
+          .v-projects-tab-btn {
+            font-size: 10px !important;
+            padding: 0 6px !important;
           }
         }
       `}</style>

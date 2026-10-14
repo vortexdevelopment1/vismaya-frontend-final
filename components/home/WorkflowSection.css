@@ -67,3 +67,69 @@
   line-height: 24px;
   margin: 0;
 }
+
+/* ==========================================================================
+   Mobile Responsive Adjustments (<=640px)
+   - Reduced header margins and scaled heading
+   - Compact workflow cards with 16px padding
+   ========================================================================== */
+@media (max-width: 640px) {
+  .workflow-section {
+    padding-top: 36px !important;
+    padding-bottom: 38px !important;
+  }
+
+  .workflow-header {
+    margin: 0 auto 18px auto !important;
+  }
+
+  .workflow-heading {
+    font-size: 25px !important;
+    line-height: 1.18 !important;
+    margin-bottom: 6px !important;
+  }
+
+  .workflow-subtext {
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+  }
+
+  .workflow-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .workflow-card {
+    padding: 14px 16px !important;
+    gap: 6px !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--border-color) !important;
+    border-left: 3.5px solid #8A6B2E !important;
+    background-color: #FFFFFF !important;
+    box-shadow: 0 2px 8px rgba(43, 45, 42, 0.03) !important;
+  }
+
+  .workflow-step-num {
+    font-size: 22px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    color: #8A6B2E !important;
+    margin-bottom: 2px !important;
+  }
+
+  .workflow-step-title {
+    font-size: 16.5px !important;
+    line-height: 1.25 !important;
+    margin: 0 !important;
+  }
+
+  .workflow-step-desc {
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+    color: var(--text-secondary) !important;
+    margin: 0 !important;
+  }
+}
+
+

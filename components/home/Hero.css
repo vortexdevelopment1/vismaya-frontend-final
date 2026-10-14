@@ -926,10 +926,25 @@
   }
 }
 
-/* Mobile (390px and down) */
-@media (max-width: 480px) {
+/* Mobile (640px and down) */
+@media (max-width: 640px) {
+  .hero-master-container {
+    overflow: hidden !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .hero-bg-arc {
+    display: none !important;
+  }
+
+  .hero-bg-glow {
+    width: 100% !important;
+    max-width: 280px !important;
+  }
+
   .hero-header-inner {
-    height: 70px;
+    height: 64px;
     padding: 0 16px;
   }
 
@@ -954,13 +969,13 @@
   }
 
   .hero-main-layout {
-    padding: 28px 16px 28px;
-    gap: 30px;
+    padding: 24px 16px 20px;
+    gap: 24px;
   }
 
   .hero-eyebrow {
-    margin-bottom: 16px;
-    gap: 10px;
+    margin-bottom: 12px;
+    gap: 8px;
   }
 
   .hero-eyebrow-line {
@@ -973,15 +988,15 @@
   }
 
   .hero-heading {
-    font-size: clamp(34px, 8.5vw, 42px);
-    line-height: 1.08;
-    margin-bottom: 18px;
+    font-size: 26px !important;
+    line-height: 1.15 !important;
+    margin-bottom: 14px;
   }
 
   .hero-subtext {
-    font-size: 15px;
-    line-height: 1.6;
-    margin-bottom: 24px;
+    font-size: 14px !important;
+    line-height: 1.55 !important;
+    margin-bottom: 20px;
   }
 
   .hero-actions-group {
@@ -995,13 +1010,16 @@
   .hero-btn-outline {
     width: 100%;
     justify-content: center;
-    padding: 13px 20px;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 18px !important;
+    font-size: 13.5px !important;
   }
 
   .hero-trust-badges {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
   }
 
   .hero-visual-header {
@@ -1014,15 +1032,21 @@
 
   .hero-collage-grid {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 12px;
   }
 
   .hero-card-tall {
-    height: 350px;
+    height: 220px !important;
+    border-radius: 14px;
   }
 
   .hero-caption-tall {
-    bottom: 64px;
+    bottom: 50px;
+    padding: 8px 12px;
+  }
+
+  .hero-caption-name {
+    font-size: 15px;
   }
 
   .hero-floating-chip {
@@ -1030,32 +1054,77 @@
     bottom: 10px;
     max-width: calc(100% - 20px);
     white-space: normal;
+    padding: 6px 10px !important;
+  }
+
+  .hero-chip-text {
+    font-size: 11px;
   }
 
   .hero-cards-stack {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 8px;
   }
 
-  .hero-card-stacked {
-    height: 160px;
-  }
-
+  .hero-card-stacked,
   .hero-card-offset {
-    height: 160px;
+    height: 120px !important;
+    border-radius: 12px;
   }
 
+  .hero-card-meta-inner {
+    padding: 8px 10px;
+  }
+
+  .hero-card-name-sm {
+    font-size: 12px;
+  }
+
+  .hero-card-role-sm {
+    font-size: 9.5px;
+  }
+
+  /* Journey strip: compact, wraps neatly with small gaps */
   .hero-journey-strip {
-    padding: 16px 14px;
+    padding: 12px 14px !important;
+    gap: 10px !important;
+  }
+
+  .hero-journey-label {
+    font-size: 10px !important;
+    letter-spacing: 0.12em !important;
   }
 
   .hero-journey-items {
-    flex-direction: column;
-    gap: 10px;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 8px 12px !important;
+  }
+
+  .hero-journey-item {
+    font-size: 12px !important;
+    gap: 6px !important;
   }
 
   .hero-journey-sep {
-    display: none;
+    display: none !important;
   }
 }
+
+@media (max-width: 400px) {
+  .hero-heading {
+    font-size: 24px !important;
+  }
+
+  .hero-card-tall {
+    height: 200px !important;
+  }
+
+  .hero-card-stacked,
+  .hero-card-offset {
+    height: 110px !important;
+  }
+}
+

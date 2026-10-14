@@ -12,6 +12,7 @@ export default function ContactPage() {
 
       {/* 1. TOP HEADER */}
       <section
+        className="contact-header-section"
         style={{
           position: "relative",
           paddingTop: "clamp(28px, 4vw, 48px)",
@@ -37,6 +38,7 @@ export default function ContactPage() {
               <span>Contact &amp; Operations Support</span>
             </div>
             <h1
+              className="contact-title-heading"
               style={{
                 fontFamily: "var(--font-heading), Georgia, serif",
                 fontSize: "clamp(34px, 5vw, 56px)",
@@ -49,7 +51,7 @@ export default function ContactPage() {
             >
               Get in Touch with Vismaya
             </h1>
-            <p style={{ fontSize: "16px", lineHeight: "28px", color: "var(--text-secondary, #777970)", margin: 0 }}>
+            <p className="contact-header-subtext" style={{ fontSize: "16px", lineHeight: "28px", color: "var(--text-secondary, #777970)", margin: 0 }}>
               Have questions about talent verification, enterprise studio onboarding, or need audition assistance? Our operations desk is available.
             </p>
           </div>
@@ -57,7 +59,7 @@ export default function ContactPage() {
       </section>
 
       {/* 2. MAIN CONTENT */}
-      <section className="public-section" style={{ backgroundColor: "#FAF9F7", padding: "clamp(36px, 5vw, 64px) 0" }}>
+      <section className="public-section contact-main-section" style={{ backgroundColor: "#FAF9F7", padding: "clamp(36px, 5vw, 64px) 0" }}>
         <div className="public-container">
           <div
             className="contact-grid"
@@ -369,6 +371,42 @@ export default function ContactPage() {
           .contact-info-card,
           .contact-form-card {
             padding: 24px !important;
+          }
+        }
+        @media (max-width: 640px) {
+          :global(.contact-header-section) {
+            padding-top: 24px !important;
+            padding-bottom: 24px !important;
+          }
+          :global(.contact-title-heading) {
+            font-size: 26px !important;
+            line-height: 1.18 !important;
+            margin-bottom: 10px !important;
+          }
+          :global(.contact-header-subtext) {
+            font-size: 14px !important;
+            line-height: 1.55 !important;
+          }
+          :global(.contact-main-section) {
+            padding: 36px 0 !important;
+          }
+          .contact-grid {
+            gap: 16px !important;
+          }
+          .contact-info-card,
+          .contact-form-card {
+            padding: 16px !important;
+            border-radius: 14px !important;
+            gap: 20px !important;
+          }
+          .contact-info-card h2,
+          .contact-form-card h2 {
+            font-size: 22px !important;
+            line-height: 1.2 !important;
+          }
+          .contact-submit-btn {
+            height: 42px !important;
+            font-size: 13.5px !important;
           }
         }
       `}</style>

@@ -320,6 +320,7 @@ export default function OpportunityApplicantsPage() {
 
       {/* Status Summary Filter Tabs */}
       <div
+        className="v-applicants-tabs-row"
         style={{
           display: "flex",
           gap: "8px",
@@ -341,6 +342,7 @@ export default function OpportunityApplicantsPage() {
             <button
               key={tab.key}
               onClick={() => setStatusFilter(tab.key)}
+              className={`v-applicants-tab-btn ${isActive ? "active" : ""}`}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -526,6 +528,7 @@ export default function OpportunityApplicantsPage() {
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
           }}
+          className="applicants-table-card"
         >
           <div style={{ overflowX: "auto" }} className="desktop-applicants-table">
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
@@ -822,6 +825,75 @@ export default function OpportunityApplicantsPage() {
           }
           .mobile-applicants-stack {
             display: flex !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .applicants-table-card {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            padding: 0 !important;
+          }
+          .mobile-applicants-stack {
+            padding: 0 !important;
+            gap: 10px !important;
+          }
+          .v-applicants-tabs-row {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            overflow: visible !important;
+            width: 100% !important;
+            margin: 4px 0 !important;
+          }
+          .v-applicants-tab-btn {
+            flex: 1 1 auto !important;
+            height: 28px !important;
+            padding: 0 8px !important;
+            border-radius: 999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 5px !important;
+          }
+          .v-applicants-tab-btn:not(.active) {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #5A584F !important;
+          }
+          .v-applicants-tab-btn.active {
+            background-color: #8A6B2E !important;
+            color: #FFFFFF !important;
+            border: 1px solid #8A6B2E !important;
+          }
+          .v-applicants-tab-btn span:last-child {
+            min-width: 16px !important;
+            height: 16px !important;
+            border-radius: 8px !important;
+            font-size: 9.5px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 4px !important;
+          }
+          .v-applicants-tab-btn.active span:last-child {
+            background-color: #FFFFFF !important;
+            color: #8A6B2E !important;
+          }
+          .v-applicants-tab-btn:not(.active) span:last-child {
+            background-color: #F3EFE6 !important;
+            color: #5A584F !important;
+          }
+        }
+        @media (max-width: 380px) {
+          .v-applicants-tab-btn {
+            font-size: 10px !important;
+            padding: 0 6px !important;
           }
         }
       `}</style>

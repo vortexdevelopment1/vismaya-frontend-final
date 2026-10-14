@@ -54,9 +54,10 @@ export default function AdminTopbar({ onOpenMobile }) {
         width: "100%",
         boxSizing: "border-box",
       }}
+      className="admin-topbar-header"
     >
       {/* Left: Mobile hamburger & title, Desktop Single Title + Muted Subtitle */}
-      <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0 }}>
+      <div className="admin-topbar-left" style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0, flex: "1 1 auto" }}>
         {/* Mobile Hamburger */}
         <button
           onClick={onOpenMobile}
@@ -80,8 +81,9 @@ export default function AdminTopbar({ onOpenMobile }) {
         </button>
 
         {/* Page Title & Subtitle */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0, flex: "1 1 auto" }}>
           <h1
+            className="admin-topbar-title"
             style={{
               fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
               fontSize: "22px",
@@ -115,7 +117,7 @@ export default function AdminTopbar({ onOpenMobile }) {
       </div>
 
       {/* Right Controls: System Status Chip + Bell + Avatar */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+      <div className="admin-topbar-right" style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
         {/* System Status Chip (Neutral bg #F3EFE6, charcoal text, gold-brown dot) */}
         <div
           style={{
@@ -165,6 +167,7 @@ export default function AdminTopbar({ onOpenMobile }) {
               position: "relative",
               transition: "all 0.16s ease",
             }}
+            className="admin-notif-btn"
           >
             <Bell size={18} />
             {unreadCount > 0 && (
@@ -288,6 +291,7 @@ export default function AdminTopbar({ onOpenMobile }) {
             letterSpacing: "0.02em",
           }}
           title="Super Admin (SA)"
+          className="admin-avatar-btn"
         >
           SA
         </div>
@@ -302,9 +306,43 @@ export default function AdminTopbar({ onOpenMobile }) {
             display: none !important;
           }
         }
-        @media (max-width: 480px) {
+        @media (max-width: 640px) {
+          .admin-topbar-header {
+            height: 56px !important;
+            min-height: 56px !important;
+            padding-inline: 12px !important;
+          }
+          .admin-topbar-left {
+            gap: 8px !important;
+          }
+          .admin-hamburger-btn {
+            width: 36px !important;
+            height: 36px !important;
+            min-height: 36px !important;
+            min-width: 36px !important;
+            border-radius: 9px !important;
+          }
+          .admin-topbar-title {
+            font-size: 17px !important;
+            line-height: 1.25 !important;
+          }
           .admin-status-chip {
             display: none !important;
+          }
+          .admin-topbar-right {
+            gap: 8px !important;
+          }
+          .admin-notif-btn {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 9px !important;
+          }
+          .admin-avatar-btn {
+            width: 34px !important;
+            height: 34px !important;
+            border-radius: 50% !important;
+            font-size: 12px !important;
+            flex-shrink: 0 !important;
           }
         }
       `}</style>

@@ -66,7 +66,7 @@ export default function AdminAnalyticsPage() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div className="admin-analytics-page" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Page Header */}
       <PageHeader
         title="Platform Analytics & Intelligence"
@@ -75,6 +75,7 @@ export default function AdminAnalyticsPage() {
         action={
           /* Date Range Selector - Segmented Control */
           <div
+            className="admin-time-range-wrap"
             style={{
               display: "flex",
               alignItems: "center",
@@ -98,6 +99,7 @@ export default function AdminAnalyticsPage() {
               return (
                 <button
                   key={range.key}
+                  className={`admin-time-range-btn ${isActive ? "active" : ""}`}
                   onClick={() => setTimeRange(range.key)}
                   style={{
                     padding: "6px clamp(10px, 2vw, 14px)",
@@ -124,6 +126,7 @@ export default function AdminAnalyticsPage() {
 
       {/* Top Row KPI Cards */}
       <div
+        className="admin-stat-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))",
@@ -166,6 +169,7 @@ export default function AdminAnalyticsPage() {
 
       {/* Row 1 Charts: User Growth Line Chart (2fr) + Category Breakdown (1fr) */}
       <div
+        className="admin-chart-row-1"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
@@ -174,6 +178,7 @@ export default function AdminAnalyticsPage() {
       >
         {/* User Growth Line Chart */}
         <div
+          className="admin-chart-card"
           style={{
             backgroundColor: "#FFFFFF",
             border: "1px solid #E8E2D4",
@@ -214,6 +219,7 @@ export default function AdminAnalyticsPage() {
 
         {/* Category Breakdown */}
         <div
+          className="admin-chart-card"
           style={{
             backgroundColor: "#FFFFFF",
             border: "1px solid #E8E2D4",
@@ -240,6 +246,7 @@ export default function AdminAnalyticsPage() {
 
       {/* Row 2 Charts: Applications Monthly Bar Chart (1fr) + Conversion Funnel (1fr) + Top Cities (1fr) */}
       <div
+        className="admin-chart-row-2"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
@@ -248,6 +255,7 @@ export default function AdminAnalyticsPage() {
       >
         {/* Application Volume Bar Chart */}
         <div
+          className="admin-chart-card"
           style={{
             backgroundColor: "#FFFFFF",
             border: "1px solid #E8E2D4",
@@ -273,6 +281,7 @@ export default function AdminAnalyticsPage() {
 
         {/* Application Conversion Funnel */}
         <div
+          className="admin-chart-card"
           style={{
             backgroundColor: "#FFFFFF",
             border: "1px solid #E8E2D4",
@@ -298,6 +307,7 @@ export default function AdminAnalyticsPage() {
 
         {/* Top Talent Cities Leaderboard */}
         <div
+          className="admin-chart-card"
           style={{
             backgroundColor: "#FFFFFF",
             border: "1px solid #E8E2D4",
@@ -324,6 +334,7 @@ export default function AdminAnalyticsPage() {
 
       {/* Row 3: Broadcast Messaging Center */}
       <div
+        className="admin-broadcast-card"
         style={{
           backgroundColor: "#FFFFFF",
           border: "1px solid #E8E2D4",
@@ -347,6 +358,7 @@ export default function AdminAnalyticsPage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              flexShrink: 0,
             }}
           >
             <Radio size={20} />
@@ -363,7 +375,7 @@ export default function AdminAnalyticsPage() {
 
         {/* Broadcast Creation Form */}
         <form onSubmit={handleBroadcastSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
+          <div className="admin-broadcast-fields" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#2B2D2A", marginBottom: "6px" }}>
                 Target Audience
@@ -492,6 +504,7 @@ export default function AdminAnalyticsPage() {
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               type="submit"
+              className="admin-broadcast-btn"
               style={{
                 height: "44px",
                 padding: "0 22px",
@@ -526,6 +539,7 @@ export default function AdminAnalyticsPage() {
               broadcasts.map((bc) => (
                 <div
                   key={bc.id}
+                  className="admin-broadcast-history-item"
                   style={{
                     padding: "16px 18px",
                     borderRadius: "14px",
@@ -537,8 +551,8 @@ export default function AdminAnalyticsPage() {
                     gap: "14px",
                   }}
                 >
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px", flexWrap: "wrap" }}>
                       <span style={{ fontSize: "15px", fontWeight: "700", color: "#2B2D2A" }}>
                         {bc.title}
                       </span>
@@ -551,6 +565,7 @@ export default function AdminAnalyticsPage() {
                           backgroundColor: bc.priority === "Urgent Casting Alert" ? "rgba(180, 35, 24, 0.08)" : "rgba(138, 107, 46, 0.12)",
                           color: bc.priority === "Urgent Casting Alert" ? "#B42318" : "#6E5420",
                           border: `1px solid ${bc.priority === "Urgent Casting Alert" ? "rgba(180, 35, 24, 0.25)" : "rgba(138, 107, 46, 0.25)"}`,
+                          whiteSpace: "nowrap",
                         }}
                       >
                         {bc.priority}
@@ -564,7 +579,7 @@ export default function AdminAnalyticsPage() {
                     </div>
                   </div>
 
-                  <span style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap", flexShrink: 0 }}>
+                  <span className="admin-broadcast-history-date" style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap", flexShrink: 0 }}>
                     {bc.sentAt}
                   </span>
                 </div>
@@ -577,6 +592,100 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .admin-analytics-page {
+            gap: 16px !important;
+          }
+          .admin-time-range-wrap {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            padding: 3px !important;
+            background-color: #F3EFE6 !important;
+            border-radius: 999px !important;
+          }
+          .admin-time-range-btn {
+            flex: 1 1 auto !important;
+            height: 28px !important;
+            padding: 0 8px !important;
+            font-size: 10.5px !important;
+            border-radius: 999px !important;
+            font-weight: 600 !important;
+            text-align: center !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .admin-time-range-btn.active {
+            background-color: #8A6B2E !important;
+            color: #FFFFFF !important;
+          }
+          .admin-stat-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+          }
+          .admin-chart-row-1,
+          .admin-chart-row-2 {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+          .admin-chart-card,
+          .admin-broadcast-card {
+            padding: 14px 14px !important;
+            border-radius: 14px !important;
+            gap: 12px !important;
+          }
+          .admin-chart-card h3,
+          .admin-broadcast-card h3 {
+            font-size: 16px !important;
+            line-height: 1.25 !important;
+          }
+          .admin-chart-card p,
+          .admin-broadcast-card p {
+            font-size: 12px !important;
+            line-height: 1.4 !important;
+          }
+          .admin-broadcast-fields {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+          .admin-broadcast-card input,
+          .admin-broadcast-card select {
+            height: 42px !important;
+            font-size: 16px !important;
+            border-radius: 10px !important;
+          }
+          .admin-broadcast-card textarea {
+            font-size: 16px !important;
+            border-radius: 10px !important;
+            min-height: 84px !important;
+          }
+          .admin-broadcast-btn {
+            width: 100% !important;
+            height: 42px !important;
+            justify-content: center !important;
+            font-size: 13px !important;
+          }
+          .admin-broadcast-history-item {
+            flex-direction: column !important;
+            gap: 8px !important;
+            padding: 12px 14px !important;
+            border-radius: 12px !important;
+          }
+          .admin-broadcast-history-date {
+            align-self: flex-start !important;
+            font-size: 11px !important;
+          }
+        }
+        @media (max-width: 400px) {
+          .admin-time-range-btn {
+            font-size: 10px !important;
+            padding: 0 6px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

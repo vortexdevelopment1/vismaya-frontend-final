@@ -73,17 +73,17 @@ export default function OrganizationDashboardPage() {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div className="recruiter-dashboard-root" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Page Header */}
       <PageHeader
         title="Organization Overview"
         subtitle="Manage casting projects, post verified opportunities, screen talent submissions, and track audition self-tapes."
         badge="Zee Films • Verified Production House"
         action={
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <div className="recruiter-dash-header-actions" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <Link
               href="/recruiter/projects"
-              className="btn-secondary"
+              className="btn-secondary dash-action-btn"
               style={{ fontSize: "13px", fontWeight: "600", height: "36px", padding: "0 16px", gap: "6px", borderRadius: "10px" }}
             >
               <FolderKanban size={15} />
@@ -91,7 +91,7 @@ export default function OrganizationDashboardPage() {
             </Link>
             <Link
               href="/recruiter/opportunities/new"
-              className="btn-primary"
+              className="btn-primary dash-action-btn"
               style={{ fontSize: "13px", fontWeight: "600", height: "36px", padding: "0 18px", gap: "6px", borderRadius: "10px" }}
             >
               <PlusCircle size={15} />
@@ -165,7 +165,7 @@ export default function OrganizationDashboardPage() {
       >
         {/* Left Card: Action Needed List */}
         <div
-          className="card-surface"
+          className="card-surface recruiter-dash-section-card"
           style={{
             padding: "22px",
             display: "flex",
@@ -173,35 +173,42 @@ export default function OrganizationDashboardPage() {
             gap: "16px",
             minWidth: 0,
             overflow: "hidden",
+            backgroundColor: "#FFFFFF",
+            borderRadius: "16px",
+            border: "1px solid #E8E2D4",
           }}
         >
           <div
+            className="recruiter-section-header"
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+              borderBottom: "1px solid #E8E2D4",
               paddingBottom: "12px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div className="recruiter-section-header-left" style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
               <div
+                className="recruiter-section-icon-box"
                 style={{
                   width: "34px",
                   height: "34px",
                   borderRadius: "10px",
-                  background: "rgba(251, 191, 36, 0.14)",
-                  color: "var(--gold)",
+                  background: "#F3EFE6",
+                  color: "#8A6B2E",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  border: "1px solid rgba(251, 191, 36, 0.35)",
+                  border: "1px solid #E8E2D4",
+                  flexShrink: 0,
                 }}
               >
                 <AlertTriangle size={18} />
               </div>
-              <div>
+              <div className="recruiter-section-title-col" style={{ minWidth: 0 }}>
                 <h2
+                  className="recruiter-section-title"
                   style={{
                     fontSize: "0.95rem",
                     fontWeight: 700,
@@ -211,28 +218,31 @@ export default function OrganizationDashboardPage() {
                 >
                   Action Needed
                 </h2>
-                <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>
+                <p className="recruiter-section-subtitle" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>
                   Items requiring your immediate review and decisions
                 </p>
               </div>
             </div>
 
             <span
+              className="recruiter-count-pill"
               style={{
                 fontSize: "0.725rem",
                 fontWeight: 700,
-                color: "var(--gold)",
-                backgroundColor: "rgba(255, 188, 0, 0.12)",
+                color: "#8A6B2E",
+                backgroundColor: "#F3EFE6",
                 padding: "3px 10px",
                 borderRadius: "8px",
-                border: "1px solid rgba(255, 188, 0, 0.25)",
+                border: "1px solid #E8E2D4",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
               {totalActionCount} items
             </span>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div className="action-needed-list" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {totalActionCount === 0 ? (
               <div
                 style={{
@@ -251,30 +261,31 @@ export default function OrganizationDashboardPage() {
                   <Link
                     key={`chg-${opp.id}`}
                     href="/recruiter/opportunities"
+                    className="action-needed-row changes-requested-row"
                     style={{
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "12px 14px",
                       borderRadius: "12px",
-                      backgroundColor: "rgba(251, 191, 36, 0.08)",
-                      border: "1px solid rgba(251, 191, 36, 0.25)",
+                      backgroundColor: "#F3EFE6",
+                      border: "1px solid rgba(201, 165, 92, 0.4)",
                       textDecoration: "none",
                       transition: "all 0.18s ease",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0 }}>
-                      <AlertTriangle size={16} style={{ color: "var(--gold)", marginTop: "2px", flexShrink: 0 }} />
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--gold)" }}>
+                    <div className="action-row-content" style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0 }}>
+                      <AlertTriangle size={16} className="action-row-icon" style={{ color: "#8A6B2E", marginTop: "2px", flexShrink: 0 }} />
+                      <div className="action-row-text" style={{ minWidth: 0 }}>
+                        <div className="action-row-title" style={{ fontSize: "0.825rem", fontWeight: 700, color: "#8A6B2E" }}>
                           Changes Requested: {opp.title}
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <div className="action-row-meta" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {opp.adminNote || "Please update opportunity details"}
                         </div>
                       </div>
                     </div>
-                    <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--gold)" }}>Edit</span>
+                    <span className="action-row-btn" style={{ fontSize: "0.75rem", fontWeight: 700, color: "#8A6B2E" }}>Edit</span>
                   </Link>
                 ))}
 
@@ -283,30 +294,31 @@ export default function OrganizationDashboardPage() {
                   <Link
                     key={`aud-${aud.id}`}
                     href="/recruiter/shortlist-auditions"
+                    className="action-needed-row"
                     style={{
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "12px 14px",
                       borderRadius: "12px",
-                      backgroundColor: "rgba(255, 255, 255, 0.04)",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      backgroundColor: "#FFFFFF",
+                      border: "1px solid #E8E2D4",
                       textDecoration: "none",
                       transition: "all 0.18s ease",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0 }}>
-                      <Video size={16} style={{ color: "var(--gold)", marginTop: "2px", flexShrink: 0 }} />
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                    <div className="action-row-content" style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0 }}>
+                      <Video size={16} className="action-row-icon" style={{ color: "#8A6B2E", marginTop: "2px", flexShrink: 0 }} />
+                      <div className="action-row-text" style={{ minWidth: 0 }}>
+                        <div className="action-row-title" style={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--text-primary)" }}>
                           Audition Video: {aud.talentName}
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+                        <div className="action-row-meta" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "2px" }}>
                           Status: {aud.status} • Ready for look-test review
                         </div>
                       </div>
                     </div>
-                    <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--gold)" }}>Review</span>
+                    <span className="action-row-btn" style={{ fontSize: "0.75rem", fontWeight: 700, color: "#8A6B2E" }}>Review</span>
                   </Link>
                 ))}
 
@@ -315,30 +327,31 @@ export default function OrganizationDashboardPage() {
                   <Link
                     key={`app-${app.id}`}
                     href={`/recruiter/applications/${app.id}?from=dashboard&opp=${app.opportunityId}`}
+                    className="action-needed-row"
                     style={{
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "12px 14px",
                       borderRadius: "12px",
-                      backgroundColor: "rgba(255, 255, 255, 0.04)",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      backgroundColor: "#FFFFFF",
+                      border: "1px solid #E8E2D4",
                       textDecoration: "none",
                       transition: "all 0.18s ease",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0 }}>
-                      <UserCheck size={16} style={{ color: "var(--gold)", marginTop: "2px", flexShrink: 0 }} />
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                    <div className="action-row-content" style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0 }}>
+                      <UserCheck size={16} className="action-row-icon" style={{ color: "#8A6B2E", marginTop: "2px", flexShrink: 0 }} />
+                      <div className="action-row-text" style={{ minWidth: 0 }}>
+                        <div className="action-row-title" style={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--text-primary)" }}>
                           New Applicant: {app.talentName}
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+                        <div className="action-row-meta" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "2px" }}>
                           Role: {app.roleApplied} • Applied {new Date(app.appliedAt).toLocaleDateString()}
                         </div>
                       </div>
                     </div>
-                    <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--gold)" }}>Screen</span>
+                    <span className="action-row-btn" style={{ fontSize: "0.75rem", fontWeight: 700, color: "#8A6B2E" }}>Screen</span>
                   </Link>
                 ))}
               </>
@@ -348,7 +361,7 @@ export default function OrganizationDashboardPage() {
 
         {/* Right Card: Full End-to-End Casting Flow */}
         <div
-          className="card-surface"
+          className="card-surface recruiter-dash-section-card"
           style={{
             padding: "22px",
             display: "flex",
@@ -356,35 +369,42 @@ export default function OrganizationDashboardPage() {
             gap: "16px",
             minWidth: 0,
             overflow: "hidden",
+            backgroundColor: "#FFFFFF",
+            borderRadius: "16px",
+            border: "1px solid #E8E2D4",
           }}
         >
           <div
+            className="recruiter-section-header"
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+              borderBottom: "1px solid #E8E2D4",
               paddingBottom: "12px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div className="recruiter-section-header-left" style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
               <div
+                className="recruiter-section-icon-box"
                 style={{
                   width: "34px",
                   height: "34px",
                   borderRadius: "10px",
-                  background: "rgba(255, 188, 0, 0.12)",
-                  color: "var(--gold)",
+                  background: "#F3EFE6",
+                  color: "#8A6B2E",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  border: "1px solid rgba(255, 188, 0, 0.28)",
+                  border: "1px solid #E8E2D4",
+                  flexShrink: 0,
                 }}
               >
                 <Sparkles size={18} />
               </div>
-              <div>
+              <div className="recruiter-section-title-col" style={{ minWidth: 0 }}>
                 <h2
+                  className="recruiter-section-title"
                   style={{
                     fontSize: "0.95rem",
                     fontWeight: 700,
@@ -394,21 +414,24 @@ export default function OrganizationDashboardPage() {
                 >
                   Casting Workflow
                 </h2>
-                <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>
+                <p className="recruiter-section-subtitle" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>
                   Verified lifecycle connecting Organizations, Vismaya Desk, and Artists
                 </p>
               </div>
             </div>
 
             <span
+              className="recruiter-count-pill"
               style={{
                 fontSize: "0.725rem",
                 fontWeight: 700,
-                color: "var(--gold)",
-                backgroundColor: "rgba(255, 188, 0, 0.12)",
+                color: "#8A6B2E",
+                backgroundColor: "#F3EFE6",
                 padding: "3px 10px",
                 borderRadius: "8px",
-                border: "1px solid rgba(255, 188, 0, 0.25)",
+                border: "1px solid #E8E2D4",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
               9 Stages
@@ -416,6 +439,7 @@ export default function OrganizationDashboardPage() {
           </div>
 
           <div
+            className="workflow-stages-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(min(125px, 100%), 1fr))",
@@ -425,20 +449,21 @@ export default function OrganizationDashboardPage() {
             {workflowStages.map((stage) => (
               <div
                 key={stage.num}
+                className={`workflow-stage-card stage-${stage.num}`}
                 style={{
                   padding: "10px 12px",
                   borderRadius: "12px",
-                  backgroundColor: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #E8E2D4",
                   display: "flex",
                   flexDirection: "column",
                   gap: "4px",
                 }}
               >
-                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--gold)" }}>
+                <div className="workflow-stage-title" style={{ fontSize: "0.8rem", fontWeight: 700, color: "#8A6B2E" }}>
                   {stage.title}
                 </div>
-                <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", lineHeight: 1.3 }}>
+                <div className="workflow-stage-desc" style={{ fontSize: "0.7rem", color: "var(--text-secondary)", lineHeight: 1.3 }}>
                   {stage.desc}
                 </div>
               </div>
@@ -446,20 +471,21 @@ export default function OrganizationDashboardPage() {
           </div>
 
           <div
+            className="workflow-callout"
             style={{
               padding: "12px 14px",
               borderRadius: "12px",
-              backgroundColor: "rgba(255, 188, 0, 0.06)",
-              border: "1px solid rgba(255, 188, 0, 0.2)",
+              backgroundColor: "#F3EFE6",
+              border: "1px solid #E8E2D4",
               fontSize: "0.785rem",
-              color: "var(--gold)",
+              color: "#5A584F",
               lineHeight: 1.4,
               display: "flex",
               alignItems: "center",
               gap: "8px",
             }}
           >
-            <ShieldCheck size={16} style={{ flexShrink: 0 }} />
+            <ShieldCheck size={16} style={{ flexShrink: 0, color: "#8A6B2E" }} />
             <span>
               All talent contact, video self-tapes, and physical callbacks are verified and mediated by the Vismaya team.
             </span>
@@ -476,9 +502,282 @@ export default function OrganizationDashboardPage() {
             grid-template-columns: minmax(0, 1fr) !important;
           }
         }
-        @media (max-width: 599.98px) {
+
+        @media (max-width: 640px) {
+          .recruiter-dashboard-root {
+            gap: 14px !important;
+          }
+
+          /* Header Block */
+          .recruiter-dashboard-root :global(.page-header-container) {
+            margin-bottom: 0 !important;
+            gap: 8px !important;
+          }
+          .recruiter-dashboard-root :global(.page-header-row) {
+            gap: 10px !important;
+          }
+          .recruiter-dashboard-root :global(.page-header-title-row) {
+            gap: 8px !important;
+            align-items: flex-start !important;
+          }
+          .recruiter-dashboard-root :global(.page-header-title) {
+            font-size: 22px !important;
+            line-height: 1.25 !important;
+          }
+          .recruiter-dashboard-root :global(.page-header-badge) {
+            font-size: 10px !important;
+            white-space: normal !important;
+            line-height: 1.3 !important;
+            padding: 3px 8px !important;
+            display: inline-block !important;
+            max-width: 100% !important;
+          }
+          .recruiter-dashboard-root :global(.page-header-subtitle) {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 3 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+          .recruiter-dashboard-root :global(.page-header-actions) {
+            width: 100% !important;
+            margin-top: 4px !important;
+          }
+
+          /* Header Action Buttons (2-column grid) */
+          .recruiter-dash-header-actions {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+          .recruiter-dash-header-actions :global(.dash-action-btn) {
+            height: 40px !important;
+            min-height: 40px !important;
+            font-size: 12.5px !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            border-radius: 8px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            white-space: nowrap !important;
+            padding: 0 10px !important;
+          }
+
+          /* Stat Cards (2x2 grid) */
           .dashboard-stats-grid {
-            grid-template-columns: minmax(0, 1fr) !important;
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+            width: 100% !important;
+          }
+
+          /* Section Cards */
+          .recruiter-dash-section-card {
+            padding: 14px !important;
+            border-radius: 14px !important;
+            gap: 12px !important;
+          }
+          .recruiter-section-header {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+            border-bottom: 1px solid #E8E2D4 !important;
+            padding-bottom: 10px !important;
+          }
+          .recruiter-section-header-left {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            min-width: 0 !important;
+            flex: 1 1 auto !important;
+          }
+          .recruiter-section-icon-box {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            border-radius: 8px !important;
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #8A6B2E !important;
+          }
+          .recruiter-section-icon-box :global(svg) {
+            width: 16px !important;
+            height: 16px !important;
+          }
+          .recruiter-section-title-col {
+            min-width: 0 !important;
+          }
+          .recruiter-section-title {
+            font-size: 17px !important;
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif !important;
+            color: #2B2D2A !important;
+            margin: 0 !important;
+            line-height: 1.25 !important;
+          }
+          .recruiter-section-subtitle {
+            font-size: 12px !important;
+            color: #5A584F !important;
+            margin: 2px 0 0 0 !important;
+            line-height: 1.35 !important;
+          }
+          .recruiter-count-pill {
+            font-size: 10.5px !important;
+            font-weight: 700 !important;
+            white-space: nowrap !important;
+            flex: none !important;
+            padding: 3px 8px !important;
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #8A6B2E !important;
+            border-radius: 8px !important;
+          }
+
+          /* Main Grid & Gap */
+          .dashboard-main-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
+            width: 100% !important;
+          }
+
+          /* Action Needed Rows */
+          .action-needed-list {
+            gap: 8px !important;
+          }
+          .action-needed-row {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            padding: 10px 12px !important;
+            border-radius: 10px !important;
+            border: 1px solid #E8E2D4 !important;
+            background-color: #FFFFFF !important;
+            gap: 6px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .action-needed-row.changes-requested-row {
+            background-color: #F3EFE6 !important;
+            border: 1px solid rgba(201, 165, 92, 0.5) !important;
+          }
+          .action-row-content {
+            display: flex !important;
+            align-items: flex-start !important;
+            gap: 8px !important;
+            width: 100% !important;
+            min-width: 0 !important;
+          }
+          .action-row-icon {
+            width: 18px !important;
+            height: 18px !important;
+            min-width: 18px !important;
+            margin-top: 2px !important;
+            flex-shrink: 0 !important;
+          }
+          .action-row-text {
+            min-width: 0 !important;
+            flex: 1 !important;
+          }
+          .action-row-title {
+            font-size: 13.5px !important;
+            font-weight: 700 !important;
+            color: #2B2D2A !important;
+            line-height: 1.35 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+          .changes-requested-row .action-row-title {
+            color: #8A6B2E !important;
+          }
+          .action-row-meta {
+            font-size: 12px !important;
+            color: #5A584F !important;
+            line-height: 1.4 !important;
+            margin-top: 2px !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: normal !important;
+          }
+          .action-row-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            height: 30px !important;
+            min-height: 30px !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            color: #8A6B2E !important;
+            border: 1px solid #8A6B2E !important;
+            background-color: #FAF9F7 !important;
+            border-radius: 6px !important;
+            padding: 0 12px !important;
+            margin-left: 26px !important;
+            align-self: flex-start !important;
+          }
+
+          /* Casting Workflow Grid */
+          .workflow-stages-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 12px 16px !important;
+          }
+          .workflow-stage-card {
+            padding: 8px 10px !important;
+            border-radius: 10px !important;
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 2px !important;
+          }
+          .workflow-stage-card.stage-9 {
+            grid-column: span 2 !important;
+          }
+          .workflow-stage-title {
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            color: #8A6B2E !important;
+            line-height: 1.3 !important;
+          }
+          .workflow-stage-desc {
+            font-size: 11.5px !important;
+            color: #5A584F !important;
+            line-height: 1.35 !important;
+          }
+          .workflow-callout {
+            padding: 10px 12px !important;
+            border-radius: 10px !important;
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+            font-size: 11.5px !important;
+            color: #5A584F !important;
+            line-height: 1.4 !important;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .recruiter-dashboard-root :global(.page-header-title) {
+            font-size: 20px !important;
+          }
+          .recruiter-dash-header-actions :global(.dash-action-btn) {
+            font-size: 12px !important;
+            padding: 0 6px !important;
           }
         }
       `}</style>

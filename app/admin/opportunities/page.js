@@ -115,7 +115,7 @@ export default function AdminOpportunitiesPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div className="admin-opp-page" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Page Header */}
       <PageHeader
         title="Opportunities Directory"
@@ -128,7 +128,7 @@ export default function AdminOpportunitiesPage() {
       />
 
       {/* Filter Tabs */}
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <div className="admin-opp-tabs-wrap" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         {[
           { key: "ALL", label: "All Opportunities", count: statusCounts.ALL },
           { key: "Published", label: "Published Live", count: statusCounts.Published },
@@ -141,6 +141,7 @@ export default function AdminOpportunitiesPage() {
           return (
             <button
               key={tab.key}
+              className={`admin-opp-tab-btn ${isActive ? "active" : ""}`}
               onClick={() => setStatusFilter(tab.key)}
               style={{
                 display: "inline-flex",
@@ -162,6 +163,7 @@ export default function AdminOpportunitiesPage() {
             >
               <span>{tab.label}</span>
               <span
+                className={`admin-opp-tab-badge ${isActive ? "active" : ""}`}
                 style={{
                   minWidth: "22px",
                   height: "22px",
@@ -185,6 +187,7 @@ export default function AdminOpportunitiesPage() {
 
       {/* Search & Organization Dropdown Filter Card */}
       <div
+        className="admin-opp-filter-card"
         style={{
           backgroundColor: "#FFFFFF",
           border: "1px solid #E8E2D4",
@@ -199,6 +202,7 @@ export default function AdminOpportunitiesPage() {
         }}
       >
         <div
+          className="admin-opp-search-wrap"
           style={{
             flex: "1 1 280px",
             display: "flex",
@@ -214,6 +218,7 @@ export default function AdminOpportunitiesPage() {
           <Search size={16} style={{ color: "#5A584F" }} />
           <input
             type="text"
+            className="admin-opp-search-input"
             placeholder="Search opportunity title, studio, project..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -229,10 +234,11 @@ export default function AdminOpportunitiesPage() {
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div className="admin-opp-org-select-wrap" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", whiteSpace: "nowrap" }}>Organization:</span>
           <select
             value={orgFilter}
+            className="admin-opp-org-select"
             onChange={(e) => setOrgFilter(e.target.value)}
             style={{
               backgroundColor: "#FFFFFF",
@@ -278,160 +284,296 @@ export default function AdminOpportunitiesPage() {
           </p>
         </div>
       ) : (
-        <div
-          style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #E8E2D4",
-            borderRadius: "16px",
-            overflow: "hidden",
-            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
-          }}
-        >
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px", minWidth: "960px" }}>
-              <thead>
-                <tr
-                  style={{
-                    backgroundColor: "#F3EFE6",
-                    borderBottom: "1px solid #E8E2D4",
-                    color: "#5A584F",
-                    fontWeight: "700",
-                    fontSize: "12px",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.14em",
-                  }}
-                >
-                  <th style={{ padding: "16px 20px" }}>Opportunity</th>
-                  <th style={{ padding: "16px 20px" }}>Project &amp; Studio</th>
-                  <th style={{ padding: "16px 20px" }}>Application Deadline</th>
-                  <th style={{ padding: "16px 20px" }}>Applicants</th>
-                  <th style={{ padding: "16px 20px" }}>Status</th>
-                  <th style={{ padding: "16px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "110px" }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOpportunities.map((opp) => {
-                  const org = getOrgForOpp(opp.orgId);
-                  const proj = getProjectForOpp(opp.projectId);
-                  const apps = getApplicantsForOpp(opp.id);
-                  const isClosed = opp.status === "Closed";
+        <>
+          <div
+            className="admin-opp-desktop-table"
+            style={{
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E8E2D4",
+              borderRadius: "16px",
+              overflow: "hidden",
+              boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
+            }}
+          >
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px", minWidth: "960px" }}>
+                <thead>
+                  <tr
+                    style={{
+                      backgroundColor: "#F3EFE6",
+                      borderBottom: "1px solid #E8E2D4",
+                      color: "#5A584F",
+                      fontWeight: "700",
+                      fontSize: "12px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.14em",
+                    }}
+                  >
+                    <th style={{ padding: "16px 20px" }}>Opportunity</th>
+                    <th style={{ padding: "16px 20px" }}>Project &amp; Studio</th>
+                    <th style={{ padding: "16px 20px" }}>Application Deadline</th>
+                    <th style={{ padding: "16px 20px" }}>Applicants</th>
+                    <th style={{ padding: "16px 20px" }}>Status</th>
+                    <th style={{ padding: "16px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "110px" }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOpportunities.map((opp) => {
+                    const org = getOrgForOpp(opp.orgId);
+                    const proj = getProjectForOpp(opp.projectId);
+                    const apps = getApplicantsForOpp(opp.id);
+                    const isClosed = opp.status === "Closed";
 
-                  return (
-                    <tr
-                      key={opp.id}
+                    return (
+                      <tr
+                        key={opp.id}
+                        style={{
+                          borderBottom: "1px solid #E8E2D4",
+                          transition: "background-color 0.15s ease",
+                        }}
+                      >
+                        {/* Opportunity Title & Type */}
+                        <td style={{ padding: "18px 20px" }}>
+                          <div style={{ fontWeight: 600, fontSize: "15px", color: "#2B2D2A" }}>
+                            {opp.title}
+                          </div>
+                          <div style={{ fontSize: "13px", color: "#6E5420", fontWeight: "600", marginTop: "2px" }}>
+                            {opp.opportunityType} &bull; {opp.location}
+                          </div>
+                        </td>
+
+                        {/* Project & Organization */}
+                        <td style={{ padding: "18px 20px" }}>
+                          <div style={{ fontWeight: 600, color: "#2B2D2A" }}>
+                            {proj?.title || "Project"}
+                          </div>
+                          <div style={{ fontSize: "13px", color: "#5A584F", display: "flex", alignItems: "center", gap: "4px", marginTop: "2px" }}>
+                            <Building2 size={13} />
+                            <span>{org?.name || "Organization"}</span>
+                          </div>
+                        </td>
+
+                        {/* Deadline & Auto-close indicator */}
+                        <td style={{ padding: "18px 20px" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                            <span style={{ fontWeight: 600, color: "#2B2D2A", fontVariantNumeric: "tabular-nums" }}>
+                              {opp.deadline}
+                            </span>
+                            {isClosed ? (
+                              <span
+                                style={{
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  color: "#6E5420",
+                                  backgroundColor: "rgba(138, 107, 46, 0.12)",
+                                  border: "1px solid rgba(138, 107, 46, 0.25)",
+                                  padding: "2px 8px",
+                                  borderRadius: "999px",
+                                  width: "fit-content",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                Auto-closed
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap" }}>
+                                Auto-closes on {opp.deadline}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Applicants Count */}
+                        <td style={{ padding: "18px 20px" }}>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              padding: "4px 10px",
+                              borderRadius: "999px",
+                              backgroundColor: apps.length > 0 ? "rgba(138, 107, 46, 0.12)" : "#F3EFE6",
+                              color: apps.length > 0 ? "#6E5420" : "#5A584F",
+                              border: apps.length > 0 ? "1px solid rgba(138, 107, 46, 0.25)" : "1px solid #E8E2D4",
+                              fontWeight: 700,
+                              fontSize: "12px",
+                            }}
+                          >
+                            <Users size={13} />
+                            <span>{apps.length}</span>
+                          </span>
+                        </td>
+
+                        {/* Status */}
+                        <td style={{ padding: "18px 20px" }}>
+                          <StatusBadge status={opp.status} size="sm" />
+                        </td>
+
+                        {/* Action */}
+                        <td style={{ padding: "18px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "110px" }}>
+                          <button
+                            type="button"
+                            onClick={() => setViewModalOpp(opp)}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              fontSize: "13px",
+                              color: "#8A6B2E",
+                              fontWeight: 600,
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              textDecoration: "none",
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                            onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                          >
+                            <Eye size={14} />
+                            <span>Details</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile Stacked Card List */}
+          <div className="admin-opp-mobile-cards">
+            {filteredOpportunities.map((opp) => {
+              const org = getOrgForOpp(opp.orgId);
+              const proj = getProjectForOpp(opp.projectId);
+              const apps = getApplicantsForOpp(opp.id);
+              const isClosed = opp.status === "Closed";
+
+              return (
+                <div key={opp.id} className="admin-opp-mobile-card">
+                  {/* Line 1: Type Pill + Status */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                    <span
                       style={{
-                        borderBottom: "1px solid #E8E2D4",
-                        transition: "background-color 0.15s ease",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: "#6E5420",
+                        backgroundColor: "rgba(201, 165, 92, 0.16)",
+                        border: "1px solid rgba(201, 165, 92, 0.25)",
+                        padding: "2px 8px",
+                        borderRadius: "6px",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      {/* Opportunity Title & Type */}
-                      <td style={{ padding: "18px 20px" }}>
-                        <div style={{ fontWeight: 600, fontSize: "15px", color: "#2B2D2A" }}>
-                          {opp.title}
-                        </div>
-                        <div style={{ fontSize: "13px", color: "#6E5420", fontWeight: "600", marginTop: "2px" }}>
-                          {opp.opportunityType} &bull; {opp.location}
-                        </div>
-                      </td>
+                      {opp.opportunityType}
+                    </span>
+                    <StatusBadge status={opp.status} size="xs" />
+                  </div>
 
-                      {/* Project & Organization */}
-                      <td style={{ padding: "18px 20px" }}>
-                        <div style={{ fontWeight: 600, color: "#2B2D2A" }}>
-                          {proj?.title || "Project"}
-                        </div>
-                        <div style={{ fontSize: "13px", color: "#5A584F", display: "flex", alignItems: "center", gap: "4px", marginTop: "2px" }}>
-                          <Building2 size={13} />
-                          <span>{org?.name || "Organization"}</span>
-                        </div>
-                      </td>
+                  {/* Title & Location */}
+                  <div>
+                    <h4
+                      style={{
+                        fontFamily: "var(--font-playfair), serif",
+                        fontSize: "15px",
+                        fontWeight: 600,
+                        color: "#2B2D2A",
+                        margin: 0,
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {opp.title}
+                    </h4>
+                    <div style={{ fontSize: "12px", color: "#5A584F", marginTop: "2px" }}>
+                      {opp.location}
+                    </div>
+                  </div>
 
-                      {/* Deadline & Auto-close indicator */}
-                      <td style={{ padding: "18px 20px" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                          <span style={{ fontWeight: 600, color: "#2B2D2A", fontVariantNumeric: "tabular-nums" }}>
-                            {opp.deadline}
-                          </span>
-                          {isClosed ? (
-                            <span
-                              style={{
-                                fontSize: "11px",
-                                fontWeight: 700,
-                                color: "#6E5420",
-                                backgroundColor: "rgba(138, 107, 46, 0.12)",
-                                border: "1px solid rgba(138, 107, 46, 0.25)",
-                                padding: "2px 8px",
-                                borderRadius: "999px",
-                                width: "fit-content",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              Auto-closed
-                            </span>
-                          ) : (
-                            <span style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap" }}>
-                              Auto-closes on {opp.deadline}
-                            </span>
-                          )}
-                        </div>
-                      </td>
+                  {/* 2-Column Info Grid */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "13px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                      <span style={{ fontSize: "10.5px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
+                        Project & Studio
+                      </span>
+                      <span style={{ color: "#2B2D2A", fontWeight: 600, fontSize: "12.5px" }}>
+                        {proj?.title || "Project"}
+                      </span>
+                      <span style={{ color: "#5A584F", fontSize: "11.5px" }}>
+                        {org?.name || "Organization"}
+                      </span>
+                    </div>
 
-                      {/* Applicants Count */}
-                      <td style={{ padding: "18px 20px" }}>
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            padding: "4px 10px",
-                            borderRadius: "999px",
-                            backgroundColor: apps.length > 0 ? "rgba(138, 107, 46, 0.12)" : "#F3EFE6",
-                            color: apps.length > 0 ? "#6E5420" : "#5A584F",
-                            border: apps.length > 0 ? "1px solid rgba(138, 107, 46, 0.25)" : "1px solid #E8E2D4",
-                            fontWeight: 700,
-                            fontSize: "12px",
-                          }}
-                        >
-                          <Users size={13} />
-                          <span>{apps.length}</span>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                      <span style={{ fontSize: "10.5px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
+                        Deadline
+                      </span>
+                      <span style={{ color: "#2B2D2A", fontWeight: 600, fontSize: "12.5px" }}>
+                        {opp.deadline}
+                      </span>
+                      {isClosed ? (
+                        <span style={{ fontSize: "10.5px", color: "#6E5420", fontWeight: 700 }}>
+                          Auto-closed
                         </span>
-                      </td>
+                      ) : (
+                        <span style={{ fontSize: "11px", color: "#5A584F" }}>
+                          Auto-closes
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-                      {/* Status */}
-                      <td style={{ padding: "18px 20px" }}>
-                        <StatusBadge status={opp.status} size="sm" />
-                      </td>
+                  {/* Applicants Count & Action Row */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "10px",
+                      paddingTop: "6px",
+                      borderTop: "1px solid #E8E2D4",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        fontSize: "12px",
+                        color: apps.length > 0 ? "#6E5420" : "#5A584F",
+                        fontWeight: 600,
+                      }}
+                    >
+                      <Users size={13} />
+                      <span>{apps.length} Applicants</span>
+                    </span>
 
-                      {/* Action */}
-                      <td style={{ padding: "18px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "110px" }}>
-                        <button
-                          type="button"
-                          onClick={() => setViewModalOpp(opp)}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            fontSize: "13px",
-                            color: "#8A6B2E",
-                            fontWeight: 600,
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            textDecoration: "none",
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
-                        >
-                          <Eye size={14} />
-                          <span>Details</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    <button
+                      type="button"
+                      onClick={() => setViewModalOpp(opp)}
+                      style={{
+                        height: "34px",
+                        padding: "0 14px",
+                        fontSize: "12.5px",
+                        fontWeight: 600,
+                        borderRadius: "8px",
+                        backgroundColor: "#8A6B2E",
+                        color: "#FFFFFF",
+                        border: "none",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      <Eye size={13} />
+                      <span>Details</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        </>
       )}
 
       {/* Read-Only Details Modal */}
@@ -541,6 +683,99 @@ export default function AdminOpportunitiesPage() {
           </div>
         </Modal>
       )}
+
+      <style jsx>{`
+        .admin-opp-mobile-cards {
+          display: none;
+        }
+        @media (max-width: 640px) {
+          .admin-opp-page {
+            gap: 16px !important;
+          }
+          .admin-opp-tabs-wrap {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            width: 100% !important;
+          }
+          .admin-opp-tab-btn {
+            flex: 1 1 auto !important;
+            height: 28px !important;
+            min-height: 28px !important;
+            padding: 0 8px !important;
+            border-radius: 999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 5px !important;
+          }
+          .admin-opp-tab-badge {
+            min-width: 16px !important;
+            height: 16px !important;
+            border-radius: 8px !important;
+            font-size: 9.5px !important;
+            font-weight: 700 !important;
+            padding: 0 4px !important;
+          }
+          .admin-opp-filter-card {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            padding: 12px 14px !important;
+            border-radius: 14px !important;
+            gap: 10px !important;
+          }
+          .admin-opp-search-wrap {
+            width: 100% !important;
+            height: 40px !important;
+          }
+          .admin-opp-search-input {
+            font-size: 16px !important;
+          }
+          .admin-opp-org-select-wrap {
+            width: 100% !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 4px !important;
+          }
+          .admin-opp-org-select {
+            width: 100% !important;
+            height: 40px !important;
+            font-size: 16px !important;
+          }
+          .admin-opp-desktop-table {
+            display: none !important;
+          }
+          .admin-opp-mobile-cards {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            width: 100% !important;
+          }
+          .admin-opp-mobile-card {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            border-radius: 14px !important;
+            padding: 12px 14px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04) !important;
+          }
+        }
+        @media (max-width: 400px) {
+          .admin-opp-tab-btn {
+            font-size: 10px !important;
+            padding: 0 5px !important;
+          }
+          .admin-opp-tab-badge {
+            font-size: 9px !important;
+            min-width: 15px !important;
+            height: 15px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

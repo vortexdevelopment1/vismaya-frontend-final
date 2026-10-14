@@ -100,7 +100,7 @@ export default function RegisterPage() {
 
         <div className="public-container" style={{ position: "relative", zIndex: 5, display: "flex", justifyContent: "center", width: "100%" }}>
           <div
-            className="glass"
+            className="glass register-glass-card"
             style={{
               width: "100%",
               maxWidth: "460px",
@@ -302,6 +302,14 @@ export default function RegisterPage() {
       </section>
 
       <PublicFooter />
+      <style jsx>{`
+        @media (max-width: 640px) {
+          :global(.register-glass-card) {
+            padding: 22px 16px !important;
+            border-radius: 14px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

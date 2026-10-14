@@ -451,14 +451,32 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
         }
         @media (max-width: 1024px) {
           .admin-sidebar {
-            transform: translateX(-100%);
-            box-shadow: 8px 0 32px rgba(43, 45, 42, 0.18);
+            transform: translateX(-105%) !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            box-shadow: none !important;
+            border-right: none !important;
           }
           .admin-sidebar.sidebar-open {
-            transform: translateX(0);
+            transform: translateX(0) !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            box-shadow: 8px 0 32px rgba(43, 45, 42, 0.18) !important;
+            border-right: 1px solid #E8E2D4 !important;
           }
           .mobile-close-btn {
             display: flex !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .admin-sidebar {
+            width: min(82vw, 300px) !important;
+            max-width: 300px !important;
+          }
+          :global(.admin-sidebar .admin-nav-item) {
+            height: 44px !important;
+            min-height: 44px !important;
+            font-size: 14px !important;
           }
         }
         @media (min-width: 1025px) {

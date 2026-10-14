@@ -87,6 +87,7 @@ export default function PaymentEntryModal({
 
       {/* Modal Box */}
       <div
+        className="payment-modal-box"
         style={{
           position: "fixed",
           top: "50%",
@@ -108,6 +109,7 @@ export default function PaymentEntryModal({
       >
         {/* Header */}
         <div
+          className="payment-modal-header"
           style={{
             padding: "20px 26px",
             borderBottom: "1px solid #E8E2D4",
@@ -117,7 +119,7 @@ export default function PaymentEntryModal({
             backgroundColor: "#FFFFFF",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
             <div
               style={{
                 width: "40px",
@@ -129,15 +131,16 @@ export default function PaymentEntryModal({
                 alignItems: "center",
                 justifyContent: "center",
                 border: "1px solid #E8E2D4",
+                flexShrink: 0,
               }}
             >
               <CreditCard size={20} />
             </div>
-            <div>
-              <h2 style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "22px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
-                {initialData ? "Edit Payment Entry" : "Log Offline Payment / Retainer"}
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "20px", fontWeight: 600, color: "#2B2D2A", margin: 0, lineHeight: 1.2 }}>
+                {initialData ? "Edit Payment Entry" : "Log Payment Entry"}
               </h2>
-              <p style={{ fontSize: "13px", color: "#5A584F", margin: "2px 0 0 0", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              <p style={{ fontSize: "12.5px", color: "#5A584F", margin: "2px 0 0 0", fontFamily: "var(--font-body), 'Inter', sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 Manual accounting ledger for client invoices and artist payouts.
               </p>
             </div>
@@ -147,7 +150,8 @@ export default function PaymentEntryModal({
             onClick={onClose}
             aria-label="Close"
             style={{
-              padding: "6px",
+              width: "36px",
+              height: "36px",
               borderRadius: "8px",
               color: "#5A584F",
               backgroundColor: "#F3EFE6",
@@ -156,6 +160,7 @@ export default function PaymentEntryModal({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              flexShrink: 0,
             }}
           >
             <X size={18} />
@@ -165,6 +170,7 @@ export default function PaymentEntryModal({
         {/* Form Body */}
         <form
           onSubmit={handleSubmit}
+          className="payment-modal-body"
           style={{
             flex: 1,
             overflowY: "auto",
@@ -174,9 +180,9 @@ export default function PaymentEntryModal({
             gap: "16px",
           }}
         >
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px" }}>
+          <div className="payment-modal-grid-2" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              <label style={{ display: "block", fontSize: "12.5px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Project / Casting Call Title *
               </label>
               <input
@@ -185,6 +191,7 @@ export default function PaymentEntryModal({
                 placeholder="e.g. Mumbai Diaries Season 2"
                 value={formData.projectTitle}
                 onChange={(e) => setFormData({ ...formData, projectTitle: e.target.value })}
+                className="payment-modal-input"
                 style={{
                   width: "100%",
                   height: "44px",
@@ -201,12 +208,13 @@ export default function PaymentEntryModal({
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              <label style={{ display: "block", fontSize: "12.5px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Payer Entity
               </label>
               <select
                 value={formData.payer}
                 onChange={(e) => setFormData({ ...formData, payer: e.target.value })}
+                className="payment-modal-input"
                 style={{
                   width: "100%",
                   height: "44px",
@@ -226,9 +234,9 @@ export default function PaymentEntryModal({
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+          <div className="payment-modal-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              <label style={{ display: "block", fontSize: "12.5px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Payer Name / Company *
               </label>
               <input
@@ -237,6 +245,7 @@ export default function PaymentEntryModal({
                 placeholder="e.g. Zee Films (Vikram Malhotra)"
                 value={formData.payerName}
                 onChange={(e) => setFormData({ ...formData, payerName: e.target.value })}
+                className="payment-modal-input"
                 style={{
                   width: "100%",
                   height: "44px",
@@ -253,7 +262,7 @@ export default function PaymentEntryModal({
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              <label style={{ display: "block", fontSize: "12.5px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Target Talent / Artist Name
               </label>
               <input
@@ -261,6 +270,7 @@ export default function PaymentEntryModal({
                 placeholder="e.g. Riya Sharma"
                 value={formData.talentName}
                 onChange={(e) => setFormData({ ...formData, talentName: e.target.value })}
+                className="payment-modal-input"
                 style={{
                   width: "100%",
                   height: "44px",
@@ -289,13 +299,13 @@ export default function PaymentEntryModal({
               gap: "12px",
             }}
           >
-            <div style={{ fontSize: "13px", fontWeight: 700, color: "#6E5420", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "#6E5420", textTransform: "uppercase", letterSpacing: "0.08em" }}>
               Financial Calculations
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "12px" }}>
+            <div className="payment-modal-grid-2" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "12px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "12px", color: "#5A584F", marginBottom: "4px" }}>
+                <label style={{ display: "block", fontSize: "11.5px", color: "#5A584F", marginBottom: "4px" }}>
                   Gross Invoice Amount (₹) *
                 </label>
                 <input
@@ -305,6 +315,7 @@ export default function PaymentEntryModal({
                   required
                   value={formData.grossAmount}
                   onChange={(e) => setFormData({ ...formData, grossAmount: e.target.value })}
+                  className="payment-modal-input"
                   style={{
                     width: "100%",
                     height: "44px",
@@ -322,7 +333,7 @@ export default function PaymentEntryModal({
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "12px", color: "#5A584F", marginBottom: "4px" }}>
+                <label style={{ display: "block", fontSize: "11.5px", color: "#5A584F", marginBottom: "4px" }}>
                   Commission Rate (%)
                 </label>
                 <input
@@ -331,6 +342,7 @@ export default function PaymentEntryModal({
                   max="100"
                   value={formData.commissionPercent}
                   onChange={(e) => setFormData({ ...formData, commissionPercent: e.target.value })}
+                  className="payment-modal-input"
                   style={{
                     width: "100%",
                     height: "44px",
@@ -348,32 +360,33 @@ export default function PaymentEntryModal({
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", paddingTop: "4px" }}>
+            <div className="payment-modal-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", paddingTop: "4px" }}>
               <div style={{ padding: "10px 14px", backgroundColor: "#FFFFFF", borderRadius: "10px", border: "1px solid #E8E2D4" }}>
-                <span style={{ fontSize: "11px", color: "#5A584F", fontWeight: 700, textTransform: "uppercase" }}>Vismaya Retained (Platform):</span>
-                <div style={{ fontSize: "18px", fontWeight: 700, color: "#8A6B2E", marginTop: "2px" }}>
+                <span style={{ fontSize: "10px", color: "#5A584F", fontWeight: 700, textTransform: "uppercase" }}>Vismaya Retained (Platform):</span>
+                <div style={{ fontSize: "16px", fontWeight: 700, color: "#8A6B2E", marginTop: "2px" }}>
                   ₹{commAmt.toLocaleString()}
                 </div>
               </div>
 
               <div style={{ padding: "10px 14px", backgroundColor: "#FFFFFF", borderRadius: "10px", border: "1px solid #E8E2D4" }}>
-                <span style={{ fontSize: "11px", color: "#5A584F", fontWeight: 700, textTransform: "uppercase" }}>Talent Bank Disbursed Payout:</span>
-                <div style={{ fontSize: "18px", fontWeight: 700, color: "#2B2D2A", marginTop: "2px" }}>
+                <span style={{ fontSize: "10px", color: "#5A584F", fontWeight: 700, textTransform: "uppercase" }}>Talent Bank Disbursed Payout:</span>
+                <div style={{ fontSize: "16px", fontWeight: 700, color: "#2B2D2A", marginTop: "2px" }}>
                   ₹{netPayout.toLocaleString()}
                 </div>
               </div>
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+          <div className="payment-modal-grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
                 Payment Date
               </label>
               <input
                 type="date"
                 value={formData.paymentDate}
                 onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
+                className="payment-modal-input"
                 style={{
                   width: "100%",
                   height: "44px",
@@ -390,12 +403,13 @@ export default function PaymentEntryModal({
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
                 Payment Channel
               </label>
               <select
                 value={formData.paymentMode}
                 onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value })}
+                className="payment-modal-input"
                 style={{
                   width: "100%",
                   height: "44px",
@@ -417,12 +431,13 @@ export default function PaymentEntryModal({
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
                 Ledger Status
               </label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="payment-modal-input"
                 style={{
                   width: "100%",
                   height: "44px",
@@ -444,7 +459,7 @@ export default function PaymentEntryModal({
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
               Reference # / Transaction UTR Note
             </label>
             <input
@@ -452,6 +467,7 @@ export default function PaymentEntryModal({
               placeholder="e.g. HDFC-NEFT-9021849182"
               value={formData.referenceNote}
               onChange={(e) => setFormData({ ...formData, referenceNote: e.target.value })}
+              className="payment-modal-input"
               style={{
                 width: "100%",
                 height: "44px",
@@ -468,7 +484,7 @@ export default function PaymentEntryModal({
           </div>
 
           {/* Footer Actions */}
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
+          <div className="payment-modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
             <button
               type="button"
               onClick={onClose}
@@ -479,7 +495,7 @@ export default function PaymentEntryModal({
                 backgroundColor: "#FFFFFF",
                 border: "1px solid #E8E2D4",
                 color: "#5A584F",
-                fontSize: "14px",
+                fontSize: "13px",
                 fontWeight: 600,
                 cursor: "pointer",
               }}
@@ -495,7 +511,7 @@ export default function PaymentEntryModal({
                 backgroundColor: "#8A6B2E",
                 color: "#FFFFFF",
                 border: "1px solid #8A6B2E",
-                fontSize: "14px",
+                fontSize: "13px",
                 fontWeight: 600,
                 cursor: "pointer",
                 boxShadow: "0 2px 6px rgba(138, 107, 46, 0.2)",
@@ -505,6 +521,51 @@ export default function PaymentEntryModal({
             </button>
           </div>
         </form>
+
+        <style jsx>{`
+          @media (max-width: 640px) {
+            .payment-modal-box {
+              top: auto !important;
+              bottom: 0 !important;
+              left: 0 !important;
+              transform: none !important;
+              width: 100vw !important;
+              max-width: 100vw !important;
+              max-height: 90vh !important;
+              border-radius: 16px 16px 0 0 !important;
+              margin: 0 !important;
+            }
+            .payment-modal-header {
+              padding: 14px 16px !important;
+            }
+            .payment-modal-body {
+              padding: 14px 16px !important;
+              gap: 12px !important;
+            }
+            .payment-modal-grid-2,
+            .payment-modal-grid-3 {
+              grid-template-columns: 1fr !important;
+              gap: 10px !important;
+            }
+            .payment-modal-input {
+              font-size: 16px !important;
+              height: 42px !important;
+            }
+            .payment-modal-footer {
+              display: grid !important;
+              grid-template-columns: 1fr 1fr !important;
+              gap: 10px !important;
+              margin-top: 6px !important;
+              padding-top: 8px !important;
+              border-top: 1px solid #E8E2D4;
+            }
+            .payment-modal-footer button {
+              width: 100% !important;
+              height: 44px !important;
+              font-size: 13px !important;
+            }
+          }
+        `}</style>
       </div>
     </>
   );

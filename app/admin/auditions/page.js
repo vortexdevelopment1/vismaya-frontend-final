@@ -1137,6 +1137,87 @@ export default function AdminAuditionsManagementPage() {
             flex: 1;
           }
         }
+
+        @media (max-width: 640px) {
+          .aud-tabs-row {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            overflow: visible !important;
+            width: 100% !important;
+          }
+          .aud-tab-btn {
+            flex: 1 1 auto !important;
+            height: 28px !important;
+            min-height: 28px !important;
+            padding: 0 8px !important;
+            border-radius: 999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 5px !important;
+          }
+          .aud-tab-badge {
+            min-width: 16px !important;
+            height: 16px !important;
+            border-radius: 8px !important;
+            font-size: 9.5px !important;
+            font-weight: 700 !important;
+            padding: 0 4px !important;
+            line-height: 16px !important;
+          }
+          .aud-toolbar-row {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            border-radius: 14px !important;
+            padding: 12px 14px !important;
+            gap: 10px !important;
+            box-shadow: 0 4px 14px rgba(43, 45, 42, 0.05) !important;
+          }
+          .aud-search-input {
+            height: 40px !important;
+            min-height: 40px !important;
+            font-size: 16px !important;
+            padding-left: 40px !important;
+            border-radius: 10px !important;
+          }
+          .aud-org-filter-wrap {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 4px !important;
+            width: 100% !important;
+          }
+          .aud-org-select {
+            width: 100% !important;
+            height: 40px !important;
+            font-size: 16px !important;
+            border-radius: 10px !important;
+          }
+          .aud-mobile-card {
+            padding: 12px 14px !important;
+            border-radius: 14px !important;
+            gap: 10px !important;
+          }
+          .aud-mobile-card-footer button {
+            height: 36px !important;
+            font-size: 12.5px !important;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .aud-tab-btn {
+            font-size: 10px !important;
+            padding: 0 5px !important;
+          }
+          .aud-tab-badge {
+            font-size: 9px !important;
+            min-width: 15px !important;
+            height: 15px !important;
+          }
+        }
       `}</style>
     </div>
   );

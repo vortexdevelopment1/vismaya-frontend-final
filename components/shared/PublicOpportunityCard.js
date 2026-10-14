@@ -96,6 +96,7 @@ export default function PublicOpportunityCard({
     >
       {/* 1. MEDIA HEADER (DARK STUDIO BANNER) */}
       <div
+        className="opp-card-media-header"
         style={{
           position: "relative",
           height: "115px",
@@ -111,6 +112,7 @@ export default function PublicOpportunityCard({
       >
         {/* Subtle grid texture overlay */}
         <div
+          className="opp-card-grid-overlay"
           aria-hidden="true"
           style={{
             position: "absolute",
@@ -124,6 +126,7 @@ export default function PublicOpportunityCard({
 
         {/* Large Soft Type Watermark Icon */}
         <div
+          className="opp-card-watermark"
           aria-hidden="true"
           style={{
             position: "absolute",
@@ -142,6 +145,7 @@ export default function PublicOpportunityCard({
 
         {/* Top-Left Chip: Opportunity Type */}
         <span
+          className="opp-card-type-chip"
           title={opportunity.opportunityType}
           style={{
             position: "relative",
@@ -169,6 +173,7 @@ export default function PublicOpportunityCard({
 
         {/* Top-Right Chip: Deadline */}
         <span
+          className={`opp-card-deadline-chip ${deadlineInfo.isUrgent ? "is-urgent" : ""}`}
           title={`Deadline: ${formatDate(opportunity.deadline)}`}
           style={{
             position: "relative",
@@ -201,6 +206,7 @@ export default function PublicOpportunityCard({
 
       {/* 2. BODY */}
       <div
+        className="opp-card-body-content"
         style={{
           padding: "20px",
           display: "flex",
@@ -216,6 +222,7 @@ export default function PublicOpportunityCard({
             style={{ textDecoration: "none", color: "inherit" }}
           >
             <h3
+              className="opp-card-title-heading"
               style={{
                 fontFamily: "Georgia, serif",
                 fontSize: "18px",
@@ -258,6 +265,7 @@ export default function PublicOpportunityCard({
 
         {/* Role Box */}
         <div
+          className="opp-card-role-container"
           style={{
             backgroundColor: "var(--bg-alt)",
             border: "1px solid var(--border-color)",
@@ -270,6 +278,7 @@ export default function PublicOpportunityCard({
           }}
         >
           <span
+            className="opp-card-role-label"
             style={{
               fontSize: "10px",
               letterSpacing: "0.1em",
@@ -284,6 +293,7 @@ export default function PublicOpportunityCard({
             Role Details
           </span>
           <span
+            className="opp-card-role-title"
             title={roleTitle}
             style={{
               fontSize: "12px",
@@ -302,6 +312,7 @@ export default function PublicOpportunityCard({
 
         {/* Meta List (Location & Deadline) */}
         <div
+          className="opp-card-meta-container"
           style={{
             display: "flex",
             flexDirection: "column",
@@ -312,6 +323,7 @@ export default function PublicOpportunityCard({
         >
           {/* Location */}
           <div
+            className="opp-card-meta-item"
             title={opportunity.location || "Mumbai"}
             style={{
               display: "flex",
@@ -337,6 +349,7 @@ export default function PublicOpportunityCard({
 
           {/* Formatted Deadline */}
           <div
+            className="opp-card-meta-item"
             style={{
               display: "flex",
               alignItems: "center",
@@ -425,15 +438,104 @@ export default function PublicOpportunityCard({
       </div>
 
       <style jsx>{`
-        @media (max-width: 390px) {
+        @media (max-width: 640px) {
+          :global(.public-opp-card) {
+            border-radius: 14px !important;
+          }
+          .opp-card-media-header {
+            height: 60px !important;
+            padding: 8px 12px !important;
+            background: #F3EFE6 !important;
+            border-bottom: 1px solid #E8E2D4 !important;
+          }
+          .opp-card-grid-overlay {
+            opacity: 0.15 !important;
+          }
+          .opp-card-watermark {
+            color: rgba(138, 107, 46, 0.12) !important;
+            right: 6px !important;
+            bottom: -8px !important;
+          }
+          .opp-card-watermark :global(svg) {
+            width: 48px !important;
+            height: 48px !important;
+          }
+          .opp-card-type-chip {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #2B2D2A !important;
+            font-size: 10px !important;
+            padding: 4px 8px !important;
+            max-width: 130px !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+          }
+          .opp-card-deadline-chip {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #5A584F !important;
+            font-size: 10px !important;
+            padding: 4px 8px !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+          }
+          .opp-card-deadline-chip.is-urgent {
+            background-color: #FFF0F0 !important;
+            border: 1px solid #FFD6D6 !important;
+            color: #D9383A !important;
+          }
+          .opp-card-body-content {
+            padding: 14px 16px 16px !important;
+            gap: 10px !important;
+          }
+          .opp-card-title-heading {
+            font-size: 18px !important;
+            line-height: 1.35 !important;
+            min-height: auto !important;
+            color: #2B2D2A !important;
+          }
+          .opp-card-role-container {
+            padding: 8px 10px !important;
+            min-height: auto !important;
+            background-color: #FAF9F7 !important;
+            border: 1px solid #E8E2D4 !important;
+            border-radius: 6px !important;
+          }
+          .opp-card-role-label {
+            font-size: 10px !important;
+            color: #8A6B2E !important;
+            letter-spacing: 0.08em !important;
+          }
+          .opp-card-role-title {
+            font-size: 12.5px !important;
+            color: #2B2D2A !important;
+            line-height: 1.35 !important;
+          }
+          .opp-card-meta-container {
+            min-height: auto !important;
+            gap: 4px !important;
+          }
+          .opp-card-meta-item {
+            font-size: 13px !important;
+            color: #5A584F !important;
+          }
           .opp-card-footer {
-            flex-direction: column;
-            align-items: flex-start !important;
-            gap: 12px !important;
+            padding-top: 10px !important;
+            margin-top: auto !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 10px !important;
+            border-top: 1px solid #E8E2D4 !important;
           }
           :global(.opp-view-btn) {
-            width: 100% !important;
-            justify-content: center !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            padding: 0 16px !important;
+            font-size: 12px !important;
+            border-radius: 6px !important;
+            background-color: #8A6B2E !important;
+            color: #FFFFFF !important;
           }
         }
       `}</style>

@@ -432,10 +432,18 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
       <style jsx global>{`
         @media (max-width: 1023.98px) {
           .talent-sidebar {
-            transform: translateX(-100%);
+            transform: translateX(-105%) !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            box-shadow: none !important;
+            border-right: none !important;
           }
           .talent-sidebar.sidebar-open {
-            transform: translateX(0);
+            transform: translateX(0) !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            box-shadow: 8px 0 28px rgba(43, 45, 42, 0.12) !important;
+            border-right: 1px solid #E8E2D4 !important;
           }
           .mobile-close-btn {
             display: flex !important;

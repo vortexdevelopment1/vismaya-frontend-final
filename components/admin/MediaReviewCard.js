@@ -24,7 +24,7 @@ export default function MediaReviewCard({
   return (
     <>
       <div
-        className="media-moderation-card"
+        className={`media-moderation-card ${isVideo ? "is-video" : "is-photo"}`}
         style={{
           borderRadius: "20px",
           overflow: "hidden",
@@ -42,6 +42,7 @@ export default function MediaReviewCard({
         {/* Top Thumbnail Preview Container */}
         <div
           onClick={() => onPreview && onPreview(media)}
+          className="media-thumb-container"
           style={{
             width: "100%",
             aspectRatio: "16 / 10",
@@ -97,6 +98,7 @@ export default function MediaReviewCard({
           {/* Top-Left: Type chip - White pill with charcoal text over image */}
           <div style={{ position: "absolute", top: "12px", left: "12px", zIndex: 4 }}>
             <span
+              className="media-type-chip"
               style={{
                 fontSize: "11px",
                 fontWeight: 700,
@@ -121,6 +123,7 @@ export default function MediaReviewCard({
 
           {/* Top-Right: Status Badge */}
           <div
+            className="media-status-badge-wrap"
             style={{
               position: "absolute",
               top: "12px",
@@ -228,6 +231,7 @@ export default function MediaReviewCard({
 
         {/* Card Body */}
         <div
+          className="media-card-body"
           style={{
             padding: "18px 20px",
             display: "flex",
@@ -240,6 +244,7 @@ export default function MediaReviewCard({
           {/* Title - Playfair 18px charcoal */}
           <h3
             title={media.title}
+            className="media-card-title"
             style={{
               fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
               fontSize: "18px",
@@ -260,6 +265,7 @@ export default function MediaReviewCard({
 
           {/* Uploader & Date Row */}
           <div
+            className="media-card-uploader"
             style={{
               display: "flex",
               alignItems: "center",
@@ -308,6 +314,7 @@ export default function MediaReviewCard({
 
           {/* Specs Chips Row */}
           <div
+            className="media-card-specs"
             style={{
               display: "flex",
               alignItems: "center",
@@ -395,6 +402,7 @@ export default function MediaReviewCard({
 
         {/* Card Footer with Equal-Width 44px Action Buttons */}
         <div
+          className="media-card-footer"
           style={{
             padding: "16px 20px",
             backgroundColor: "#FFFFFF",
@@ -578,6 +586,62 @@ export default function MediaReviewCard({
           background-color: #8A6B2E !important;
           color: #FFFFFF !important;
           border-color: #8A6B2E !important;
+        }
+
+        @media (max-width: 640px) {
+          .media-moderation-card {
+            border-radius: 14px !important;
+          }
+          .media-moderation-card.is-photo .media-thumb-container {
+            aspect-ratio: 4 / 5 !important;
+          }
+          .media-moderation-card.is-video .media-thumb-container {
+            aspect-ratio: 4 / 3 !important;
+          }
+          .media-moderation-card .play-overlay-btn {
+            width: 36px !important;
+            height: 36px !important;
+          }
+          .media-moderation-card .play-overlay-btn svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+          .media-moderation-card .media-type-chip {
+            font-size: 9.5px !important;
+            padding: 2px 7px !important;
+          }
+          .media-moderation-card .media-status-badge-wrap {
+            top: 8px !important;
+            right: 8px !important;
+          }
+          .media-moderation-card .media-thumb-container div[style*="top: 12px"] {
+            top: 8px !important;
+            left: 8px !important;
+          }
+          .media-moderation-card .media-card-body {
+            padding: 10px 12px !important;
+            gap: 6px !important;
+          }
+          .media-moderation-card .media-card-title {
+            font-size: 13.5px !important;
+            line-height: 1.25 !important;
+            min-height: auto !important;
+          }
+          .media-moderation-card .media-card-uploader {
+            font-size: 11px !important;
+          }
+          .media-moderation-card .media-card-specs {
+            display: none !important;
+          }
+          .media-moderation-card .media-card-footer {
+            padding: 10px 12px !important;
+          }
+          .media-moderation-card .media-card-footer button {
+            height: 36px !important;
+            min-height: 36px !important;
+            font-size: 12px !important;
+            padding: 0 4px !important;
+          }
         }
       `}</style>
     </>

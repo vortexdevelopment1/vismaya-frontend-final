@@ -62,6 +62,7 @@ function TalentCardItem({ talent, index }) {
 export default function TalentRosterSection({ roster }) {
   const [activeCategory, setActiveCategory] = useState("ALL");
   const [isFading, setIsFading] = useState(false);
+  const [isWhyOpen, setIsWhyOpen] = useState(false);
 
   const categories = ["ALL", "ACTORS", "MODELS", "VOICE"];
   const allTalent = roster && roster.length > 0 ? roster : eliteTalentRoster;
@@ -120,10 +121,23 @@ export default function TalentRosterSection({ roster }) {
           <div className="talent-roster-info-card">
             <div className="talent-roster-info-head">
               <Shield size={18} className="talent-roster-shield-icon" />
-              <h3 className="talent-roster-info-title">Why is data obscured?</h3>
+              <div className="talent-roster-info-title-wrap">
+                <h3 className="talent-roster-info-title talent-desktop-only">Why is data obscured?</h3>
+                <div className="talent-roster-info-mobile-note talent-mobile-only">
+                  <span>Contact details are hidden.</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsWhyOpen((prev) => !prev)}
+                    className="talent-roster-why-btn"
+                    aria-expanded={isWhyOpen}
+                  >
+                    Why?
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <p className="talent-roster-info-body">
+            <p className={`talent-roster-info-body ${isWhyOpen ? "is-open" : ""}`}>
               To protect our roster from scraping and unsolicited contact, full portfolios and
               contact details are visible only to logged-in users. All contact is handled through
               Vismaya.

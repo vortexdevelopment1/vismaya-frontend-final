@@ -268,11 +268,11 @@ export default function RecruiterManagementPage() {
         style={{
           backgroundColor: "#FFFFFF",
           border: "1px solid #E8E2D4",
-          borderRadius: "16px",
-          padding: "16px",
+          borderRadius: "14px",
+          padding: "12px 14px",
           display: "flex",
           flexDirection: "column",
-          gap: "12px",
+          gap: "10px",
           width: "100%",
           boxSizing: "border-box",
           boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
@@ -420,7 +420,7 @@ export default function RecruiterManagementPage() {
           style={{
             width: "100%",
             justifyContent: "center",
-            height: "40px",
+            height: "36px",
             fontSize: "13px",
             fontWeight: "600",
             gap: "6px",

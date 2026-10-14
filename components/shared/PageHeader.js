@@ -84,8 +84,9 @@ export default function PageHeader({
         className="page-header-row"
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: "1 1 300px", minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+          <div className="page-header-title-row" style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
             <h1
+              className="page-header-title"
               style={{
                 fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
                 fontSize: "clamp(26px, 3.5vw, 40px)",
@@ -103,6 +104,7 @@ export default function PageHeader({
 
             {badge && (
               <span
+                className="page-header-badge"
                 style={{
                   fontSize: "11px",
                   fontWeight: "700",
@@ -124,6 +126,7 @@ export default function PageHeader({
 
           {subtitle && (
             <p
+              className="page-header-subtitle"
               style={{
                 fontSize: "16px",
                 lineHeight: "1.7",
@@ -160,14 +163,71 @@ export default function PageHeader({
 
       <style jsx>{`
         @media (max-width: 640px) {
+          .page-header-container {
+            margin-bottom: 14px !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+          :global(.page-header-container nav) {
+            font-size: 11.5px !important;
+            gap: 6px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 100% !important;
+            flex-wrap: nowrap !important;
+          }
+          .page-header-row {
+            gap: 10px !important;
+            width: 100% !important;
+          }
+          .page-header-title-row {
+            gap: 8px !important;
+          }
+          .page-header-title {
+            font-size: 22px !important;
+            line-height: 1.2 !important;
+            letter-spacing: -0.01em !important;
+          }
+          .page-header-badge {
+            font-size: 10px !important;
+            padding: 2.5px 8px !important;
+            letter-spacing: 0.08em !important;
+            white-space: nowrap !important;
+          }
+          .page-header-subtitle {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 3 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
           .page-header-actions {
             width: 100% !important;
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+          }
+          .page-header-actions > :only-child,
+          .page-header-actions:has(> :only-child) {
+            grid-template-columns: 1fr !important;
+            grid-column: 1 / -1 !important;
           }
           .page-header-actions > :global(button),
           .page-header-actions > :global(a) {
-            flex: 1 1 140px;
-            text-align: center;
-            justifyContent: center;
+            height: 40px !important;
+            min-height: 40px !important;
+            font-size: 13px !important;
+            padding: 0 12px !important;
+            border-radius: 10px !important;
+            width: 100% !important;
+            justify-content: center !important;
+            text-align: center !important;
+            box-sizing: border-box !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
           }
         }
       `}</style>

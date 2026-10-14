@@ -21,6 +21,7 @@ export default function SendConfirmModal({
 
   return (
     <div
+      className="broadcast-confirm-overlay"
       style={{
         position: "fixed",
         inset: 0,
@@ -36,6 +37,7 @@ export default function SendConfirmModal({
       onClick={onClose}
     >
       <div
+        className="broadcast-confirm-dialog"
         style={{
           backgroundColor: "var(--bg-surface, #FFFFFF)",
           border: "1px solid var(--border-color, #E4E1D9)",
@@ -147,7 +149,7 @@ export default function SendConfirmModal({
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+        <div className="broadcast-confirm-actions" style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
           <button
             type="button"
             className={`${styles.btn} ${styles.gh}`}
@@ -168,6 +170,32 @@ export default function SendConfirmModal({
           </button>
         </div>
       </div>
+
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .broadcast-confirm-overlay {
+            padding: 0 !important;
+            align-items: flex-end !important;
+          }
+          .broadcast-confirm-dialog {
+            max-width: 100vw !important;
+            border-radius: 16px 16px 0 0 !important;
+            padding: 20px 16px !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+          }
+          .broadcast-confirm-actions {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 10px !important;
+          }
+          .broadcast-confirm-actions button {
+            width: 100% !important;
+            height: 44px !important;
+            justify-content: center !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

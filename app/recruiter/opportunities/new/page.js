@@ -340,8 +340,9 @@ function SubmitOpportunityForm() {
   if (submittedStatus) {
     const isSubmitted = submittedStatus === "submitted";
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "680px", margin: "40px auto" }}>
+      <div className="new-opp-confirm-screen" style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "680px", margin: "40px auto" }}>
         <div
+          className="new-opp-confirm-card"
           style={{
             padding: "48px 36px",
             textAlign: "center",
@@ -356,6 +357,7 @@ function SubmitOpportunityForm() {
           }}
         >
           <div
+            className="new-opp-confirm-icon-box"
             style={{
               width: "64px",
               height: "64px",
@@ -374,6 +376,7 @@ function SubmitOpportunityForm() {
 
           <div>
             <h2
+              className="new-opp-confirm-title"
               style={{
                 fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
                 fontSize: "28px",
@@ -385,6 +388,7 @@ function SubmitOpportunityForm() {
               {isSubmitted ? "Opportunity Submitted to Vismaya" : "Opportunity Saved as Draft"}
             </h2>
             <p
+              className="new-opp-confirm-desc"
               style={{
                 fontFamily: "var(--font-body), 'Inter', sans-serif",
                 fontSize: "15px",
@@ -400,6 +404,7 @@ function SubmitOpportunityForm() {
           </div>
 
           <div
+            className="new-opp-confirm-banner"
             style={{
               padding: "16px 20px",
               borderRadius: "14px",
@@ -422,7 +427,7 @@ function SubmitOpportunityForm() {
             </span>
           </div>
 
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center", marginTop: "10px" }}>
+          <div className="new-opp-confirm-actions" style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center", marginTop: "10px" }}>
             <Link
               href="/recruiter/opportunities"
               style={{
@@ -497,11 +502,12 @@ function SubmitOpportunityForm() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+    <div className="new-opp-page-root" style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
       {/* PAGE HEADER */}
-      <div>
+      <div className="new-opp-header-block">
         <nav
           aria-label="Breadcrumb"
+          className="new-opp-breadcrumb"
           style={{
             display: "flex",
             alignItems: "center",
@@ -524,6 +530,7 @@ function SubmitOpportunityForm() {
         </nav>
 
         <h1
+          className="new-opp-title"
           style={{
             fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
             fontSize: "clamp(30px, 3.5vw, 38px)",
@@ -537,6 +544,7 @@ function SubmitOpportunityForm() {
           Create Opportunity
         </h1>
         <p
+          className="new-opp-desc"
           style={{
             fontFamily: "var(--font-body), 'Inter', sans-serif",
             fontSize: "16px",
@@ -552,6 +560,7 @@ function SubmitOpportunityForm() {
 
       {/* STEP INDICATOR CARD (Full Width on Top) */}
       <div
+        className="new-opp-stepper-card"
         style={{
           borderRadius: "16px",
           backgroundColor: "#FFFFFF",
@@ -663,14 +672,15 @@ function SubmitOpportunityForm() {
           className="mobile-stepper"
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "15px", fontWeight: 600, color: "#2B2D2A" }}>
+            <span className="mobile-stepper-label" style={{ fontSize: "15px", fontWeight: 600, color: "#2B2D2A" }}>
               Step {currentStep}: {steps[currentStep - 1].label}
             </span>
-            <span style={{ fontSize: "12px", color: "#5A584F", fontWeight: 600 }}>
+            <span className="mobile-stepper-count" style={{ fontSize: "12px", color: "#5A584F", fontWeight: 600 }}>
               {currentStep} of 4
             </span>
           </div>
           <div
+            className="mobile-stepper-bar-track"
             style={{
               height: "6px",
               borderRadius: "999px",
@@ -679,6 +689,7 @@ function SubmitOpportunityForm() {
             }}
           >
             <div
+              className="mobile-stepper-bar-fill"
               style={{
                 height: "100%",
                 width: `${(currentStep / 4) * 100}%`,
@@ -710,8 +721,9 @@ function SubmitOpportunityForm() {
           {/* STEP 1: PROJECT LINK */}
           {currentStep === 1 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
-              <div>
+              <div className="new-opp-step-header">
                 <h2
+                  className="new-opp-step-heading"
                   style={{
                     fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
                     fontSize: "26px",
@@ -722,13 +734,13 @@ function SubmitOpportunityForm() {
                 >
                   1. Link to a Casting Project
                 </h2>
-                <p style={{ fontSize: "15px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
+                <p className="new-opp-step-desc" style={{ fontSize: "15px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
                   Every opportunity must belong to an active project container.
                 </p>
               </div>
 
               {/* Segmented Toggle Pair */}
-              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+              <div className="new-opp-project-toggle-group" style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                 <button
                   type="button"
                   onClick={() => setIsInlineProject(false)}
@@ -745,7 +757,7 @@ function SubmitOpportunityForm() {
                     cursor: "pointer",
                     transition: "all 0.18s ease",
                   }}
-                  className="seg-toggle-btn"
+                  className={`seg-toggle-btn ${!isInlineProject ? "seg-toggle-active" : ""}`}
                 >
                   Select Existing Project ({orgProjects.length})
                 </button>
@@ -765,7 +777,7 @@ function SubmitOpportunityForm() {
                     cursor: "pointer",
                     transition: "all 0.18s ease",
                   }}
-                  className="seg-toggle-btn"
+                  className={`seg-toggle-btn ${isInlineProject ? "seg-toggle-active" : ""}`}
                 >
                   + Create New Project Inline
                 </button>
@@ -792,7 +804,7 @@ function SubmitOpportunityForm() {
                       ...inputStyle,
                       cursor: "pointer",
                     }}
-                    className="v-form-select"
+                    className="v-form-select new-opp-project-select"
                   >
                     {orgProjects.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -808,6 +820,7 @@ function SubmitOpportunityForm() {
                 </div>
               ) : (
                 <div
+                  className="new-opp-inline-project-card"
                   style={{
                     display: "flex",
                     flexDirection: "column",
@@ -912,8 +925,9 @@ function SubmitOpportunityForm() {
           {/* STEP 2: OPPORTUNITY & CHARACTER ROLES */}
           {currentStep === 2 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
-              <div>
+              <div className="new-opp-step-header">
                 <h2
+                  className="new-opp-step-heading"
                   style={{
                     fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
                     fontSize: "26px",
@@ -924,13 +938,13 @@ function SubmitOpportunityForm() {
                 >
                   2. Opportunity Details & Roles
                 </h2>
-                <p style={{ fontSize: "15px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
+                <p className="new-opp-step-desc" style={{ fontSize: "15px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
                   Define public opportunity titles, category, and character roles.
                 </p>
               </div>
 
-              <div className="form-responsive-grid-2">
-                <div>
+              <div className="form-responsive-grid-2 new-opp-title-cat-grid">
+                <div className="new-opp-title-field">
                   <label
                     style={{
                       display: "block",
@@ -958,7 +972,7 @@ function SubmitOpportunityForm() {
                   )}
                 </div>
 
-                <div>
+                <div className="new-opp-cat-field">
                   <label
                     style={{
                       display: "block",
@@ -989,8 +1003,8 @@ function SubmitOpportunityForm() {
                 </div>
               </div>
 
-              <div className="form-responsive-grid-3">
-                <div>
+              <div className="form-responsive-grid-3 new-opp-shoot-remun-grid">
+                <div className="new-opp-loc-field">
                   <label
                     style={{
                       display: "block",
@@ -1013,7 +1027,7 @@ function SubmitOpportunityForm() {
                   />
                 </div>
 
-                <div>
+                <div className="new-opp-remun-type-field">
                   <label
                     style={{
                       display: "block",
@@ -1043,7 +1057,7 @@ function SubmitOpportunityForm() {
                   </select>
                 </div>
 
-                <div>
+                <div className="new-opp-remun-amt-field">
                   <label
                     style={{
                       display: "block",
@@ -1073,9 +1087,10 @@ function SubmitOpportunityForm() {
               </div>
 
               {/* Character Roles Builder */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "12px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+              <div className="new-opp-roles-section" style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "12px" }}>
+                <div className="new-opp-roles-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
                   <span
+                    className="new-opp-roles-title"
                     style={{
                       fontSize: "13px",
                       fontWeight: 700,
@@ -1104,7 +1119,7 @@ function SubmitOpportunityForm() {
                       cursor: "pointer",
                       transition: "all 0.18s ease",
                     }}
-                    className="add-role-btn"
+                    className="add-role-btn new-opp-add-role-btn"
                   >
                     <Plus size={15} style={{ color: "#8A6B2E" }} />
                     <span>Add Role</span>
@@ -1114,6 +1129,7 @@ function SubmitOpportunityForm() {
                 {formData.roles.map((role, idx) => (
                   <div
                     key={role.id || idx}
+                    className="new-opp-role-card"
                     style={{
                       padding: "20px",
                       borderRadius: "14px",
@@ -1124,14 +1140,15 @@ function SubmitOpportunityForm() {
                       gap: "14px",
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: "14px", fontWeight: 700, color: "#2B2D2A" }}>
+                    <div className="new-opp-role-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span className="new-opp-role-title" style={{ fontSize: "14px", fontWeight: 700, color: "#2B2D2A" }}>
                         Role #{idx + 1}
                       </span>
                       {formData.roles.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveRole(idx)}
+                          className="new-opp-remove-role-btn"
                           style={{
                             color: "#B42318",
                             fontSize: "13px",
@@ -1150,8 +1167,8 @@ function SubmitOpportunityForm() {
                       )}
                     </div>
 
-                    <div className="form-responsive-grid-3">
-                      <div>
+                    <div className="form-responsive-grid-3 new-opp-role-grid-1">
+                      <div className="new-opp-char-name-field">
                         <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "4px" }}>
                           Character Name <span style={{ color: "#8A6B2E" }}>*</span>
                         </label>
@@ -1170,7 +1187,7 @@ function SubmitOpportunityForm() {
                         )}
                       </div>
 
-                      <div>
+                      <div className="new-opp-char-gender-field">
                         <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "4px" }}>
                           Gender
                         </label>
@@ -1187,7 +1204,7 @@ function SubmitOpportunityForm() {
                         </select>
                       </div>
 
-                      <div>
+                      <div className="new-opp-char-age-field">
                         <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "4px" }}>
                           Age Range
                         </label>
@@ -1202,8 +1219,8 @@ function SubmitOpportunityForm() {
                       </div>
                     </div>
 
-                    <div className="form-responsive-grid-2">
-                      <div>
+                    <div className="form-responsive-grid-2 new-opp-role-grid-2">
+                      <div className="new-opp-char-skills-field">
                         <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "4px" }}>
                           Skills & Attributes
                         </label>
@@ -1217,7 +1234,7 @@ function SubmitOpportunityForm() {
                         />
                       </div>
 
-                      <div>
+                      <div className="new-opp-char-lang-field">
                         <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "4px" }}>
                           Languages Required
                         </label>
@@ -1240,8 +1257,9 @@ function SubmitOpportunityForm() {
           {/* STEP 3: ELIGIBILITY & MANDATORY DEADLINE */}
           {currentStep === 3 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
-              <div>
+              <div className="new-opp-step-header">
                 <h2
+                  className="new-opp-step-heading"
                   style={{
                     fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
                     fontSize: "26px",
@@ -1252,13 +1270,14 @@ function SubmitOpportunityForm() {
                 >
                   3. Eligibility Criteria & Application Deadline
                 </h2>
-                <p style={{ fontSize: "15px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
+                <p className="new-opp-step-desc" style={{ fontSize: "15px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
                   Set artist screening filters and the mandatory automatic expiration deadline.
                 </p>
               </div>
 
               {/* Mandatory Deadline Card */}
               <div
+                className="new-opp-deadline-card"
                 style={{
                   padding: "22px",
                   borderRadius: "14px",
@@ -1269,11 +1288,11 @@ function SubmitOpportunityForm() {
                   gap: "12px",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#2B2D2A", fontWeight: 700, fontSize: "15px" }}>
+                <div className="new-opp-deadline-header" style={{ display: "flex", alignItems: "center", gap: "8px", color: "#2B2D2A", fontWeight: 700, fontSize: "15px" }}>
                   <Calendar size={18} style={{ color: "#8A6B2E" }} />
-                  <span>Mandatory Application Deadline <span style={{ color: "#8A6B2E" }}>*</span></span>
+                  <span className="new-opp-deadline-title">Mandatory Application Deadline <span style={{ color: "#8A6B2E" }}>*</span></span>
                 </div>
-                <p style={{ fontSize: "13.5px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
+                <p className="new-opp-deadline-desc" style={{ fontSize: "13.5px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
                   Published opportunities automatically stop accepting talent applications and move to <strong>Closed</strong> once this date passes.
                 </p>
 
@@ -1288,7 +1307,7 @@ function SubmitOpportunityForm() {
                     maxWidth: "300px",
                     border: formErrors.deadline ? "1px solid #B42318" : "1px solid #E8E2D4",
                   }}
-                  className="v-form-input"
+                  className="v-form-input new-opp-deadline-input"
                 />
                 {formErrors.deadline && (
                   <span style={{ color: "#B42318", fontSize: "12px", fontWeight: 600 }}>
@@ -1298,8 +1317,8 @@ function SubmitOpportunityForm() {
               </div>
 
               {/* Screening Eligibility Fields */}
-              <div className="form-responsive-grid-3">
-                <div>
+              <div className="form-responsive-grid-3 new-opp-eligibility-grid">
+                <div className="new-opp-age-min-field">
                   <label
                     style={{
                       display: "block",
@@ -1323,7 +1342,7 @@ function SubmitOpportunityForm() {
                   />
                 </div>
 
-                <div>
+                <div className="new-opp-age-max-field">
                   <label
                     style={{
                       display: "block",
@@ -1347,7 +1366,7 @@ function SubmitOpportunityForm() {
                   />
                 </div>
 
-                <div>
+                <div className="new-opp-territory-field">
                   <label
                     style={{
                       display: "block",
@@ -1405,8 +1424,9 @@ function SubmitOpportunityForm() {
           {/* STEP 4: FULL BRIEF & REVIEW */}
           {currentStep === 4 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
-              <div>
+              <div className="new-opp-step-header">
                 <h2
+                  className="new-opp-step-heading"
                   style={{
                     fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
                     fontSize: "26px",
@@ -1417,7 +1437,7 @@ function SubmitOpportunityForm() {
                 >
                   4. Full Casting Brief & Final Review
                 </h2>
-                <p style={{ fontSize: "15px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
+                <p className="new-opp-step-desc" style={{ fontSize: "15px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
                   Review your opportunity before sending it to the Vismaya moderation desk.
                 </p>
               </div>
@@ -1451,6 +1471,7 @@ function SubmitOpportunityForm() {
 
               {/* Review Summary Card */}
               <div
+                className="new-opp-review-card"
                 style={{
                   padding: "20px 24px",
                   borderRadius: "14px",
@@ -1462,42 +1483,43 @@ function SubmitOpportunityForm() {
                   fontSize: "14px",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ color: "#5A584F" }}>Project:</span>
-                  <strong style={{ color: "#2B2D2A" }}>
+                <div className="new-opp-review-row" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
+                  <span className="new-opp-review-label" style={{ color: "#5A584F" }}>Project:</span>
+                  <strong className="new-opp-review-value" style={{ color: "#2B2D2A" }}>
                     {selectedProject?.title || inlineProjTitle || "Assigned Project"}
                   </strong>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ color: "#5A584F" }}>Opportunity Title:</span>
-                  <strong style={{ color: "#2B2D2A" }}>{formData.title || "Untitled Opportunity"}</strong>
+                <div className="new-opp-review-row" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
+                  <span className="new-opp-review-label" style={{ color: "#5A584F" }}>Opportunity Title:</span>
+                  <strong className="new-opp-review-value" style={{ color: "#2B2D2A" }}>{formData.title || "Untitled Opportunity"}</strong>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ color: "#5A584F" }}>Category:</span>
-                  <strong style={{ color: "#2B2D2A" }}>{formData.opportunityType}</strong>
+                <div className="new-opp-review-row" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
+                  <span className="new-opp-review-label" style={{ color: "#5A584F" }}>Category:</span>
+                  <strong className="new-opp-review-value" style={{ color: "#2B2D2A" }}>{formData.opportunityType}</strong>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ color: "#5A584F" }}>Remuneration:</span>
-                  <strong style={{ color: "#2B2D2A" }}>
+                <div className="new-opp-review-row" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
+                  <span className="new-opp-review-label" style={{ color: "#5A584F" }}>Remuneration:</span>
+                  <strong className="new-opp-review-value" style={{ color: "#2B2D2A" }}>
                     {formData.remunerationType === "Paid"
                       ? formData.remunerationAmount
                       : formData.remunerationType}
                   </strong>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ color: "#5A584F" }}>Application Deadline:</span>
-                  <strong style={{ color: "#8A6B2E" }}>
+                <div className="new-opp-review-row" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
+                  <span className="new-opp-review-label" style={{ color: "#5A584F" }}>Application Deadline:</span>
+                  <strong className="new-opp-review-value" style={{ color: "#8A6B2E" }}>
                     {formData.deadline || "Pending"} (Mandatory Future Date)
                   </strong>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
-                  <span style={{ color: "#5A584F" }}>Character Roles:</span>
-                  <strong style={{ color: "#2B2D2A" }}>{formData.roles.length} Roles</strong>
+                <div className="new-opp-review-row" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "4px" }}>
+                  <span className="new-opp-review-label" style={{ color: "#5A584F" }}>Character Roles:</span>
+                  <strong className="new-opp-review-value" style={{ color: "#2B2D2A" }}>{formData.roles.length} Roles</strong>
                 </div>
               </div>
 
               {/* Vismaya Moderation Notice Banner */}
               <div
+                className="new-opp-moderation-banner"
                 style={{
                   padding: "16px 20px",
                   borderRadius: "12px",
@@ -1657,6 +1679,7 @@ function SubmitOpportunityForm() {
         {/* LIVE STICKY PREVIEW CARD (RIGHT) */}
         <div className="new-opp-summary-container">
           <div
+            className="new-opp-preview-card"
             style={{
               padding: "28px",
               borderRadius: "16px",
@@ -1671,8 +1694,9 @@ function SubmitOpportunityForm() {
               boxSizing: "border-box",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div className="new-opp-preview-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <h3
+                className="new-opp-preview-title"
                 style={{
                   fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
                   fontSize: "22px",
@@ -1684,6 +1708,7 @@ function SubmitOpportunityForm() {
                 Opportunity overview
               </h3>
               <span
+                className="new-opp-preview-pill"
                 style={{
                   fontSize: "11px",
                   fontWeight: 700,
@@ -1701,8 +1726,9 @@ function SubmitOpportunityForm() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontSize: "14px" }}>
-              <div>
+              <div className="new-opp-preview-item">
                 <span
+                  className="new-opp-preview-label"
                   style={{
                     color: "#5A584F",
                     display: "block",
@@ -1715,13 +1741,14 @@ function SubmitOpportunityForm() {
                 >
                   Project container
                 </span>
-                <strong style={{ color: "#2B2D2A", fontSize: "15px", fontWeight: 600 }}>
+                <strong className="new-opp-preview-value" style={{ color: "#2B2D2A", fontSize: "15px", fontWeight: 600 }}>
                   {selectedProject?.title || inlineProjTitle || "Untitled Project"}
                 </strong>
               </div>
 
-              <div>
+              <div className="new-opp-preview-item">
                 <span
+                  className="new-opp-preview-label"
                   style={{
                     color: "#5A584F",
                     display: "block",
@@ -1735,6 +1762,7 @@ function SubmitOpportunityForm() {
                   Opportunity title
                 </span>
                 <strong
+                  className="new-opp-preview-value"
                   style={{
                     color: formData.title ? "#2B2D2A" : "#6B6A63",
                     fontSize: "16px",
@@ -1745,9 +1773,10 @@ function SubmitOpportunityForm() {
                 </strong>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                <div>
+              <div className="new-opp-preview-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div className="new-opp-preview-item">
                   <span
+                    className="new-opp-preview-label"
                     style={{
                       color: "#5A584F",
                       display: "block",
@@ -1760,10 +1789,11 @@ function SubmitOpportunityForm() {
                   >
                     Category
                   </span>
-                  <span style={{ color: "#2B2D2A", fontWeight: 500 }}>{formData.opportunityType}</span>
+                  <span className="new-opp-preview-value" style={{ color: "#2B2D2A", fontWeight: 500 }}>{formData.opportunityType}</span>
                 </div>
-                <div>
+                <div className="new-opp-preview-item">
                   <span
+                    className="new-opp-preview-label"
                     style={{
                       color: "#5A584F",
                       display: "block",
@@ -1776,13 +1806,14 @@ function SubmitOpportunityForm() {
                   >
                     Location
                   </span>
-                  <span style={{ color: "#2B2D2A", fontWeight: 500 }}>{formData.location || "Mumbai"}</span>
+                  <span className="new-opp-preview-value" style={{ color: "#2B2D2A", fontWeight: 500 }}>{formData.location || "Mumbai"}</span>
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                <div>
+              <div className="new-opp-preview-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div className="new-opp-preview-item">
                   <span
+                    className="new-opp-preview-label"
                     style={{
                       color: "#5A584F",
                       display: "block",
@@ -1796,12 +1827,13 @@ function SubmitOpportunityForm() {
                     Roles count
                   </span>
                   {/* Gold-Brown Roles Count (No Green) */}
-                  <strong style={{ color: "#8A6B2E", fontWeight: 700 }}>
+                  <strong className="new-opp-preview-value" style={{ color: "#8A6B2E", fontWeight: 700 }}>
                     {formData.roles.length} Role{formData.roles.length > 1 ? "s" : ""}
                   </strong>
                 </div>
-                <div>
+                <div className="new-opp-preview-item">
                   <span
+                    className="new-opp-preview-label"
                     style={{
                       color: "#5A584F",
                       display: "block",
@@ -1814,14 +1846,15 @@ function SubmitOpportunityForm() {
                   >
                     Deadline
                   </span>
-                  <span style={{ color: formData.deadline ? "#2B2D2A" : "#6B6A63", fontWeight: 500 }}>
+                  <span className="new-opp-preview-value" style={{ color: formData.deadline ? "#2B2D2A" : "#6B6A63", fontWeight: 500 }}>
                     {formData.deadline ? new Date(formData.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "Pending"}
                   </span>
                 </div>
               </div>
 
-              <div>
+              <div className="new-opp-preview-item">
                 <span
+                  className="new-opp-preview-label"
                   style={{
                     color: "#5A584F",
                     display: "block",
@@ -1834,7 +1867,7 @@ function SubmitOpportunityForm() {
                 >
                   Remuneration
                 </span>
-                <span style={{ color: "#2B2D2A", fontWeight: 500 }}>
+                <span className="new-opp-preview-value" style={{ color: "#2B2D2A", fontWeight: 500 }}>
                   {formData.remunerationType === "Paid"
                     ? formData.remunerationAmount || "Paid Role"
                     : formData.remunerationType}
@@ -1843,6 +1876,7 @@ function SubmitOpportunityForm() {
             </div>
 
             <div
+              className="new-opp-preview-hint"
               style={{
                 backgroundColor: "#F3EFE6",
                 border: "1px solid #E8E2D4",
@@ -1868,6 +1902,7 @@ function SubmitOpportunityForm() {
           <button
             type="button"
             onClick={handlePrev}
+            className="new-opp-mobile-back-btn"
             style={{
               height: "44px",
               padding: "0 16px",
@@ -1890,6 +1925,7 @@ function SubmitOpportunityForm() {
         <button
           type="button"
           onClick={() => handleFormSubmit(true)}
+          className="new-opp-mobile-save-btn"
           style={{
             flex: 1,
             height: "44px",
@@ -1914,6 +1950,7 @@ function SubmitOpportunityForm() {
           <button
             type="button"
             onClick={handleNext}
+            className="new-opp-mobile-primary-btn"
             style={{
               flex: 1.2,
               height: "44px",
@@ -1937,6 +1974,7 @@ function SubmitOpportunityForm() {
           <button
             type="button"
             onClick={() => handleFormSubmit(false)}
+            className="new-opp-mobile-primary-btn"
             style={{
               flex: 1.4,
               height: "44px",
@@ -2076,6 +2114,467 @@ function SubmitOpportunityForm() {
             z-index: 45;
             gap: 10px;
             box-shadow: 0 -4px 16px rgba(43, 45, 42, 0.08);
+          }
+        }
+
+        @media (max-width: 640px) {
+          /* Page Root & Spacing */
+          .new-opp-page-root {
+            gap: 14px !important;
+            padding-bottom: 96px !important;
+          }
+
+          /* Header Block: Requirement A */
+          .new-opp-header-block {
+            margin-bottom: 0 !important;
+          }
+          .new-opp-breadcrumb {
+            font-size: 11.5px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 100% !important;
+            margin-bottom: 8px !important;
+          }
+          .new-opp-title {
+            font-size: 22px !important;
+            line-height: 1.2 !important;
+            margin: 0 0 6px 0 !important;
+            letter-spacing: -0.01em !important;
+          }
+          .new-opp-desc {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 3 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+
+          /* Step Progress Card: Requirement B */
+          .new-opp-stepper-card {
+            border-radius: 14px !important;
+            margin-bottom: 12px !important;
+          }
+          .mobile-stepper {
+            padding: 12px 14px !important;
+            gap: 8px !important;
+          }
+          .mobile-stepper-label {
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            color: #2B2D2A !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+          .mobile-stepper-count {
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            color: #5A584F !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+          }
+          .mobile-stepper-bar-track {
+            height: 6px !important;
+            border-radius: 999px !important;
+          }
+
+          /* Wizard Headings & Text: Requirement C */
+          .new-opp-step-header {
+            margin-bottom: 2px !important;
+          }
+          .new-opp-step-heading {
+            font-size: 18px !important;
+            line-height: 1.25 !important;
+            margin: 0 0 4px 0 !important;
+            color: #2B2D2A !important;
+          }
+          .new-opp-step-desc {
+            font-size: 12.5px !important;
+            line-height: 1.5 !important;
+            margin: 0 !important;
+            color: #5A584F !important;
+          }
+
+          /* Cards & Sections: Requirement D */
+          .new-opp-workspace-layout {
+            gap: 12px !important;
+            margin-bottom: 0 !important;
+          }
+          .new-opp-form-card {
+            padding: 14px 16px !important;
+            border-radius: 14px !important;
+            gap: 14px !important;
+          }
+          .new-opp-form-card > div {
+            gap: 14px !important;
+          }
+
+          /* Buttons & Toggles: Requirement E */
+          .new-opp-project-toggle-group {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+          .new-opp-project-toggle-group .seg-toggle-btn {
+            height: 40px !important;
+            min-height: 40px !important;
+            font-size: 12.5px !important;
+            font-weight: 600 !important;
+            padding: 0 6px !important;
+            border-radius: 8px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .v-btn-secondary,
+          .v-btn-outline-gold,
+          .v-btn-primary {
+            height: 42px !important;
+            min-height: 42px !important;
+            font-size: 13px !important;
+          }
+
+          /* Form Fields: Requirement F */
+          .new-opp-form-card label,
+          .new-opp-inline-project-card label,
+          .new-opp-role-card label {
+            font-size: 12px !important;
+            margin-bottom: 4px !important;
+            letter-spacing: normal !important;
+          }
+          .v-form-input,
+          .v-form-select,
+          .new-opp-project-select {
+            height: 42px !important;
+            min-height: 42px !important;
+            font-size: 16px !important;
+            padding: 8px 12px !important;
+            border-radius: 10px !important;
+            border: 1px solid #E8E2D4 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+          }
+          .v-form-textarea {
+            font-size: 16px !important;
+            min-height: 96px !important;
+            padding: 10px 12px !important;
+            border-radius: 10px !important;
+            border: 1px solid #E8E2D4 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Two-Column Responsive Grids for Short Fields */
+          .new-opp-title-cat-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+          }
+          .new-opp-shoot-remun-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+          }
+          .new-opp-loc-field {
+            grid-column: span 2 !important;
+          }
+          .new-opp-remun-type-field {
+            grid-column: span 1 !important;
+          }
+          .new-opp-remun-amt-field {
+            grid-column: span 1 !important;
+          }
+
+          /* Inline Project Card */
+          .new-opp-inline-project-card {
+            padding: 12px 14px !important;
+            border-radius: 12px !important;
+            gap: 10px !important;
+          }
+
+          /* Character Roles Builder */
+          .new-opp-roles-section {
+            gap: 10px !important;
+            margin-top: 4px !important;
+          }
+          .new-opp-roles-header {
+            gap: 6px !important;
+          }
+          .new-opp-roles-title {
+            font-size: 12px !important;
+            letter-spacing: 0.06em !important;
+          }
+          .new-opp-add-role-btn {
+            height: 36px !important;
+            min-height: 36px !important;
+            font-size: 12px !important;
+            padding: 0 12px !important;
+            border-radius: 8px !important;
+          }
+          .new-opp-role-card {
+            padding: 12px !important;
+            border-radius: 12px !important;
+            gap: 10px !important;
+          }
+          .new-opp-role-title {
+            font-size: 13px !important;
+          }
+          .new-opp-remove-role-btn {
+            font-size: 12px !important;
+            height: 32px !important;
+            padding: 0 6px !important;
+          }
+          .new-opp-role-grid-1 {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+          }
+          .new-opp-char-name-field {
+            grid-column: span 2 !important;
+          }
+          .new-opp-char-gender-field {
+            grid-column: span 1 !important;
+          }
+          .new-opp-char-age-field {
+            grid-column: span 1 !important;
+          }
+          .new-opp-role-grid-2 {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+          }
+
+          /* Step 3 Deadline & Eligibility */
+          .new-opp-deadline-card {
+            padding: 12px 14px !important;
+            border-radius: 12px !important;
+            gap: 8px !important;
+          }
+          .new-opp-deadline-header {
+            font-size: 14px !important;
+          }
+          .new-opp-deadline-desc {
+            font-size: 12px !important;
+            line-height: 1.45 !important;
+          }
+          .new-opp-deadline-input {
+            max-width: 100% !important;
+          }
+          .new-opp-eligibility-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+          }
+          .new-opp-age-min-field {
+            grid-column: span 1 !important;
+          }
+          .new-opp-age-max-field {
+            grid-column: span 1 !important;
+          }
+          .new-opp-territory-field {
+            grid-column: span 2 !important;
+          }
+
+          /* Step 4 Review summary card: Requirement I */
+          .new-opp-review-card {
+            padding: 12px 14px !important;
+            border-radius: 12px !important;
+            gap: 8px !important;
+          }
+          .new-opp-review-row {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: baseline !important;
+            gap: 8px !important;
+            flex-wrap: wrap !important;
+          }
+          .new-opp-review-label {
+            font-size: 11px !important;
+            color: #5A584F !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.06em !important;
+          }
+          .new-opp-review-value {
+            font-size: 13px !important;
+            color: #2B2D2A !important;
+            text-align: right !important;
+          }
+          .new-opp-moderation-banner {
+            padding: 12px 14px !important;
+            border-radius: 10px !important;
+            font-size: 12px !important;
+            line-height: 1.45 !important;
+            gap: 10px !important;
+          }
+
+          /* Live Preview Card: Requirement G */
+          .new-opp-summary-container {
+            width: 100% !important;
+          }
+          .new-opp-preview-card {
+            padding: 14px !important;
+            border-radius: 14px !important;
+            gap: 12px !important;
+          }
+          .new-opp-preview-header {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 8px !important;
+            flex-wrap: wrap !important;
+          }
+          .new-opp-preview-title {
+            font-size: 16px !important;
+            line-height: 1.25 !important;
+            margin: 0 !important;
+          }
+          .new-opp-preview-pill {
+            font-size: 10px !important;
+            padding: 2px 7px !important;
+            white-space: nowrap !important;
+            flex: none !important;
+            letter-spacing: 0.08em !important;
+          }
+          .new-opp-preview-label {
+            font-size: 10px !important;
+            letter-spacing: 0.08em !important;
+            margin-bottom: 2px !important;
+          }
+          .new-opp-preview-value {
+            font-size: 13px !important;
+            line-height: 1.35 !important;
+          }
+          .new-opp-preview-grid-2 {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+          }
+          .new-opp-preview-hint {
+            padding: 10px 12px !important;
+            font-size: 12px !important;
+            line-height: 1.4 !important;
+            border-radius: 10px !important;
+          }
+
+          /* Sticky Bottom Action Bar: Requirement H */
+          .new-opp-mobile-action-bar {
+            display: flex !important;
+            align-items: center !important;
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            background: #FFFFFF !important;
+            border-top: 1px solid #E8E2D4 !important;
+            padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+            z-index: 45 !important;
+            gap: 8px !important;
+            box-shadow: 0 -4px 16px rgba(43, 45, 42, 0.08) !important;
+          }
+          .new-opp-mobile-back-btn {
+            height: 44px !important;
+            min-height: 44px !important;
+            width: 44px !important;
+            min-width: 44px !important;
+            padding: 0 !important;
+            justify-content: center !important;
+            border-radius: 10px !important;
+            flex-shrink: 0 !important;
+          }
+          .new-opp-mobile-back-btn span {
+            display: none !important;
+          }
+          .new-opp-mobile-save-btn {
+            flex: 1 !important;
+            min-width: 0 !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            font-size: 13px !important;
+            border-radius: 10px !important;
+            padding: 0 8px !important;
+            white-space: nowrap !important;
+            justify-content: center !important;
+          }
+          .new-opp-mobile-primary-btn {
+            flex: 1 !important;
+            min-width: 0 !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            font-size: 13px !important;
+            border-radius: 10px !important;
+            padding: 0 8px !important;
+            white-space: nowrap !important;
+            justify-content: center !important;
+          }
+
+          /* Confirmation Screen */
+          .new-opp-confirm-screen {
+            margin: 16px auto !important;
+            gap: 14px !important;
+          }
+          .new-opp-confirm-card {
+            padding: 24px 16px !important;
+            border-radius: 16px !important;
+            gap: 16px !important;
+          }
+          .new-opp-confirm-icon-box {
+            width: 48px !important;
+            height: 48px !important;
+          }
+          .new-opp-confirm-title {
+            font-size: 20px !important;
+            line-height: 1.25 !important;
+          }
+          .new-opp-confirm-desc {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+          }
+          .new-opp-confirm-banner {
+            padding: 12px 14px !important;
+            font-size: 12px !important;
+          }
+          .new-opp-confirm-actions {
+            flex-direction: column !important;
+            width: 100% !important;
+            gap: 8px !important;
+          }
+          .new-opp-confirm-actions a,
+          .new-opp-confirm-actions button {
+            width: 100% !important;
+            height: 42px !important;
+            font-size: 13px !important;
+            justify-content: center !important;
+            box-sizing: border-box !important;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .new-opp-title {
+            font-size: 20px !important;
+          }
+          .new-opp-project-toggle-group {
+            grid-template-columns: 1fr !important;
+          }
+          .new-opp-mobile-save-btn {
+            font-size: 12px !important;
+            padding: 0 4px !important;
+          }
+          .new-opp-mobile-primary-btn {
+            font-size: 12px !important;
+            padding: 0 4px !important;
           }
         }
       `}</style>

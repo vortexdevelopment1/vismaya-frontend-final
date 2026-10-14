@@ -91,6 +91,36 @@ function TalentLayoutContent({ children }) {
             padding-block: 20px !important;
           }
         }
+        @media (max-width: 1023.98px) {
+          .talent-sidebar:not(.sidebar-open) {
+            transform: translateX(-105%) !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            box-shadow: none !important;
+            border-right: none !important;
+          }
+          .talent-sidebar.sidebar-open {
+            transform: translateX(0) !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            box-shadow: 8px 0 28px rgba(43, 45, 42, 0.12) !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .talent-main-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+          }
+          .talent-page-main {
+            padding-inline: 16px !important;
+            padding-block: 16px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
+          }
+        }
       `}</style>
     </div>
   );

@@ -8,6 +8,8 @@ import {
   Search,
   X,
   RotateCcw,
+  SlidersHorizontal,
+  ChevronDown,
 } from "lucide-react";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
@@ -36,6 +38,23 @@ export default function PublicOpportunitiesPage() {
   const [selectedCity, setSelectedCity] = useState("all");
   const [selectedGender, setSelectedGender] = useState("all");
   const [selectedPayment, setSelectedPayment] = useState("all");
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  const activeDropdownFiltersCount = useMemo(() => {
+    let count = 0;
+    if (selectedType !== "all") count++;
+    if (selectedCity !== "all") count++;
+    if (selectedGender !== "all") count++;
+    if (selectedPayment !== "all") count++;
+    return count;
+  }, [selectedType, selectedCity, selectedGender, selectedPayment]);
+
+  const clearDropdownFilters = () => {
+    setSelectedType("all");
+    setSelectedCity("all");
+    setSelectedGender("all");
+    setSelectedPayment("all");
+  };
 
   const types = ["all", "OTT Series", "Commercial / TVC", "Feature Film", "Theatre", "Music Video", "Short Film", "Print / Editorial"];
   const cities = ["all", "Mumbai", "Delhi", "Bengaluru", "Pune", "Hyderabad", "Pan-India"];
@@ -152,63 +171,99 @@ export default function PublicOpportunitiesPage() {
               )}
             </div>
 
-            {/* Filter Dropdowns Grid (4 equal columns on desktop) */}
-            <div className="opp-filters-grid">
-              <div className="opp-filter-item">
-                <label className="opp-filter-label">Type</label>
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                >
-                  {types.map((t) => (
-                    <option key={t} value={t}>
-                      {t === "all" ? "All Types" : t}
-                    </option>
-                  ))}
-                </select>
+            {/* Mobile-only Filter Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileFilterOpen((prev) => !prev)}
+              className="opp-mobile-filter-toggle"
+              aria-expanded={isMobileFilterOpen}
+            >
+              <div className="opp-filter-toggle-content">
+                <SlidersHorizontal size={15} className="opp-filter-toggle-icon" />
+                <span className="opp-filter-toggle-text">Filters</span>
+                {activeDropdownFiltersCount > 0 && (
+                  <span className="opp-filter-badge">{activeDropdownFiltersCount}</span>
+                )}
+              </div>
+              <ChevronDown
+                size={16}
+                className={`opp-filter-chevron ${isMobileFilterOpen ? "is-open" : ""}`}
+              />
+            </button>
+
+            {/* Filter Dropdowns Grid & Panel Wrapper (Always visible on desktop, collapsible on mobile) */}
+            <div className={`opp-filters-collapse-panel ${isMobileFilterOpen ? "is-open" : ""}`}>
+              <div className="opp-filters-grid">
+                <div className="opp-filter-item">
+                  <label className="opp-filter-label">Type</label>
+                  <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                  >
+                    {types.map((t) => (
+                      <option key={t} value={t}>
+                        {t === "all" ? "All Types" : t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="opp-filter-item">
+                  <label className="opp-filter-label">City / Location</label>
+                  <select
+                    value={selectedCity}
+                    onChange={(e) => setSelectedCity(e.target.value)}
+                  >
+                    {cities.map((c) => (
+                      <option key={c} value={c}>
+                        {c === "all" ? "All Locations" : c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="opp-filter-item">
+                  <label className="opp-filter-label">Gender</label>
+                  <select
+                    value={selectedGender}
+                    onChange={(e) => setSelectedGender(e.target.value)}
+                  >
+                    {genders.map((g) => (
+                      <option key={g} value={g}>
+                        {g === "all" ? "All Genders" : g}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="opp-filter-item">
+                  <label className="opp-filter-label">Remuneration</label>
+                  <select
+                    value={selectedPayment}
+                    onChange={(e) => setSelectedPayment(e.target.value)}
+                  >
+                    {paymentOptions.map((p) => (
+                      <option key={p} value={p}>
+                        {p === "all" ? "All Compensation" : p}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div className="opp-filter-item">
-                <label className="opp-filter-label">City / Location</label>
-                <select
-                  value={selectedCity}
-                  onChange={(e) => setSelectedCity(e.target.value)}
-                >
-                  {cities.map((c) => (
-                    <option key={c} value={c}>
-                      {c === "all" ? "All Locations" : c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="opp-filter-item">
-                <label className="opp-filter-label">Gender</label>
-                <select
-                  value={selectedGender}
-                  onChange={(e) => setSelectedGender(e.target.value)}
-                >
-                  {genders.map((g) => (
-                    <option key={g} value={g}>
-                      {g === "all" ? "All Genders" : g}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="opp-filter-item">
-                <label className="opp-filter-label">Remuneration</label>
-                <select
-                  value={selectedPayment}
-                  onChange={(e) => setSelectedPayment(e.target.value)}
-                >
-                  {paymentOptions.map((p) => (
-                    <option key={p} value={p}>
-                      {p === "all" ? "All Compensation" : p}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Mobile-only Clear filters inside expanded panel */}
+              {activeDropdownFiltersCount > 0 && (
+                <div className="opp-mobile-clear-filters-row">
+                  <button
+                    type="button"
+                    onClick={clearDropdownFilters}
+                    className="opp-mobile-clear-filters-btn"
+                  >
+                    <RotateCcw size={12} />
+                    <span>Clear filters</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Results Count & Reset Row */}

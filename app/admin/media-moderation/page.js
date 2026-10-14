@@ -81,6 +81,7 @@ export default function MediaModerationPage() {
       {/* Media Cards Grid */}
       {filteredMedia.length > 0 ? (
         <div
+          className="admin-media-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
@@ -119,6 +120,20 @@ export default function MediaModerationPage() {
           />
         </div>
       )}
+
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .admin-media-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+          }
+        }
+        @media (max-width: 380px) {
+          .admin-media-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
 
       {/* Preview Modal */}
       {previewMedia && (

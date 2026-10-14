@@ -129,7 +129,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+    <div className="admin-dash-root" style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
       {/* Top Page Header */}
       <PageHeader
         title="Admin Operations Console"
@@ -139,6 +139,7 @@ export default function AdminDashboardPage() {
 
       {/* 4 Primary Stat Cards */}
       <div
+        className="admin-stat-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
@@ -194,6 +195,7 @@ export default function AdminDashboardPage() {
             flexDirection: "column",
             gap: "20px",
           }}
+          className="admin-dash-card admin-attention-card"
         >
           <div
             style={{
@@ -249,6 +251,7 @@ export default function AdminDashboardPage() {
               gap: "14px",
               alignItems: "stretch",
             }}
+            className="admin-attention-grid"
           >
             {attentionItems.map((item) => {
               const Icon = item.icon;
@@ -356,6 +359,7 @@ export default function AdminDashboardPage() {
             flexDirection: "column",
             gap: "18px",
           }}
+          className="admin-dash-card admin-activity-card"
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -482,9 +486,11 @@ export default function AdminDashboardPage() {
           width: "100%",
           boxSizing: "border-box",
         }}
+        className="admin-dash-card admin-workflow-card"
       >
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
+        <div className="admin-workflow-left" style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
           <div
+            className="admin-workflow-icon"
             style={{
               width: "44px",
               height: "44px",
@@ -502,6 +508,7 @@ export default function AdminDashboardPage() {
           </div>
           <div>
             <h3
+              className="admin-workflow-title"
               style={{
                 fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
                 fontSize: "18px",
@@ -513,6 +520,7 @@ export default function AdminDashboardPage() {
               Vismaya Operating Workflow Model
             </h3>
             <p
+              className="admin-workflow-desc"
               style={{
                 fontSize: "14px",
                 color: "#5A584F",
@@ -576,6 +584,73 @@ export default function AdminDashboardPage() {
         }
         .admin-review-cta:hover {
           background-color: #6E5420 !important;
+        }
+
+        @media (max-width: 640px) {
+          .admin-dash-root {
+            gap: 14px !important;
+          }
+          .admin-stat-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+          }
+          .admin-dash-grid {
+            gap: 14px !important;
+          }
+          .admin-dash-card {
+            padding: 14px 16px !important;
+            border-radius: 14px !important;
+            gap: 12px !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+          }
+          .admin-attention-card h2,
+          .admin-activity-card h3 {
+            font-size: 18px !important;
+            line-height: 1.25 !important;
+          }
+          .admin-attention-grid {
+            grid-template-columns: 1fr !important;
+            gap: 8px !important;
+          }
+          .admin-attention-item {
+            padding: 12px !important;
+            border-radius: 10px !important;
+          }
+          .admin-workflow-card {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            padding: 14px 16px !important;
+            gap: 14px !important;
+          }
+          .admin-workflow-left {
+            gap: 12px !important;
+          }
+          .admin-workflow-icon {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 9px !important;
+            min-width: 36px !important;
+          }
+          .admin-workflow-icon :global(svg) {
+            width: 18px !important;
+            height: 18px !important;
+          }
+          .admin-workflow-title {
+            font-size: 16px !important;
+            line-height: 1.25 !important;
+          }
+          .admin-workflow-desc {
+            font-size: 12.5px !important;
+            line-height: 1.5 !important;
+          }
+          .admin-review-cta {
+            width: 100% !important;
+            height: 42px !important;
+            justify-content: center !important;
+            font-size: 13px !important;
+            box-sizing: border-box !important;
+          }
         }
       `}</style>
     </div>

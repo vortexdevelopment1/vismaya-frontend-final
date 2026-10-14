@@ -9,6 +9,7 @@ export default function OpportunitiesSection({ opportunities = [], getProject })
     <section className="public-section" style={{ backgroundColor: "var(--bg-primary)" }}>
       <div className="public-container">
         <div
+          className="home-opp-header-wrap"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -23,6 +24,7 @@ export default function OpportunitiesSection({ opportunities = [], getProject })
               <span>Live Auditions</span>
             </div>
             <h2
+              className="home-opp-heading"
               style={{
                 fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
                 fontSize: "clamp(30px, 4vw, 44px)",
@@ -35,6 +37,7 @@ export default function OpportunitiesSection({ opportunities = [], getProject })
               Active Casting Calls
             </h2>
             <p
+              className="home-opp-subtext"
               style={{
                 fontFamily: "var(--font-body), 'Inter', sans-serif",
                 fontSize: "15px",
@@ -54,9 +57,10 @@ export default function OpportunitiesSection({ opportunities = [], getProject })
         </div>
 
         <div
+          className="home-opp-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))",
             gap: "24px",
             alignItems: "stretch",
           }}
@@ -120,6 +124,33 @@ export default function OpportunitiesSection({ opportunities = [], getProject })
 
         :global(.opp-view-all-arrow) {
           transition: transform 200ms ease;
+        }
+
+        @media (max-width: 640px) {
+          :global(.home-opp-header-wrap) {
+            margin-bottom: 20px !important;
+            gap: 16px !important;
+          }
+          :global(.home-opp-heading) {
+            font-size: 26px !important;
+            line-height: 1.18 !important;
+            margin-bottom: 8px !important;
+          }
+          :global(.home-opp-subtext) {
+            font-size: 14px !important;
+            line-height: 1.55 !important;
+          }
+          :global(.opp-view-all-btn) {
+            width: 100% !important;
+            justify-content: center !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            font-size: 13px !important;
+          }
+          :global(.home-opp-grid) {
+            grid-template-columns: 1fr !important;
+            gap: 14px !important;
+          }
         }
       `}</style>
     </section>

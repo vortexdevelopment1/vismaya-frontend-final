@@ -30,7 +30,7 @@ export default function MediaCard({ media, onDelete }) {
   return (
     <>
       <div
-        className="card-surface"
+        className="card-surface media-card-root"
         style={{
           border: media.status === "Rejected" ? "1px solid rgba(180, 35, 24, 0.35)" : "1px solid #E8E2D4",
           borderRadius: "16px",
@@ -45,6 +45,7 @@ export default function MediaCard({ media, onDelete }) {
       >
         {/* Media Thumbnail / Preview Area (Aspect ~ 4/3 or clamp) */}
         <div
+          className={`media-card-thumbnail-wrap ${isVideo ? "is-video" : "is-photo"}`}
           style={{
             height: "200px",
             width: "100%",
@@ -127,6 +128,7 @@ export default function MediaCard({ media, onDelete }) {
 
           {/* Subtle Top Gradient for Badge Readability */}
           <div
+            className="media-card-gradient"
             style={{
               position: "absolute",
               top: 0,
@@ -141,6 +143,7 @@ export default function MediaCard({ media, onDelete }) {
 
           {/* Top Badges: Type & Moderation Status */}
           <div
+            className="media-card-top-badges"
             style={{
               position: "absolute",
               top: "10px",
@@ -153,6 +156,7 @@ export default function MediaCard({ media, onDelete }) {
             }}
           >
             <span
+              className="media-category-badge"
               style={{
                 fontSize: "0.72rem",
                 fontWeight: "700",
@@ -172,12 +176,15 @@ export default function MediaCard({ media, onDelete }) {
               {media.type || (isVideo ? "Showreel" : "Photo")}
             </span>
 
-            <StatusBadge status={media.status || "Pending"} size="xs" />
+            <span className="media-status-badge">
+              <StatusBadge status={media.status || "Pending"} size="xs" />
+            </span>
           </div>
 
           {/* Bottom Duration or Resolution */}
           {(media.duration || media.resolution) && (
             <span
+              className="media-specs-badge"
               style={{
                 position: "absolute",
                 bottom: "10px",
@@ -199,6 +206,7 @@ export default function MediaCard({ media, onDelete }) {
 
         {/* Media Details */}
         <div
+          className="media-card-body"
           style={{
             padding: "16px 18px",
             display: "flex",
@@ -209,8 +217,9 @@ export default function MediaCard({ media, onDelete }) {
             minWidth: 0,
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
+          <div className="media-card-info" style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
             <h4
+              className="media-card-title"
               style={{
                 fontSize: "0.95rem",
                 fontWeight: "700",
@@ -223,7 +232,7 @@ export default function MediaCard({ media, onDelete }) {
             >
               {media.title || "Untitled Media"}
             </h4>
-            <span style={{ fontSize: "0.78rem", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+            <span className="media-card-meta" style={{ fontSize: "0.78rem", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
               Uploaded on {media.date || "Today"} &bull; {media.fileSize || "2.5 MB"}
             </span>
           </div>
@@ -231,6 +240,7 @@ export default function MediaCard({ media, onDelete }) {
           {/* Admin Rejection Reason Banner */}
           {media.status === "Rejected" && media.reason && (
             <div
+              className="media-rejection-banner"
               style={{
                 backgroundColor: "#FEF3F2",
                 border: "1px solid #FECDCA",
@@ -256,6 +266,7 @@ export default function MediaCard({ media, onDelete }) {
 
           {/* Action Buttons */}
           <div
+            className="media-card-actions"
             style={{
               marginTop: "auto",
               paddingTop: "12px",
@@ -269,7 +280,7 @@ export default function MediaCard({ media, onDelete }) {
             <button
               type="button"
               onClick={() => setShowPreview(true)}
-              className="btn-secondary"
+              className="btn-secondary media-preview-btn"
               style={{
                 fontSize: "0.82rem",
                 padding: "8px 16px",
@@ -303,7 +314,7 @@ export default function MediaCard({ media, onDelete }) {
                 transition: "color 0.15s ease, background-color 0.15s ease",
               }}
               title="Delete Media"
-              className="delete-icon-btn"
+              className="delete-icon-btn media-delete-btn"
             >
               <Trash2 size={16} />
             </button>
@@ -319,21 +330,24 @@ export default function MediaCard({ media, onDelete }) {
         subtitle={`${media.type || (isVideo ? "Showreel" : "Photo")} • Uploaded ${media.date || "Recently"}`}
         maxWidth="720px"
         footer={
-          <button
-            type="button"
-            onClick={() => setShowPreview(false)}
-            className="btn-secondary"
-            style={{ padding: "8px 20px", borderRadius: "8px" }}
-          >
-            Close Preview
-          </button>
+          <div className="preview-modal-footer" style={{ width: "100%" }}>
+            <button
+              type="button"
+              onClick={() => setShowPreview(false)}
+              className="btn-secondary"
+              style={{ padding: "8px 20px", borderRadius: "8px" }}
+            >
+              Close Preview
+            </button>
+          </div>
         }
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div
+            className="preview-media-container"
             style={{
               width: "100%",
-              backgroundColor: "#1C1D1A",
+              backgroundColor: isVideo ? "#000000" : "#F3EFE6",
               borderRadius: "12px",
               border: "1px solid #E8E2D4",
               overflow: "hidden",
@@ -411,7 +425,7 @@ export default function MediaCard({ media, onDelete }) {
         subtitle="This action cannot be undone."
         maxWidth="440px"
         footer={
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div className="delete-modal-footer" style={{ display: "flex", gap: "10px" }}>
             <button
               type="button"
               onClick={() => setShowDeleteConfirm(false)}
@@ -457,6 +471,201 @@ export default function MediaCard({ media, onDelete }) {
         .media-play-icon:hover {
           transform: scale(1.1);
           background-color: #6e5420 !important;
+        }
+
+        @media (max-width: 640px) {
+          .media-card-root {
+            border-radius: 14px !important;
+            box-shadow: 0 1px 4px rgba(43, 45, 42, 0.04) !important;
+            border: 1px solid #E8E2D4 !important;
+          }
+          .media-card-thumbnail-wrap {
+            height: auto !important;
+          }
+          .media-card-thumbnail-wrap.is-photo {
+            aspect-ratio: 4 / 5 !important;
+          }
+          .media-card-thumbnail-wrap.is-video {
+            aspect-ratio: 4 / 3 !important;
+            background-color: #F3EFE6 !important;
+          }
+          .media-card-thumbnail-wrap video {
+            background-color: #F3EFE6 !important;
+          }
+          .media-card-thumbnail-wrap img,
+          .media-card-thumbnail-wrap video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            object-position: center top !important;
+          }
+          .media-card-gradient {
+            height: 36px !important;
+          }
+          .media-card-top-badges {
+            top: 6px !important;
+            left: 6px !important;
+            right: 6px !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: flex-start !important;
+            justifyContent: space-between !important;
+            gap: 4px !important;
+          }
+          .media-category-badge {
+            font-size: 9.5px !important;
+            font-weight: 700 !important;
+            padding: 2.5px 6px !important;
+            border-radius: 4px !important;
+            background-color: rgba(255, 255, 255, 0.94) !important;
+            color: #2B2D2A !important;
+            border: 1px solid rgba(232, 226, 212, 0.9) !important;
+            box-shadow: 0 1px 3px rgba(43, 45, 42, 0.12) !important;
+            letter-spacing: 0.02em !important;
+          }
+          .media-category-badge :global(svg) {
+            width: 10px !important;
+            height: 10px !important;
+            color: #8A6B2E !important;
+          }
+          .media-status-badge :global(span) {
+            font-size: 9.5px !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+            box-shadow: 0 1px 3px rgba(43, 45, 42, 0.12) !important;
+          }
+          .media-specs-badge {
+            bottom: 6px !important;
+            right: 6px !important;
+            font-size: 9.5px !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+            background-color: rgba(255, 255, 255, 0.94) !important;
+            color: #2B2D2A !important;
+            border: 1px solid rgba(232, 226, 212, 0.9) !important;
+            box-shadow: 0 1px 3px rgba(43, 45, 42, 0.12) !important;
+          }
+          .media-play-icon {
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
+            box-shadow: 0 2px 8px rgba(43, 45, 42, 0.25) !important;
+          }
+          .media-play-icon :global(svg) {
+            width: 14px !important;
+            height: 14px !important;
+            margin-left: 2px !important;
+          }
+          .media-card-body {
+            padding: 9px 10px 10px !important;
+            gap: 6px !important;
+          }
+          .media-card-info {
+            gap: 2px !important;
+          }
+          .media-card-title {
+            font-size: 13px !important;
+            line-height: 1.25 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            word-break: break-word !important;
+          }
+          .media-card-meta {
+            font-size: 10.5px !important;
+            line-height: 1.35 !important;
+          }
+          .media-rejection-banner {
+            padding: 6px 8px !important;
+            border-radius: 6px !important;
+            gap: 6px !important;
+            margin-top: 2px !important;
+          }
+          .media-rejection-banner :global(svg) {
+            width: 13px !important;
+            height: 13px !important;
+          }
+          .media-rejection-banner span {
+            font-size: 10.5px !important;
+            line-height: 1.3 !important;
+          }
+          .media-card-actions {
+            margin-top: auto !important;
+            padding-top: 8px !important;
+            gap: 6px !important;
+          }
+          .media-preview-btn {
+            height: 32px !important;
+            min-height: 32px !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            padding: 0 8px !important;
+            border-radius: 6px !important;
+            flex: 1 !important;
+            justify-content: center !important;
+            letter-spacing: 0.04em !important;
+            text-transform: uppercase !important;
+          }
+          .media-delete-btn {
+            width: 32px !important;
+            min-width: 32px !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            padding: 0 !important;
+            border-radius: 6px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .media-delete-btn :global(svg) {
+            width: 14px !important;
+            height: 14px !important;
+          }
+          .preview-media-container {
+            min-height: 180px !important;
+          }
+          .preview-media-container video,
+          .preview-media-container img {
+            max-height: 55vh !important;
+          }
+          .preview-modal-footer {
+            width: 100% !important;
+          }
+          .preview-modal-footer :global(button) {
+            width: 100% !important;
+            height: 40px !important;
+            justify-content: center !important;
+          }
+          .delete-modal-footer {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+          .delete-modal-footer :global(button) {
+            width: 100% !important;
+            height: 40px !important;
+            justify-content: center !important;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .media-card-body {
+            padding: 8px 8px 9px !important;
+          }
+          .media-card-title {
+            font-size: 12px !important;
+          }
+          .media-card-meta {
+            font-size: 10px !important;
+          }
+          .media-preview-btn {
+            font-size: 10px !important;
+            padding: 0 4px !important;
+          }
         }
       `}</style>
     </>

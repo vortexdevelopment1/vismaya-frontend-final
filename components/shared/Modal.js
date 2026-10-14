@@ -218,7 +218,7 @@ export default function Modal({
           display: none;
         }
 
-        @media (max-width: 599.98px) {
+        @media (max-width: 640px) {
           .modal-backdrop-wrap {
             align-items: flex-end !important;
             padding: 0 !important;
@@ -226,7 +226,7 @@ export default function Modal({
           .modal-dialog-panel {
             max-width: 100% !important;
             width: 100% !important;
-            max-height: 88dvh !important;
+            max-height: min(90dvh, 90vh) !important;
             border-bottom-left-radius: 0 !important;
             border-bottom-right-radius: 0 !important;
             border-top-left-radius: 20px !important;
@@ -238,13 +238,13 @@ export default function Modal({
             display: block !important;
           }
           .modal-header-box {
-            padding: 14px 18px !important;
+            padding: 14px 16px !important;
           }
           .modal-body-content {
-            padding: 18px !important;
+            padding: 16px !important;
           }
           .modal-footer-box {
-            padding: 14px 18px calc(14px + env(safe-area-inset-bottom, 0px)) 18px !important;
+            padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) 16px !important;
           }
         }
       `}</style>

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
+import EmptyState from "@/components/shared/EmptyState";
 
 export default function OrganizationNotificationsPage() {
   const router = useRouter();
@@ -176,7 +177,10 @@ export default function OrganizationNotificationsPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px", width: "100%", minWidth: 0 }}>
+    <div
+      className="v-notif-page-wrapper"
+      style={{ display: "flex", flexDirection: "column", gap: "24px", width: "100%", minWidth: 0 }}
+    >
       {/* Page Header */}
       <PageHeader
         title="Notifications"
@@ -190,7 +194,7 @@ export default function OrganizationNotificationsPage() {
             <button
               type="button"
               onClick={handleMarkAllRead}
-              className="btn-secondary"
+              className="v-mark-all-btn btn-secondary"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -208,7 +212,10 @@ export default function OrganizationNotificationsPage() {
       />
 
       {/* Filter Tabs */}
-      <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
+      <div
+        className="v-notif-tabs-container"
+        style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}
+      >
         {[
           { key: "ALL", label: "All Activity", count: tabCounts.ALL },
           { key: "OPPORTUNITY", label: "Opportunity", count: tabCounts.OPPORTUNITY },
@@ -221,6 +228,7 @@ export default function OrganizationNotificationsPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
+              className={`v-notif-tab-btn ${isActive ? "active" : ""}`}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -264,7 +272,7 @@ export default function OrganizationNotificationsPage() {
           iconName="Bell"
         />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }} className="v-notif-list">
           {filteredNotifications.map((notif) => {
             const conf = getIconConfig(notif.type);
             const Icon = conf.icon;
@@ -273,7 +281,7 @@ export default function OrganizationNotificationsPage() {
               <div
                 key={notif.id}
                 onClick={() => handleNotificationClick(notif)}
-                className="card-surface"
+                className={`v-notif-card card-surface ${notif.read ? "v-notif-read" : "v-notif-unread"}`}
                 style={{
                   backgroundColor: notif.read ? "var(--bg-glass)" : "rgba(255, 188, 0, 0.08)",
                   backdropFilter: "blur(16px)",
@@ -290,6 +298,7 @@ export default function OrganizationNotificationsPage() {
               >
                 {/* Category Icon */}
                 <div
+                  className="v-notif-icon-box"
                   style={{
                     width: "42px",
                     height: "42px",
@@ -307,10 +316,20 @@ export default function OrganizationNotificationsPage() {
                 </div>
 
                 {/* Content */}
-                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <div
+                  className="v-notif-content-col"
+                  style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}
+                >
+                  <div
+                    className="v-notif-meta-row"
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}
+                  >
+                    <div
+                      className="v-notif-tag-wrap"
+                      style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}
+                    >
                       <span
+                        className="v-notif-tag-text"
                         style={{
                           fontSize: "0.725rem",
                           fontWeight: "700",
@@ -323,6 +342,7 @@ export default function OrganizationNotificationsPage() {
                       </span>
                       {!notif.read && (
                         <span
+                          className="v-notif-unread-dot"
                           style={{
                             width: "8px",
                             height: "8px",
@@ -333,13 +353,17 @@ export default function OrganizationNotificationsPage() {
                         />
                       )}
                     </div>
-                    <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                    <span
+                      className="v-notif-date-text"
+                      style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                    >
                       <Clock size={12} />
                       {formatTimestamp(notif.createdAt)}
                     </span>
                   </div>
 
                   <p
+                    className="v-notif-message-text"
                     style={{
                       fontSize: "0.875rem",
                       fontWeight: notif.read ? "500" : "600",
@@ -352,7 +376,7 @@ export default function OrganizationNotificationsPage() {
                   </p>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", alignSelf: "center" }}>
+                <div className="v-notif-chevron-box" style={{ display: "flex", alignItems: "center", alignSelf: "center" }}>
                   <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />
                 </div>
               </div>
@@ -360,6 +384,301 @@ export default function OrganizationNotificationsPage() {
           })}
         </div>
       )}
+
+      {/* Mobile-Only CSS (max-width: 640px) */}
+      <style jsx global>{`
+        @media (max-width: 640px) {
+          /* Page wrapper & Spacing */
+          .v-notif-page-wrapper {
+            gap: 12px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
+            background: transparent !important;
+          }
+
+          /* B. Header */
+          .v-notif-page-wrapper .page-header-container {
+            margin-bottom: 0 !important;
+            gap: 8px !important;
+          }
+          .v-notif-page-wrapper .page-header-container nav[aria-label="Breadcrumb"] {
+            font-size: 11.5px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            flex-wrap: nowrap !important;
+            gap: 6px !important;
+          }
+          .v-notif-page-wrapper .page-header-title {
+            font-size: 22px !important;
+            line-height: 1.25 !important;
+            margin: 0 !important;
+          }
+          .v-notif-page-wrapper .page-header-subtitle {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 3 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+          .v-notif-page-wrapper .page-header-actions {
+            width: 100% !important;
+            margin: 4px 0 0 0 !important;
+          }
+          .v-notif-page-wrapper .v-mark-all-btn {
+            width: 100% !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            font-size: 12px !important;
+            margin: 10px 0 !important;
+            border-radius: 10px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #2B2D2A !important;
+          }
+          .v-notif-page-wrapper .v-mark-all-btn:hover {
+            background-color: #F3EFE6 !important;
+            color: #8A6B2E !important;
+            border-color: #8A6B2E !important;
+          }
+
+          /* C. Tabs: NO horizontal scroll, flex-wrap chips in 2 lines */
+          .v-notif-page-wrapper .v-notif-tabs-container {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            overflow: visible !important;
+            margin: 12px 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+          }
+          .v-notif-page-wrapper .v-notif-tab-btn {
+            flex: 1 1 auto !important;
+            height: 28px !important;
+            padding: 0 8px !important;
+            border-radius: 999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 5px !important;
+            box-shadow: none !important;
+          }
+          .v-notif-page-wrapper .v-notif-tab-btn.active {
+            background-color: #8A6B2E !important;
+            color: #FFFFFF !important;
+            border: 1px solid #8A6B2E !important;
+            box-shadow: none !important;
+          }
+          .v-notif-page-wrapper .v-notif-tab-btn.active span:last-child {
+            background-color: #FFFFFF !important;
+            color: #8A6B2E !important;
+            min-width: 16px !important;
+            height: 16px !important;
+            border-radius: 8px !important;
+            font-size: 9.5px !important;
+            padding: 0 4px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .v-notif-page-wrapper .v-notif-tab-btn:not(.active) {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #5A584F !important;
+            box-shadow: none !important;
+          }
+          .v-notif-page-wrapper .v-notif-tab-btn:not(.active) span:last-child {
+            background-color: #F3EFE6 !important;
+            color: #2B2D2A !important;
+            min-width: 16px !important;
+            height: 16px !important;
+            border-radius: 8px !important;
+            font-size: 9.5px !important;
+            padding: 0 4px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+
+          /* D. Notification rows */
+          .v-notif-page-wrapper .v-notif-list {
+            gap: 10px !important;
+          }
+          .v-notif-page-wrapper .v-notif-card {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            padding: 12px !important;
+            border-radius: 14px !important;
+            gap: 10px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            transition: all 0.15s ease !important;
+          }
+          .v-notif-page-wrapper .v-notif-card.v-notif-read {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            box-shadow: 0 1px 3px rgba(43, 45, 42, 0.03) !important;
+          }
+          .v-notif-page-wrapper .v-notif-card.v-notif-unread {
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+            border-left: 3px solid #8A6B2E !important;
+            box-shadow: 0 1px 4px rgba(43, 45, 42, 0.05) !important;
+          }
+          .v-notif-page-wrapper .v-notif-icon-box {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            border-radius: 8px !important;
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #8A6B2E !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+          }
+          .v-notif-page-wrapper .v-notif-icon-box :global(svg) {
+            width: 16px !important;
+            height: 16px !important;
+          }
+          .v-notif-page-wrapper .v-notif-content-col {
+            flex: 1 !important;
+            min-width: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 2px !important;
+          }
+          .v-notif-page-wrapper .v-notif-meta-row {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 2px !important;
+            width: 100% !important;
+          }
+          .v-notif-page-wrapper .v-notif-tag-wrap {
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            flex-wrap: nowrap !important;
+            line-height: 1.2 !important;
+          }
+          .v-notif-page-wrapper .v-notif-tag-text {
+            font-size: 10.5px !important;
+            font-weight: 700 !important;
+            color: #8A6B2E !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.08em !important;
+          }
+          .v-notif-page-wrapper .v-notif-unread-dot {
+            width: 7px !important;
+            height: 7px !important;
+            min-width: 7px !important;
+            min-height: 7px !important;
+            border-radius: 50% !important;
+            background-color: #8A6B2E !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            display: inline-block !important;
+          }
+          .v-notif-page-wrapper .v-notif-date-text {
+            font-size: 11px !important;
+            color: #5A584F !important;
+            white-space: nowrap !important;
+            line-height: 1.3 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+          }
+          .v-notif-page-wrapper .v-notif-date-text :global(svg) {
+            width: 11px !important;
+            height: 11px !important;
+          }
+          .v-notif-page-wrapper .v-notif-message-text {
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            line-height: 1.5 !important;
+            color: #2B2D2A !important;
+            margin: 2px 0 0 0 !important;
+            overflow-wrap: anywhere !important;
+            word-break: normal !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 4 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+          .v-notif-page-wrapper .v-notif-chevron-box {
+            width: 16px !important;
+            flex-shrink: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+          }
+          .v-notif-page-wrapper .v-notif-chevron-box :global(svg) {
+            width: 16px !important;
+            height: 16px !important;
+            color: #5A584F !important;
+          }
+
+          /* E. Empty state */
+          .v-notif-page-wrapper [style*="border: 1px dashed"],
+          .v-notif-page-wrapper .empty-state-box {
+            padding: 24px 16px !important;
+            border-radius: 14px !important;
+            background-color: #FFFFFF !important;
+            border: 1px dashed #E8E2D4 !important;
+          }
+          .v-notif-page-wrapper [style*="border: 1px dashed"] > div:first-child {
+            width: 40px !important;
+            height: 40px !important;
+            margin-bottom: 8px !important;
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #8A6B2E !important;
+            box-shadow: none !important;
+          }
+          .v-notif-page-wrapper [style*="border: 1px dashed"] h3 {
+            font-size: 15px !important;
+            margin-bottom: 4px !important;
+            color: #2B2D2A !important;
+          }
+          .v-notif-page-wrapper [style*="border: 1px dashed"] p {
+            font-size: 13px !important;
+            line-height: 1.4 !important;
+            color: #5A584F !important;
+          }
+        }
+
+        /* Screen tweak under 380px */
+        @media (max-width: 380px) {
+          .v-notif-page-wrapper .v-notif-tabs-container {
+            gap: 4px !important;
+          }
+          .v-notif-page-wrapper .v-notif-tab-btn {
+            font-size: 10px !important;
+            padding: 0 6px !important;
+            gap: 4px !important;
+            height: 27px !important;
+          }
+          .v-notif-page-wrapper .v-notif-tab-btn span:last-child {
+            min-width: 15px !important;
+            height: 15px !important;
+            font-size: 9px !important;
+            padding: 0 3px !important;
+            line-height: 15px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

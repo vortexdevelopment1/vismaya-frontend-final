@@ -41,7 +41,7 @@ export default function Home() {
   }, [opportunities]);
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", width: "100%", backgroundColor: "var(--bg-primary)" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", width: "100%", maxWidth: "100%", overflowX: "hidden", backgroundColor: "var(--bg-primary)" }}>
       {/* 0. Public Navigation */}
       <PublicNav />
 

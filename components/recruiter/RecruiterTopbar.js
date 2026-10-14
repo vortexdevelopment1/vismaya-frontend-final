@@ -41,6 +41,7 @@ export default function RecruiterTopbar({ onOpenMobile }) {
 
   return (
     <header
+      className="recruiter-topbar-header"
       style={{
         height: "var(--topbar-height)",
         backgroundColor: "rgba(255, 255, 255, 0.95)",
@@ -57,7 +58,7 @@ export default function RecruiterTopbar({ onOpenMobile }) {
       }}
     >
       {/* Left: Hamburger & Title */}
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+      <div className="recruiter-topbar-left" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
         <button
           onClick={onOpenMobile}
           aria-label="Open navigation drawer"
@@ -78,10 +79,11 @@ export default function RecruiterTopbar({ onOpenMobile }) {
           <Menu size={20} />
         </button>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+        <div className="recruiter-topbar-title-wrap" style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
           <div
             role="heading"
             aria-level={2}
+            className="recruiter-topbar-title"
             style={{
               fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
               fontSize: "clamp(16px, 2vw, 22px)",
@@ -117,7 +119,7 @@ export default function RecruiterTopbar({ onOpenMobile }) {
       </div>
 
       {/* Right Controls */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div className="recruiter-topbar-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         {!pathname?.startsWith("/recruiter/opportunities/new") && pathname !== "/recruiter/opportunities" && (
           <Link
             href="/recruiter/opportunities/new"
@@ -152,6 +154,7 @@ export default function RecruiterTopbar({ onOpenMobile }) {
           <button
             onClick={() => setShowNotifMenu(!showNotifMenu)}
             aria-label="View notifications"
+            className="recruiter-bell-btn"
             style={{
               minWidth: "44px",
               minHeight: "44px",
@@ -257,6 +260,7 @@ export default function RecruiterTopbar({ onOpenMobile }) {
         <Link
           href="/recruiter/settings"
           title="Studio Settings"
+          className="recruiter-avatar-btn"
           style={{
             width: "44px",
             height: "44px",
@@ -303,9 +307,91 @@ export default function RecruiterTopbar({ onOpenMobile }) {
             display: none !important;
           }
         }
-        @media (max-width: 480px) {
-          .recruiter-topbar-post-btn {
+        @media (max-width: 640px) {
+          .recruiter-topbar-header {
+            height: 56px !important;
+            padding: 0 12px !important;
+          }
+          .recruiter-topbar-left {
+            gap: 8px !important;
+            min-width: 0 !important;
+            flex: 1 !important;
+          }
+          .recruiter-hamburger-btn {
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
+            border-radius: 8px !important;
+            padding: 0 !important;
+            flex-shrink: 0 !important;
+          }
+          .recruiter-hamburger-btn :global(svg) {
+            width: 18px !important;
+            height: 18px !important;
+          }
+          .recruiter-topbar-title-wrap {
+            min-width: 0 !important;
+            flex: 1 !important;
+            gap: 0 !important;
+          }
+          .recruiter-topbar-title {
+            font-size: 17px !important;
+            line-height: 1.25 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            min-width: 0 !important;
+            flex: 1 !important;
+            max-width: 100% !important;
+          }
+          .topbar-subtitle, .topbar-divider {
             display: none !important;
+          }
+          .recruiter-topbar-right {
+            gap: 8px !important;
+            flex-shrink: 0 !important;
+          }
+          .recruiter-topbar-post-btn {
+            display: inline-flex !important;
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
+            padding: 0 !important;
+            border-radius: 8px !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+          }
+          .recruiter-topbar-post-btn span {
+            display: none !important;
+          }
+          .recruiter-topbar-post-btn :global(svg) {
+            width: 18px !important;
+            height: 18px !important;
+          }
+          .recruiter-bell-btn {
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
+            padding: 0 !important;
+            border-radius: 8px !important;
+            flex-shrink: 0 !important;
+          }
+          .recruiter-bell-btn :global(svg) {
+            width: 17px !important;
+            height: 17px !important;
+          }
+          .recruiter-avatar-btn {
+            width: 34px !important;
+            height: 34px !important;
+            min-width: 34px !important;
+            min-height: 34px !important;
+            border-radius: 8px !important;
+            font-size: 13.5px !important;
+            flex-shrink: 0 !important;
           }
         }
       `}</style>

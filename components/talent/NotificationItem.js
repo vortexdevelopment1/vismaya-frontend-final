@@ -66,7 +66,7 @@ export default function NotificationItem({ notification }) {
   return (
     <div
       onClick={handleClick}
-      className="card-surface"
+      className={`card-surface talent-notif-item ${notification.read ? "notif-read" : "notif-unread"}`}
       style={{
         backgroundColor: notification.read ? "#FFFFFF" : "#F3EFE6",
         border: notification.read ? "1px solid #E8E2D4" : "1px solid #8A6B2E",
@@ -83,6 +83,7 @@ export default function NotificationItem({ notification }) {
     >
       {/* Category Icon */}
       <div
+        className="talent-notif-icon-box"
         style={{
           width: "42px",
           height: "42px",
@@ -100,14 +101,17 @@ export default function NotificationItem({ notification }) {
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <div className="talent-notif-body" style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px", minWidth: 0 }}>
+        <div className="talent-notif-header-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+          <div className="talent-notif-title-wrap" style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
             <span
+              className="talent-notif-title"
               style={{
                 fontSize: "0.9rem",
                 fontWeight: notification.read ? "600" : "700",
                 color: "var(--text-primary, #292C29)",
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
               }}
             >
               {notification.title || conf.label}
@@ -116,34 +120,40 @@ export default function NotificationItem({ notification }) {
             {/* Unread Dot */}
             {!notification.read && (
               <span
+                className="talent-notif-unread-dot"
                 style={{
                   width: "8px",
                   height: "8px",
                   borderRadius: "50%",
                   backgroundColor: "var(--gold, #9B7A3F)",
+                  flexShrink: 0,
                 }}
               />
             )}
           </div>
 
-          <span style={{ fontSize: "0.75rem", color: "var(--text-muted, #777970)" }}>
+          <span className="talent-notif-time" style={{ fontSize: "0.75rem", color: "var(--text-muted, #777970)", flexShrink: 0 }}>
             {timeDisplay}
           </span>
         </div>
 
         <p
+          className="talent-notif-msg"
           style={{
             fontSize: "0.85rem",
             color: "var(--text-secondary, #5A5C53)",
             lineHeight: 1.5,
             margin: 0,
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
           }}
         >
           {notification.message}
         </p>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
+        <div className="talent-notif-footer" style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px", flexWrap: "wrap" }}>
           <span
+            className="talent-notif-category"
             style={{
               fontSize: "0.7rem",
               fontWeight: "600",
@@ -159,6 +169,7 @@ export default function NotificationItem({ notification }) {
 
           {targetLink && (
             <span
+              className="talent-notif-link"
               style={{
                 fontSize: "0.75rem",
                 color: "var(--gold, #9B7A3F)",
@@ -174,6 +185,124 @@ export default function NotificationItem({ notification }) {
           )}
         </div>
       </div>
+
+      <style jsx>{`
+        @media (max-width: 640px) {
+          :global(.talent-notif-item) {
+            padding: 12px !important;
+            gap: 10px !important;
+            border-radius: 14px !important;
+            box-shadow: 0 1px 4px rgba(43, 45, 42, 0.04) !important;
+          }
+          :global(.talent-notif-item.notif-read) {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+          }
+          :global(.talent-notif-item.notif-unread) {
+            background-color: #FBF7EC !important;
+            border: 1px solid rgba(201, 165, 92, 0.6) !important;
+          }
+          .talent-notif-icon-box {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            border-radius: 8px !important;
+            margin-top: 2px !important;
+          }
+          .talent-notif-icon-box :global(svg) {
+            width: 16px !important;
+            height: 16px !important;
+          }
+          .talent-notif-body {
+            min-width: 0 !important;
+            gap: 3px !important;
+          }
+          .talent-notif-header-row {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 2px !important;
+            width: 100% !important;
+          }
+          .talent-notif-title-wrap {
+            display: flex !important;
+            align-items: flex-start !important;
+            gap: 6px !important;
+            width: 100% !important;
+          }
+          .talent-notif-title {
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            color: #2B2D2A !important;
+            line-height: 1.35 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
+          }
+          .talent-notif-unread-dot {
+            width: 7px !important;
+            height: 7px !important;
+            min-width: 7px !important;
+            border-radius: 50% !important;
+            background-color: #8A6B2E !important;
+            flex-shrink: 0 !important;
+            margin-top: 5px !important;
+          }
+          .talent-notif-time {
+            font-size: 11px !important;
+            color: #5A584F !important;
+            line-height: 1.2 !important;
+          }
+          .talent-notif-msg {
+            font-size: 12.5px !important;
+            line-height: 1.5 !important;
+            color: #5A584F !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 3 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
+            margin-top: 2px !important;
+          }
+          .talent-notif-footer {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            flex-wrap: wrap !important;
+            margin-top: 6px !important;
+          }
+          .talent-notif-category {
+            font-size: 10.5px !important;
+            height: 24px !important;
+            min-height: 24px !important;
+            padding: 0 8px !important;
+            border-radius: 4px !important;
+            background-color: #F3EFE6 !important;
+            color: #8A6B2E !important;
+            border: 1px solid #E8E2D4 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            white-space: nowrap !important;
+          }
+          .talent-notif-link {
+            font-size: 12px !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            color: #8A6B2E !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            padding: 0 4px !important;
+            white-space: nowrap !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

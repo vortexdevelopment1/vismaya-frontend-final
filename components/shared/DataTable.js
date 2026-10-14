@@ -36,6 +36,7 @@ export default function DataTable({
 
   return (
     <div
+      className="data-table-container"
       style={{
         backgroundColor: "#FFFFFF",
         border: "1px solid #E8E2D4",
@@ -451,6 +452,56 @@ export default function DataTable({
             align-items: center !important;
             gap: 10px !important;
             text-align: center !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .admin-main-container .data-table-container {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+          }
+          .admin-main-container .data-table-toolbar {
+            background: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            border-radius: 14px !important;
+            padding: 12px 14px !important;
+            box-shadow: 0 4px 14px rgba(43,45,42,0.05) !important;
+            margin-bottom: 12px !important;
+            gap: 10px !important;
+          }
+          .admin-main-container .data-table-toolbar h3 {
+            font-size: 16px !important;
+            line-height: 1.25 !important;
+          }
+          .admin-main-container .data-table-search-input {
+            height: 40px !important;
+            min-height: 40px !important;
+            font-size: 16px !important;
+            padding-left: 40px !important;
+            border-radius: 10px !important;
+          }
+          .admin-main-container .dt-mobile-view {
+            padding: 0 !important;
+            gap: 10px !important;
+          }
+          .admin-main-container .data-table-pagination {
+            background: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            border-radius: 14px !important;
+            padding: 10px 14px !important;
+            margin-top: 12px !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            box-shadow: 0 4px 14px rgba(43,45,42,0.05) !important;
+          }
+          .admin-main-container .data-table-pagination span {
+            font-size: 12px !important;
+          }
+          .admin-main-container .data-table-pagination button {
+            width: 34px !important;
+            height: 34px !important;
           }
         }
       `}</style>

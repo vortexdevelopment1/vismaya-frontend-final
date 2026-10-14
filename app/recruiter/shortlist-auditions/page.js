@@ -326,6 +326,7 @@ export default function ShortlistAuditionsPage() {
     if (stage === "rev") {
       return (
         <span
+          className="v-stage-status-pill"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -368,6 +369,7 @@ export default function ShortlistAuditionsPage() {
     if (stage === "short") {
       return (
         <span
+          className="v-stage-status-pill"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -400,6 +402,7 @@ export default function ShortlistAuditionsPage() {
     if (stage === "req" || stage === "tal") {
       return (
         <span
+          className="v-stage-status-pill"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -432,6 +435,7 @@ export default function ShortlistAuditionsPage() {
     if (stage === "sel") {
       return (
         <span
+          className="v-stage-status-pill"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -456,6 +460,7 @@ export default function ShortlistAuditionsPage() {
     if (stage === "no") {
       return (
         <span
+          className="v-stage-status-pill"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -487,6 +492,7 @@ export default function ShortlistAuditionsPage() {
 
     return (
       <span
+        className="v-stage-status-pill"
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -554,9 +560,13 @@ export default function ShortlistAuditionsPage() {
       )}
 
       {/* Breadcrumb & Main Page Header */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "24px" }}>
+      <div
+        className="v-page-header-wrap"
+        style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "24px" }}
+      >
         <nav
           aria-label="Breadcrumb"
+          className="v-breadcrumb-nav"
           style={{
             display: "flex",
             alignItems: "center",
@@ -578,6 +588,7 @@ export default function ShortlistAuditionsPage() {
 
         <div>
           <h1
+            className="v-page-title"
             style={{
               fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
               fontSize: "clamp(28px, 4vw, 40px)",
@@ -591,6 +602,7 @@ export default function ShortlistAuditionsPage() {
             Shortlist & Auditions
           </h1>
           <p
+            className="v-page-description"
             style={{
               fontSize: "16px",
               lineHeight: 1.5,
@@ -817,6 +829,7 @@ export default function ShortlistAuditionsPage() {
       <div className="v-candidate-grid">
         {displayApplications.length === 0 ? (
           <div
+            className="v-empty-state-card"
             style={{
               gridColumn: "1 / -1",
               backgroundColor: "#FFFFFF",
@@ -908,6 +921,7 @@ export default function ShortlistAuditionsPage() {
                       <img
                         src={prof.avatar}
                         alt={app.talentName}
+                        className="v-candidate-avatar"
                         style={{
                           width: "52px",
                           height: "52px",
@@ -919,6 +933,7 @@ export default function ShortlistAuditionsPage() {
                       />
                     ) : (
                       <div
+                        className="v-candidate-avatar"
                         style={{
                           width: "52px",
                           height: "52px",
@@ -976,6 +991,7 @@ export default function ShortlistAuditionsPage() {
                       />
                     </Link>
                     <span
+                      className="v-candidate-meta-text"
                       style={{
                         fontSize: "13px",
                         color: "#5A584F",
@@ -994,6 +1010,7 @@ export default function ShortlistAuditionsPage() {
                 {/* 2. Role & Project */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                   <div
+                    className="v-candidate-role-text"
                     style={{
                       fontFamily: "var(--font-body), 'Inter', sans-serif",
                       fontSize: "15px",
@@ -1010,6 +1027,7 @@ export default function ShortlistAuditionsPage() {
                     {app.roleApplied}
                   </div>
                   <div
+                    className="v-candidate-proj-text"
                     style={{
                       fontSize: "13px",
                       color: "#5A584F",
@@ -1512,7 +1530,10 @@ export default function ShortlistAuditionsPage() {
               />
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}
+              className="v-modal-footer-btns"
+            >
               <button
                 type="button"
                 onClick={() => setAuditionModalApp(null)}
@@ -1607,7 +1628,10 @@ export default function ShortlistAuditionsPage() {
               />
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}
+              className="v-modal-footer-btns"
+            >
               <button
                 type="button"
                 onClick={() => setSelectedModalApp(null)}
@@ -1684,7 +1708,10 @@ export default function ShortlistAuditionsPage() {
               />
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}
+              className="v-modal-footer-btns"
+            >
               <button
                 type="button"
                 onClick={() => setNotSelectedModalApp(null)}
@@ -1725,7 +1752,7 @@ export default function ShortlistAuditionsPage() {
       )}
 
       {/* Embedded CSS */}
-      <style jsx>{`
+      <style jsx global>{`
         @keyframes toastIn {
           from {
             opacity: 0;
@@ -1745,59 +1772,59 @@ export default function ShortlistAuditionsPage() {
           font-family: var(--font-body), 'Inter', sans-serif;
         }
 
-        .v-breadcrumb-link:hover {
+        .v-shortlist-page-wrapper .v-breadcrumb-link:hover {
           color: #8A6B2E !important;
         }
 
-        .v-opp-select:focus,
-        .v-search-input:focus {
+        .v-shortlist-page-wrapper .v-opp-select:focus,
+        .v-shortlist-page-wrapper .v-search-input:focus {
           border-color: #8A6B2E !important;
           box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
         }
 
-        .v-tab-btn:not(.active):hover {
+        .v-shortlist-page-wrapper .v-tab-btn:not(.active):hover {
           background-color: #F3EFE6 !important;
           color: #2B2D2A !important;
         }
 
-        .v-candidate-card:hover {
+        .v-shortlist-page-wrapper .v-candidate-card:hover {
           transform: translateY(-3px) !important;
           border-color: #C9A55C !important;
           box-shadow: 0 4px 8px rgba(43, 45, 42, 0.06), 0 16px 32px rgba(43, 45, 42, 0.08) !important;
         }
 
-        .v-candidate-card.closed-card {
+        .v-shortlist-page-wrapper .v-candidate-card.closed-card {
           opacity: 0.78;
         }
 
-        .v-candidate-name-link:hover .v-candidate-name-text {
+        .v-shortlist-page-wrapper .v-candidate-name-link:hover .v-candidate-name-text {
           color: #8A6B2E !important;
         }
-        .v-candidate-name-link:hover .v-link-icon {
+        .v-shortlist-page-wrapper .v-candidate-name-link:hover .v-link-icon {
           color: #8A6B2E !important;
         }
 
-        .v-card-primary-btn:hover {
+        .v-shortlist-page-wrapper .v-card-primary-btn:hover {
           background-color: #6E5420 !important;
           transform: translateY(-1px);
         }
-        .v-card-primary-btn:active {
+        .v-shortlist-page-wrapper .v-card-primary-btn:active {
           transform: scale(0.98);
         }
 
-        .v-card-menu-btn:hover {
+        .v-shortlist-page-wrapper .v-card-menu-btn:hover {
           border-color: #8A6B2E !important;
           background-color: #F3EFE6 !important;
           color: #8A6B2E !important;
         }
 
-        .v-menu-item-ok:hover {
+        .v-shortlist-page-wrapper .v-menu-item-ok:hover {
           background-color: #F3EFE6 !important;
         }
-        .v-menu-item-danger:hover {
+        .v-shortlist-page-wrapper .v-menu-item-danger:hover {
           background-color: rgba(180, 35, 24, 0.08) !important;
         }
-        .v-menu-item-ghost:hover {
+        .v-shortlist-page-wrapper .v-menu-item-ghost:hover {
           background-color: #F3EFE6 !important;
         }
 
@@ -1813,8 +1840,8 @@ export default function ShortlistAuditionsPage() {
           background-color: #6E5420 !important;
         }
 
-        /* GRID RESPONSIVE BREAKPOINTS */
-        .v-candidate-grid {
+        /* GRID RESPONSIVE BREAKPOINTS (Desktop & Tablets above 768px untouched) */
+        .v-shortlist-page-wrapper .v-candidate-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 24px;
@@ -1823,71 +1850,365 @@ export default function ShortlistAuditionsPage() {
         }
 
         @media (max-width: 1280px) {
-          .v-candidate-grid {
+          .v-shortlist-page-wrapper .v-candidate-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
             gap: 16px !important;
           }
-          .v-candidate-card {
+          .v-shortlist-page-wrapper .v-candidate-card {
             padding: 18px 16px !important;
           }
-          .v-candidate-name-text {
+          .v-shortlist-page-wrapper .v-candidate-name-text {
             font-size: 18px !important;
           }
-          .v-card-primary-btn {
+          .v-shortlist-page-wrapper .v-card-primary-btn {
             font-size: 13px !important;
             padding: 0 8px !important;
           }
         }
 
         @media (max-width: 899.98px) {
-          .v-candidate-grid {
+          .v-shortlist-page-wrapper .v-candidate-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             gap: 20px !important;
           }
-          .v-candidate-card {
+          .v-shortlist-page-wrapper .v-candidate-card {
             padding: 22px !important;
           }
-          .v-candidate-name-text {
+          .v-shortlist-page-wrapper .v-candidate-name-text {
             font-size: 20px !important;
           }
         }
 
+        /* MOBILE ONLY REDESIGN (max-width: 640px) */
         @media (max-width: 640px) {
-          .v-candidate-grid {
-            grid-template-columns: 1fr !important;
-            gap: 16px !important;
+          /* D. Outer wrapper */
+          .v-shortlist-page-wrapper {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
           }
-          .v-toolbar-card {
-            padding: 16px !important;
+
+          /* B. Header */
+          .v-shortlist-page-wrapper .v-page-header-wrap {
+            margin-bottom: 12px !important;
+            gap: 4px !important;
           }
-          .v-toolbar-top {
+          .v-shortlist-page-wrapper .v-breadcrumb-nav {
+            font-size: 11.5px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            gap: 6px !important;
+          }
+          .v-shortlist-page-wrapper .v-page-title {
+            font-size: 22px !important;
+            line-height: 1.25 !important;
+            margin: 0 0 4px 0 !important;
+          }
+          .v-shortlist-page-wrapper .v-page-description {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 3 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+
+          /* C. Toolbar card: single compact white card */
+          .v-shortlist-page-wrapper .v-toolbar-card {
+            padding: 12px !important;
+            border-radius: 14px !important;
+            gap: 10px !important;
+            margin-bottom: 12px !important;
+            border: 1px solid #E8E2D4 !important;
+            box-shadow: 0 2px 8px rgba(43, 45, 42, 0.03) !important;
+          }
+          .v-shortlist-page-wrapper .v-toolbar-top {
             flex-direction: column !important;
             align-items: stretch !important;
-            gap: 12px !important;
-          }
-          .v-opp-select {
+            gap: 8px !important;
             width: 100% !important;
           }
-          .v-search-box {
+          .v-shortlist-page-wrapper .v-opp-select {
+            width: 100% !important;
+            height: 40px !important;
+            font-size: 16px !important;
+            border-radius: 8px !important;
+            padding: 0 10px !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            background-color: #FFFFFF !important;
+          }
+          .v-shortlist-page-wrapper .v-search-box {
             width: 100% !important;
             max-width: 100% !important;
             margin-left: 0 !important;
+            flex: 1 1 auto !important;
           }
-          .v-tabs-row {
+          .v-shortlist-page-wrapper .v-search-input {
+            width: 100% !important;
+            height: 40px !important;
+            font-size: 16px !important;
+            padding: 0 12px 0 38px !important;
+            border-radius: 8px !important;
+          }
+          .v-shortlist-page-wrapper .v-search-box :global(svg) {
+            left: 12px !important;
+            width: 16px !important;
+            height: 16px !important;
+          }
+          .v-shortlist-page-wrapper .v-tabs-row {
             flex-direction: column !important;
             align-items: stretch !important;
-            gap: 12px !important;
+            gap: 8px !important;
+            padding-top: 10px !important;
+            border-top: 1px solid #E8E2D4 !important;
           }
-          .v-tabs-scroll-container {
+          .v-shortlist-page-wrapper .v-tabs-scroll-container {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            overflow: visible !important;
             width: 100% !important;
             max-width: 100% !important;
-            overflow-x: auto !important;
-            flex-wrap: nowrap !important;
-            padding-bottom: 4px !important;
+            padding: 0 !important;
+          }
+          .v-shortlist-page-wrapper .v-tab-btn {
+            flex: 1 1 auto !important;
+            height: 28px !important;
+            padding: 0 8px !important;
+            border-radius: 999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            gap: 5px !important;
+            justify-content: center !important;
+          }
+          .v-shortlist-page-wrapper .v-tab-btn:not(.active) {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #5A584F !important;
+            box-shadow: none !important;
+          }
+          .v-shortlist-page-wrapper .v-tab-btn.active {
+            background-color: #8A6B2E !important;
+            border: 1px solid #8A6B2E !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 1px 4px rgba(138, 107, 46, 0.20) !important;
+          }
+          .v-shortlist-page-wrapper .v-tab-btn span:last-child {
+            min-width: 16px !important;
+            height: 16px !important;
+            font-size: 9.5px !important;
+            padding: 0 4px !important;
+            border-radius: 999px !important;
+            line-height: 16px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .v-shortlist-page-wrapper .v-tab-btn.active span:last-child {
+            background-color: rgba(255, 255, 255, 0.24) !important;
+            color: #FFFFFF !important;
+          }
+          .v-shortlist-page-wrapper .v-tab-btn:not(.active) span:last-child {
+            background-color: #F3EFE6 !important;
+            color: #2B2D2A !important;
+          }
+          .v-shortlist-page-wrapper .v-need-action-tag {
+            font-size: 12px !important;
+            margin-top: 8px !important;
+            margin-left: 0 !important;
+            gap: 6px !important;
+            color: #6E5420 !important;
+          }
+          .v-shortlist-page-wrapper .v-need-action-tag span:first-child {
+            width: 7px !important;
+            height: 7px !important;
+          }
+
+          /* E. Candidate grid & cards */
+          .v-shortlist-page-wrapper .v-candidate-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            grid-template-columns: 1fr !important;
+            gap: 11px !important;
+            margin-bottom: 20px !important;
+            width: 100% !important;
+          }
+          .v-shortlist-page-wrapper .v-candidate-card {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            border-radius: 14px !important;
+            padding: 12px 14px !important;
+            height: auto !important;
+            min-height: 0 !important;
+            gap: 8px !important;
+            box-shadow: 0 1px 4px rgba(43, 45, 42, 0.04) !important;
+            transform: none !important;
+          }
+          .v-shortlist-page-wrapper .v-candidate-avatar {
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            font-size: 14px !important;
+            border-radius: 50% !important;
+          }
+          .v-shortlist-page-wrapper .v-candidate-name-text {
+            font-size: 17px !important;
+            line-height: 1.25 !important;
+          }
+          .v-shortlist-page-wrapper .v-candidate-name-link {
+            gap: 5px !important;
+          }
+          .v-shortlist-page-wrapper .v-link-icon {
+            width: 12px !important;
+            height: 12px !important;
+          }
+          .v-shortlist-page-wrapper .v-candidate-meta-text {
+            font-size: 12px !important;
+            color: #5A584F !important;
+            line-height: 1.3 !important;
+          }
+          .v-shortlist-page-wrapper .v-candidate-role-text {
+            font-size: 13.5px !important;
+            font-weight: 600 !important;
+            line-height: 1.35 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+          .v-shortlist-page-wrapper .v-candidate-proj-text {
+            font-size: 11.5px !important;
+            color: #5A584F !important;
+            line-height: 1.35 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+          .v-shortlist-page-wrapper .v-stage-status-pill {
+            font-size: 10.5px !important;
+            padding: 3px 8px !important;
+            gap: 5px !important;
+            border-radius: 999px !important;
+          }
+          .v-shortlist-page-wrapper .v-card-actions-row {
+            margin-top: 10px !important;
+            padding-top: 0 !important;
+            gap: 8px !important;
+            align-items: center !important;
+            width: 100% !important;
+          }
+          .v-shortlist-page-wrapper .v-card-primary-btn {
+            flex: 1 1 auto !important;
+            height: 38px !important;
+            min-height: 38px !important;
+            font-size: 12.5px !important;
+            padding: 0 10px !important;
+            border-radius: 8px !important;
+            box-shadow: 0 1px 4px rgba(138, 107, 46, 0.18) !important;
+          }
+          .v-shortlist-page-wrapper .v-card-menu-btn {
+            width: 38px !important;
+            height: 38px !important;
+            min-width: 38px !important;
+            min-height: 38px !important;
+            flex: 0 0 38px !important;
+            border-radius: 8px !important;
+          }
+
+          /* Empty state */
+          .v-shortlist-page-wrapper .v-empty-state-card {
+            padding: 32px 16px !important;
+            border-radius: 14px !important;
+            gap: 8px !important;
+          }
+
+          /* F. Modals & Drawers on Mobile */
+          .modal-dialog-panel {
+            width: 100% !important;
+            max-width: 100% !important;
+            max-height: 90vh !important;
+            border-radius: 16px 16px 0 0 !important;
+          }
+          .modal-body-content {
+            padding: 16px !important;
+            overflow-y: auto !important;
             -webkit-overflow-scrolling: touch;
           }
-          .v-need-action-tag {
-            margin-left: 0 !important;
+          .v-review-modal-actions {
+            flex-direction: column-reverse !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+          .v-modal-ghost-btn {
+            width: 100% !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            border-radius: 8px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .v-review-modal-btn-group {
+            width: 100% !important;
+            display: flex !important;
+            gap: 8px !important;
+          }
+          .v-review-modal-btn-group button {
+            flex: 1 !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            border-radius: 8px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 12.5px !important;
+          }
+          .v-modal-footer-btns {
+            display: flex !important;
+            gap: 8px !important;
+            width: 100% !important;
+            margin-top: 8px !important;
+          }
+          .v-modal-footer-btns button {
+            flex: 1 !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            border-radius: 8px !important;
+            font-size: 13px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+        }
+
+        /* Screen tweak under 380px */
+        @media (max-width: 380px) {
+          .v-shortlist-page-wrapper .v-tabs-scroll-container {
+            gap: 4px !important;
+          }
+          .v-shortlist-page-wrapper .v-tab-btn {
+            font-size: 10px !important;
+            padding: 0 6px !important;
+            gap: 4px !important;
+            height: 27px !important;
+          }
+          .v-shortlist-page-wrapper .v-tab-btn span:last-child {
+            min-width: 15px !important;
+            height: 15px !important;
+            font-size: 9px !important;
+            padding: 0 3px !important;
+            line-height: 15px !important;
           }
         }
       `}</style>

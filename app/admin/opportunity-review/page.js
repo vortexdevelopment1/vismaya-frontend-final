@@ -1812,27 +1812,123 @@ export default function OpportunityReviewPage() {
         }
 
         @media (max-width: 639.98px) {
+          .opp-review-toolbar {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            border-radius: 14px !important;
+            padding: 12px 14px !important;
+            box-shadow: 0 4px 14px rgba(43, 45, 42, 0.05) !important;
+            margin-bottom: 4px !important;
+            gap: 10px !important;
+          }
+          .opp-review-tabs {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            overflow: visible !important;
+            width: 100% !important;
+          }
+          .opp-tab-btn {
+            flex: 1 1 auto !important;
+            height: 28px !important;
+            min-height: 28px !important;
+            padding: 0 8px !important;
+            border-radius: 999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 5px !important;
+          }
+          .opp-tab-badge {
+            min-width: 16px !important;
+            height: 16px !important;
+            border-radius: 8px !important;
+            font-size: 9.5px !important;
+            font-weight: 700 !important;
+            padding: 0 4px !important;
+            line-height: 16px !important;
+          }
+          .opp-review-search-wrap {
+            max-width: 100% !important;
+            width: 100% !important;
+          }
+          .opp-review-search-input {
+            height: 40px !important;
+            min-height: 40px !important;
+            font-size: 16px !important;
+            padding-left: 40px !important;
+            border-radius: 10px !important;
+          }
+          .opp-list-item {
+            padding: 12px 14px !important;
+            border-radius: 14px !important;
+            gap: 6px !important;
+          }
+          .opp-item-title {
+            font-size: 14.5px !important;
+            line-height: 1.25 !important;
+          }
+          .opp-category-chip {
+            font-size: 10.5px !important;
+            padding: 2px 7px !important;
+          }
           .opp-key-facts-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+            padding: 12px 14px !important;
           }
-
+          .opp-fact-val {
+            font-size: 15px !important;
+          }
+          .opp-header-title {
+            font-size: 20px !important;
+            line-height: 1.2 !important;
+          }
+          .opp-detail-sticky-header {
+            padding: 12px 14px !important;
+          }
           .opp-header-actions {
-            display: none;
+            display: none !important;
           }
-
           .mobile-fixed-action-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            position: sticky;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) 16px;
-            background: #FFFFFF;
-            border-top: 1px solid #E8E2D4;
-            box-shadow: 0 -4px 16px rgba(43, 45, 42, 0.08);
-            z-index: 20;
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            position: sticky !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)) 12px !important;
+            background: #FFFFFF !important;
+            border-top: 1px solid #E8E2D4 !important;
+            box-shadow: 0 -4px 16px rgba(43, 45, 42, 0.08) !important;
+            z-index: 20 !important;
+          }
+          .mobile-fixed-action-bar .opp-action-btn {
+            flex: 1 1 0 !important;
+            height: 40px !important;
+            font-size: 12px !important;
+            padding: 0 6px !important;
+            justify-content: center !important;
+            white-space: nowrap !important;
+          }
+        }
+        @media (max-width: 400px) {
+          .opp-tab-btn {
+            font-size: 10px !important;
+            padding: 0 5px !important;
+          }
+          .opp-tab-badge {
+            font-size: 9px !important;
+            min-width: 15px !important;
+            height: 15px !important;
+          }
+          .mobile-fixed-action-bar .opp-action-btn {
+            font-size: 11px !important;
+            padding: 0 4px !important;
           }
         }
       `}</style>

@@ -148,12 +148,31 @@
 /* Mobile Adjustments */
 @media (max-width: 640px) {
   .brands-marquee-section {
-    padding: 14px 0;
-    margin-bottom: 36px;
+    padding: 16px 0 !important;
+    margin-bottom: 0 !important;
+    overflow: hidden !important;
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  .brands-marquee-mask {
+    overflow: hidden !important;
+    overflow-x: hidden !important;
+    max-width: 100% !important;
   }
 
   .brand-name {
-    font-size: 14px;
-    letter-spacing: 0.06em;
+    font-size: 15px !important;
+    letter-spacing: 0.07em !important;
+  }
+
+  .brands-marquee-group {
+    gap: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  .brand-item {
+    gap: 24px !important;
   }
 }
+

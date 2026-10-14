@@ -278,6 +278,7 @@ export default function TalentTopbar({ onOpenMobile }) {
         >
           {profile?.avatar ? (
             <div
+              className="talent-topbar-avatar"
               style={{
                 width: "40px",
                 height: "40px",
@@ -291,6 +292,7 @@ export default function TalentTopbar({ onOpenMobile }) {
             />
           ) : (
             <div
+              className="talent-topbar-avatar"
               style={{
                 width: "40px",
                 height: "40px",
@@ -319,6 +321,36 @@ export default function TalentTopbar({ onOpenMobile }) {
           }
           .talent-topbar-subtitle {
             display: none !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .talent-topbar {
+            height: 56px !important;
+            min-height: 56px !important;
+            padding-inline: 16px !important;
+          }
+          .talent-topbar h1 {
+            font-size: 18px !important;
+            line-height: 22px !important;
+          }
+          .talent-hamburger-btn {
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
+            border-radius: 8px !important;
+          }
+          .talent-bell-btn {
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
+            border-radius: 8px !important;
+          }
+          .talent-topbar-avatar {
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 12px !important;
           }
         }
         @media (max-width: 480px) {

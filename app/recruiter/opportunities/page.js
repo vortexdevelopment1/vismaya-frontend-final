@@ -148,7 +148,7 @@ export default function MyOpportunitiesPage() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px", width: "100%", maxWidth: "1400px", margin: "0 auto" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px", width: "100%", maxWidth: "1400px", margin: "0 auto" }} className="opps-page-container">
       {/* Page Header */}
       <div
         style={{
@@ -160,8 +160,8 @@ export default function MyOpportunitiesPage() {
         }}
         className="opps-page-header"
       >
-        <div style={{ flex: "1 1 340px", minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "14px", flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0 }} className="opps-header-text-block">
+          <div style={{ display: "flex", alignItems: "baseline", gap: "14px", flexWrap: "wrap" }} className="opps-title-row">
             <h1
               style={{
                 fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
@@ -172,6 +172,7 @@ export default function MyOpportunitiesPage() {
                 margin: 0,
                 letterSpacing: "-0.02em",
               }}
+              className="opps-page-h1"
             >
               My Opportunities
             </h1>
@@ -190,6 +191,7 @@ export default function MyOpportunitiesPage() {
                 textTransform: "uppercase",
                 whiteSpace: "nowrap",
               }}
+              className="opps-count-pill"
             >
               {orgOpportunities.length} TOTAL OPPORTUNITIES
             </span>
@@ -202,6 +204,7 @@ export default function MyOpportunitiesPage() {
               margin: "8px 0 0 0",
               lineHeight: 1.6,
             }}
+            className="opps-header-desc"
           >
             Manage casting requirements, view application inflows, and coordinate Vismaya moderation status.
           </p>
@@ -213,19 +216,14 @@ export default function MyOpportunitiesPage() {
             display: "inline-flex",
             alignItems: "center",
             gap: "8px",
-            height: "46px",
-            padding: "0 22px",
             borderRadius: "10px",
             backgroundColor: "#8A6B2E",
             color: "#FFFFFF",
-            fontSize: "14px",
             fontWeight: 600,
             fontFamily: "var(--font-body), 'Inter', sans-serif",
             textDecoration: "none",
             boxShadow: "0 2px 8px rgba(138, 107, 46, 0.24)",
             transition: "all 0.18s ease",
-            whiteSpace: "nowrap",
-            flexShrink: 0,
           }}
           className="v-primary-post-btn"
         >
@@ -261,6 +259,7 @@ export default function MyOpportunitiesPage() {
               flexShrink: 0,
               margin: 0,
             }}
+            className="v-filter-label"
           >
             Status:
           </label>
@@ -269,15 +268,11 @@ export default function MyOpportunitiesPage() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             style={{
-              width: "200px",
-              height: "44px",
               borderRadius: "10px",
               backgroundColor: "#FFFFFF",
               border: "1px solid #E8E2D4",
               color: "#2B2D2A",
-              fontSize: "14px",
               fontWeight: 500,
-              padding: "0 14px",
               outline: "none",
               cursor: "pointer",
               fontFamily: "var(--font-body), 'Inter', sans-serif",
@@ -296,9 +291,6 @@ export default function MyOpportunitiesPage() {
         {/* Search Input */}
         <div
           style={{
-            marginLeft: "auto",
-            flex: "1 1 280px",
-            maxWidth: "420px",
             position: "relative",
             display: "flex",
             alignItems: "center",
@@ -338,17 +330,9 @@ export default function MyOpportunitiesPage() {
       </div>
 
       {/* Opportunities Container Card */}
-      <div
-        style={{
-          backgroundColor: "#FFFFFF",
-          border: "1px solid #E8E2D4",
-          borderRadius: "16px",
-          overflow: "hidden",
-          boxShadow: "0 2px 12px rgba(43, 45, 42, 0.04)",
-        }}
-      >
+      <div className="v-opps-outer-card">
         {filteredOpportunities.length === 0 ? (
-          <div style={{ padding: "48px 24px" }}>
+          <div style={{ padding: "48px 24px" }} className="v-opps-empty-wrap">
             <EmptyState
               title="No opportunities found"
               description={
@@ -704,20 +688,18 @@ export default function MyOpportunitiesPage() {
                   <div
                     key={`card-${opp.id}`}
                     style={{
-                      padding: "20px",
                       borderRadius: "14px",
                       backgroundColor: "#FFFFFF",
                       border: "1px solid #E8E2D4",
                       display: "flex",
                       flexDirection: "column",
-                      gap: "14px",
                       boxShadow: "0 2px 8px rgba(43, 45, 42, 0.03)",
                     }}
                     className="v-responsive-card"
                   >
                     {/* Card Top: Category, Status & Title */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }} className="v-card-top-group">
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", flexWrap: "wrap" }} className="v-card-row-1">
                         <span
                           style={{
                             display: "inline-flex",
@@ -731,10 +713,13 @@ export default function MyOpportunitiesPage() {
                             color: "#6E5420",
                             border: "1px solid rgba(201, 165, 92, 0.32)",
                           }}
+                          className="v-card-type-pill"
                         >
                           {opp.opportunityType}
                         </span>
-                        {renderStatusPill(opp.status)}
+                        <div className="v-card-status-pill-wrap">
+                          {renderStatusPill(opp.status)}
+                        </div>
                       </div>
 
                       <Link
@@ -746,6 +731,7 @@ export default function MyOpportunitiesPage() {
                           textDecoration: "none",
                           lineHeight: 1.35,
                         }}
+                        className="v-card-title-link"
                       >
                         {opp.title}
                       </Link>
@@ -757,6 +743,7 @@ export default function MyOpportunitiesPage() {
                           color: "#5A584F",
                           textDecoration: "none",
                         }}
+                        className="v-card-proj-link"
                       >
                         Project: {proj?.title || "Assigned Project"}
                       </Link>
@@ -773,18 +760,19 @@ export default function MyOpportunitiesPage() {
                         backgroundColor: "#F3EFE6",
                         border: "1px solid #E8E2D4",
                       }}
+                      className="v-card-meta-box"
                     >
-                      <div>
-                        <span style={{ display: "block", fontSize: "11px", fontWeight: 700, letterSpacing: "0.10em", color: "#5A584F", textTransform: "uppercase" }}>
+                      <div className="v-card-meta-col">
+                        <span style={{ display: "block", fontSize: "11px", fontWeight: 700, letterSpacing: "0.10em", color: "#5A584F", textTransform: "uppercase" }} className="v-card-meta-label">
                           Deadline
                         </span>
-                        <strong style={{ fontSize: "14px", color: "#2B2D2A", fontVariantNumeric: "tabular-nums" }}>
+                        <strong style={{ fontSize: "14px", color: "#2B2D2A", fontVariantNumeric: "tabular-nums" }} className="v-card-meta-val">
                           {opp.deadline}
                         </strong>
                       </div>
 
-                      <div>
-                        <span style={{ display: "block", fontSize: "11px", fontWeight: 700, letterSpacing: "0.10em", color: "#5A584F", textTransform: "uppercase" }}>
+                      <div className="v-card-meta-col">
+                        <span style={{ display: "block", fontSize: "11px", fontWeight: 700, letterSpacing: "0.10em", color: "#5A584F", textTransform: "uppercase" }} className="v-card-meta-label">
                           Applicants
                         </span>
                         <Link
@@ -798,6 +786,7 @@ export default function MyOpportunitiesPage() {
                             color: "#8A6B2E",
                             textDecoration: "none",
                           }}
+                          className="v-card-meta-apps-link"
                         >
                           <Users size={14} />
                           <span>{oppApps.length}</span>
@@ -816,6 +805,7 @@ export default function MyOpportunitiesPage() {
                           border: "1px solid #E8E2D4",
                           lineHeight: 1.45,
                         }}
+                        className="v-card-note-box"
                       >
                         <strong>Note: </strong>
                         {opp.adminNote}
@@ -823,27 +813,13 @@ export default function MyOpportunitiesPage() {
                     )}
 
                     {/* Card Actions */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        flexWrap: "wrap",
-                        paddingTop: "6px",
-                      }}
-                      className="v-card-actions"
-                    >
+                    <div className="v-card-actions">
                       <Link
                         href={`/recruiter/opportunities/${opp.id}/applicants`}
                         style={{
-                          flex: 1,
-                          minWidth: "110px",
-                          height: "44px",
-                          padding: "0 14px",
                           borderRadius: "10px",
                           backgroundColor: "#8A6B2E",
                           color: "#FFFFFF",
-                          fontSize: "13.5px",
                           fontWeight: 600,
                           display: "inline-flex",
                           alignItems: "center",
@@ -852,6 +828,7 @@ export default function MyOpportunitiesPage() {
                           textDecoration: "none",
                           boxShadow: "0 2px 6px rgba(138, 107, 46, 0.20)",
                         }}
+                        className="v-mobile-action-view"
                       >
                         <Eye size={16} />
                         <span>View</span>
@@ -861,13 +838,10 @@ export default function MyOpportunitiesPage() {
                         <Link
                           href={`/recruiter/opportunities/new?edit=${opp.id}`}
                           style={{
-                            height: "44px",
-                            padding: "0 14px",
                             borderRadius: "10px",
                             border: "1px solid #E8E2D4",
                             backgroundColor: "#FFFFFF",
                             color: "#2B2D2A",
-                            fontSize: "13.5px",
                             fontWeight: 600,
                             display: "inline-flex",
                             alignItems: "center",
@@ -875,6 +849,7 @@ export default function MyOpportunitiesPage() {
                             gap: "6px",
                             textDecoration: "none",
                           }}
+                          className="v-mobile-action-edit"
                         >
                           <Edit size={16} />
                           <span>Edit</span>
@@ -890,13 +865,10 @@ export default function MyOpportunitiesPage() {
                             setCancelError("");
                           }}
                           style={{
-                            height: "44px",
-                            padding: "0 14px",
                             borderRadius: "10px",
                             border: "1px solid rgba(180, 35, 24, 0.25)",
                             backgroundColor: "transparent",
                             color: "#B42318",
-                            fontSize: "13.5px",
                             fontWeight: 600,
                             display: "inline-flex",
                             alignItems: "center",
@@ -904,6 +876,7 @@ export default function MyOpportunitiesPage() {
                             gap: "6px",
                             cursor: "pointer",
                           }}
+                          className="v-mobile-action-cancel"
                         >
                           <XCircle size={16} />
                           <span>Cancel</span>
@@ -915,13 +888,10 @@ export default function MyOpportunitiesPage() {
                           type="button"
                           onClick={() => setCompleteModalOpp(opp)}
                           style={{
-                            height: "44px",
-                            padding: "0 14px",
                             borderRadius: "10px",
                             border: "1px solid #8A6B2E",
                             backgroundColor: "transparent",
                             color: "#8A6B2E",
-                            fontSize: "13.5px",
                             fontWeight: 600,
                             display: "inline-flex",
                             alignItems: "center",
@@ -929,6 +899,7 @@ export default function MyOpportunitiesPage() {
                             gap: "6px",
                             cursor: "pointer",
                           }}
+                          className="v-mobile-action-complete"
                         >
                           <CheckCircle2 size={16} />
                           <span>Complete</span>
@@ -944,48 +915,105 @@ export default function MyOpportunitiesPage() {
       </div>
 
       {/* Embedded Styles for hover and responsive breakpoints */}
-      <style jsx>{`
-        .v-primary-post-btn:hover {
+      <style jsx global>{`
+        /* Base styles for elements whose inline styles were moved to classes */
+        .opps-page-container .opps-header-text-block {
+          flex: 1 1 340px;
+          min-width: 0;
+        }
+        .opps-page-container .v-primary-post-btn {
+          height: 46px;
+          padding: 0 22px;
+          font-size: 14px;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+        .opps-page-container .v-filter-select {
+          width: 200px;
+          height: 44px;
+          font-size: 14px;
+          padding: 0 14px;
+        }
+        .opps-page-container .v-search-wrapper {
+          margin-left: auto;
+          flex: 1 1 280px;
+          max-width: 420px;
+        }
+        .opps-page-container .v-opps-outer-card {
+          background-color: #FFFFFF;
+          border: 1px solid #E8E2D4;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 2px 12px rgba(43, 45, 42, 0.04);
+        }
+        .opps-page-container .v-responsive-card {
+          padding: 20px;
+          gap: 14px;
+        }
+        .opps-page-container .v-card-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+          padding-top: 6px;
+        }
+        .opps-page-container .v-mobile-action-view {
+          flex: 1;
+          min-width: 110px;
+          height: 44px;
+          padding: 0 14px;
+          font-size: 13.5px;
+        }
+        .opps-page-container .v-mobile-action-edit,
+        .opps-page-container .v-mobile-action-cancel,
+        .opps-page-container .v-mobile-action-complete {
+          height: 44px;
+          padding: 0 14px;
+          font-size: 13.5px;
+        }
+
+        /* Hover & focus states */
+        .opps-page-container .v-primary-post-btn:hover {
           background-color: #6E5420 !important;
           transform: translateY(-1px);
         }
-        .v-filter-select:focus,
-        .v-search-field:focus {
+        .opps-page-container .v-filter-select:focus,
+        .opps-page-container .v-search-field:focus {
           border-color: #8A6B2E !important;
           box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
         }
-        .v-opp-table-row:hover {
+        .opps-page-container .v-opp-table-row:hover {
           background-color: #FAF9F7 !important;
         }
-        .v-opp-title-link:hover {
+        .opps-page-container .v-opp-title-link:hover {
           color: #8A6B2E !important;
         }
-        .v-opp-proj-link:hover {
+        .opps-page-container .v-opp-proj-link:hover {
           color: #2B2D2A !important;
         }
-        .v-applicants-pill:hover {
+        .opps-page-container .v-applicants-pill:hover {
           border-color: #8A6B2E !important;
           color: #8A6B2E !important;
         }
-        .v-action-btn-ghost:hover {
+        .opps-page-container .v-action-btn-ghost:hover {
           border-color: #8A6B2E !important;
           color: #8A6B2E !important;
           background-color: #F3EFE6 !important;
         }
-        .v-action-btn-danger:hover {
+        .opps-page-container .v-action-btn-danger:hover {
           background-color: rgba(180, 35, 24, 0.08) !important;
           border-color: #B42318 !important;
         }
-        .v-action-btn-complete:hover {
+        .opps-page-container .v-action-btn-complete:hover {
           background-color: #F3EFE6 !important;
           border-color: #6E5420 !important;
           color: #6E5420 !important;
         }
 
-        .desktop-table-container {
+        .opps-page-container .desktop-table-container {
           display: block;
         }
-        .mobile-cards-container {
+        .opps-page-container .mobile-cards-container {
           display: none;
           flex-direction: column;
           gap: 16px;
@@ -993,50 +1021,391 @@ export default function MyOpportunitiesPage() {
         }
 
         @media (max-width: 1024px) {
-          .desktop-table-container {
+          .opps-page-container .desktop-table-container {
             display: none !important;
           }
-          .mobile-cards-container {
+          .opps-page-container .mobile-cards-container {
             display: flex !important;
           }
         }
 
         @media (max-width: 767.98px) {
-          .v-filter-toolbar {
+          .opps-page-container .v-filter-toolbar {
             padding: 16px !important;
             gap: 12px !important;
           }
-          .v-filter-group {
+          .opps-page-container .v-filter-group {
             width: 100% !important;
           }
-          .v-filter-select {
+          .opps-page-container .v-filter-select {
             flex: 1 !important;
             width: 100% !important;
           }
-          .v-search-wrapper {
+          .opps-page-container .v-search-wrapper {
             width: 100% !important;
             max-width: 100% !important;
             margin-left: 0 !important;
           }
-          .opps-page-header {
+          .opps-page-container .opps-page-header {
             flex-direction: column !important;
             align-items: stretch !important;
           }
-          .v-primary-post-btn {
+          .opps-page-container .v-primary-post-btn {
             width: 100% !important;
             justify-content: center !important;
           }
         }
 
-        @media (max-width: 480px) {
-          .v-card-actions {
+        @media (max-width: 640px) {
+          /* Container & spacing */
+          .opps-page-container {
+            gap: 12px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 0 !important;
+          }
+
+          /* Header (A) */
+          .opps-page-container .opps-page-header {
             flex-direction: column !important;
             align-items: stretch !important;
+            gap: 10px !important;
+            margin: 0 !important;
           }
-          .v-card-actions a,
-          .v-card-actions button {
+          .opps-page-container .opps-header-text-block {
+            flex: 1 1 auto !important;
             width: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+          }
+          .opps-page-container .opps-title-row {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 8px !important;
+            flex-wrap: nowrap !important;
+          }
+          .opps-page-container .opps-page-h1 {
+            font-size: 22px !important;
+            line-height: 1.2 !important;
+            letter-spacing: -0.015em !important;
+            margin: 0 !important;
+          }
+          .opps-page-container .opps-count-pill {
+            font-size: 10px !important;
+            padding: 3px 8px !important;
+            white-space: nowrap !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.08em !important;
+          }
+          .opps-page-container .opps-header-desc {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            margin: 6px 0 0 0 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 3 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+          .opps-page-container .v-primary-post-btn {
+            width: 100% !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            font-size: 13px !important;
+            margin-top: 12px !important;
+            margin-bottom: 0 !important;
+            padding: 0 16px !important;
             justify-content: center !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Filter bar (B) */
+          .opps-page-container .v-filter-toolbar {
+            padding: 10px 12px !important;
+            border-radius: 14px !important;
+            gap: 10px !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            box-shadow: 0 2px 8px rgba(43, 45, 42, 0.03) !important;
+          }
+          .opps-page-container .v-filter-group {
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            box-sizing: border-box !important;
+          }
+          .opps-page-container .v-filter-label {
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            color: #5A584F !important;
+            white-space: nowrap !important;
+          }
+          .opps-page-container .v-filter-select {
+            flex: 1 !important;
+            width: 100% !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            font-size: 16px !important;
+            border-radius: 10px !important;
+            border: 1px solid #E8E2D4 !important;
+            padding: 0 10px !important;
+            box-sizing: border-box !important;
+            background-color: #FFFFFF !important;
+          }
+          .opps-page-container .v-search-wrapper {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-left: 0 !important;
+            box-sizing: border-box !important;
+          }
+          .opps-page-container .v-search-field {
+            width: 100% !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            font-size: 16px !important;
+            border-radius: 10px !important;
+            border: 1px solid #E8E2D4 !important;
+            padding: 0 12px 0 36px !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Outer wrapper transparent (Problem 3) */
+          .opps-page-container .v-opps-outer-card {
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            overflow: visible !important;
+            padding: 0 !important;
+          }
+          .opps-page-container .mobile-cards-container {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 11px !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Opportunity Cards (C) */
+          .opps-page-container .v-responsive-card {
+            padding: 12px 14px !important;
+            border-radius: 14px !important;
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            box-shadow: 0 2px 8px rgba(43, 45, 42, 0.03) !important;
+            gap: 10px !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+          }
+          .opps-page-container .v-card-top-group {
+            gap: 6px !important;
+          }
+          .opps-page-container .v-card-row-1 {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            gap: 8px !important;
+            flex-wrap: nowrap !important;
+          }
+          .opps-page-container .v-card-type-pill {
+            font-size: 10.5px !important;
+            padding: 3px 8px !important;
+            white-space: nowrap !important;
+            font-weight: 600 !important;
+            line-height: 1.2 !important;
+          }
+          .opps-page-container .v-card-status-pill-wrap > span {
+            font-size: 10px !important;
+            padding: 3px 8px !important;
+            white-space: nowrap !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.08em !important;
+            line-height: 1.2 !important;
+          }
+          .opps-page-container .v-card-title-link {
+            font-size: 15.5px !important;
+            line-height: 1.3 !important;
+            font-weight: 600 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-decoration: none !important;
+            margin: 0 !important;
+          }
+          .opps-page-container .v-card-proj-link {
+            font-size: 12px !important;
+            color: #5A584F !important;
+            line-height: 1.35 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-decoration: none !important;
+          }
+          .opps-page-container .v-card-meta-box {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+            padding: 8px 10px !important;
+            border-radius: 10px !important;
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+            box-sizing: border-box !important;
+          }
+          .opps-page-container .v-card-meta-label {
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.08em !important;
+            color: #5A584F !important;
+            text-transform: uppercase !important;
+            margin-bottom: 2px !important;
+          }
+          .opps-page-container .v-card-meta-val {
+            font-size: 13px !important;
+            line-height: 1.25 !important;
+            color: #2B2D2A !important;
+          }
+          .opps-page-container .v-card-meta-apps-link {
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            color: #8A6B2E !important;
+            gap: 4px !important;
+            text-decoration: none !important;
+          }
+          .opps-page-container .v-card-note-box {
+            font-size: 11.5px !important;
+            padding: 8px 10px !important;
+            border-radius: 8px !important;
+            line-height: 1.4 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Actions: One row of equal buttons (auto-fit minmax(0, 1fr)) */
+          .opps-page-container .v-card-actions {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fit, minmax(0, 1fr)) !important;
+            gap: 6px !important;
+            padding-top: 2px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .opps-page-container .v-card-actions a,
+          .opps-page-container .v-card-actions button {
+            height: 36px !important;
+            min-height: 36px !important;
+            max-height: 36px !important;
+            padding: 0 4px !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            border-radius: 8px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 4px !important;
+            white-space: nowrap !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .opps-page-container .v-card-actions svg {
+            width: 14px !important;
+            height: 14px !important;
+            flex-shrink: 0 !important;
+          }
+          .opps-page-container .v-mobile-action-view {
+            background-color: #8A6B2E !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            box-shadow: 0 1px 4px rgba(138, 107, 46, 0.20) !important;
+          }
+          .opps-page-container .v-mobile-action-cancel {
+            background-color: #FFFFFF !important;
+            color: #B42318 !important;
+            border: 1px solid rgba(180, 35, 24, 0.25) !important;
+            box-shadow: none !important;
+          }
+          .opps-page-container .v-mobile-action-complete {
+            background-color: #FFFFFF !important;
+            color: #8A6B2E !important;
+            border: 1px solid #8A6B2E !important;
+            box-shadow: none !important;
+          }
+          .opps-page-container .v-mobile-action-edit {
+            background-color: #FFFFFF !important;
+            color: #5A584F !important;
+            border: 1px solid #E8E2D4 !important;
+            box-shadow: none !important;
+          }
+
+          /* Empty State (D) */
+          .opps-page-container .v-opps-empty-wrap {
+            padding: 24px 12px !important;
+            background-color: #FFFFFF !important;
+            border-radius: 14px !important;
+            border: 1px solid #E8E2D4 !important;
+          }
+          .opps-page-container .v-opps-empty-wrap div[style*="width: 56px"],
+          .opps-page-container .v-opps-empty-wrap div[style*="width:56px"] {
+            width: 40px !important;
+            height: 40px !important;
+            margin-bottom: 10px !important;
+          }
+          .opps-page-container .v-opps-empty-wrap h3 {
+            font-size: 16px !important;
+            line-height: 22px !important;
+            margin-bottom: 4px !important;
+          }
+          .opps-page-container .v-opps-empty-wrap p {
+            font-size: 13px !important;
+            line-height: 18px !important;
+          }
+
+          /* Modals (E) */
+          .opps-page-container .v-modal-btn-row {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+          .opps-page-container .v-modal-btn-row button {
+            flex: 1 1 0 !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            font-size: 13px !important;
+            padding: 0 8px !important;
+          }
+          .opps-page-container .v-modal-textarea {
+            font-size: 16px !important;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .opps-page-container .opps-page-h1 {
+            font-size: 20px !important;
+          }
+          .opps-page-container .v-card-actions a,
+          .opps-page-container .v-card-actions button {
+            font-size: 11.5px !important;
+            gap: 3px !important;
+            padding: 0 2px !important;
+          }
+          .opps-page-container .v-card-actions svg {
+            width: 13px !important;
+            height: 13px !important;
           }
         }
       `}</style>
@@ -1110,6 +1479,7 @@ export default function MyOpportunitiesPage() {
                   color: "#2B2D2A",
                   boxSizing: "border-box",
                 }}
+                className="v-modal-textarea"
               />
             </div>
 
@@ -1121,6 +1491,7 @@ export default function MyOpportunitiesPage() {
                 gap: "10px",
                 marginTop: "8px",
               }}
+              className="v-modal-btn-row"
             >
               <button
                 type="button"
@@ -1194,6 +1565,7 @@ export default function MyOpportunitiesPage() {
                 gap: "10px",
                 marginTop: "8px",
               }}
+              className="v-modal-btn-row"
             >
               <button
                 type="button"

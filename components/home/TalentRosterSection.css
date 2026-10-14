@@ -168,6 +168,14 @@
   flex-shrink: 0;
 }
 
+.talent-desktop-only {
+  display: block;
+}
+
+.talent-mobile-only {
+  display: none;
+}
+
 .talent-roster-info-title {
   font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
   font-size: 20px;
@@ -442,66 +450,384 @@
   }
 }
 
-/* Mobile Screens (390px and down) */
-@media (max-width: 580px) {
+/* Mobile Screens (640px and down) */
+@media (max-width: 640px) {
+  /* 1. Section Shell */
   .talent-roster-section-light {
-    padding: 56px 16px 64px;
+    padding: 32px 16px !important;
+    overflow: hidden !important;
+  }
+
+  .talent-roster-bg-glow {
+    width: 220px !important;
+    height: 220px !important;
+  }
+
+  .talent-roster-container {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .talent-roster-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 28px;
+    display: contents !important;
   }
 
   .talent-roster-header-left {
-    max-width: 100%;
-    align-items: flex-start;
+    display: contents !important;
   }
 
+  /* Eyebrow: VERIFIED SPOTLIGHT */
+  .talent-roster-eyebrow {
+    order: 1 !important;
+    margin-bottom: 6px !important;
+    gap: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  .talent-roster-eyebrow-line {
+    width: 24px !important;
+    height: 1.5px !important;
+    background-color: #8A6B2E !important;
+  }
+
+  .talent-roster-eyebrow-text {
+    font-size: 10.5px !important;
+    letter-spacing: 0.18em !important;
+    font-weight: 600 !important;
+    color: #8A6B2E !important;
+  }
+
+  /* Title: Elite Talent Roster. */
   .talent-roster-title {
-    font-size: clamp(32px, 8.5vw, 42px);
-    line-height: 1.1;
+    order: 2 !important;
+    font-size: 26px !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.02em !important;
+    margin-bottom: 8px !important;
   }
 
+  /* Subtext */
   .talent-roster-subtext {
-    font-size: 15px;
-    line-height: 1.6;
-    margin-bottom: 24px;
+    order: 3 !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    color: #5A584F !important;
+    margin-bottom: 0 !important;
+    max-width: 100% !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
   }
 
-  .talent-roster-cta-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 15px 24px;
-  }
-
+  /* 2. Info Card (Note + Filter Pills) */
   .talent-roster-info-card {
-    padding: 20px;
+    order: 4 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 10px 0 0 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 0 !important;
   }
 
+  .talent-roster-info-head {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-bottom: 0 !important;
+    padding: 2px 0 !important;
+  }
+
+  .talent-roster-shield-icon {
+    width: 13px !important;
+    height: 13px !important;
+    color: #8A6B2E !important;
+    flex-shrink: 0 !important;
+  }
+
+  .talent-desktop-only {
+    display: none !important;
+  }
+
+  .talent-mobile-only {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .talent-roster-info-mobile-note {
+    font-family: var(--font-body), 'Inter', sans-serif !important;
+    font-size: 11.5px !important;
+    color: #5A584F !important;
+    font-weight: 500 !important;
+    line-height: 1.3 !important;
+  }
+
+  .talent-roster-why-btn {
+    font-family: var(--font-body), 'Inter', sans-serif !important;
+    font-size: 11.5px !important;
+    color: #8A6B2E !important;
+    font-weight: 600 !important;
+    text-decoration: underline !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    transition: color 180ms ease !important;
+  }
+
+  .talent-roster-why-btn:hover {
+    color: #6E5420 !important;
+  }
+
+  .talent-roster-info-body {
+    display: none;
+  }
+
+  .talent-roster-info-body.is-open {
+    display: block !important;
+    font-family: var(--font-body), 'Inter', sans-serif !important;
+    font-size: 11.5px !important;
+    line-height: 1.45 !important;
+    color: #5A584F !important;
+    padding: 8px 10px !important;
+    background-color: #F3EFE6 !important;
+    border: 1px solid #E8E2D4 !important;
+    border-radius: 8px !important;
+    margin: 6px 0 !important;
+  }
+
+  /* 3. Filter Pills */
   .talent-roster-filter-track {
-    flex-wrap: wrap;
-    gap: 6px;
+    background-color: #F3EFE6 !important;
+    border: 1px solid #E8E2D4 !important;
+    border-radius: 10px !important;
+    padding: 3px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+    gap: 4px !important;
+    width: 100% !important;
+    margin: 14px 0 !important;
+    box-sizing: border-box !important;
   }
 
   .talent-roster-filter-pill {
-    flex: 1 1 calc(50% - 6px);
-    padding: 10px 12px;
-    font-size: 11px;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    height: 33px !important;
+    min-height: 33px !important;
+    max-height: 33px !important;
+    border-radius: 7px !important;
+    padding: 0 2px !important;
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    color: #5A584F !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    transition: all 180ms ease !important;
   }
 
+  .talent-roster-filter-pill.active {
+    background-color: #8A6B2E !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 4px rgba(138, 107, 46, 0.25) !important;
+  }
+
+  /* 4. Talent Cards (2-Column Grid, No sideways scroll) */
   .talent-roster-cards-grid {
-    grid-template-columns: 1fr;
-    gap: 18px;
-    margin-top: 36px;
+    order: 5 !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin-top: 0 !important;
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    scroll-snap-type: none !important;
+    align-items: stretch !important;
+    box-sizing: border-box !important;
+  }
+
+  .talent-card {
+    flex: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    background-color: #FFFFFF !important;
+    border: 1px solid #E8E2D4 !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 4px rgba(43, 45, 42, 0.04) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    scroll-snap-align: none !important;
+  }
+
+  .talent-card-photo-wrap {
+    width: 100% !important;
+    height: 140px !important;
+    min-height: 140px !important;
+    max-height: 140px !important;
+    aspect-ratio: auto !important;
+    position: relative !important;
+    overflow: hidden !important;
+    background-color: #EFECE6 !important;
+  }
+
+  .talent-card-photo {
+    object-fit: cover !important;
+    object-position: center top !important;
+  }
+
+  .talent-card-rating-badge {
+    position: absolute !important;
+    top: 6px !important;
+    right: 6px !important;
+    background-color: #FFFFFF !important;
+    border-radius: 999px !important;
+    padding: 2.5px 7px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    color: #2B2D2A !important;
+    box-shadow: 0 1px 4px rgba(43, 45, 42, 0.12) !important;
+    z-index: 5 !important;
+    line-height: 1 !important;
   }
 
   .talent-card-info {
-    padding: 18px 18px 20px;
+    padding: 9px 10px 11px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    flex: 1 1 auto !important;
+    background-color: #FFFFFF !important;
+    box-sizing: border-box !important;
   }
 
   .talent-card-name {
-    font-size: 20px;
+    font-family: var(--font-heading), 'Playfair Display', Georgia, serif !important;
+    font-size: 14.5px !important;
+    font-weight: 600 !important;
+    color: #2B2D2A !important;
+    line-height: 1.25 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .talent-card-role {
+    font-family: var(--font-body), 'Inter', sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #8A6B2E !important;
+    line-height: 1.35 !important;
+    margin: 0 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    min-height: 2.7em !important;
+  }
+
+  .talent-card-city {
+    font-family: var(--font-body), 'Inter', sans-serif !important;
+    font-size: 10.5px !important;
+    color: #5A584F !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-top: auto !important;
+    padding-top: 3px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-width: 0 !important;
+  }
+
+  .talent-city-icon {
+    width: 11px !important;
+    height: 11px !important;
+    color: #8A6B2E !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 5. CTA Button: Full width, pinned after cards */
+  .talent-roster-cta-btn {
+    order: 6 !important;
+    width: 100% !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 0 20px !important;
+    font-family: var(--font-body), 'Inter', sans-serif !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+    border-radius: 10px !important;
+    margin-top: 14px !important;
+    margin-bottom: 0 !important;
+    background-color: #8A6B2E !important;
+    color: #FFFFFF !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+    box-shadow: 0 2px 8px rgba(138, 107, 46, 0.2) !important;
+    box-sizing: border-box !important;
+  }
+
+  .talent-roster-cta-btn:hover {
+    background-color: #6E5420 !important;
   }
 }
+
+@media (max-width: 400px) {
+  .talent-roster-title {
+    font-size: 24px !important;
+  }
+
+  .talent-card-photo-wrap {
+    height: 132px !important;
+    min-height: 132px !important;
+    max-height: 132px !important;
+  }
+
+  .talent-card-name {
+    font-size: 13.5px !important;
+  }
+
+  .talent-card-role {
+    font-size: 10.5px !important;
+  }
+}
+
+

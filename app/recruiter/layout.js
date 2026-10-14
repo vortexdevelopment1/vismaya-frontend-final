@@ -87,6 +87,21 @@ function RecruiterLayoutContent({ children }) {
             margin-left: 0 !important;
             width: 100% !important;
           }
+          .recruiter-sidebar:not(.sidebar-open) {
+            transform: translateX(-115%) !important;
+            left: -320px !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            box-shadow: none !important;
+            border-right: none !important;
+          }
+          .recruiter-sidebar.sidebar-open {
+            left: 0 !important;
+            transform: translateX(0) !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            box-shadow: 8px 0 28px rgba(43, 45, 42, 0.12) !important;
+          }
         }
 
         /* Standardized Organization Dashboard Buttons (Requirement 8) */
@@ -135,6 +150,25 @@ function RecruiterLayoutContent({ children }) {
           .recruiter-main-container .btn-dash,
           .recruiter-main-container .btn-sm {
             min-height: 40px;
+          }
+        }
+
+        @media (max-width: 640px) {
+          :root {
+            --topbar-height: 56px;
+          }
+          .recruiter-main-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+          }
+          .recruiter-main-viewport {
+            padding-inline: 16px !important;
+            padding-block: 16px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
           }
         }
       `}</style>

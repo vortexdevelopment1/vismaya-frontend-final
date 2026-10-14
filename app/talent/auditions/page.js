@@ -124,7 +124,7 @@ export default function TalentAuditionsPage() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+    <div className="talent-auditions-root" style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
       <PageHeader
         title="Auditions &amp; Self-Tapes"
         subtitle="Manage audition invitations, script sides, and submit recorded self-tapes directly through the secure Vismaya portal."
@@ -137,7 +137,7 @@ export default function TalentAuditionsPage() {
 
       {/* Vismaya Security Channel Banner */}
       <div
-        className="card-surface"
+        className="card-surface aud-security-banner"
         style={{
           backgroundColor: "#F3EFE6",
           border: "1px solid #E8E2D4",
@@ -150,13 +150,13 @@ export default function TalentAuditionsPage() {
           gap: "14px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <ShieldCheck size={24} style={{ color: "#8A6B2E", flexShrink: 0 }} />
-          <div>
-            <span style={{ fontSize: "14px", fontWeight: "700", color: "#2B2D2A", display: "block", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+        <div className="aud-security-left" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <ShieldCheck size={24} className="aud-security-icon" style={{ color: "#8A6B2E", flexShrink: 0 }} />
+          <div className="aud-security-content">
+            <span className="aud-security-title" style={{ fontSize: "14px", fontWeight: "700", color: "#2B2D2A", display: "block", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
               Your self-tape is sent through Vismaya
             </span>
-            <span style={{ fontSize: "13px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+            <span className="aud-security-desc" style={{ fontSize: "13px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
               All auditions and video callbacks are reviewed and verified by Vismaya before relay to casting teams to guarantee artist privacy.
             </span>
           </div>
@@ -164,6 +164,7 @@ export default function TalentAuditionsPage() {
 
         <Link
           href="/talent/portfolio"
+          className="aud-portfolio-btn"
           style={{
             fontSize: "13px",
             fontWeight: 600,
@@ -186,7 +187,7 @@ export default function TalentAuditionsPage() {
       {!isHydrated ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {[1, 2].map((i) => (
-            <div key={i} className="card-surface" style={{ padding: "28px", height: "240px", borderRadius: "18px", backgroundColor: "#FFFFFF", border: "1px solid #E8E2D4" }}>
+            <div key={i} className="card-surface aud-skeleton-card" style={{ padding: "28px", height: "240px", borderRadius: "18px", backgroundColor: "#FFFFFF", border: "1px solid #E8E2D4" }}>
               <Skeleton width="40%" height="24px" />
               <Skeleton width="80%" height="16px" style={{ marginTop: "12px" }} />
               <Skeleton width="60%" height="16px" style={{ marginTop: "8px" }} />
@@ -194,15 +195,17 @@ export default function TalentAuditionsPage() {
           ))}
         </div>
       ) : myAuditions.length === 0 ? (
-        <EmptyState
-          title="No audition invitations yet"
-          description="When casting directors shortlist your profile for a role, your audition script sides and self-tape requests will appear here."
-          iconName="Video"
-          actionLabel="Explore Live Opportunities"
-          actionHref="/talent/opportunities"
-        />
+        <div className="aud-empty-wrap">
+          <EmptyState
+            title="No audition invitations yet"
+            description="When casting directors shortlist your profile for a role, your audition script sides and self-tape requests will appear here."
+            iconName="Video"
+            actionLabel="Explore Live Opportunities"
+            actionHref="/talent/opportunities"
+          />
+        </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        <div className="aud-cards-list" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {myAuditions.map((aud) => {
             const opp = getOpportunity(aud.opportunityId);
             const project = opp ? getProject(opp.projectId) : null;
@@ -216,7 +219,7 @@ export default function TalentAuditionsPage() {
             return (
               <div
                 key={aud.id}
-                className="card-surface"
+                className="card-surface aud-card-root"
                 style={{
                   backgroundColor: "#FFFFFF",
                   border: isPendingUpload ? "1.5px solid #8A6B2E" : "1px solid #E8E2D4",
@@ -233,6 +236,7 @@ export default function TalentAuditionsPage() {
                 {/* Pending Upload Top Highlight */}
                 {isPendingUpload && (
                   <div
+                    className="aud-card-highlight-strip"
                     style={{
                       position: "absolute",
                       top: 0,
@@ -245,10 +249,14 @@ export default function TalentAuditionsPage() {
                 )}
 
                 {/* Header: Opportunity Title, Type, Status */}
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: 0, flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <div
+                  className="aud-card-header"
+                  style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}
+                >
+                  <div className="aud-card-header-left" style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: 0, flex: 1 }}>
+                    <div className="aud-card-meta-row-1" style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                       <span
+                        className="aud-card-type-pill"
                         style={{
                           fontSize: "0.725rem",
                           fontWeight: "700",
@@ -262,25 +270,28 @@ export default function TalentAuditionsPage() {
                       >
                         {aud.type || "Audition"}
                       </span>
-                      <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                      <span className="aud-card-ref" style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
                         Ref: #{aud.id}
                       </span>
                     </div>
 
-                    <h3 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.1rem, 2.5vw, 1.25rem)", fontWeight: "700", color: "var(--text-primary)", margin: "4px 0 0 0", overflowWrap: "anywhere" }}>
+                    <h3
+                      className="aud-card-title"
+                      style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.1rem, 2.5vw, 1.25rem)", fontWeight: "700", color: "var(--text-primary)", margin: "4px 0 0 0", overflowWrap: "anywhere" }}
+                    >
                       {opp?.title || "Opportunity Audition"}
                     </h3>
 
                     {project && (
-                      <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                      <span className="aud-card-project" style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
                         Project: <strong style={{ color: "var(--text-primary)" }}>{project.title}</strong>
                       </span>
                     )}
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px" }}>
+                  <div className="aud-card-header-right" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px" }}>
                     <StatusBadge status={aud.status} size="md" />
-                    <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                    <span className="aud-card-requested-date" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                       Requested {new Date(aud.requestedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
                     </span>
                   </div>
@@ -288,6 +299,7 @@ export default function TalentAuditionsPage() {
 
                 {/* Audition Note / Script Sides Instructions */}
                 <div
+                  className="aud-instructions-box"
                   style={{
                     backgroundColor: "var(--bg-alt)",
                     border: "1px solid var(--border-color)",
@@ -299,12 +311,12 @@ export default function TalentAuditionsPage() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <FileText size={15} style={{ color: "var(--gold)" }} />
-                    <span style={{ fontSize: "0.8rem", fontWeight: "700", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    <FileText size={15} className="aud-instructions-icon" style={{ color: "var(--gold)" }} />
+                    <span className="aud-instructions-heading" style={{ fontSize: "0.8rem", fontWeight: "700", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                       Audition Instructions &amp; Sides
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-secondary)", lineHeight: 1.55, overflowWrap: "anywhere" }}>
+                  <p className="aud-instructions-text" style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-secondary)", lineHeight: 1.55, overflowWrap: "anywhere" }}>
                     {aud.note || "Please record your audition self-tape and upload via the form below."}
                   </p>
                 </div>
@@ -312,6 +324,7 @@ export default function TalentAuditionsPage() {
                 {/* Status-specific Information Boxes */}
                 {isReceived && (
                   <div
+                    className="aud-status-box aud-status-received"
                     style={{
                       backgroundColor: "#EFF2EC",
                       border: "1px solid #D1DCC8",
@@ -322,12 +335,12 @@ export default function TalentAuditionsPage() {
                       gap: "12px",
                     }}
                   >
-                    <CheckCircle2 size={20} style={{ color: "var(--gold)", flexShrink: 0 }} />
+                    <CheckCircle2 size={20} className="aud-status-icon" style={{ color: "var(--gold)", flexShrink: 0 }} />
                     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>
+                      <span className="aud-status-title" style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>
                         Self-tape Received by Vismaya Desk
                       </span>
-                      <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", overflowWrap: "anywhere" }}>
+                      <span className="aud-status-desc" style={{ fontSize: "0.8rem", color: "var(--text-secondary)", overflowWrap: "anywhere" }}>
                         Your tape is currently being quality-checked by the Vismaya moderation team before being forwarded to the casting director.
                       </span>
                     </div>
@@ -336,6 +349,7 @@ export default function TalentAuditionsPage() {
 
                 {isForwarded && (
                   <div
+                    className="aud-status-box aud-status-forwarded"
                     style={{
                       backgroundColor: "var(--bg-alt)",
                       border: "1px solid var(--border-color)",
@@ -346,12 +360,12 @@ export default function TalentAuditionsPage() {
                       gap: "12px",
                     }}
                   >
-                    <Sparkles size={20} style={{ color: "var(--gold)", flexShrink: 0 }} />
+                    <Sparkles size={20} className="aud-status-icon" style={{ color: "var(--gold)", flexShrink: 0 }} />
                     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--gold)" }}>
+                      <span className="aud-status-title" style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--gold)" }}>
                         Forwarded to Organization
                       </span>
-                      <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", overflowWrap: "anywhere" }}>
+                      <span className="aud-status-desc" style={{ fontSize: "0.8rem", color: "var(--text-secondary)", overflowWrap: "anywhere" }}>
                         Your verified tape has been forwarded to the organization&apos;s casting desk for review and callback consideration.
                       </span>
                     </div>
@@ -360,10 +374,10 @@ export default function TalentAuditionsPage() {
 
                 {/* Submitted Video Player Section (When already submitted or forwarded) */}
                 {(isReceived || isForwarded) && aud.selfTapeUrl && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+                  <div className="aud-recording-section" style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <Video size={16} style={{ color: "var(--gold)" }} />
-                      <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "var(--text-primary)" }}>
+                      <Video size={16} className="aud-recording-icon" style={{ color: "var(--gold)" }} />
+                      <span className="aud-recording-label" style={{ fontSize: "0.85rem", fontWeight: "700", color: "var(--text-primary)" }}>
                         Submitted Self-Tape Recording:
                       </span>
                     </div>
@@ -371,6 +385,7 @@ export default function TalentAuditionsPage() {
                       src={aud.selfTapeUrl}
                       height="clamp(180px, 35vw, 260px)"
                       fileName={selectedFiles[aud.id]?.fileName || "Self-Tape-Audition.mp4"}
+                      className="aud-video-player"
                     />
                   </div>
                 )}
@@ -378,6 +393,7 @@ export default function TalentAuditionsPage() {
                 {/* Self-Tape Upload Area */}
                 {(isPendingUpload || isReceived) && (
                   <div
+                    className="aud-upload-area"
                     style={{
                       backgroundColor: "var(--bg-alt)",
                       border: "1px solid var(--border-color)",
@@ -389,21 +405,22 @@ export default function TalentAuditionsPage() {
                       width: "100%",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+                    <div className="aud-upload-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <Video size={18} style={{ color: "var(--gold)" }} />
-                        <h4 style={{ fontSize: "0.95rem", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
+                        <Video size={18} className="aud-upload-icon" style={{ color: "var(--gold)" }} />
+                        <h4 className="aud-upload-heading" style={{ fontSize: "0.95rem", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
                           {isReceived ? "Re-upload / Update Self-Tape" : "Submit Audition Self-Tape"}
                         </h4>
                       </div>
 
-                      <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                      <span className="aud-upload-hint" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                         MP4, MOV, WEBM (Video only)
                       </span>
                     </div>
 
                     {/* File Picker Strip */}
                     <div
+                      className="aud-picker-strip"
                       style={{
                         backgroundColor: "var(--bg-surface)",
                         border: "1px dashed var(--gold)",
@@ -417,8 +434,9 @@ export default function TalentAuditionsPage() {
                         width: "100%",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
+                      <div className="aud-picker-left" style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
                         <div
+                          className="aud-picker-icon-box"
                           style={{
                             width: "42px",
                             height: "42px",
@@ -435,16 +453,17 @@ export default function TalentAuditionsPage() {
                           <Upload size={18} />
                         </div>
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)", display: "block", overflowWrap: "anywhere" }}>
+                          <span className="aud-picker-file-name" style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)", display: "block", overflowWrap: "anywhere" }}>
                             {selectedFiles[aud.id]?.fileName || (aud.selfTapeUrl ? "Current: Verified-Self-Tape.mp4" : "Choose audition video file")}
                           </span>
-                          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                          <span className="aud-picker-file-meta" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                             {selectedFiles[aud.id]?.fileSize ? `File size: ${selectedFiles[aud.id].fileSize} • Video validated` : "High-definition landscape recording recommended"}
                           </span>
                         </div>
                       </div>
 
                       <label
+                        className="aud-picker-browse-btn"
                         style={{
                           padding: "8px 16px",
                           minHeight: "38px",
@@ -474,7 +493,7 @@ export default function TalentAuditionsPage() {
 
                     {/* File validation error if any */}
                     {fileErrorMap[aud.id] && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--danger)", fontSize: "0.8rem" }}>
+                      <div className="aud-error-msg" style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--danger)", fontSize: "0.8rem" }}>
                         <AlertCircle size={14} />
                         <span>{fileErrorMap[aud.id]}</span>
                       </div>
@@ -482,24 +501,26 @@ export default function TalentAuditionsPage() {
 
                     {/* Local Preview before submitting */}
                     {selectedFiles[aud.id]?.previewUrl && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
-                        <span style={{ fontSize: "0.8rem", fontWeight: "700", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      <div className="aud-local-preview-section" style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+                        <span className="aud-local-preview-label" style={{ fontSize: "0.8rem", fontWeight: "700", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                           Selected Video Preview:
                         </span>
                         <VideoPlayer
                           src={selectedFiles[aud.id].previewUrl}
                           fileName={selectedFiles[aud.id].fileName}
                           height="clamp(180px, 35vw, 240px)"
+                          className="aud-local-video-player"
                         />
                       </div>
                     )}
 
                     {/* Optional Note to Casting Director */}
-                    <div>
-                      <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "6px" }}>
+                    <div className="aud-notes-field">
+                      <label className="aud-textarea-label" style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "6px" }}>
                         Notes / Slate Comments (Optional)
                       </label>
                       <textarea
+                        className="aud-textarea"
                         rows={2}
                         placeholder="Mention take number, lighting setup, or dialect context..."
                         value={auditionNotes[aud.id] || ""}
@@ -521,15 +542,15 @@ export default function TalentAuditionsPage() {
                     </div>
 
                     {/* Submit Button & Vismaya routing note */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", paddingTop: "6px" }}>
-                      <span style={{ fontSize: "0.785rem", color: "var(--text-muted)", fontStyle: "italic" }}>
+                    <div className="aud-submit-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", paddingTop: "6px" }}>
+                      <span className="aud-submit-badge" style={{ fontSize: "0.785rem", color: "var(--text-muted)", fontStyle: "italic" }}>
                         &bull; Your self-tape is sent through Vismaya
                       </span>
 
                       <button
                         onClick={() => handleSubmitTape(aud.id)}
                         disabled={isSubmittingMap[aud.id]}
-                        className="btn-primary"
+                        className="btn-primary aud-submit-btn"
                         style={{
                           padding: "8px 20px",
                           minHeight: "38px",
@@ -557,6 +578,455 @@ export default function TalentAuditionsPage() {
           })}
         </div>
       )}
+
+      <style jsx>{`
+        @media (max-width: 640px) {
+          /* Root and Header */
+          .talent-auditions-root {
+            gap: 12px !important;
+          }
+          .talent-auditions-root :global(.page-header-container) {
+            margin-bottom: 0px !important;
+            gap: 8px !important;
+          }
+          .talent-auditions-root :global(.page-header-title-row) {
+            gap: 8px !important;
+            align-items: center !important;
+          }
+          .talent-auditions-root :global(.page-header-title) {
+            font-size: 22px !important;
+            line-height: 1.25 !important;
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif !important;
+            color: #2B2D2A !important;
+          }
+          .talent-auditions-root :global(.page-header-badge) {
+            font-size: 10.5px !important;
+            padding: 3px 8px !important;
+            letter-spacing: 0.08em !important;
+            background-color: #F3EFE6 !important;
+            color: #6E5420 !important;
+            border: 1px solid #E8E2D4 !important;
+          }
+          .talent-auditions-root :global(.page-header-subtitle) {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            color: #5A584F !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 3 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+
+          /* B. Info Banner */
+          .aud-security-banner {
+            padding: 12px !important;
+            border-radius: 12px !important;
+            gap: 10px !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+          }
+          .aud-security-left {
+            display: flex !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+            width: 100% !important;
+          }
+          .aud-security-icon {
+            width: 24px !important;
+            height: 24px !important;
+            min-width: 24px !important;
+            color: #8A6B2E !important;
+            margin-top: 1px !important;
+          }
+          .aud-security-title {
+            font-size: 13.5px !important;
+            line-height: 1.35 !important;
+            font-weight: 700 !important;
+            color: #2B2D2A !important;
+            margin-bottom: 2px !important;
+          }
+          .aud-security-desc {
+            font-size: 12px !important;
+            line-height: 1.45 !important;
+            color: #5A584F !important;
+            display: block !important;
+          }
+          .aud-portfolio-btn {
+            height: 38px !important;
+            min-height: 38px !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            padding: 0 14px !important;
+            border-radius: 6px !important;
+            border: 1px solid #8A6B2E !important;
+            color: #8A6B2E !important;
+            background-color: #FFFFFF !important;
+            align-self: flex-start !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin-left: 34px !important;
+          }
+
+          /* Cards List */
+          .aud-cards-list {
+            gap: 12px !important;
+          }
+
+          /* C. Audition Card */
+          .aud-card-root {
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 14px !important;
+            border-radius: 14px !important;
+            gap: 10px !important;
+            border: 1px solid #E8E2D4 !important;
+            background-color: #FFFFFF !important;
+            box-shadow: 0 2px 8px rgba(43, 45, 42, 0.04) !important;
+            width: 100% !important;
+          }
+          .aud-card-highlight-strip {
+            height: 3px !important;
+            background: #8A6B2E !important;
+          }
+          .aud-card-header {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto !important;
+            row-gap: 5px !important;
+            column-gap: 10px !important;
+            align-items: center !important;
+            width: 100% !important;
+          }
+          .aud-card-header-left,
+          .aud-card-meta-row-1,
+          .aud-card-header-right {
+            display: contents !important;
+          }
+          .aud-card-type-pill {
+            grid-row: 1 !important;
+            grid-column: 1 !important;
+            justify-self: start !important;
+            height: 24px !important;
+            min-height: 24px !important;
+            line-height: 22px !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            padding: 0 8px !important;
+            border-radius: 4px !important;
+            background-color: #F3EFE6 !important;
+            color: #8A6B2E !important;
+            border: 1px solid #E8E2D4 !important;
+            white-space: nowrap !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.06em !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .aud-card-header-right :global(.status-badge) {
+            grid-row: 1 !important;
+            grid-column: 2 !important;
+            justify-self: end !important;
+            height: 24px !important;
+            min-height: 24px !important;
+            font-size: 10px !important;
+            padding: 0 8px !important;
+            white-space: nowrap !important;
+            line-height: 1 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            max-width: 100% !important;
+          }
+          .aud-card-ref {
+            grid-row: 2 !important;
+            grid-column: 1 !important;
+            justify-self: start !important;
+            font-size: 11px !important;
+            color: #5A584F !important;
+            white-space: nowrap !important;
+            line-height: 1.2 !important;
+          }
+          .aud-card-requested-date {
+            grid-row: 2 !important;
+            grid-column: 2 !important;
+            justify-self: end !important;
+            font-size: 11px !important;
+            color: #5A584F !important;
+            white-space: nowrap !important;
+            line-height: 1.2 !important;
+          }
+          .aud-card-title {
+            grid-row: 3 !important;
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif !important;
+            font-size: 17px !important;
+            line-height: 1.25 !important;
+            font-weight: 600 !important;
+            color: #2B2D2A !important;
+            margin: 3px 0 0 0 !important;
+            text-align: left !important;
+            overflow-wrap: break-word !important;
+            word-break: normal !important;
+            hyphens: none !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 3 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+          .aud-card-project {
+            grid-row: 4 !important;
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+            font-size: 12.5px !important;
+            line-height: 1.4 !important;
+            color: #5A584F !important;
+            margin: 1px 0 0 0 !important;
+            display: block !important;
+            overflow-wrap: break-word !important;
+            word-break: normal !important;
+          }
+          .aud-card-project strong {
+            color: #2B2D2A !important;
+          }
+
+          /* D. Inside the Card */
+          .aud-instructions-box {
+            padding: 10px 12px !important;
+            border-radius: 8px !important;
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+            gap: 4px !important;
+          }
+          .aud-instructions-icon {
+            width: 14px !important;
+            height: 14px !important;
+            color: #8A6B2E !important;
+          }
+          .aud-instructions-heading {
+            font-size: 10.5px !important;
+            font-weight: 700 !important;
+            color: #8A6B2E !important;
+            letter-spacing: 0.04em !important;
+            text-transform: uppercase !important;
+          }
+          .aud-instructions-text {
+            font-size: 12.5px !important;
+            line-height: 1.5 !important;
+            color: #5A584F !important;
+          }
+
+          .aud-status-box {
+            padding: 10px 12px !important;
+            border-radius: 8px !important;
+            gap: 8px !important;
+            display: flex !important;
+            align-items: flex-start !important;
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+          }
+          .aud-status-box :global(.aud-status-icon) {
+            width: 18px !important;
+            height: 18px !important;
+            min-width: 18px !important;
+            margin-top: 1px !important;
+            color: #8A6B2E !important;
+          }
+          .aud-status-title {
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            color: #2B2D2A !important;
+            line-height: 1.3 !important;
+          }
+          .aud-status-desc {
+            font-size: 12px !important;
+            line-height: 1.4 !important;
+            color: #5A584F !important;
+          }
+
+          .aud-recording-section {
+            gap: 6px !important;
+          }
+          .aud-recording-icon {
+            width: 15px !important;
+            height: 15px !important;
+            color: #8A6B2E !important;
+          }
+          .aud-recording-label {
+            font-size: 12.5px !important;
+            color: #2B2D2A !important;
+            font-weight: 600 !important;
+          }
+
+          /* Upload Area */
+          .aud-upload-area {
+            padding: 14px !important;
+            gap: 12px !important;
+            border-radius: 8px !important;
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+          }
+          .aud-upload-icon {
+            width: 16px !important;
+            height: 16px !important;
+            color: #8A6B2E !important;
+          }
+          .aud-upload-heading {
+            font-size: 13.5px !important;
+            font-weight: 700 !important;
+            color: #2B2D2A !important;
+          }
+          .aud-upload-hint {
+            font-size: 11px !important;
+            color: #5A584F !important;
+          }
+          .aud-picker-strip {
+            padding: 12px !important;
+            gap: 10px !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            border: 1px dashed #C9A55C !important;
+            background-color: #FFFFFF !important;
+            border-radius: 6px !important;
+          }
+          .aud-picker-left {
+            width: 100% !important;
+            gap: 10px !important;
+          }
+          .aud-picker-icon-box {
+            width: 28px !important;
+            height: 28px !important;
+            min-width: 28px !important;
+            border-radius: 6px !important;
+          }
+          .aud-picker-icon-box :global(svg) {
+            width: 15px !important;
+            height: 15px !important;
+          }
+          .aud-picker-file-name {
+            font-size: 12.5px !important;
+            line-height: 1.3 !important;
+            font-weight: 600 !important;
+            color: #2B2D2A !important;
+          }
+          .aud-picker-file-meta {
+            font-size: 11px !important;
+            line-height: 1.3 !important;
+            color: #5A584F !important;
+          }
+          .aud-picker-browse-btn {
+            width: 100% !important;
+            height: 38px !important;
+            min-height: 38px !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            border-radius: 6px !important;
+            background-color: #F3EFE6 !important;
+            color: #2B2D2A !important;
+            border: 1px solid #E8E2D4 !important;
+          }
+          .aud-local-preview-section {
+            gap: 6px !important;
+          }
+          .aud-local-preview-label {
+            font-size: 11.5px !important;
+            color: #8A6B2E !important;
+            font-weight: 700 !important;
+          }
+          .aud-textarea-label {
+            font-size: 12px !important;
+            color: #5A584F !important;
+            margin-bottom: 4px !important;
+          }
+          .aud-textarea {
+            font-size: 16px !important;
+            padding: 8px 10px !important;
+            border-radius: 6px !important;
+            border: 1px solid #E8E2D4 !important;
+            background-color: #FFFFFF !important;
+            color: #2B2D2A !important;
+          }
+          .aud-submit-row {
+            flex-direction: column-reverse !important;
+            align-items: stretch !important;
+            gap: 8px !important;
+            padding-top: 2px !important;
+          }
+          .aud-submit-btn {
+            width: 100% !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.04em !important;
+            text-transform: uppercase !important;
+            border-radius: 8px !important;
+            justify-content: center !important;
+            background-color: #8A6B2E !important;
+            color: #FFFFFF !important;
+            border: 1px solid #8A6B2E !important;
+          }
+          .aud-submit-badge {
+            font-size: 11px !important;
+            text-align: center !important;
+            color: #5A584F !important;
+          }
+
+          /* E. Empty State */
+          .aud-empty-wrap :global(> div) {
+            padding: 24px 16px !important;
+            border-radius: 12px !important;
+            background-color: #FFFFFF !important;
+            border: 1px dashed #E8E2D4 !important;
+          }
+          .aud-empty-wrap :global(> div > div:first-child) {
+            width: 40px !important;
+            height: 40px !important;
+            margin-bottom: 10px !important;
+            background-color: #F3EFE6 !important;
+            border-color: #E8E2D4 !important;
+            color: #8A6B2E !important;
+          }
+          .aud-empty-wrap :global(> div > div:first-child svg) {
+            width: 20px !important;
+            height: 20px !important;
+          }
+          .aud-empty-wrap :global(h3) {
+            font-size: 15px !important;
+            margin-bottom: 4px !important;
+            color: #2B2D2A !important;
+          }
+          .aud-empty-wrap :global(p) {
+            font-size: 13px !important;
+            line-height: 1.45 !important;
+            margin-bottom: 14px !important;
+            color: #5A584F !important;
+          }
+          .aud-empty-wrap :global(.btn-primary) {
+            min-height: 38px !important;
+            height: 38px !important;
+            font-size: 12px !important;
+            padding: 0 16px !important;
+            border-radius: 8px !important;
+            background-color: #8A6B2E !important;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .talent-auditions-root :global(.page-header-title) {
+            font-size: 20px !important;
+          }
+          .aud-card-title {
+            font-size: 16px !important;
+          }
+          .aud-portfolio-btn {
+            width: 100% !important;
+            margin-left: 0 !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

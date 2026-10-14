@@ -27,6 +27,7 @@ export default function RequirementDrawer({ requirement, isOpen, onClose }) {
 
       {/* Drawer Panel */}
       <div
+        className="requirement-drawer-panel"
         style={{
           position: "fixed",
           top: 0,
@@ -475,6 +476,14 @@ export default function RequirementDrawer({ requirement, isOpen, onClose }) {
             }
             to {
               transform: translateX(0);
+            }
+          }
+          @media (max-width: 640px) {
+            .requirement-drawer-panel {
+              width: 100vw !important;
+              max-width: 100vw !important;
+              max-height: 90vh !important;
+              border-left: none !important;
             }
           }
         `}</style>

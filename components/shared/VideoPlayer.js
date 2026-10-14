@@ -21,7 +21,7 @@ export default function VideoPlayer({
   if (!src || hasError) {
     return (
       <div
-        className={className}
+        className={`video-player-fallback ${className}`}
         style={{
           width: "100%",
           minHeight: height,
@@ -40,6 +40,7 @@ export default function VideoPlayer({
         }}
       >
         <div
+          className="video-fallback-icon-wrap"
           style={{
             width: "48px",
             height: "48px",
@@ -56,6 +57,7 @@ export default function VideoPlayer({
         </div>
         <div>
           <strong
+            className="video-fallback-title"
             style={{
               display: "block",
               fontSize: "0.925rem",
@@ -66,6 +68,7 @@ export default function VideoPlayer({
             Preview not available after refresh
           </strong>
           <p
+            className="video-fallback-desc"
             style={{
               fontSize: "0.785rem",
               color: "var(--text-secondary, #5A584F)",
@@ -77,6 +80,43 @@ export default function VideoPlayer({
             {fileName ? `File: ${fileName} • ` : ""}Local object preview URLs reset upon page reload. In production, self-tapes stream from permanent cloud storage.
           </p>
         </div>
+
+        <style jsx>{`
+          @media (max-width: 640px) {
+            .video-player-fallback {
+              min-height: unset !important;
+              max-height: 140px !important;
+              padding: 12px !important;
+              border-radius: 8px !important;
+              gap: 8px !important;
+              background-color: #F3EFE6 !important;
+              border: 1px solid #E8E2D4 !important;
+            }
+            .video-fallback-icon-wrap {
+              width: 32px !important;
+              height: 32px !important;
+              min-width: 32px !important;
+            }
+            .video-fallback-icon-wrap :global(svg) {
+              width: 16px !important;
+              height: 16px !important;
+            }
+            .video-fallback-title {
+              font-size: 13px !important;
+              margin-bottom: 2px !important;
+              color: #2B2D2A !important;
+            }
+            .video-fallback-desc {
+              font-size: 11.5px !important;
+              line-height: 1.35 !important;
+              color: #5A584F !important;
+              display: -webkit-box !important;
+              -webkit-line-clamp: 2 !important;
+              -webkit-box-orient: vertical !important;
+              overflow: hidden !important;
+            }
+          }
+        `}</style>
       </div>
     );
   }
@@ -96,7 +136,7 @@ export default function VideoPlayer({
         justifyContent: "center",
         ...style,
       }}
-      className={className}
+      className={`video-player-wrap ${className}`}
     >
       <video
         controls
@@ -113,6 +153,17 @@ export default function VideoPlayer({
           display: "block",
         }}
       />
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .video-player-wrap {
+            max-height: 220px !important;
+            border-radius: 8px !important;
+          }
+          .video-player-wrap video {
+            max-height: 220px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

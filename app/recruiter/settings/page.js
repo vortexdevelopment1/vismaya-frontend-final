@@ -357,11 +357,12 @@ export default function OrganizationSettingsPage() {
   const isCurrentTabDirty = (activeTab === "profile" && isProfileDirty) || (activeTab === "notifications" && isNotifDirty);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px", width: "100%", maxWidth: "1200px", margin: "0 auto" }}>
+    <div className={`settings-page-wrapper ${isCurrentTabDirty ? "has-dirty-bar" : ""}`} style={{ display: "flex", flexDirection: "column", gap: "24px", width: "100%", maxWidth: "1200px", margin: "0 auto" }}>
       {/* Page Header */}
-      <div>
+      <div className="settings-page-header">
         <nav
           aria-label="Breadcrumb"
+          className="settings-breadcrumb"
           style={{
             display: "flex",
             alignItems: "center",
@@ -389,6 +390,7 @@ export default function OrganizationSettingsPage() {
         </nav>
 
         <h1
+          className="settings-page-title"
           style={{
             fontFamily: "Playfair Display, Georgia, serif",
             fontSize: "40px",
@@ -402,6 +404,7 @@ export default function OrganizationSettingsPage() {
           Settings & Corporate Profile
         </h1>
         <p
+          className="settings-page-desc"
           style={{
             fontFamily: "var(--font-body), 'Inter', sans-serif",
             fontSize: "16px",
@@ -451,6 +454,7 @@ export default function OrganizationSettingsPage() {
       {/* Unsaved Changes Modal Dialog */}
       {showUnsavedPrompt && (
         <div
+          className="unsaved-modal-overlay"
           style={{
             position: "fixed",
             inset: 0,
@@ -464,6 +468,7 @@ export default function OrganizationSettingsPage() {
           }}
         >
           <div
+            className="unsaved-modal-box"
             style={{
               backgroundColor: "#FFFFFF",
               border: "1px solid #E8E2D4",
@@ -600,7 +605,7 @@ export default function OrganizationSettingsPage() {
                 <div className="settings-card-body">
                   <div className="settings-form-grid">
                     {/* Organization Name */}
-                    <div className="form-group">
+                    <div className="form-group mobile-full">
                       <label className="form-label">
                         Organization / Studio name <span className="req">*</span>
                       </label>
@@ -671,7 +676,7 @@ export default function OrganizationSettingsPage() {
                     </div>
 
                     {/* GSTIN */}
-                    <div className="form-group">
+                    <div className="form-group mobile-full">
                       <label className="form-label">
                         GSTIN (Tax identification)
                       </label>
@@ -756,7 +761,7 @@ export default function OrganizationSettingsPage() {
                 <div className="settings-card-body">
                   <div className="settings-form-grid">
                     {/* Contact Person */}
-                    <div className="form-group">
+                    <div className="form-group mobile-full">
                       <label className="form-label">
                         Contact person <span className="req">*</span>
                       </label>
@@ -825,7 +830,7 @@ export default function OrganizationSettingsPage() {
                     </div>
 
                     {/* Work Email */}
-                    <div className="form-group">
+                    <div className="form-group mobile-full">
                       <label className="form-label">
                         Work email <span className="req">*</span>
                       </label>
@@ -862,8 +867,9 @@ export default function OrganizationSettingsPage() {
                 </div>
 
                 <div className="settings-card-body">
-                  <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap" }}>
+                  <div className="branding-logo-row" style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap" }}>
                     <div
+                      className="branding-logo-box"
                       style={{
                         width: "80px",
                         height: "80px",
@@ -883,14 +889,14 @@ export default function OrganizationSettingsPage() {
                       {profileForm.companyName.charAt(0).toUpperCase()}
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1, minWidth: "220px" }}>
-                      <span style={{ fontSize: "15px", fontWeight: "600", color: "#2B2D2A" }}>
+                    <div className="branding-logo-content" style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1, minWidth: "220px" }}>
+                      <span className="branding-watermark-title" style={{ fontSize: "15px", fontWeight: "600", color: "#2B2D2A" }}>
                         Corporate watermark preview
                       </span>
-                      <span className="form-hint" style={{ marginTop: 0 }}>
+                      <span className="form-hint branding-hint" style={{ marginTop: 0 }}>
                         Recommended: Square PNG, WebP or SVG format. Minimum resolution 400x400px (Max file size 2MB).
                       </span>
-                      <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+                      <div className="branding-btn-wrap" style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
                         <button
                           type="button"
                           onClick={() => showFeedback("File selector opened for corporate logo upload.")}
@@ -935,6 +941,7 @@ export default function OrganizationSettingsPage() {
               <div className="settings-card">
                 <div className="settings-card-body" style={{ padding: "32px" }}>
                   <div
+                    className="verif-banner-row"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -945,6 +952,7 @@ export default function OrganizationSettingsPage() {
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
                       <div
+                        className="verif-shield-box"
                         style={{
                           width: "56px",
                           height: "56px",
@@ -963,6 +971,7 @@ export default function OrganizationSettingsPage() {
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
                           <h2
+                            className="verif-status-heading"
                             style={{
                               fontSize: "22px",
                               fontWeight: "700",
@@ -974,6 +983,7 @@ export default function OrganizationSettingsPage() {
                             Verification status:
                           </h2>
                           <span
+                            className="verif-status-badge"
                             style={{
                               fontSize: "12px",
                               fontWeight: "700",
@@ -993,7 +1003,7 @@ export default function OrganizationSettingsPage() {
                             Verified Organization
                           </span>
                         </div>
-                        <p style={{ fontSize: "14px", color: "#5A584F", margin: "6px 0 0 0" }}>
+                        <p className="verif-status-desc" style={{ fontSize: "14px", color: "#5A584F", margin: "6px 0 0 0" }}>
                           Last compliance review by Vismaya Senior Casting Desk: <strong>October 02, 2026</strong>
                         </p>
                       </div>
@@ -1200,6 +1210,7 @@ export default function OrganizationSettingsPage() {
 
                     {/* Password Requirements Checklist */}
                     <div
+                      className="password-checklist-box"
                       style={{
                         backgroundColor: "#FAF9F7",
                         border: "1px solid #E8E2D4",
@@ -1213,7 +1224,7 @@ export default function OrganizationSettingsPage() {
                       <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A" }}>
                         Password requirements:
                       </span>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "13px" }}>
+                      <div className="password-checklist-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "13px" }}>
                         <span style={{ color: newPassword.length >= 8 ? "#2B2D2A" : "#5A584F", display: "flex", alignItems: "center", gap: "6px" }}>
                           <Check size={14} style={{ color: newPassword.length >= 8 ? "#8A6B2E" : "#D9D2C0" }} /> At least 8 characters
                         </span>
@@ -2175,6 +2186,711 @@ export default function OrganizationSettingsPage() {
 
           .channel-row {
             align-items: flex-start;
+          }
+        }
+
+        @media (max-width: 640px) {
+          /* Page Container & Spacing */
+          .settings-page-wrapper {
+            gap: 12px !important;
+            padding: 16px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
+            background: transparent !important;
+          }
+          .settings-page-wrapper.has-dirty-bar {
+            padding-bottom: 80px !important;
+          }
+
+          /* B. Header */
+          .settings-page-header {
+            margin-bottom: 0 !important;
+            gap: 6px !important;
+          }
+          .settings-breadcrumb {
+            font-size: 11.5px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            margin-bottom: 6px !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+          }
+          .settings-breadcrumb a,
+          .settings-breadcrumb span {
+            font-size: 11.5px !important;
+          }
+          .settings-page-title {
+            font-size: 22px !important;
+            line-height: 1.2 !important;
+            margin: 0 0 6px 0 !important;
+            letter-spacing: -0.01em !important;
+          }
+          .settings-page-desc {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            color: #5A584F !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 3 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+
+          /* Feedback Toast */
+          .settings-page-wrapper > div[style*="border-radius: 12px"] {
+            padding: 10px 14px !important;
+            font-size: 13px !important;
+            gap: 8px !important;
+            border-radius: 10px !important;
+          }
+
+          /* Layout & Card Spacing */
+          .settings-layout-container {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            width: 100% !important;
+          }
+          .settings-content-area {
+            width: 100% !important;
+            min-width: 0 !important;
+          }
+          .settings-content-area form,
+          .settings-content-area > div {
+            gap: 12px !important;
+            width: 100% !important;
+          }
+
+          /* C. Tabs: NO horizontal scroll, compact chips fitting in 2 lines */
+          .settings-menu-nav {
+            overflow: visible !important;
+            padding: 0 !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            width: 100% !important;
+          }
+          .settings-menu-track {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            width: 100% !important;
+          }
+          .settings-menu-item {
+            flex: 1 1 auto !important;
+            height: 32px !important;
+            padding: 0 10px !important;
+            border-radius: 999px !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            width: auto !important;
+            box-shadow: none !important;
+            box-sizing: border-box !important;
+          }
+          .settings-menu-item.active {
+            background-color: #F3EFE6 !important;
+            border: 1px solid #8A6B2E !important;
+            border-bottom: 1px solid #8A6B2E !important;
+            color: #8A6B2E !important;
+            font-weight: 600 !important;
+            box-shadow: none !important;
+          }
+          .settings-menu-item:not(.active) {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            border-bottom: 1px solid #E8E2D4 !important;
+            color: #5A584F !important;
+            box-shadow: none !important;
+          }
+          .settings-menu-item .menu-item-icon-wrap {
+            display: inline-flex !important;
+            width: 14px !important;
+            height: 14px !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .settings-menu-item .menu-item-icon-wrap :global(svg) {
+            width: 14px !important;
+            height: 14px !important;
+          }
+          .settings-menu-item .menu-item-label {
+            flex: 0 1 auto !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            white-space: nowrap !important;
+          }
+          .dirty-dot {
+            width: 6px !important;
+            height: 6px !important;
+            margin-left: -2px !important;
+          }
+
+          /* D. Section Cards */
+          .settings-card {
+            border-radius: 14px !important;
+            border: 1px solid #E8E2D4 !important;
+            box-shadow: 0 1px 3px rgba(43, 45, 42, 0.04) !important;
+            overflow: visible !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            background-color: #FFFFFF !important;
+          }
+          .settings-card-header {
+            padding: 14px 14px 10px 14px !important;
+            border-bottom: 1px solid #E8E2D4 !important;
+            gap: 4px !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+          }
+          .settings-card-title {
+            font-size: 17px !important;
+            line-height: 1.25 !important;
+            margin: 0 0 3px 0 !important;
+            color: #2B2D2A !important;
+          }
+          .settings-card-desc {
+            font-size: 12px !important;
+            line-height: 1.5 !important;
+            color: #5A584F !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            word-wrap: break-word !important;
+          }
+          .settings-card-body {
+            padding: 14px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow: visible !important;
+          }
+
+          /* E. Form Fields: Single-column on mobile to prevent field squeeze and overflow */
+          .settings-form-grid {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+            gap: 14px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .form-group,
+          .form-group.mobile-full,
+          .form-group.span-full,
+          .settings-form-grid > * {
+            grid-column: 1 / -1 !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 2px !important;
+          }
+          .form-label {
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            line-height: 1.3 !important;
+            margin-bottom: 4px !important;
+            color: #2B2D2A !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            display: block !important;
+            word-wrap: break-word !important;
+          }
+          .req {
+            font-size: 12px !important;
+            color: #B42318 !important;
+            font-weight: 700 !important;
+          }
+          .form-hint {
+            font-size: 11.5px !important;
+            line-height: 1.4 !important;
+            color: #5A584F !important;
+            margin-top: 4px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            display: block !important;
+            box-sizing: border-box !important;
+            word-wrap: break-word !important;
+          }
+          .form-error {
+            font-size: 11.5px !important;
+            line-height: 1.4 !important;
+            color: #B42318 !important;
+            margin-top: 4px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            display: block !important;
+            box-sizing: border-box !important;
+            word-wrap: break-word !important;
+          }
+          .settings-card input,
+          .settings-card select,
+          .settings-card textarea,
+          .settings-card :global(.v-password-wrapper),
+          .settings-card :global(.v-password-input),
+          .settings-card :global(.v-password-wrapper input) {
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .settings-card input,
+          .settings-card select,
+          .settings-card :global(.v-password-input),
+          .settings-card :global(.v-password-wrapper input) {
+            height: 42px !important;
+            min-height: 42px !important;
+            font-size: 16px !important;
+            padding: 0 12px !important;
+            border-radius: 10px !important;
+            border: 1px solid #E8E2D4 !important;
+            background-color: #FFFFFF !important;
+            color: #2B2D2A !important;
+            text-overflow: ellipsis !important;
+            font-family: var(--font-body), "Inter", sans-serif !important;
+          }
+          .settings-card :global(.v-password-input) {
+            padding-right: 42px !important;
+          }
+          .settings-card :global(.v-password-toggle-btn) {
+            min-width: 36px !important;
+            min-height: 36px !important;
+            width: 36px !important;
+            height: 36px !important;
+            right: 4px !important;
+          }
+          .settings-card select,
+          .form-select {
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            font-size: 16px !important;
+            padding-left: 12px !important;
+            padding-right: 32px !important;
+            border-radius: 10px !important;
+            border: 1px solid #E8E2D4 !important;
+            background-color: #FFFFFF !important;
+            background-position: right 12px center !important;
+            background-size: 16px 16px !important;
+            color: #2B2D2A !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            font-family: var(--font-body), "Inter", sans-serif !important;
+          }
+          .settings-card textarea {
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            min-height: 96px !important;
+            height: auto !important;
+            font-size: 16px !important;
+            padding: 10px 12px !important;
+            border-radius: 10px !important;
+            border: 1px solid #E8E2D4 !important;
+            background-color: #FFFFFF !important;
+            box-sizing: border-box !important;
+            color: #2B2D2A !important;
+            line-height: 1.4 !important;
+            resize: vertical !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            font-family: var(--font-body), "Inter", sans-serif !important;
+          }
+
+          /* F. Studio Logo & Branding */
+          .branding-logo-row {
+            gap: 12px !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .branding-logo-box {
+            width: 72px !important;
+            height: 72px !important;
+            min-width: 72px !important;
+            min-height: 72px !important;
+            border-radius: 12px !important;
+            font-size: 28px !important;
+            flex-shrink: 0 !important;
+          }
+          .branding-logo-content {
+            min-width: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: 1 1 auto !important;
+            gap: 3px !important;
+            box-sizing: border-box !important;
+          }
+          .branding-watermark-title {
+            font-size: 13px !important;
+            line-height: 1.3 !important;
+            width: 100% !important;
+            word-wrap: break-word !important;
+          }
+          .branding-hint {
+            font-size: 11.5px !important;
+            line-height: 1.35 !important;
+            width: 100% !important;
+            word-wrap: break-word !important;
+          }
+          .branding-btn-wrap {
+            margin-top: 6px !important;
+            width: 100% !important;
+          }
+          .btn-upload-logo {
+            height: 36px !important;
+            font-size: 12px !important;
+            padding: 0 14px !important;
+            border-radius: 9px !important;
+            width: auto !important;
+          }
+
+          /* G. Action Buttons (Save changes / Cancel) */
+          .settings-card-footer,
+          .settings-save-bar {
+            padding: 12px 14px !important;
+            border-top: 1px solid #E8E2D4 !important;
+            display: flex !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .footer-actions {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            flex-direction: row !important;
+          }
+          .footer-actions > button:only-child,
+          .footer-actions:has(> button:only-child) {
+            grid-template-columns: 1fr !important;
+            grid-column: 1 / -1 !important;
+          }
+          .btn-ghost-cancel {
+            height: 42px !important;
+            font-size: 13px !important;
+            border-radius: 10px !important;
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #5A584F !important;
+            width: 100% !important;
+            justify-content: center !important;
+          }
+          .btn-ghost-cancel:disabled {
+            background-color: #FAF9F7 !important;
+            border-color: #E8E2D4 !important;
+            color: #8A877D !important;
+            opacity: 0.55 !important;
+          }
+          .btn-primary-gold {
+            height: 42px !important;
+            font-size: 13px !important;
+            border-radius: 10px !important;
+            background-color: #8A6B2E !important;
+            color: #FFFFFF !important;
+            width: 100% !important;
+            justify-content: center !important;
+          }
+          .btn-primary-gold:hover {
+            background-color: #6E5420 !important;
+          }
+
+          /* Mobile Sticky Bottom Bar (when dirty) */
+          .mobile-sticky-action-bar {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            padding: 10px 16px !important;
+            background: rgba(255, 255, 255, 0.98) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border-top: 1px solid #E8E2D4 !important;
+            box-shadow: 0 -4px 16px rgba(43, 45, 42, 0.08) !important;
+            z-index: 50 !important;
+          }
+          .mobile-sticky-action-bar .btn-ghost-cancel,
+          .mobile-sticky-action-bar .btn-primary-gold {
+            height: 42px !important;
+            font-size: 13px !important;
+          }
+
+          /* Verification Tab */
+          .verif-banner-row {
+            gap: 12px !important;
+          }
+          .verif-banner-row > div:first-child {
+            gap: 12px !important;
+          }
+          .verif-shield-box {
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            border-radius: 12px !important;
+          }
+          .verif-shield-box :global(svg) {
+            width: 24px !important;
+            height: 24px !important;
+          }
+          .verif-status-heading {
+            font-size: 16px !important;
+          }
+          .verif-status-badge {
+            font-size: 10.5px !important;
+            padding: 3px 8px !important;
+            border-radius: 6px !important;
+          }
+          .verif-status-desc {
+            font-size: 12px !important;
+            margin: 4px 0 0 0 !important;
+          }
+          .doc-row {
+            padding: 10px 0 !important;
+            gap: 10px !important;
+            min-height: 40px !important;
+            flex-wrap: nowrap !important;
+          }
+          .doc-icon-box {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            border-radius: 8px !important;
+          }
+          .doc-icon-box :global(svg) {
+            width: 16px !important;
+            height: 16px !important;
+          }
+          .doc-row strong {
+            font-size: 12.5px !important;
+            line-height: 1.3 !important;
+          }
+          .doc-row span {
+            font-size: 11px !important;
+          }
+          .status-chip-active {
+            font-size: 10px !important;
+            padding: 2px 7px !important;
+            border-radius: 6px !important;
+          }
+          .btn-replace-doc {
+            height: 32px !important;
+            font-size: 11.5px !important;
+            padding: 0 10px !important;
+            border-radius: 8px !important;
+          }
+
+          /* Security Tab */
+          .security-tab-grid {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+            width: 100% !important;
+          }
+          .password-checklist-box {
+            padding: 10px 12px !important;
+            border-radius: 8px !important;
+            gap: 6px !important;
+          }
+          .password-checklist-box span:first-child {
+            font-size: 12px !important;
+          }
+          .password-checklist-grid {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 6px !important;
+            font-size: 11.5px !important;
+          }
+          .password-checklist-grid span {
+            font-size: 11.5px !important;
+            gap: 4px !important;
+          }
+          .password-checklist-grid span :global(svg) {
+            width: 12px !important;
+            height: 12px !important;
+          }
+          .session-row {
+            padding: 10px 0 !important;
+            gap: 10px !important;
+            flex-wrap: nowrap !important;
+          }
+          .session-icon-box {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            border-radius: 8px !important;
+          }
+          .session-icon-box :global(svg) {
+            width: 16px !important;
+            height: 16px !important;
+          }
+          .session-row strong {
+            font-size: 12.5px !important;
+          }
+          .session-row span {
+            font-size: 11px !important;
+          }
+          .session-current-chip {
+            font-size: 9.5px !important;
+            padding: 2px 6px !important;
+            border-radius: 5px !important;
+          }
+          .btn-signout-session {
+            height: 32px !important;
+            font-size: 11.5px !important;
+            padding: 0 10px !important;
+            border-radius: 8px !important;
+          }
+
+          /* Notification Channels Tab */
+          .notif-channels-list {
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+          }
+          .channel-row {
+            padding: 10px 0 !important;
+            gap: 12px !important;
+            min-height: 44px !important;
+            align-items: center !important;
+          }
+          .channel-icon-box {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            border-radius: 8px !important;
+          }
+          .channel-icon-box :global(svg) {
+            width: 16px !important;
+            height: 16px !important;
+          }
+          .channel-title {
+            font-size: 13px !important;
+            margin-bottom: 2px !important;
+            line-height: 1.3 !important;
+          }
+          .channel-desc {
+            font-size: 11.5px !important;
+            line-height: 1.4 !important;
+          }
+          .notif-toggle-btn {
+            width: 40px !important;
+            height: 22px !important;
+            min-width: 40px !important;
+            border-radius: 11px !important;
+            padding: 2px !important;
+          }
+          .notif-toggle-knob {
+            width: 18px !important;
+            height: 18px !important;
+          }
+
+          /* Notice banner */
+          .settings-card-body > div[style*="marginTop: 24px"] {
+            margin-top: 14px !important;
+            padding: 10px 12px !important;
+            border-radius: 10px !important;
+            font-size: 11.5px !important;
+            gap: 8px !important;
+          }
+
+          /* H. Unsaved Modal */
+          .unsaved-modal-overlay {
+            padding: 16px !important;
+          }
+          .unsaved-modal-box {
+            padding: 18px 16px !important;
+            border-radius: 14px !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            gap: 12px !important;
+          }
+          .unsaved-modal-box h3 {
+            font-size: 16px !important;
+          }
+          .unsaved-modal-box p {
+            font-size: 13px !important;
+          }
+          .unsaved-modal-box button {
+            height: 42px !important;
+            font-size: 13px !important;
+            padding: 0 14px !important;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .settings-page-wrapper {
+            padding: 12px !important;
+          }
+          .settings-card {
+            border-radius: 12px !important;
+          }
+          .settings-card-header {
+            padding: 12px 12px 8px 12px !important;
+          }
+          .settings-card-body {
+            padding: 12px !important;
+          }
+          .settings-card-footer,
+          .settings-save-bar {
+            padding: 10px 12px !important;
+          }
+          .branding-logo-box {
+            width: 64px !important;
+            height: 64px !important;
+            min-width: 64px !important;
+            min-height: 64px !important;
+            font-size: 24px !important;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .settings-menu-track {
+            gap: 4px !important;
+          }
+          .settings-menu-item {
+            font-size: 10.5px !important;
+            padding: 0 7px !important;
+            height: 30px !important;
+            gap: 4px !important;
+          }
+          .settings-menu-item .menu-item-icon-wrap {
+            width: 13px !important;
+            height: 13px !important;
+          }
+          .settings-menu-item .menu-item-icon-wrap :global(svg) {
+            width: 13px !important;
+            height: 13px !important;
           }
         }
       `}</style>

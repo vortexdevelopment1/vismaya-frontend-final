@@ -116,3 +116,62 @@
   line-height: 24px;
   margin: 0;
 }
+
+/* ==========================================================================
+   Mobile Responsive Adjustments (<=640px)
+   - Reduced header margins and scaled heading
+   - Compact cards with 16px padding and 12px inner gap
+   ========================================================================== */
+@media (max-width: 640px) {
+  .portals-header-wrap {
+    margin-bottom: 20px !important;
+  }
+
+  .portals-heading {
+    font-size: 26px !important;
+    line-height: 1.18 !important;
+    margin-bottom: 8px !important;
+  }
+
+  .portals-subtext {
+    font-size: 14px !important;
+    line-height: 1.55 !important;
+  }
+
+  .portals-grid {
+    gap: 14px !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .portal-card {
+    padding: 16px !important;
+    gap: 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .portal-card-top {
+    gap: 10px !important;
+  }
+
+  .portal-icon-box {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 8px !important;
+  }
+
+  .portal-title {
+    font-size: 20px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .portal-subtitle {
+    font-size: 12px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .portal-description {
+    font-size: 13.5px !important;
+    line-height: 1.5 !important;
+  }
+}
+

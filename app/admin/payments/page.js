@@ -341,15 +341,123 @@ export default function AdminPaymentsPage() {
     },
   ];
 
+  // Mobile Card Renderers
+  const renderPaymentMobileCard = (row) => (
+    <div className="admin-payment-mobile-card">
+      <div className="admin-payment-card-top">
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div className="admin-payment-amount">
+            ₹{(row.grossAmount || 0).toLocaleString()}
+          </div>
+          <div className="admin-payment-project">
+            {row.projectTitle}
+          </div>
+        </div>
+        <StatusBadge status={row.status} size="xs" />
+      </div>
+
+      <div className="admin-payment-meta-line">
+        <span className="admin-payment-meta-label">Payer:</span> {row.payerName} ({row.payer})
+      </div>
+
+      <div className="admin-payment-details-grid">
+        <div className="admin-payment-detail-item">
+          <span className="admin-payment-detail-label">Commission ({row.commissionPercent || 15}%)</span>
+          <span className="admin-payment-detail-val" style={{ color: "#8A6B2E" }}>
+            ₹{(row.commissionAmount || 0).toLocaleString()}
+          </span>
+        </div>
+        <div className="admin-payment-detail-item">
+          <span className="admin-payment-detail-label">Talent Payout</span>
+          <span className="admin-payment-detail-val">
+            ₹{(row.talentPayout || 0).toLocaleString()}
+          </span>
+        </div>
+        <div className="admin-payment-detail-item">
+          <span className="admin-payment-detail-label">Date & Mode</span>
+          <span className="admin-payment-detail-val">
+            {row.paymentDate} • {row.paymentMode}
+          </span>
+        </div>
+        <div className="admin-payment-detail-item">
+          <span className="admin-payment-detail-label">Reference</span>
+          <span className="admin-payment-detail-val admin-payment-mono" title={row.referenceNote}>
+            {row.referenceNote || "—"}
+          </span>
+        </div>
+      </div>
+
+      <div className="admin-payment-card-actions">
+        <button
+          onClick={() => handleOpenEdit(row)}
+          className="admin-payment-action-btn"
+        >
+          <Edit size={14} /> Edit Entry
+        </button>
+        <button
+          onClick={() => setDeleteConfirmId(row.id)}
+          className="admin-payment-delete-btn"
+        >
+          <Trash2 size={14} /> Delete
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderSubscriptionMobileCard = (row) => (
+    <div className="admin-payment-mobile-card">
+      <div className="admin-payment-card-top">
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div className="admin-sub-name">{row.name}</div>
+          <div className="admin-sub-type">Type: {row.userType}</div>
+        </div>
+        <StatusBadge status={row.status} size="xs" />
+      </div>
+
+      <div className="admin-payment-details-grid">
+        <div className="admin-payment-detail-item">
+          <span className="admin-payment-detail-label">Membership Plan</span>
+          <span className="admin-sub-plan-pill">{row.plan}</span>
+        </div>
+        <div className="admin-payment-detail-item">
+          <span className="admin-payment-detail-label">Fee</span>
+          <span className="admin-payment-detail-val">{row.amount}</span>
+        </div>
+        <div className="admin-payment-detail-item" style={{ gridColumn: "span 2" }}>
+          <span className="admin-payment-detail-label">Expiry Date</span>
+          <span className="admin-payment-detail-val">{row.expiryDate}</span>
+        </div>
+      </div>
+
+      <div className="admin-payment-card-actions">
+        {row.status !== "Paid" ? (
+          <button
+            onClick={() => updateSubscriptionStatus(row.id, "Paid")}
+            className="admin-sub-action-btn admin-sub-paid-btn"
+          >
+            Mark Paid
+          </button>
+        ) : (
+          <button
+            onClick={() => updateSubscriptionStatus(row.id, "Due")}
+            className="admin-sub-action-btn admin-sub-due-btn"
+          >
+            Set Due
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "28px" }} className="admin-payments-container">
       {/* Page Header */}
       <PageHeader
         title="Escrow & Financial Ledger"
         subtitle="Manual financial ledger for logging recruiter client retainers, commission splits, talent bank payouts, and platform subscriptions."
         badge="Manual Accounting Ledger"
         action={
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <div className="admin-payments-header-actions" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <button
               onClick={handleExportCSV}
               style={{
@@ -403,6 +511,7 @@ export default function AdminPaymentsPage() {
 
       {/* 4 Financial Stat Cards - Numbers all charcoal/gold-brown */}
       <div
+        className="admin-stat-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
@@ -447,6 +556,7 @@ export default function AdminPaymentsPage() {
       {/* Two-Level Tabs: Top level segmented control */}
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div
+          className="admin-payments-section-tabs"
           style={{
             display: "inline-flex",
             backgroundColor: "#F3EFE6",
@@ -515,6 +625,7 @@ export default function AdminPaymentsPage() {
               pageSize={6}
               emptyTitle="No payment records found"
               emptyDescription="There are no payment entries matching the selected status filter."
+              renderMobileCard={renderPaymentMobileCard}
             />
           </div>
         )}
@@ -531,6 +642,7 @@ export default function AdminPaymentsPage() {
               pageSize={6}
               emptyTitle="No subscription records found"
               emptyDescription="No subscriptions listed."
+              renderMobileCard={renderSubscriptionMobileCard}
             />
           </div>
         )}
@@ -552,6 +664,7 @@ export default function AdminPaymentsPage() {
       {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
         <div
+          className="admin-delete-modal-overlay"
           style={{
             position: "fixed",
             inset: 0,
@@ -566,6 +679,7 @@ export default function AdminPaymentsPage() {
           }}
         >
           <div
+            className="admin-delete-modal-content"
             style={{
               backgroundColor: "#FFFFFF",
               border: "1px solid #E8E2D4",
@@ -603,7 +717,7 @@ export default function AdminPaymentsPage() {
               </div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+            <div className="admin-delete-modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
               <button
                 onClick={() => setDeleteConfirmId(null)}
                 style={{
@@ -655,6 +769,221 @@ export default function AdminPaymentsPage() {
         }
         .add-entry-btn:hover {
           background-color: #6E5420 !important;
+        }
+
+        @media (max-width: 640px) {
+          .admin-payments-container {
+            gap: 16px !important;
+          }
+          .admin-payments-header-actions {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            width: 100% !important;
+            gap: 8px !important;
+          }
+          .admin-payments-header-actions button {
+            width: 100% !important;
+            justify-content: center !important;
+            font-size: 12.5px !important;
+            padding: 0 10px !important;
+            height: 40px !important;
+          }
+          .admin-payments-section-tabs {
+            width: 100% !important;
+            display: flex !important;
+          }
+          .admin-payments-section-tabs button {
+            flex: 1 1 50% !important;
+            padding: 8px 6px !important;
+            font-size: 11.5px !important;
+            text-align: center !important;
+            white-space: normal !important;
+            line-height: 1.25 !important;
+            min-height: 38px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+
+          /* Mobile Cards for Ledger */
+          .admin-payment-mobile-card {
+            background: #FFFFFF;
+            border: 1px solid #E8E2D4;
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 4px 14px rgba(43, 45, 42, 0.04);
+            box-sizing: border-box;
+            width: 100%;
+          }
+          .admin-payment-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+          }
+          .admin-payment-amount {
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: "#2B2D2A";
+            line-height: 1.2;
+          }
+          .admin-payment-project {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #2B2D2A;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .admin-payment-meta-line {
+            font-size: 12px;
+            color: #5A584F;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .admin-payment-meta-label {
+            font-weight: 600;
+            color: #2B2D2A;
+          }
+          .admin-payment-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: #FAF9F7;
+            border: 1px solid #E8E2D4;
+            border-radius: 10px;
+            padding: 10px;
+          }
+          .admin-payment-detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+          }
+          .admin-payment-detail-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #5A584F;
+            font-weight: 600;
+          }
+          .admin-payment-detail-val {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #2B2D2A;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .admin-payment-mono {
+            font-family: monospace;
+            font-size: 11.5px;
+          }
+          .admin-payment-card-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 2px;
+          }
+          .admin-payment-action-btn {
+            height: 36px;
+            border-radius: 8px;
+            background-color: #FFFFFF;
+            border: 1px solid #E8E2D4;
+            color: #8A6B2E;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+          }
+          .admin-payment-delete-btn {
+            height: 36px;
+            border-radius: 8px;
+            background-color: #FFFFFF;
+            border: 1px solid rgba(180, 35, 24, 0.35);
+            color: #B42318;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+          }
+
+          /* Subscriptions Mobile Card */
+          .admin-sub-name {
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: #2B2D2A;
+            line-height: 1.2;
+          }
+          .admin-sub-type {
+            font-size: 12px;
+            color: #5A584F;
+            margin-top: 2px;
+          }
+          .admin-sub-plan-pill {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            color: #6E5420;
+            background: rgba(201, 165, 92, 0.16);
+            border: 1px solid rgba(201, 165, 92, 0.25);
+            padding: 2px 8px;
+            border-radius: 999px;
+            width: fit-content;
+          }
+          .admin-sub-action-btn {
+            grid-column: span 2;
+            height: 36px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+          }
+          .admin-sub-paid-btn {
+            background-color: #8A6B2E;
+            color: #FFFFFF;
+            border: 1px solid #8A6B2E;
+          }
+          .admin-sub-due-btn {
+            background-color: #FFFFFF;
+            color: #8A6B2E;
+            border: 1px solid #8A6B2E;
+          }
+
+          /* Delete Modal */
+          .admin-delete-modal-overlay {
+            padding: 16px !important;
+            align-items: flex-end !important;
+          }
+          .admin-delete-modal-content {
+            border-radius: 16px 16px 0 0 !important;
+            padding: 20px 16px !important;
+            max-width: 100vw !important;
+          }
+          .admin-delete-modal-footer {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 10px !important;
+          }
+          .admin-delete-modal-footer button {
+            width: 100% !important;
+            height: 42px !important;
+            font-size: 13px !important;
+          }
         }
       `}</style>
     </div>

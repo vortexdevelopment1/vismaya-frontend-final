@@ -41,6 +41,7 @@ export default function StatCard({
     >
       {/* Top Row: Label left (truncated/nowrap), 44px Icon box right (flex-shrink 0) */}
       <div
+        className="stat-card-header"
         style={{
           display: "flex",
           alignItems: "center",
@@ -51,6 +52,7 @@ export default function StatCard({
       >
         <span
           title={title}
+          className="stat-card-label"
           style={{
             fontSize: "12px",
             fontWeight: "600",
@@ -69,6 +71,7 @@ export default function StatCard({
         </span>
 
         <div
+          className="stat-card-icon-box"
           style={{
             width: "44px",
             height: "44px",
@@ -87,8 +90,9 @@ export default function StatCard({
       </div>
 
       {/* Number Row */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+      <div className="stat-card-num-row" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
         <span
+          className="stat-card-number"
           style={{
             fontSize: numFontSize,
             lineHeight: numLineHeight,
@@ -106,6 +110,7 @@ export default function StatCard({
         {/* Trend Chip: ALWAYS positioned right under the number */}
         {change && (
           <span
+            className="stat-card-trend"
             style={{
               marginTop: "8px",
               display: "inline-flex",
@@ -137,6 +142,7 @@ export default function StatCard({
       {description && (
         <span
           title={description}
+          className="stat-card-desc"
           style={{
             fontSize: "14px",
             color: "#5A584F",
@@ -153,6 +159,72 @@ export default function StatCard({
           {description}
         </span>
       )}
+
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .stat-card-consistent {
+            padding: 12px !important;
+            border-radius: 14px !important;
+            height: 100% !important;
+          }
+          .stat-card-header {
+            margin-bottom: 6px !important;
+            gap: 6px !important;
+            align-items: flex-start !important;
+          }
+          .stat-card-label {
+            font-size: 10px !important;
+            letter-spacing: 0.08em !important;
+            line-height: 1.25 !important;
+            white-space: normal !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+          .stat-card-icon-box {
+            width: 28px !important;
+            height: 28px !important;
+            min-width: 28px !important;
+            min-height: 28px !important;
+            border-radius: 8px !important;
+            flex-shrink: 0 !important;
+          }
+          .stat-card-icon-box :global(svg) {
+            width: 14px !important;
+            height: 14px !important;
+          }
+          .stat-card-number {
+            font-size: 26px !important;
+            line-height: 28px !important;
+          }
+          .stat-card-trend {
+            font-size: 10px !important;
+            padding: 2px 7px !important;
+            margin-top: 4px !important;
+            white-space: nowrap !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            display: inline-flex !important;
+            align-items: center !important;
+          }
+          .stat-card-trend :global(svg) {
+            width: 10px !important;
+            height: 10px !important;
+          }
+          .stat-card-desc {
+            font-size: 11.5px !important;
+            line-height: 1.35 !important;
+            padding-top: 6px !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -82,7 +82,7 @@ export default function ApplicationCard({ application }) {
   return (
     <>
       <div
-        className="card-surface"
+        className="card-surface app-card-root"
         style={{
           padding: "clamp(16px, 3vw, 26px)",
           display: "flex",
@@ -99,6 +99,7 @@ export default function ApplicationCard({ application }) {
         {/* Highlight Strip for Shortlisted / Selected */}
         {(isShortlisted || isSelected) && (
           <div
+            className="app-card-highlight-strip"
             style={{
               position: "absolute",
               top: 0,
@@ -112,6 +113,7 @@ export default function ApplicationCard({ application }) {
 
         {/* Card Header */}
         <div
+          className="app-card-header"
           style={{
             display: "flex",
             alignItems: "flex-start",
@@ -120,9 +122,10 @@ export default function ApplicationCard({ application }) {
             gap: "12px",
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: 0, flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+          <div className="app-card-header-left" style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: 0, flex: 1 }}>
+            <div className="app-card-meta-row-1" style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
               <span
+                className="app-card-type-pill"
                 style={{
                   fontSize: "11px",
                   fontWeight: "700",
@@ -137,12 +140,13 @@ export default function ApplicationCard({ application }) {
               >
                 {opportunity?.opportunityType || "Opportunity"}
               </span>
-              <span style={{ fontSize: "12px", color: "var(--text-muted, #777970)" }}>
+              <span className="app-card-ref" style={{ fontSize: "12px", color: "var(--text-muted, #777970)" }}>
                 Ref: #{application.id}
               </span>
             </div>
 
             <h3
+              className="app-card-title"
               style={{
                 fontFamily: "var(--font-heading), Georgia, serif",
                 fontSize: "clamp(18px, 3.5vw, 20px)",
@@ -155,13 +159,13 @@ export default function ApplicationCard({ application }) {
               {opportunity?.title || application.roleApplied}
             </h3>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", fontSize: "13px", color: "var(--text-secondary, #5A5C53)" }}>
-              <span>
+            <div className="app-card-role-project" style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", fontSize: "13px", color: "var(--text-secondary, #5A5C53)" }}>
+              <span className="app-card-role">
                 Role: <strong style={{ color: "var(--text-primary, #292C29)" }}>{application.roleApplied}</strong>
               </span>
               {project && (
-                <span>
-                  &bull; Project: <strong style={{ color: "var(--gold, #9B7A3F)" }}>{project.title}</strong>
+                <span className="app-card-project">
+                  <span className="app-card-bullet">&bull; </span>Project: <strong style={{ color: "var(--gold, #9B7A3F)" }}>{project.title}</strong>
                 </span>
               )}
             </div>
@@ -169,7 +173,7 @@ export default function ApplicationCard({ application }) {
 
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px" }} className="app-header-badge">
             <StatusBadge status={application.status} size="md" />
-            <span style={{ fontSize: "12px", color: "var(--text-muted, #777970)" }}>
+            <span className="app-card-applied-date" style={{ fontSize: "12px", color: "var(--text-muted, #777970)" }}>
               Applied {new Date(application.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
             </span>
           </div>
@@ -178,6 +182,7 @@ export default function ApplicationCard({ application }) {
         {/* Selected Highlight */}
         {isSelected && (
           <div
+            className="app-status-box app-status-selected"
             style={{
               backgroundColor: "var(--bg-alt, #F0EEE7)",
               border: "1px solid var(--border-color, #E4E1D9)",
@@ -188,12 +193,12 @@ export default function ApplicationCard({ application }) {
               gap: "14px",
             }}
           >
-            <Trophy size={24} style={{ color: "var(--gold, #9B7A3F)", flexShrink: 0 }} />
+            <Trophy size={24} className="app-status-icon" style={{ color: "var(--gold, #9B7A3F)", flexShrink: 0 }} />
             <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-              <span style={{ fontSize: "13px", fontWeight: "700", color: "var(--text-primary, #292C29)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              <span className="app-status-title" style={{ fontSize: "13px", fontWeight: "700", color: "var(--text-primary, #292C29)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                 Congratulations! You are Selected
               </span>
-              <span style={{ fontSize: "13px", color: "var(--text-secondary, #5A5C53)", lineHeight: 1.4, overflowWrap: "anywhere" }}>
+              <span className="app-status-text" style={{ fontSize: "13px", color: "var(--text-secondary, #5A5C53)", lineHeight: 1.4, overflowWrap: "anywhere" }}>
                 The organization has officially confirmed your selection for <strong>{application.roleApplied}</strong>. Vismaya casting desk will assist with production onboarding.
               </span>
             </div>
@@ -203,6 +208,7 @@ export default function ApplicationCard({ application }) {
         {/* Shortlisted Highlight */}
         {isShortlisted && (
           <div
+            className="app-status-box app-status-shortlisted"
             style={{
               backgroundColor: "var(--bg-alt, #F0EEE7)",
               border: "1px solid var(--border-color, #E4E1D9)",
@@ -213,8 +219,8 @@ export default function ApplicationCard({ application }) {
               gap: "12px",
             }}
           >
-            <Sparkles size={20} style={{ color: "var(--gold, #9B7A3F)", flexShrink: 0 }} />
-            <span style={{ fontSize: "13px", color: "var(--text-primary, #292C29)", fontWeight: "500", lineHeight: 1.4, overflowWrap: "anywhere" }}>
+            <Sparkles size={20} className="app-status-icon" style={{ color: "var(--gold, #9B7A3F)", flexShrink: 0 }} />
+            <span className="app-status-text" style={{ fontSize: "13px", color: "var(--text-primary, #292C29)", fontWeight: "500", lineHeight: 1.4, overflowWrap: "anywhere" }}>
               Your profile has been shortlisted! Look out for audition and self-tape instructions in your Auditions tab.
             </span>
           </div>
@@ -223,6 +229,7 @@ export default function ApplicationCard({ application }) {
         {/* 4-Stage Visual Progress Tracker */}
         {!isNotSelected && !isWithdrawn ? (
           <div
+            className="app-stage-tracker-wrap"
             style={{
               backgroundColor: "var(--bg-alt, #F0EEE7)",
               padding: "clamp(12px, 2.5vw, 18px) clamp(12px, 3vw, 22px)",
@@ -327,17 +334,18 @@ export default function ApplicationCard({ application }) {
             <div className="talent-stepper-mobile">
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: "700", color: "var(--gold, #9B7A3F)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  <span className="app-stage-heading" style={{ fontSize: "11px", fontWeight: "700", color: "var(--gold, #9B7A3F)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     Stage {currentStage} of 4: {stages[currentStage - 1]?.label}
                   </span>
-                  <span style={{ fontSize: "11px", color: "var(--text-muted, #777970)" }}>
+                  <span className="app-stage-pct" style={{ fontSize: "11px", color: "var(--text-muted, #777970)" }}>
                     {Math.round((currentStage / 4) * 100)}% Complete
                   </span>
                 </div>
 
                 {/* Progress bar */}
-                <div style={{ width: "100%", height: "6px", backgroundColor: "var(--border-color, #E4E1D9)", borderRadius: "999px", overflow: "hidden" }}>
+                <div className="app-stage-bar-bg" style={{ width: "100%", height: "6px", backgroundColor: "var(--border-color, #E4E1D9)", borderRadius: "999px", overflow: "hidden" }}>
                   <div
+                    className="app-stage-bar-fill"
                     style={{
                       width: `${(currentStage / 4) * 100}%`,
                       height: "100%",
@@ -349,13 +357,14 @@ export default function ApplicationCard({ application }) {
                 </div>
 
                 {/* 4 stage indicators */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px", paddingTop: "4px" }}>
+                <div className="app-stage-steps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px", paddingTop: "4px" }}>
                   {stages.map((st) => {
                     const isPassed = currentStage >= st.number;
                     const isCurrent = currentStage === st.number;
                     return (
                       <div
                         key={st.number}
+                        className="app-stage-step"
                         style={{
                           display: "flex",
                           flexDirection: "column",
@@ -365,6 +374,7 @@ export default function ApplicationCard({ application }) {
                         }}
                       >
                         <div
+                          className="app-stage-circle"
                           style={{
                             width: "22px",
                             height: "22px",
@@ -383,6 +393,7 @@ export default function ApplicationCard({ application }) {
                           {isPassed ? "✓" : st.number}
                         </div>
                         <span
+                          className="app-stage-label"
                           style={{
                             fontSize: "10px",
                             fontWeight: isCurrent ? "700" : "500",
@@ -401,6 +412,7 @@ export default function ApplicationCard({ application }) {
           </div>
         ) : isWithdrawn ? (
           <div
+            className="app-status-box app-status-withdrawn"
             style={{
               backgroundColor: "var(--bg-alt, #F0EEE7)",
               border: "1px solid var(--border-color, #E4E1D9)",
@@ -413,14 +425,15 @@ export default function ApplicationCard({ application }) {
               gap: "12px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <RotateCcw size={18} style={{ color: "var(--text-muted, #777970)" }} />
-              <span style={{ fontSize: "13px", color: "var(--text-secondary, #5A5C53)" }}>
+            <div className="app-status-left" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <RotateCcw size={18} className="app-status-icon" style={{ color: "var(--text-muted, #777970)" }} />
+              <span className="app-status-text" style={{ fontSize: "13px", color: "var(--text-secondary, #5A5C53)" }}>
                 Application was withdrawn by artist.
               </span>
             </div>
             <Link
               href="/talent/opportunities"
+              className="app-status-link"
               style={{
                 fontSize: "12px",
                 color: "var(--gold, #9B7A3F)",
@@ -437,6 +450,7 @@ export default function ApplicationCard({ application }) {
           </div>
         ) : (
           <div
+            className="app-status-box app-status-rejected"
             style={{
               backgroundColor: "var(--bg-alt, #F0EEE7)",
               border: "1px solid var(--border-color, #E4E1D9)",
@@ -449,14 +463,15 @@ export default function ApplicationCard({ application }) {
               gap: "12px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <XCircle size={18} style={{ color: "var(--text-muted, #777970)" }} />
-              <span style={{ fontSize: "13px", color: "var(--text-primary, #292C29)" }}>
+            <div className="app-status-left" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <XCircle size={18} className="app-status-icon" style={{ color: "var(--text-muted, #777970)" }} />
+              <span className="app-status-text" style={{ fontSize: "13px", color: "var(--text-primary, #292C29)" }}>
                 Application not selected for this cycle.
               </span>
             </div>
             <Link
               href="/talent/opportunities"
+              className="app-status-link"
               style={{
                 fontSize: "12px",
                 color: "var(--gold, #9B7A3F)",
@@ -476,6 +491,7 @@ export default function ApplicationCard({ application }) {
         {/* Latest History Note */}
         {application.history && application.history.length > 0 && (
           <div
+            className="app-latest-note"
             style={{
               backgroundColor: "var(--bg-alt, #F0EEE7)",
               padding: "12px 16px",
@@ -493,6 +509,7 @@ export default function ApplicationCard({ application }) {
 
         {/* Bottom Actions */}
         <div
+          className="app-card-actions"
           style={{
             display: "flex",
             alignItems: "center",
@@ -502,7 +519,7 @@ export default function ApplicationCard({ application }) {
         >
           <button
             onClick={() => setShowDetails(true)}
-            className="btn-secondary btn-dash"
+            className="btn-secondary btn-dash app-timeline-btn"
             style={{ borderRadius: "4px" }}
           >
             <Eye size={14} />
@@ -522,7 +539,7 @@ export default function ApplicationCard({ application }) {
                 borderRadius: "4px",
                 transition: "all var(--transition)",
               }}
-              className="withdraw-btn-hover"
+              className="withdraw-btn-hover app-withdraw-btn"
             >
               Withdraw Application
             </button>
@@ -538,7 +555,7 @@ export default function ApplicationCard({ application }) {
         subtitle={`Role: ${application.roleApplied} • Ref #${application.id}`}
         maxWidth="600px"
         footer={
-          <button onClick={() => setShowDetails(false)} className="btn-secondary btn-dash">
+          <button onClick={() => setShowDetails(false)} className="btn-secondary btn-dash app-modal-btn">
             Close
           </button>
         }
@@ -646,17 +663,17 @@ export default function ApplicationCard({ application }) {
         subtitle="Confirm retraction of your profile submission."
         maxWidth="460px"
         footer={
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div className="app-modal-footer-actions" style={{ display: "flex", gap: "10px", width: "100%" }}>
             <button
               onClick={() => setShowWithdrawConfirm(false)}
-              className="btn-secondary btn-dash"
+              className="btn-secondary btn-dash app-modal-btn"
             >
               Keep Application
             </button>
             <button
               onClick={handleConfirmWithdraw}
               disabled={isSubmittingWithdraw}
-              className="btn-danger btn-dash"
+              className="btn-danger btn-dash app-modal-btn"
             >
               {isSubmittingWithdraw ? "Withdrawing..." : "Confirm Withdrawal"}
             </button>
@@ -697,6 +714,367 @@ export default function ApplicationCard({ application }) {
         .withdraw-btn-hover:hover {
           color: var(--status-red) !important;
           background-color: rgba(255, 107, 107, 0.12) !important;
+        }
+
+        @media (max-width: 640px) {
+          /* D. Application Card Root */
+          .app-card-root {
+            padding: 14px !important;
+            border-radius: 14px !important;
+            gap: 10px !important;
+            border: 1px solid #E8E2D4 !important;
+            background-color: #FFFFFF !important;
+            box-shadow: 0 2px 8px rgba(43, 45, 42, 0.04) !important;
+          }
+          .app-card-highlight-strip {
+            height: 3px !important;
+            background: #8A6B2E !important;
+          }
+
+          /* Card Header Grid Reorganization */
+          .app-card-header {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto !important;
+            row-gap: 5px !important;
+            column-gap: 10px !important;
+            align-items: center !important;
+            width: 100% !important;
+          }
+          .app-card-header-left {
+            display: contents !important;
+          }
+          .app-card-meta-row-1 {
+            display: contents !important;
+          }
+          .app-header-badge {
+            display: contents !important;
+          }
+
+          /* Header Row 1: Type Pill on Left, Status Pill on Right */
+          .app-card-type-pill {
+            grid-row: 1 !important;
+            grid-column: 1 !important;
+            justify-self: start !important;
+            height: 24px !important;
+            min-height: 24px !important;
+            line-height: 22px !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            padding: 0 8px !important;
+            border-radius: 4px !important;
+            background-color: #F3EFE6 !important;
+            color: #8A6B2E !important;
+            border: 1px solid #E8E2D4 !important;
+            white-space: nowrap !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.06em !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .app-header-badge :global(.status-badge) {
+            grid-row: 1 !important;
+            grid-column: 2 !important;
+            justify-self: end !important;
+            height: 24px !important;
+            min-height: 24px !important;
+            font-size: 10px !important;
+            padding: 0 8px !important;
+            white-space: nowrap !important;
+            line-height: 1 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+          }
+
+          /* Header Row 2: Ref on Left, Applied Date on Right */
+          .app-card-ref {
+            grid-row: 2 !important;
+            grid-column: 1 !important;
+            justify-self: start !important;
+            font-size: 11px !important;
+            color: #5A584F !important;
+            white-space: nowrap !important;
+            line-height: 1.2 !important;
+          }
+          .app-card-applied-date {
+            grid-row: 2 !important;
+            grid-column: 2 !important;
+            justify-self: end !important;
+            font-size: 11px !important;
+            color: #5A584F !important;
+            white-space: nowrap !important;
+            line-height: 1.2 !important;
+          }
+
+          /* Header Row 3: Title (Playfair, ~17px, max 2 lines ellipsis) */
+          .app-card-title {
+            grid-row: 3 !important;
+            grid-column: 1 / -1 !important;
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif !important;
+            font-size: 17px !important;
+            line-height: 1.25 !important;
+            font-weight: 500 !important;
+            color: #2B2D2A !important;
+            margin: 3px 0 0 0 !important;
+            text-align: left !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            word-break: normal !important;
+            overflow-wrap: break-word !important;
+          }
+
+          /* Header Row 4: Role & Project (2 compact lines, ~12.5px, line-height 1.4, margin 2px) */
+          .app-card-role-project {
+            grid-row: 4 !important;
+            grid-column: 1 / -1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 2px !important;
+            margin-top: 2px !important;
+            font-size: 12.5px !important;
+            line-height: 1.4 !important;
+            color: #5A584F !important;
+          }
+          .app-card-role,
+          .app-card-project {
+            display: block !important;
+            font-size: 12.5px !important;
+            line-height: 1.4 !important;
+            color: #5A584F !important;
+            margin: 0 !important;
+          }
+          .app-card-role strong {
+            color: #2B2D2A !important;
+          }
+          .app-card-project strong {
+            color: #8A6B2E !important;
+          }
+          .app-card-bullet {
+            display: none !important;
+          }
+
+          /* Status message box */
+          .app-status-box {
+            padding: 10px 12px !important;
+            border-radius: 8px !important;
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+            display: flex !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+          }
+          .app-status-box :global(.app-status-icon) {
+            width: 18px !important;
+            height: 18px !important;
+            min-width: 18px !important;
+            margin-top: 1px !important;
+            align-self: flex-start !important;
+            color: #8A6B2E !important;
+            flex-shrink: 0 !important;
+          }
+          .app-status-box .app-status-title {
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            color: #2B2D2A !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.04em !important;
+          }
+          .app-status-box .app-status-text {
+            font-size: 12.5px !important;
+            line-height: 1.4 !important;
+            color: #2B2D2A !important;
+          }
+          .app-status-withdrawn,
+          .app-status-rejected {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 6px !important;
+          }
+          .app-status-left {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+          .app-status-box :global(.app-status-link) {
+            font-size: 12px !important;
+            color: #8A6B2E !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            padding-left: 26px !important;
+          }
+
+          /* Stage Tracker */
+          .talent-stepper-desktop {
+            display: none !important;
+          }
+          .talent-stepper-mobile {
+            display: block !important;
+          }
+          .app-stage-tracker-wrap {
+            padding: 10px 12px !important;
+            border-radius: 8px !important;
+            background-color: #F3EFE6 !important;
+            border: 1px solid #E8E2D4 !important;
+          }
+          .app-stage-heading {
+            font-size: 10.5px !important;
+            font-weight: 700 !important;
+            color: #8A6B2E !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.06em !important;
+          }
+          .app-stage-pct {
+            font-size: 10.5px !important;
+            color: #5A584F !important;
+            font-weight: 500 !important;
+          }
+          .app-stage-bar-bg {
+            height: 6px !important;
+            background-color: #E8E2D4 !important;
+            border-radius: 999px !important;
+          }
+          .app-stage-bar-fill {
+            height: 100% !important;
+            background-color: #8A6B2E !important;
+            border-radius: 999px !important;
+          }
+          .app-stage-steps-grid {
+            display: grid !important;
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 4px !important;
+            padding-top: 2px !important;
+            width: 100% !important;
+          }
+          .app-stage-circle {
+            width: 20px !important;
+            height: 20px !important;
+            min-width: 20px !important;
+            border-radius: 50% !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+          }
+          .app-stage-label {
+            font-size: 10px !important;
+            line-height: 1.15 !important;
+            white-space: nowrap !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.02em !important;
+            text-align: center !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 100% !important;
+          }
+
+          /* Latest Note */
+          .app-latest-note {
+            font-size: 11.5px !important;
+            line-height: 1.4 !important;
+            padding: 8px 10px !important;
+            border-radius: 6px !important;
+            border: 1px solid #E8E2D4 !important;
+            background-color: #F3EFE6 !important;
+            color: #5A584F !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+
+          /* Actions */
+          .app-card-actions {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+            width: 100% !important;
+            padding-top: 4px !important;
+            align-items: stretch !important;
+          }
+          .app-timeline-btn {
+            height: 38px !important;
+            min-height: 38px !important;
+            font-size: 11.5px !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.04em !important;
+            text-transform: uppercase !important;
+            padding: 0 10px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            border-radius: 6px !important;
+            white-space: nowrap !important;
+            background-color: #FAF9F7 !important;
+            color: #2B2D2A !important;
+            border: 1px solid #E8E2D4 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .app-withdraw-btn {
+            height: 38px !important;
+            min-height: 38px !important;
+            font-size: 11.5px !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.02em !important;
+            padding: 0 8px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 6px !important;
+            white-space: nowrap !important;
+            color: #B3261E !important;
+            border: 1px solid rgba(179, 38, 30, 0.28) !important;
+            background-color: rgba(179, 38, 30, 0.04) !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          /* If Withdraw button is not rendered (e.g. status is Withdrawn), View Timeline expands to full width */
+          .app-timeline-btn:only-child {
+            grid-column: 1 / -1 !important;
+          }
+
+          /* Modals on mobile */
+          :global(.app-modal-btn) {
+            height: 42px !important;
+            min-height: 42px !important;
+            font-size: 13px !important;
+            border-radius: 6px !important;
+            flex: 1 1 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          :global(.app-modal-footer-actions) {
+            width: 100% !important;
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+          }
+          :global(.modal-footer-box > .app-modal-btn) {
+            width: 100% !important;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .app-stage-label {
+            font-size: 9px !important;
+            letter-spacing: 0 !important;
+          }
+          .app-card-title {
+            font-size: 16px !important;
+          }
+          .app-timeline-btn,
+          .app-withdraw-btn {
+            font-size: 11px !important;
+            padding: 0 4px !important;
+          }
         }
       `}</style>
     </>

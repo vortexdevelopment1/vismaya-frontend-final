@@ -210,7 +210,7 @@ export default function TalentPortfolioPage() {
   const isAnyUploading = uploadQueue.some((i) => i.status === "uploading");
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+    <div className="talent-portfolio-root" style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
       {/* Hidden File Input */}
       <input
         ref={fileInputRef}
@@ -240,7 +240,7 @@ export default function TalentPortfolioPage() {
               setGlobalError("");
               if (fileInputRef.current) fileInputRef.current.click();
             }}
-            className="btn-primary"
+            className="btn-primary portfolio-header-upload-btn"
             style={{
               padding: "10px 20px",
               fontSize: "0.9rem",
@@ -258,6 +258,7 @@ export default function TalentPortfolioPage() {
 
       {/* Admin Moderation Protocol Banner */}
       <div
+        className="portfolio-moderation-banner"
         style={{
           backgroundColor: "#F3EFE6",
           border: "1px solid #E8E2D4",
@@ -269,6 +270,7 @@ export default function TalentPortfolioPage() {
         }}
       >
         <div
+          className="portfolio-moderation-icon"
           style={{
             width: "44px",
             height: "44px",
@@ -286,11 +288,11 @@ export default function TalentPortfolioPage() {
           <ShieldCheck size={22} />
         </div>
 
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
-          <span style={{ fontSize: "14px", fontWeight: "700", color: "#2B2D2A", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+        <div className="portfolio-moderation-text" style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
+          <span className="portfolio-moderation-title" style={{ fontSize: "14px", fontWeight: "700", color: "#2B2D2A", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
             Admin Moderation Protocol
           </span>
-          <span style={{ fontSize: "13px", color: "#5A584F", lineHeight: 1.5, fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+          <span className="portfolio-moderation-desc" style={{ fontSize: "13px", color: "#5A584F", lineHeight: 1.5, fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
             Every photo and video upload is queued for Vismaya Admin verification before appearing in recruiter comp cards. Images up to 5MB (JPG, PNG, WebP) and videos up to 100MB (MP4, WebM, MOV) are supported.
           </span>
         </div>
@@ -298,6 +300,7 @@ export default function TalentPortfolioPage() {
 
       {/* Drag & Drop Quick Zone */}
       <div
+        className="portfolio-drop-zone"
         onDragOver={(e) => {
           e.preventDefault();
           setIsDragging(true);
@@ -330,6 +333,7 @@ export default function TalentPortfolioPage() {
         }}
       >
         <div
+          className="portfolio-drop-icon"
           style={{
             width: "52px",
             height: "52px",
@@ -345,11 +349,11 @@ export default function TalentPortfolioPage() {
           <Upload size={24} />
         </div>
 
-        <div>
-          <span style={{ fontSize: "1rem", fontWeight: "700", color: "#2B2D2A", display: "block" }}>
+        <div className="portfolio-drop-text">
+          <span className="portfolio-drop-title" style={{ fontSize: "1rem", fontWeight: "700", color: "#2B2D2A", display: "block" }}>
             Drag and drop high-res photos or showreel clips here
           </span>
-          <span style={{ fontSize: "0.825rem", color: "#5A584F", marginTop: "4px", display: "block" }}>
+          <span className="portfolio-drop-subtitle" style={{ fontSize: "0.825rem", color: "#5A584F", marginTop: "4px", display: "block" }}>
             Or click to browse from your device &bull; Photos up to 5 MB, Videos up to 100 MB
           </span>
         </div>
@@ -376,26 +380,31 @@ export default function TalentPortfolioPage() {
       )}
 
       {/* Filter Tabs */}
-      <Tabs
-        tabs={tabs}
-        activeTab={activeTab}
-        onChange={(key) => setActiveTab(key)}
-        variant="pills"
-      />
+      <div className="portfolio-tabs-wrap">
+        <Tabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onChange={(key) => setActiveTab(key)}
+          variant="pills"
+        />
+      </div>
 
       {/* Media Cards Grid */}
       {filteredMedia.length === 0 ? (
-        <EmptyState
-          title={`No ${activeTab === "all" ? "" : activeTab} media uploaded`}
-          description="Upload professional headshots, comp cards, or dramatic showreels to build your casting presence."
-          iconName="Briefcase"
-          actionLabel="Upload Media Now"
-          onAction={() => {
-            if (fileInputRef.current) fileInputRef.current.click();
-          }}
-        />
+        <div className="portfolio-empty-wrap">
+          <EmptyState
+            title={`No ${activeTab === "all" ? "" : activeTab} media uploaded`}
+            description="Upload professional headshots, comp cards, or dramatic showreels to build your casting presence."
+            iconName="Briefcase"
+            actionLabel="Upload Media Now"
+            onAction={() => {
+              if (fileInputRef.current) fileInputRef.current.click();
+            }}
+          />
+        </div>
       ) : (
         <div
+          className="portfolio-media-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
@@ -423,13 +432,13 @@ export default function TalentPortfolioPage() {
         subtitle="Review category labels, captions, and file sizes before submitting to Admin moderation."
         maxWidth="680px"
         footer={
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+          <div className="upload-modal-footer" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
             <button
               type="button"
               onClick={() => {
                 if (fileInputRef.current) fileInputRef.current.click();
               }}
-              className="btn-secondary"
+              className="btn-secondary upload-modal-add-btn"
               disabled={isAnyUploading}
               style={{ padding: "8px 16px", borderRadius: "8px", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "6px" }}
             >
@@ -437,12 +446,12 @@ export default function TalentPortfolioPage() {
               <span>Add More Files</span>
             </button>
 
-            <div style={{ display: "flex", gap: "10px" }}>
+            <div className="upload-modal-action-btns" style={{ display: "flex", gap: "10px" }}>
               <button
                 type="button"
                 onClick={() => setShowUploadModal(false)}
                 disabled={isAnyUploading}
-                className="btn-secondary"
+                className="btn-secondary upload-modal-close-btn"
                 style={{ padding: "8px 18px", borderRadius: "8px" }}
               >
                 Close
@@ -452,7 +461,7 @@ export default function TalentPortfolioPage() {
                 type="button"
                 onClick={handleUploadAll}
                 disabled={isAnyUploading || uploadQueue.length === 0}
-                className="btn-primary"
+                className="btn-primary upload-modal-submit-btn"
                 style={{
                   padding: "8px 24px",
                   borderRadius: "8px",
@@ -472,7 +481,7 @@ export default function TalentPortfolioPage() {
           </div>
         }
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div className="upload-queue-container" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {uploadQueue.length === 0 ? (
             <div
               style={{
@@ -489,6 +498,7 @@ export default function TalentPortfolioPage() {
             uploadQueue.map((item) => (
               <div
                 key={item.id}
+                className="upload-queue-card"
                 style={{
                   backgroundColor: "#FAF9F7",
                   border: item.error ? "1px solid #FECDCA" : "1px solid #E8E2D4",
@@ -500,9 +510,10 @@ export default function TalentPortfolioPage() {
                 }}
               >
                 {/* Top Row: Preview, Title, Category, Remove */}
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+                <div className="upload-queue-row" style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
                   {/* Thumbnail */}
                   <div
+                    className="upload-queue-thumb"
                     style={{
                       width: "60px",
                       height: "60px",
@@ -547,14 +558,15 @@ export default function TalentPortfolioPage() {
                   </div>
 
                   {/* Inputs */}
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px", minWidth: 0 }}>
-                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <div className="upload-queue-inputs" style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px", minWidth: 0 }}>
+                    <div className="upload-queue-fields-row" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                       <input
                         type="text"
                         value={item.title}
                         disabled={item.status === "uploading" || item.status === "success"}
                         placeholder="Caption / Title"
                         onChange={(e) => handleQueueFieldChange(item.id, "title", e.target.value)}
+                        className="upload-queue-title-input"
                         style={{
                           flex: 1,
                           minWidth: "160px",
@@ -572,6 +584,7 @@ export default function TalentPortfolioPage() {
                         value={item.type}
                         disabled={item.status === "uploading" || item.status === "success"}
                         onChange={(e) => handleQueueFieldChange(item.id, "type", e.target.value)}
+                        className="upload-queue-type-select"
                         style={{
                           padding: "8px 12px",
                           borderRadius: "6px",
@@ -590,7 +603,7 @@ export default function TalentPortfolioPage() {
                       </select>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.75rem", color: "#5A584F" }}>
+                    <div className="upload-queue-meta-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.75rem", color: "#5A584F" }}>
                       <span>
                         {item.file.name} &bull; {item.sizeMb} MB
                       </span>
@@ -668,6 +681,255 @@ export default function TalentPortfolioPage() {
           )}
         </div>
       </Modal>
+
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .talent-portfolio-root {
+            gap: 14px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Header */
+          :global(.talent-portfolio-root .page-header-container) {
+            margin-bottom: 0px !important;
+            gap: 8px !important;
+          }
+          :global(.talent-portfolio-root .page-header-container nav) {
+            font-size: 12px !important;
+            gap: 6px !important;
+          }
+          :global(.talent-portfolio-root .page-header-title) {
+            font-size: 22px !important;
+            line-height: 1.25 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+          :global(.talent-portfolio-root .page-header-subtitle) {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 3 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+          :global(.talent-portfolio-root .page-header-actions) {
+            width: 100% !important;
+            margin-top: 4px !important;
+          }
+          :global(.talent-portfolio-root .portfolio-header-upload-btn) {
+            width: 100% !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.05em !important;
+            text-transform: uppercase !important;
+            justify-content: center !important;
+            border-radius: 10px !important;
+          }
+
+          /* Moderation Protocol Banner */
+          .portfolio-moderation-banner {
+            padding: 12px !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+            border-radius: 12px !important;
+          }
+          .portfolio-moderation-icon {
+            width: 28px !important;
+            height: 28px !important;
+            min-width: 28px !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+          }
+          .portfolio-moderation-icon :global(svg) {
+            width: 15px !important;
+            height: 15px !important;
+          }
+          .portfolio-moderation-text {
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 2px !important;
+            min-width: 0 !important;
+          }
+          .portfolio-moderation-title {
+            font-size: 13px !important;
+            line-height: 1.3 !important;
+          }
+          .portfolio-moderation-desc {
+            font-size: 12px !important;
+            line-height: 1.45 !important;
+          }
+
+          /* Drop Zone */
+          .portfolio-drop-zone {
+            padding: 16px !important;
+            border-width: 1.5px !important;
+            border-radius: 14px !important;
+            gap: 8px !important;
+          }
+          .portfolio-drop-icon {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+          }
+          .portfolio-drop-icon :global(svg) {
+            width: 16px !important;
+            height: 16px !important;
+          }
+          .portfolio-drop-title {
+            font-size: 14px !important;
+            line-height: 1.3 !important;
+          }
+          .portfolio-drop-subtitle {
+            font-size: 11.5px !important;
+            line-height: 1.35 !important;
+            margin-top: 3px !important;
+          }
+
+          /* Category Tabs - Horizontally scrollable row */
+          .portfolio-tabs-wrap {
+            margin-left: -16px !important;
+            margin-right: -16px !important;
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important;
+          }
+          .portfolio-tabs-wrap::-webkit-scrollbar {
+            display: none !important;
+          }
+          .portfolio-tabs-wrap :global(.custom-tabs-container) {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            overflow-x: visible !important;
+            gap: 8px !important;
+            padding-bottom: 2px !important;
+            width: max-content !important;
+          }
+          .portfolio-tabs-wrap :global(.tab-btn) {
+            height: 34px !important;
+            min-height: 34px !important;
+            padding: 0 12px !important;
+            font-size: 12.5px !important;
+            gap: 6px !important;
+            flex-shrink: 0 !important;
+            white-space: nowrap !important;
+          }
+          .portfolio-tabs-wrap :global(.tab-btn span:last-child) {
+            font-size: 11px !important;
+            height: 18px !important;
+            min-width: 18px !important;
+            padding: 0 5px !important;
+          }
+
+          /* Media Cards Grid */
+          .portfolio-media-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+            width: 100% !important;
+          }
+
+          /* Empty State */
+          .portfolio-empty-wrap :global(> div) {
+            padding: 24px 16px !important;
+            border-radius: 14px !important;
+          }
+          .portfolio-empty-wrap :global(h3) {
+            font-size: 16px !important;
+          }
+          .portfolio-empty-wrap :global(p) {
+            font-size: 12.5px !important;
+            line-height: 1.45 !important;
+            margin-bottom: 14px !important;
+          }
+          .portfolio-empty-wrap :global(button) {
+            height: 40px !important;
+            min-height: 40px !important;
+            font-size: 13px !important;
+          }
+
+          /* Upload Modal */
+          .upload-modal-footer {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+          .upload-modal-add-btn {
+            width: 100% !important;
+            height: 40px !important;
+            justify-content: center !important;
+            font-size: 12.5px !important;
+            border-radius: 8px !important;
+          }
+          .upload-modal-action-btns {
+            display: grid !important;
+            grid-template-columns: 1fr 1.6fr !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+          .upload-modal-close-btn,
+          .upload-modal-submit-btn {
+            height: 44px !important;
+            justify-content: center !important;
+            font-size: 13px !important;
+            border-radius: 8px !important;
+            width: 100% !important;
+          }
+          .upload-queue-card {
+            padding: 12px !important;
+            gap: 10px !important;
+            border-radius: 10px !important;
+          }
+          .upload-queue-thumb {
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            border-radius: 6px !important;
+          }
+          .upload-queue-fields-row {
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+          .upload-queue-title-input,
+          .upload-queue-type-select {
+            width: 100% !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            font-size: 16px !important;
+            border-radius: 8px !important;
+            padding: 0 10px !important;
+            box-sizing: border-box !important;
+          }
+          .upload-queue-meta-row {
+            font-size: 12px !important;
+          }
+        }
+
+        @media (max-width: 400px) {
+          :global(.talent-portfolio-root .page-header-title) {
+            font-size: 20px !important;
+          }
+          .portfolio-drop-title {
+            font-size: 13px !important;
+          }
+          .portfolio-media-grid {
+            gap: 8px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

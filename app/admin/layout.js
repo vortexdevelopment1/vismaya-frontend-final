@@ -90,6 +90,31 @@ function AdminLayoutContent({ children }) {
             padding-block: 20px !important;
           }
         }
+        @media (max-width: 640px) {
+          :root {
+            --sidebar-width: min(82vw, 300px);
+            --topbar-height: 56px;
+          }
+          .admin-main-container {
+            margin-left: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+          }
+          .admin-page-main {
+            padding-inline: 16px !important;
+            padding-block: 16px 24px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
+          }
+        }
+        @media (max-width: 400px) {
+          .admin-page-main {
+            padding-inline: 12px !important;
+          }
+        }
       `}</style>
     </div>
   );

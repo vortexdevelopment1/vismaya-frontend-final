@@ -134,7 +134,7 @@ export default function AdminApplicationsOverviewPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div className="admin-app-page" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Page Header */}
       <PageHeader
         title="Application Pipeline Overview"
@@ -147,7 +147,7 @@ export default function AdminApplicationsOverviewPage() {
       />
 
       {/* Status Tabs */}
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <div className="admin-app-tabs-wrap" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         {[
           { key: "ALL", label: "All Applications", count: statusCounts.ALL },
           { key: "Applied", label: "Applied", count: statusCounts.Applied },
@@ -161,6 +161,7 @@ export default function AdminApplicationsOverviewPage() {
           return (
             <button
               key={tab.key}
+              className={`admin-app-tab-btn ${isActive ? "active" : ""}`}
               onClick={() => setStatusFilter(tab.key)}
               style={{
                 display: "inline-flex",
@@ -182,6 +183,7 @@ export default function AdminApplicationsOverviewPage() {
             >
               <span>{tab.label}</span>
               <span
+                className={`admin-app-tab-badge ${isActive ? "active" : ""}`}
                 style={{
                   minWidth: "22px",
                   height: "22px",
@@ -205,6 +207,7 @@ export default function AdminApplicationsOverviewPage() {
 
       {/* Search & Filter Selectors Card */}
       <div
+        className="admin-app-filter-card"
         style={{
           backgroundColor: "#FFFFFF",
           border: "1px solid #E8E2D4",
@@ -219,6 +222,7 @@ export default function AdminApplicationsOverviewPage() {
         }}
       >
         <div
+          className="admin-app-search-wrap"
           style={{
             flex: "1 1 260px",
             display: "flex",
@@ -234,6 +238,7 @@ export default function AdminApplicationsOverviewPage() {
           <Search size={16} style={{ color: "#5A584F" }} />
           <input
             type="text"
+            className="admin-app-search-input"
             placeholder="Search candidate name, role, city..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -249,12 +254,13 @@ export default function AdminApplicationsOverviewPage() {
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+        <div className="admin-app-selects-row" style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
           {/* Opportunity Dropdown */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div className="admin-app-select-wrap" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", whiteSpace: "nowrap" }}>Opportunity:</span>
             <select
               value={oppFilter}
+              className="admin-app-select"
               onChange={(e) => setOppFilter(e.target.value)}
               style={{
                 height: "44px",
@@ -280,10 +286,11 @@ export default function AdminApplicationsOverviewPage() {
           </div>
 
           {/* Organization Dropdown */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div className="admin-app-select-wrap" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", whiteSpace: "nowrap" }}>Organization:</span>
             <select
               value={orgFilter}
+              className="admin-app-select"
               onChange={(e) => setOrgFilter(e.target.value)}
               style={{
                 height: "44px",
@@ -483,39 +490,44 @@ export default function AdminApplicationsOverviewPage() {
           </div>
 
           {/* Mobile Stacked Card View (< 768px) */}
-          <div className="admin-app-mobile-cards" style={{ padding: "14px", flexDirection: "column", gap: "12px" }}>
+          <div className="admin-app-mobile-cards">
             {filteredApplications.map((app) => {
               const prof = app.talentProfile || {};
               const opp = getOpportunityForApp(app.opportunityId);
               const org = getOrgForOpp(opp);
+              const stages = ["Applied", "Review", "Shortlist", "Selected"];
+              const stageIdx = app.status === "Selected" ? 3 : app.status === "Shortlisted" ? 2 : app.status === "Under Review" ? 1 : 0;
+              const isNegative = app.status === "Not Selected" || app.status === "Withdrawn";
 
               return (
                 <div
                   key={app.id}
+                  className="admin-app-mobile-card"
                   style={{
                     backgroundColor: "#FFFFFF",
                     border: "1px solid #E8E2D4",
                     borderRadius: "14px",
-                    padding: "16px",
+                    padding: "12px 14px",
                     display: "flex",
                     flexDirection: "column",
                     gap: "10px",
                     boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04)",
                   }}
                 >
+                  {/* Card Header: Avatar, Name, Status */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
                       {prof.avatar ? (
                         <img
                           src={prof.avatar}
                           alt={app.talentName}
-                          style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", border: "1px solid #E8E2D4" }}
+                          style={{ width: "38px", height: "38px", borderRadius: "50%", objectFit: "cover", border: "1px solid #E8E2D4", flexShrink: 0 }}
                         />
                       ) : (
                         <div
                           style={{
-                            width: "36px",
-                            height: "36px",
+                            width: "38px",
+                            height: "38px",
                             borderRadius: "50%",
                             background: "#F3EFE6",
                             color: "#8A6B2E",
@@ -525,35 +537,122 @@ export default function AdminApplicationsOverviewPage() {
                             fontWeight: 700,
                             fontSize: "13px",
                             border: "1px solid #E8E2D4",
+                            flexShrink: 0,
                           }}
                         >
                           {(app.talentName || "T")[0]}
                         </div>
                       )}
-                      <div>
-                        <div style={{ fontWeight: 600, color: "#2B2D2A", fontSize: "14px" }}>{app.talentName}</div>
-                        <div style={{ fontSize: "12px", color: "#5A584F" }}>{prof.city || "Mumbai"}</div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, color: "#2B2D2A", fontSize: "14.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {app.talentName}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#5A584F" }}>
+                          {prof.city || "Mumbai"} &bull; ID: {app.id}
+                        </div>
                       </div>
                     </div>
                     <StatusBadge status={app.status} size="xs" />
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "13px" }}>
-                    <span style={{ color: "#6E5420", fontWeight: 600 }}>{app.roleApplied}</span>
-                    <span style={{ color: "#2B2D2A" }}>{opp?.title || "Opportunity"}</span>
-                    <span style={{ color: "#5A584F", fontSize: "12px" }}>{org?.name || "Organization"} &bull; {formatDate(app.appliedAt)}</span>
+                  {/* Role & Project Info */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "13px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                      <span style={{ fontSize: "10px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
+                        Applied Role
+                      </span>
+                      <span style={{ color: "#6E5420", fontWeight: 600, fontSize: "13px" }}>
+                        {app.roleApplied}
+                      </span>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                      <span style={{ fontSize: "10px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
+                        Studio &amp; Project
+                      </span>
+                      <span style={{ color: "#2B2D2A", fontWeight: 600, fontSize: "12.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {opp?.title || "Opportunity"}
+                      </span>
+                      <span style={{ color: "#5A584F", fontSize: "11.5px" }}>
+                        {org?.name || "Organization"}
+                      </span>
+                    </div>
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "4px" }}>
+                  {/* 4-Step Stage Progress Bar */}
+                  <div style={{ padding: "8px 0", borderTop: "1px solid #E8E2D4", borderBottom: "1px solid #E8E2D4" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", marginBottom: "4px" }}>
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "8%",
+                          right: "8%",
+                          height: "2px",
+                          backgroundColor: "#E8E2D4",
+                          zIndex: 1,
+                          transform: "translateY(-50%)",
+                        }}
+                      />
+                      {stages.map((stg, i) => {
+                        const isDone = !isNegative && i <= stageIdx;
+                        const isCurrent = !isNegative && i === stageIdx;
+                        return (
+                          <div
+                            key={stg}
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              gap: "3px",
+                              zIndex: 2,
+                              position: "relative",
+                              flex: 1,
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: isCurrent ? "12px" : "8px",
+                                height: isCurrent ? "12px" : "8px",
+                                borderRadius: "50%",
+                                backgroundColor: isDone ? "#8A6B2E" : "#E8E2D4",
+                                border: isCurrent ? "2px solid #FFFFFF" : "none",
+                                boxShadow: isCurrent ? "0 0 0 2px #8A6B2E" : "none",
+                                transition: "all 0.2s ease",
+                              }}
+                            />
+                            <span
+                              style={{
+                                fontSize: "10px",
+                                fontWeight: isDone ? 700 : 500,
+                                color: isDone ? "#2B2D2A" : "#5A584F",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {stg}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Date & Action Row */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+                    <span style={{ fontSize: "11.5px", color: "#5A584F" }}>
+                      {formatDate(app.appliedAt)}
+                    </span>
+
                     <button
                       type="button"
                       onClick={() => setTimelineApp(app)}
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
-                        gap: "6px",
+                        gap: "5px",
                         fontSize: "12px",
-                        padding: "6px 14px",
+                        height: "34px",
+                        padding: "0 14px",
                         borderRadius: "8px",
                         color: "#8A6B2E",
                         backgroundColor: "#FFFFFF",
@@ -689,6 +788,93 @@ export default function AdminApplicationsOverviewPage() {
       <style jsx global>{`
         .admin-row-hover:hover {
           background-color: #FAF9F7 !important;
+        }
+        .admin-app-mobile-cards {
+          display: none;
+        }
+        @media (max-width: 640px) {
+          .admin-app-page {
+            gap: 16px !important;
+          }
+          .admin-app-tabs-wrap {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            width: 100% !important;
+          }
+          .admin-app-tab-btn {
+            flex: 1 1 auto !important;
+            height: 28px !important;
+            min-height: 28px !important;
+            padding: 0 8px !important;
+            border-radius: 999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 5px !important;
+          }
+          .admin-app-tab-badge {
+            min-width: 16px !important;
+            height: 16px !important;
+            border-radius: 8px !important;
+            font-size: 9.5px !important;
+            font-weight: 700 !important;
+            padding: 0 4px !important;
+          }
+          .admin-app-filter-card {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            padding: 12px 14px !important;
+            border-radius: 14px !important;
+            gap: 10px !important;
+          }
+          .admin-app-search-wrap {
+            width: 100% !important;
+            height: 40px !important;
+          }
+          .admin-app-search-input {
+            font-size: 16px !important;
+          }
+          .admin-app-selects-row {
+            width: 100% !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+          .admin-app-select-wrap {
+            width: 100% !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 4px !important;
+          }
+          .admin-app-select {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 40px !important;
+            font-size: 16px !important;
+          }
+          .admin-app-table-wrap {
+            display: none !important;
+          }
+          .admin-app-mobile-cards {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            padding: 0 !important;
+            width: 100% !important;
+          }
+        }
+        @media (max-width: 400px) {
+          .admin-app-tab-btn {
+            font-size: 10px !important;
+            padding: 0 5px !important;
+          }
+          .admin-app-tab-badge {
+            font-size: 9px !important;
+            min-width: 15px !important;
+            height: 15px !important;
+          }
         }
       `}</style>
     </div>

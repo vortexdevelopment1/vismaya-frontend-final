@@ -55,6 +55,7 @@ export default function ReviewDrawer({
 
       {/* Drawer Panel */}
       <div
+        className="admin-review-drawer"
         style={{
           position: "fixed",
           top: 0,
@@ -73,6 +74,7 @@ export default function ReviewDrawer({
       >
         {/* Header */}
         <div
+          className="admin-review-drawer-header"
           style={{
             padding: "20px 24px",
             borderBottom: "1px solid #E8E2D4",
@@ -158,6 +160,7 @@ export default function ReviewDrawer({
           <button
             onClick={onClose}
             aria-label="Close drawer"
+            className="admin-review-drawer-close"
             style={{
               color: "#5A584F",
               padding: "8px",
@@ -177,6 +180,7 @@ export default function ReviewDrawer({
 
         {/* Scrollable Body */}
         <div
+          className="admin-review-drawer-body"
           style={{
             flex: 1,
             overflowY: "auto",
@@ -545,6 +549,7 @@ export default function ReviewDrawer({
 
         {/* Action Controls Footer */}
         <div
+          className="admin-review-drawer-footer"
           style={{
             padding: "16px 24px",
             borderTop: "1px solid #E8E2D4",
@@ -556,7 +561,7 @@ export default function ReviewDrawer({
             gap: "10px",
           }}
         >
-          <div>
+          <div className="admin-review-drawer-left-actions">
             {data.status === "Suspended" ? (
               <button
                 type="button"
@@ -617,7 +622,7 @@ export default function ReviewDrawer({
             )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div className="admin-review-drawer-right-actions" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {data.status !== "Rejected" && (
               <button
                 type="button"
@@ -713,6 +718,62 @@ export default function ReviewDrawer({
           }
           to {
             transform: translateX(0);
+          }
+        }
+        @keyframes slideUpDrawer {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        @media (max-width: 640px) {
+          .admin-review-drawer {
+            width: 100vw !important;
+            max-width: 100vw !important;
+            left: 0 !important;
+            right: 0 !important;
+            top: auto !important;
+            bottom: 0 !important;
+            height: 90vh !important;
+            max-height: 90vh !important;
+            border-left: none !important;
+            border-top: 1px solid #E8E2D4 !important;
+            border-top-left-radius: 16px !important;
+            border-top-right-radius: 16px !important;
+            animation: slideUpDrawer 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+          }
+          .admin-review-drawer-header {
+            padding: 14px 16px !important;
+          }
+          .admin-review-drawer-close {
+            width: 38px !important;
+            height: 38px !important;
+            padding: 0 !important;
+          }
+          .admin-review-drawer-body {
+            padding: 14px 16px !important;
+            gap: 12px !important;
+          }
+          .admin-review-drawer-footer {
+            padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) 16px !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+          .admin-review-drawer-left-actions,
+          .admin-review-drawer-right-actions {
+            display: flex !important;
+            width: 100% !important;
+            gap: 8px !important;
+          }
+          .admin-review-drawer-footer button {
+            flex: 1 1 0 !important;
+            height: 42px !important;
+            font-size: 13px !important;
+            justify-content: center !important;
+            white-space: nowrap !important;
+            padding: 0 10px !important;
           }
         }
       `}</style>

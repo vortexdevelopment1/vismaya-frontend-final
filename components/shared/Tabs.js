@@ -156,6 +156,138 @@ export default function Tabs({
           background-color: #F3EFE6 !important;
           color: #2B2D2A !important;
         }
+
+        @media (max-width: 640px) {
+          .talent-main-container .custom-tabs-container,
+          .admin-main-container .custom-tabs-container {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            overflow: visible !important;
+            padding: 0 !important;
+            margin: 8px 0 12px 0 !important;
+            width: 100% !important;
+            border-bottom: none !important;
+          }
+          .talent-main-container .tab-btn,
+          .talent-main-container .tab-touch-btn,
+          .admin-main-container .tab-btn,
+          .admin-main-container .tab-touch-btn {
+            flex: 1 1 auto !important;
+            height: 28px !important;
+            min-height: 28px !important;
+            padding: 0 8px !important;
+            border-radius: 999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            font-family: var(--font-body), 'Inter', sans-serif !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 5px !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            transition: all 0.15s ease !important;
+            border: 1px solid #E8E2D4 !important;
+            background-color: #FFFFFF !important;
+            color: #5A584F !important;
+          }
+          .talent-main-container .tab-btn > span,
+          .talent-main-container .tab-touch-btn > span,
+          .admin-main-container .tab-btn > span,
+          .admin-main-container .tab-touch-btn > span {
+            font-size: 10.5px !important;
+            white-space: nowrap !important;
+          }
+          .talent-main-container .tab-btn.tab-active,
+          .talent-main-container .tab-touch-btn.tab-underline-active,
+          .admin-main-container .tab-btn.tab-active,
+          .admin-main-container .tab-touch-btn.tab-underline-active {
+            background-color: #8A6B2E !important;
+            border-color: #8A6B2E !important;
+            color: #FFFFFF !important;
+            box-shadow: none !important;
+          }
+          .talent-main-container .tab-btn.tab-active > span,
+          .talent-main-container .tab-touch-btn.tab-underline-active > span,
+          .admin-main-container .tab-btn.tab-active > span,
+          .admin-main-container .tab-touch-btn.tab-underline-active > span {
+            color: #FFFFFF !important;
+          }
+          .talent-main-container .tab-btn.tab-active > span:not(:only-child):last-child,
+          .talent-main-container .tab-touch-btn.tab-underline-active > span:not(:only-child):last-child,
+          .admin-main-container .tab-btn.tab-active > span:not(:only-child):last-child,
+          .admin-main-container .tab-touch-btn.tab-underline-active > span:not(:only-child):last-child {
+            background-color: #FFFFFF !important;
+            color: #8A6B2E !important;
+            border: none !important;
+          }
+          .talent-main-container .tab-btn:not(.tab-active),
+          .talent-main-container .tab-touch-btn:not(.tab-underline-active),
+          .admin-main-container .tab-btn:not(.tab-active),
+          .admin-main-container .tab-touch-btn:not(.tab-underline-active) {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E2D4 !important;
+            color: #5A584F !important;
+          }
+          .talent-main-container .tab-btn:not(.tab-active) > span,
+          .talent-main-container .tab-touch-btn:not(.tab-underline-active) > span,
+          .admin-main-container .tab-btn:not(.tab-active) > span,
+          .admin-main-container .tab-touch-btn:not(.tab-underline-active) > span {
+            color: #5A584F !important;
+          }
+          .talent-main-container .tab-btn:not(.tab-active) > span:not(:only-child):last-child,
+          .talent-main-container .tab-touch-btn:not(.tab-underline-active) > span:not(:only-child):last-child,
+          .admin-main-container .tab-btn:not(.tab-active) > span:not(:only-child):last-child,
+          .admin-main-container .tab-touch-btn:not(.tab-underline-active) > span:not(:only-child):last-child {
+            background-color: #F3EFE6 !important;
+            color: #2B2D2A !important;
+            border: 1px solid #E8E2D4 !important;
+          }
+          .talent-main-container .tab-btn > span:not(:only-child):last-child,
+          .talent-main-container .tab-touch-btn > span:not(:only-child):last-child,
+          .admin-main-container .tab-btn > span:not(:only-child):last-child,
+          .admin-main-container .tab-touch-btn > span:not(:only-child):last-child {
+            min-width: 16px !important;
+            height: 16px !important;
+            border-radius: 8px !important;
+            font-size: 9.5px !important;
+            font-weight: 700 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 4px !important;
+            line-height: 16px !important;
+            flex-shrink: 0 !important;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .talent-main-container .tab-btn,
+          .talent-main-container .tab-touch-btn,
+          .admin-main-container .tab-btn,
+          .admin-main-container .tab-touch-btn {
+            font-size: 10px !important;
+            padding: 0 5px !important;
+            gap: 4px !important;
+          }
+          .talent-main-container .tab-btn > span,
+          .talent-main-container .tab-touch-btn > span,
+          .admin-main-container .tab-btn > span,
+          .admin-main-container .tab-touch-btn > span {
+            font-size: 10px !important;
+          }
+          .talent-main-container .tab-btn > span:not(:only-child):last-child,
+          .talent-main-container .tab-touch-btn > span:not(:only-child):last-child,
+          .admin-main-container .tab-btn > span:not(:only-child):last-child,
+          .admin-main-container .tab-touch-btn > span:not(:only-child):last-child {
+            font-size: 9px !important;
+            min-width: 15px !important;
+            height: 15px !important;
+            padding: 0 3px !important;
+          }
+        }
       `}</style>
     </div>
   );

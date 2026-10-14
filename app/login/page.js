@@ -80,7 +80,7 @@ function LoginFormContent() {
 
   return (
     <div
-      className="glass"
+      className="glass login-glass-card"
       style={{
         width: "100%",
         maxWidth: "460px",
@@ -350,6 +350,12 @@ export default function LoginPage() {
           background-color: rgba(255, 188, 0, 0.14) !important;
           border-color: rgba(255, 188, 0, 0.40) !important;
           color: var(--gold) !important;
+        }
+        @media (max-width: 640px) {
+          :global(.login-glass-card) {
+            padding: 22px 16px !important;
+            border-radius: 14px !important;
+          }
         }
       `}</style>
     </div>

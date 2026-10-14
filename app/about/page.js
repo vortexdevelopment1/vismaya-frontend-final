@@ -36,6 +36,7 @@ export default function AboutPage() {
 
       {/* 1. TOP HEADER */}
       <section
+        className="about-header-section"
         style={{
           position: "relative",
           paddingTop: "clamp(28px, 4vw, 48px)",
@@ -62,6 +63,7 @@ export default function AboutPage() {
               <span>About Vismaya Platform</span>
             </div>
             <h1
+              className="about-title-heading"
               style={{
                 fontFamily: "var(--font-heading), Georgia, serif",
                 fontSize: "clamp(34px, 5vw, 56px)",
@@ -74,7 +76,7 @@ export default function AboutPage() {
             >
               Transforming Entertainment Casting
             </h1>
-            <p style={{ fontSize: "16px", lineHeight: "28px", color: "var(--text-secondary, #777970)", margin: 0 }}>
+            <p className="about-header-subtext" style={{ fontSize: "16px", lineHeight: "28px", color: "var(--text-secondary, #777970)", margin: 0 }}>
               Empowering artists and revolutionizing casting management across film, television, OTT, commercials, and fashion.
             </p>
           </div>
@@ -84,10 +86,10 @@ export default function AboutPage() {
       {/* 2. MAIN CONTENT (DARK GLASS) */}
       <section className="public-section" style={{ backgroundColor: "var(--bg-primary)" }}>
         <div className="public-container">
-          <div style={{ display: "flex", flexDirection: "column", gap: "48px" }}>
+          <div className="about-main-gap" style={{ display: "flex", flexDirection: "column", gap: "48px" }}>
             {/* Vision Box */}
             <div
-              className="card-surface"
+              className="card-surface about-vision-card"
               style={{
                 borderRadius: "20px",
                 padding: "clamp(32px, 5vw, 48px)",
@@ -101,6 +103,7 @@ export default function AboutPage() {
               </div>
 
               <h2
+                className="about-vision-heading"
                 style={{
                   fontFamily: "var(--font-heading), Georgia, serif",
                   fontSize: "clamp(24px, 3.5vw, 34px)",
@@ -124,11 +127,12 @@ export default function AboutPage() {
 
             {/* Platform Pillars Grid */}
             <div>
-              <div style={{ textAlign: "center", maxWidth: "680px", margin: "0 auto 40px auto" }}>
+              <div className="about-pillars-header" style={{ textAlign: "center", maxWidth: "680px", margin: "0 auto 40px auto" }}>
                 <div className="eyebrow" style={{ marginBottom: "12px", justifyContent: "center" }}>
                   <span>Platform Pillars</span>
                 </div>
                 <h2
+                  className="about-pillars-heading"
                   style={{
                     fontFamily: "var(--font-heading), Georgia, serif",
                     fontSize: "clamp(28px, 4vw, 38px)",
@@ -145,6 +149,7 @@ export default function AboutPage() {
               </div>
 
               <div
+                className="about-pillars-grid"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
@@ -156,7 +161,7 @@ export default function AboutPage() {
                   return (
                     <div
                       key={idx}
-                      className="card-surface"
+                      className="card-surface about-pillar-card"
                       style={{
                         padding: "32px 24px",
                         display: "flex",
@@ -203,7 +208,7 @@ export default function AboutPage() {
 
             {/* Bottom CTA Box */}
             <div
-              className="glass"
+              className="glass about-cta-box"
               style={{
                 borderRadius: "var(--radius-card, 6px)",
                 padding: "clamp(32px, 5vw, 48px)",
@@ -218,6 +223,7 @@ export default function AboutPage() {
             >
               <div style={{ maxWidth: "600px" }}>
                 <h3
+                  className="about-cta-heading"
                   style={{
                     fontFamily: "var(--font-heading), Georgia, serif",
                     fontSize: "clamp(22px, 3vw, 28px)",
@@ -243,6 +249,68 @@ export default function AboutPage() {
       </section>
 
       <PublicFooter />
+
+      <style jsx>{`
+        @media (max-width: 640px) {
+          :global(.about-header-section) {
+            padding-top: 24px !important;
+            padding-bottom: 24px !important;
+          }
+          :global(.about-title-heading) {
+            font-size: 26px !important;
+            line-height: 1.18 !important;
+            margin-bottom: 10px !important;
+          }
+          :global(.about-header-subtext) {
+            font-size: 14px !important;
+            line-height: 1.55 !important;
+          }
+          :global(.about-main-gap) {
+            gap: 24px !important;
+          }
+          :global(.about-vision-card) {
+            padding: 18px 16px !important;
+            gap: 12px !important;
+            border-radius: 14px !important;
+          }
+          :global(.about-vision-heading) {
+            font-size: 20px !important;
+            line-height: 1.25 !important;
+          }
+          :global(.about-pillars-header) {
+            margin-bottom: 18px !important;
+          }
+          :global(.about-pillars-heading) {
+            font-size: 22px !important;
+            line-height: 1.2 !important;
+            margin-bottom: 6px !important;
+          }
+          :global(.about-pillars-grid) {
+            grid-template-columns: 1fr !important;
+            gap: 14px !important;
+          }
+          :global(.about-pillar-card) {
+            padding: 16px !important;
+            min-height: auto !important;
+            border-radius: 12px !important;
+            gap: 10px !important;
+          }
+          :global(.about-cta-box) {
+            padding: 18px 16px !important;
+            gap: 14px !important;
+            border-radius: 14px !important;
+          }
+          :global(.about-cta-heading) {
+            font-size: 20px !important;
+            line-height: 1.25 !important;
+          }
+          :global(.about-cta-box .btn-primary) {
+            width: 100% !important;
+            justify-content: center !important;
+            height: 42px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

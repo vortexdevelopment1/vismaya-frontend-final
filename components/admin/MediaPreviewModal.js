@@ -90,7 +90,7 @@ export default function MediaPreviewModal({
           </div>
 
           {/* Action Footer */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "10px", paddingTop: "8px" }}>
+          <div className="media-preview-footer" style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "10px", paddingTop: "8px" }}>
             <button
               type="button"
               onClick={onClose}
@@ -160,6 +160,24 @@ export default function MediaPreviewModal({
             )}
           </div>
         </div>
+
+        <style jsx>{`
+          @media (max-width: 640px) {
+            .media-preview-footer {
+              display: grid !important;
+              grid-template-columns: repeat(auto-fit, minmax(0, 1fr)) !important;
+              gap: 8px !important;
+              width: 100% !important;
+            }
+            .media-preview-footer button {
+              width: 100% !important;
+              height: 42px !important;
+              justify-content: center !important;
+              font-size: 13px !important;
+              padding: 0 10px !important;
+            }
+          }
+        `}</style>
       </Modal>
 
       {/* Reject Reason Modal */}

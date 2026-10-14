@@ -1059,6 +1059,75 @@ export default function AdminCancellationRequestsPage() {
             max-width: 100% !important;
           }
         }
+
+        @media (max-width: 640px) {
+          .cancel-tabs-row {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            overflow-x: visible !important;
+          }
+          .cancel-tab-btn {
+            flex: 1 1 auto !important;
+            height: 28px !important;
+            padding: 0 8px !important;
+            border-radius: 999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 4px !important;
+          }
+          .cancel-tab-badge {
+            min-width: 16px !important;
+            height: 16px !important;
+            font-size: 9.5px !important;
+            padding: 0 4px !important;
+          }
+          .cancel-toolbar-row {
+            margin-bottom: 2px !important;
+          }
+          .cancel-search-wrap {
+            max-width: 100% !important;
+            width: 100% !important;
+          }
+          .cancel-search-input {
+            height: 40px !important;
+            min-height: 40px !important;
+            font-size: 16px !important;
+          }
+          .cancel-mobile-cards-stack {
+            gap: 10px !important;
+          }
+          .cancel-mobile-card {
+            padding: 12px !important;
+            border-radius: 14px !important;
+            gap: 10px !important;
+          }
+          .cancel-mobile-reason-box {
+            padding: 10px 12px !important;
+            border-radius: 10px !important;
+          }
+          .cancel-mobile-reason-box strong {
+            font-size: 10px !important;
+          }
+          .cancel-reason-text {
+            font-size: 12.5px !important;
+            -webkit-line-clamp: 3 !important;
+          }
+          .cancel-btn-approve,
+          .cancel-btn-decline {
+            height: 36px !important;
+            min-height: 36px !important;
+            font-size: 12px !important;
+            border-radius: 8px !important;
+          }
+          .cancel-modal-textarea {
+            font-size: 16px !important;
+          }
+        }
       `}</style>
     </div>
   );
