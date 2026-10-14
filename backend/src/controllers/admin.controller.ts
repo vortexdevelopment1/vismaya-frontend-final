@@ -1,0 +1,2643 @@
+import { Request, Response } from "express";
+import mongoose from "mongoose";
+import crypto from "crypto";
+import User from "../models/user.model.js";
+import Opportunity from "../models/opportunity.model.js";
+import Project from "../models/project.model.js";
+import Organization from "../models/organization.model.js";
+import TalentProfile from "../models/talentProfile.model.js";
+import PaymentTransaction from "../models/paymentTransaction.model.js";
+import AdminAuditLog from "../models/adminAuditLog.model.js";
+import Verification from "../models/verification.model.js";
+import Application from "../models/application.model.js";
+import MediaItem from "../models/mediaItem.model.js";
+import Coupon from "../models/coupon.model.js";
+import CreditLedger from "../models/creditLedger.model.js";
+import CreditTransaction from "../models/creditTransaction.model.js";
+import Report from "../models/report.model.js";
+import ProjectShortlist from "../models/projectShortlist.model.js";
+import Audition from "../models/audition.model.js";
+import { logAdminAction } from "../services/audit.service.js";
+import { notifyUser } from "../services/notification.service.js";
+import { revokeAllUserSessions } from "../services/session.service.js";
+import { escapeRegex } from "../utils/sanitize.util.js";
+import { validateCouponInput } from "../validators/coupon.validator.js";
+import { calculateProfileCompletion } from "../utils/profileCompletion.util.js";
+
+// --- USER OPERATIONS ---
+
+const findUserByIdOrVismayaId = async (idOrVismayaId: any): Promise<any> => {
+    if (!idOrVismayaId) return null;
+    const str = String(idOrVismayaId).trim();
+    if (!str) return null;
+
+    // 1. Check if it's a Vismaya ID (e.g., VIS-607537 or prefix VIS-60753)
+    if (str.toUpperCase().startsWith("VIS-")) {
+        let profile = await TalentProfile.findOne({
+            vismayaId: new RegExp(`^${escapeRegex(str)}$`, "i")
+        });
+        if (!profile) {
+            profile = await TalentProfile.findOne({
+                vismayaId: new RegExp(`^${escapeRegex(str)}`, "i")
+            });
+        }
+        if (profile && profile.userId) {
+            return await User.findById(profile.userId);
+        }
+    }
+
+    // 2. Check if valid MongoDB ObjectId
+    if (mongoose.Types.ObjectId.isValid(str)) {
+        // A) Directly a User ID
+        const user = await User.findById(str);
+        if (user) return user;
+
+        // B) A TalentProfile ID
+        const profile = await TalentProfile.findById(str);
+        if (profile && profile.userId) {
+            return await User.findById(profile.userId);
+        }
+
+        // C) An Organization ID
+        const org = await Organization.findById(str);
+        if (org && org.userId) {
+            return await User.findById(org.userId);
+        }
+    }
+
+    // 3. Check if numeric digits (e.g., 60753 or 607537) corresponding to VIS-xxxxx
+    if (/^\d{4,8}$/.test(str)) {
+        let profile = await TalentProfile.findOne({
+            vismayaId: new RegExp(`^VIS-${escapeRegex(str)}`, "i")
+        });
+        if (profile && profile.userId) {
+            return await User.findById(profile.userId);
+        }
+    }
+
+    // 4. Check by email
+    if (str.includes("@")) {
+        const user = await User.findOne({ email: str.toLowerCase() });
+        if (user) return user;
+    }
+
+    // 5. Fallback: check TalentProfile by vismayaId substring or stageName
+    const profile = await TalentProfile.findOne({
+        $or: [
+            { vismayaId: new RegExp(escapeRegex(str), "i") },
+            { stageName: new RegExp(`^${escapeRegex(str)}$`, "i") }
+        ]
+    });
+    if (profile && profile.userId) {
+        return await User.findById(profile.userId);
+    }
+
+    // 6. Fallback: check User by name
+    const userByName = await User.findOne({ name: new RegExp(`^${escapeRegex(str)}$`, "i") });
+    if (userByName) return userByName;
+
+    return null;
+};
+
+const findTalentProfileByIdOrVismayaId = async (idOrVismayaId: any): Promise<any> => {
+    if (!idOrVismayaId) return null;
+    const str = String(idOrVismayaId).trim();
+    if (!str) return null;
+
+    // 1. Direct Vismaya ID (e.g. VIS-607537)
+    if (str.toUpperCase().startsWith("VIS-")) {
+        let profile = await TalentProfile.findOne({
+            vismayaId: new RegExp(`^${escapeRegex(str)}$`, "i")
+        }).populate("userId", "name email mobile status isPaid createdAt");
+        if (!profile) {
+            profile = await TalentProfile.findOne({
+                vismayaId: new RegExp(`^${escapeRegex(str)}`, "i")
+            }).populate("userId", "name email mobile status isPaid createdAt");
+        }
+        if (profile) return profile;
+    }
+
+    // 2. Valid MongoDB ObjectId
+    if (mongoose.Types.ObjectId.isValid(str)) {
+        // A) Directly TalentProfile ID
+        let profile = await TalentProfile.findById(str)
+            .populate("userId", "name email mobile status isPaid createdAt");
+        if (profile) return profile;
+
+        // B) By userId
+        profile = await TalentProfile.findOne({ userId: str })
+            .populate("userId", "name email mobile status isPaid createdAt");
+        if (profile) return profile;
+    }
+
+    // 3. Numeric digits corresponding to VIS-xxxxx
+    if (/^\d{4,8}$/.test(str)) {
+        const profile = await TalentProfile.findOne({
+            vismayaId: new RegExp(`^VIS-${escapeRegex(str)}`, "i")
+        }).populate("userId", "name email mobile status isPaid createdAt");
+        if (profile) return profile;
+    }
+
+    // 4. By email of user
+    if (str.includes("@")) {
+        const user = await User.findOne({ email: str.toLowerCase() });
+        if (user) {
+            const profile = await TalentProfile.findOne({ userId: user._id })
+                .populate("userId", "name email mobile status isPaid createdAt");
+            if (profile) return profile;
+        }
+    }
+
+    // 5. Fallback: by stageName or partial vismayaId
+    const profile = await TalentProfile.findOne({
+        $or: [
+            { vismayaId: new RegExp(escapeRegex(str), "i") },
+            { stageName: new RegExp(`^${escapeRegex(str)}$`, "i") }
+        ]
+    }).populate("userId", "name email mobile status isPaid createdAt");
+    if (profile) return profile;
+
+    // 6. Fallback: by User name
+    const userByName = await User.findOne({ name: new RegExp(`^${escapeRegex(str)}$`, "i") });
+    if (userByName) {
+        const p = await TalentProfile.findOne({ userId: userByName._id })
+            .populate("userId", "name email mobile status isPaid createdAt");
+        if (p) return p;
+    }
+
+    return null;
+};
+
+const extractTargetUserId = (req: Request): any => {
+    const rawCandidates = [
+        req.params.talentId,
+        req.params.userId,
+        req.params.orgId,
+        req.params.id,
+        req.body?.talentId,
+        req.body?.userId,
+        req.body?.vismayaId,
+        req.body?.profileId,
+        req.body?.id
+    ];
+
+    // Pick first candidate that is not null/undefined and not the literal placeholder "id" or "undefined"
+    const valid = rawCandidates.find(
+        (c) => c && typeof c === "string" && c.trim() && !["id", "undefined", "null"].includes(c.trim().toLowerCase())
+    );
+    if (valid) return valid.trim();
+
+    // Fallback: return the first non-empty candidate or null
+    const fallback = rawCandidates.find((c) => c && typeof c === "string" && c.trim());
+    return fallback ? fallback.trim() : null;
+};
+
+const generateUniqueVismayaId = async (): Promise<string> => {
+    // crypto imported at top
+    let isUnique = false;
+    let candidate = "";
+    while (!isUnique) {
+        const randomDigits = crypto.randomInt(100000, 1000000);
+        candidate = `VIS-${randomDigits}`;
+        const existing = await TalentProfile.exists({ vismayaId: candidate });
+        if (!existing) {
+            isUnique = true;
+        }
+    }
+    return candidate;
+};
+
+const resolveTalentAndUserForModeration = async (targetId: any): Promise<{ profile: any; user: any }> => {
+    if (!targetId) return { profile: null, user: null };
+    const str = String(targetId).trim();
+    if (!str || ["id", "undefined", "null"].includes(str.toLowerCase())) return { profile: null, user: null };
+
+    // 1. Try finding TalentProfile first
+    let profile = await findTalentProfileByIdOrVismayaId(str);
+    let user = null;
+
+    if (profile) {
+        // Resolve linked user
+        const rawUserId = profile.userId && profile.userId._id ? profile.userId._id : profile.userId;
+        if (rawUserId) {
+            user = await User.findById(rawUserId);
+        }
+    } else {
+        // Try finding User
+        user = await findUserByIdOrVismayaId(str);
+        if (user) {
+            // Find or create TalentProfile for this user
+            profile = await TalentProfile.findOne({ userId: user._id });
+            if (!profile) {
+                const vismayaId = await generateUniqueVismayaId();
+                profile = new TalentProfile({
+                    userId: user._id,
+                    vismayaId,
+                    stageName: user.name || "Artist",
+                    currentCity: "Mumbai",
+                    currentState: "Maharashtra",
+                    primaryProfession: "Actor / Performer"
+                });
+            }
+        }
+    }
+
+    // Ensure profile has a unique vismayaId
+    if (profile && !profile.vismayaId) {
+        profile.vismayaId = await generateUniqueVismayaId();
+    }
+
+    return { profile, user };
+};
+
+export const approveTalentProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const targetId = extractTargetUserId(req);
+        const { profile, user } = await resolveTalentAndUserForModeration(targetId);
+
+        if (!profile && !user) {
+            return res.status(404).json({
+                success: false,
+                message: `Talent profile not found for identifier: ${targetId || "unspecified"}`
+            });
+        }
+
+        const badgeType = req.body?.badgeType || "verified";
+        const note = req.body?.note || req.body?.statusNote || "Profile approved by Vismaya Admin";
+        const adminId = req.user?.userId || (req.user as any)?._id;
+
+        // 1. Update Profile in DB
+        profile.status = "approved";
+        profile.isProfileApproved = true;
+        profile.isVerified = true;
+        profile.verifiedAt = new Date();
+        profile.badgeType = badgeType;
+        profile.statusReason = note;
+        profile.reviewedBy = adminId;
+        profile.reviewedAt = new Date();
+
+        // 2. Update linked User in DB so status reflects across all portals
+        if (user) {
+            user.status = "active";
+            await user.save();
+            profile.isSearchable = ((profile.profileCompletionPercentage || 0) >= 60) && !!user.isPaid;
+        }
+
+        await profile.save();
+
+        // 3. Audit log (guarded)
+        try {
+            await logAdminAction({
+                adminId,
+                action: "APPROVE_TALENT_PROFILE",
+                targetType: "TalentProfile",
+                targetId: profile._id,
+                details: `Talent profile approved for ${profile.stageName || user?.name || profile.vismayaId} (${profile.vismayaId}). Badge: ${badgeType}.`,
+                req
+            });
+        } catch (auditErr: any) {
+            console.warn("[ApproveTalentProfile] Audit log warning:", auditErr.message);
+        }
+
+        // 4. In-app / external notification (guarded)
+        const recipientId = user?._id || profile.userId?._id || profile.userId;
+        if (recipientId) {
+            try {
+                await notifyUser({
+                    recipientId,
+                    type: "account_status",
+                    title: "Talent Profile Approved",
+                    message: "Your Vismaya talent profile has been verified and approved by admin. You can now apply to live casting calls and auditions."
+                });
+            } catch (notifErr: any) {
+                console.warn("[ApproveTalentProfile] Notification warning:", notifErr.message);
+            }
+        }
+
+        const populatedProfile = await TalentProfile.findById(profile._id)
+            .populate("userId", "name email mobile status isPaid createdAt");
+
+        return res.status(200).json({
+            success: true,
+            message: "Talent profile approved successfully",
+            profile: populatedProfile || profile,
+            data: populatedProfile || profile,
+            user: user ? {
+                id: user._id.toString(),
+                _id: user._id.toString(),
+                userId: user._id.toString(),
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                status: user.status
+            } : null
+        });
+    } catch (error: any) {
+        console.error("Approve talent profile error:", error);
+        return res.status(500).json({
+            success: false,
+            message: error?.message || "Something went wrong while approving talent profile"
+        });
+    }
+};
+
+export const rejectTalentProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const targetId = extractTargetUserId(req);
+        const { profile, user } = await resolveTalentAndUserForModeration(targetId);
+
+        if (!profile && !user) {
+            return res.status(404).json({
+                success: false,
+                message: `Talent profile not found for identifier: ${targetId || "unspecified"}`
+            });
+        }
+
+        const { reason } = req.body || {};
+        const rejectionReason = reason || "Profile did not meet verification criteria";
+        const adminId = req.user?.userId || (req.user as any)?._id;
+
+        // 1. Update Profile in DB
+        profile.status = "rejected";
+        profile.isProfileApproved = false;
+        profile.isVerified = false;
+        profile.isSearchable = false;
+        profile.statusReason = rejectionReason;
+        profile.rejectionReason = rejectionReason;
+        profile.reviewedBy = adminId;
+        profile.reviewedAt = new Date();
+        await profile.save();
+
+        // 2. Update linked User if requested
+        if (user && req.body?.rejectUser === true) {
+            user.status = "rejected";
+            await user.save();
+        }
+
+        // 3. Audit log (guarded)
+        try {
+            await logAdminAction({
+                adminId,
+                action: "REJECT_TALENT_PROFILE",
+                targetType: "TalentProfile",
+                targetId: profile._id,
+                details: `Talent profile rejected. Reason: ${rejectionReason}`,
+                req
+            });
+        } catch (auditErr: any) {
+            console.warn("[RejectTalentProfile] Audit log warning:", auditErr.message);
+        }
+
+        // 4. Notification (guarded)
+        const recipientId = user?._id || profile.userId?._id || profile.userId;
+        if (recipientId) {
+            try {
+                await notifyUser({
+                    recipientId,
+                    type: "account_status",
+                    title: "Talent Profile Review Update",
+                    message: `Your talent profile was not approved: ${rejectionReason}`
+                });
+            } catch (notifErr: any) {
+                console.warn("[RejectTalentProfile] Notification warning:", notifErr.message);
+            }
+        }
+
+        const populatedProfile = await TalentProfile.findById(profile._id)
+            .populate("userId", "name email mobile status isPaid createdAt");
+
+        return res.status(200).json({
+            success: true,
+            message: "Talent profile rejected successfully",
+            profile: populatedProfile || profile,
+            data: populatedProfile || profile,
+            user: user ? {
+                id: user._id.toString(),
+                _id: user._id.toString(),
+                name: user.name,
+                email: user.email,
+                status: user.status
+            } : null
+        });
+    } catch (error: any) {
+        console.error("Reject talent profile error:", error);
+        return res.status(500).json({
+            success: false,
+            message: error?.message || "Something went wrong while rejecting talent profile"
+        });
+    }
+};
+
+export const suspendTalentProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const targetId = extractTargetUserId(req);
+        const { profile, user } = await resolveTalentAndUserForModeration(targetId);
+
+        if (!profile && !user) {
+            return res.status(404).json({
+                success: false,
+                message: `Talent profile not found for identifier: ${targetId || "unspecified"}`
+            });
+        }
+
+        const { reason } = req.body || {};
+        const suspendReason = reason || "Profile suspended by administrator";
+        const adminId = req.user?.userId || (req.user as any)?._id;
+
+        // 1. Update Profile in DB
+        profile.status = "suspended";
+        profile.isProfileApproved = false;
+        profile.isSearchable = false;
+        profile.statusReason = suspendReason;
+        profile.reviewedBy = adminId;
+        profile.reviewedAt = new Date();
+        await profile.save();
+
+        // 2. Update linked User in DB and revoke sessions across all portals
+        if (user) {
+            user.status = "suspended";
+            await user.save();
+            try {
+                await revokeAllUserSessions(user._id);
+            } catch (sessErr: any) {
+                console.warn("[SuspendTalentProfile] Session revocation warning:", sessErr.message);
+            }
+        }
+
+        // 3. Audit log (guarded)
+        try {
+            await logAdminAction({
+                adminId,
+                action: "SUSPEND_TALENT_PROFILE",
+                targetType: "TalentProfile",
+                targetId: profile._id,
+                details: `Talent profile suspended. Reason: ${suspendReason}`,
+                req
+            });
+        } catch (auditErr: any) {
+            console.warn("[SuspendTalentProfile] Audit log warning:", auditErr.message);
+        }
+
+        // 4. Notification (guarded)
+        const recipientId = user?._id || profile.userId?._id || profile.userId;
+        if (recipientId) {
+            try {
+                await notifyUser({
+                    recipientId,
+                    type: "account_status",
+                    title: "Talent Account Suspended",
+                    message: `Your talent account has been temporarily suspended by administration. Reason: ${suspendReason}`
+                });
+            } catch (notifErr: any) {
+                console.warn("[SuspendTalentProfile] Notification warning:", notifErr.message);
+            }
+        }
+
+        const populatedProfile = await TalentProfile.findById(profile._id)
+            .populate("userId", "name email mobile status isPaid createdAt");
+
+        return res.status(200).json({
+            success: true,
+            message: "Talent profile suspended successfully",
+            profile: populatedProfile || profile,
+            data: populatedProfile || profile,
+            user: user ? {
+                id: user._id.toString(),
+                _id: user._id.toString(),
+                name: user.name,
+                email: user.email,
+                status: user.status
+            } : null
+        });
+    } catch (error: any) {
+        console.error("Suspend talent profile error:", error);
+        return res.status(500).json({
+            success: false,
+            message: error?.message || "Something went wrong while suspending talent profile"
+        });
+    }
+};
+
+export const reactivateTalentProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const targetId = extractTargetUserId(req);
+        const { profile, user } = await resolveTalentAndUserForModeration(targetId);
+
+        if (!profile && !user) {
+            return res.status(404).json({
+                success: false,
+                message: `Talent profile not found for identifier: ${targetId || "unspecified"}`
+            });
+        }
+
+        const adminId = req.user?.userId || (req.user as any)?._id;
+
+        // 1. Update Profile in DB
+        profile.status = "approved";
+        profile.isProfileApproved = true;
+        profile.isVerified = true;
+        profile.statusReason = null;
+        profile.reviewedBy = adminId;
+        profile.reviewedAt = new Date();
+
+        // 2. Update linked User in DB so status reflects across all portals
+        if (user) {
+            user.status = "active";
+            await user.save();
+            profile.isSearchable = ((profile.profileCompletionPercentage || 0) >= 60) && !!user.isPaid;
+        }
+
+        await profile.save();
+
+        // 3. Audit log (guarded)
+        try {
+            await logAdminAction({
+                adminId,
+                action: "REACTIVATE_TALENT_PROFILE",
+                targetType: "TalentProfile",
+                targetId: profile._id,
+                details: "Talent profile reactivated.",
+                req
+            });
+        } catch (auditErr: any) {
+            console.warn("[ReactivateTalentProfile] Audit log warning:", auditErr.message);
+        }
+
+        // 4. Notification (guarded)
+        const recipientId = user?._id || profile.userId?._id || profile.userId;
+        if (recipientId) {
+            try {
+                await notifyUser({
+                    recipientId,
+                    type: "account_status",
+                    title: "Talent Account Reactivated",
+                    message: "Your artist profile and account have been reactivated by administration."
+                });
+            } catch (notifErr: any) {
+                console.warn("[ReactivateTalentProfile] Notification warning:", notifErr.message);
+            }
+        }
+
+        const populatedProfile = await TalentProfile.findById(profile._id)
+            .populate("userId", "name email mobile status isPaid createdAt");
+
+        return res.status(200).json({
+            success: true,
+            message: "Talent profile reactivated successfully",
+            profile: populatedProfile || profile,
+            data: populatedProfile || profile,
+            user: user ? {
+                id: user._id.toString(),
+                _id: user._id.toString(),
+                name: user.name,
+                email: user.email,
+                status: user.status
+            } : null
+        });
+    } catch (error: any) {
+        console.error("Reactivate talent profile error:", error);
+        return res.status(500).json({
+            success: false,
+            message: error?.message || "Something went wrong while reactivating talent profile"
+        });
+    }
+};
+
+export const getPendingTalentProfiles = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { page = 1, limit = 50 } = req.query;
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 50, 1), 100);
+        const skip = (pageNum - 1) * limitNum;
+
+        const filter = {
+            $or: [
+                { status: "pending" },
+                { isProfileApproved: false },
+                { isProfileApproved: { $exists: false } }
+            ]
+        };
+
+        const [profiles, total] = await Promise.all([
+            TalentProfile.find(filter as any)
+                .populate("userId", "name email mobile status isPaid createdAt")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            TalentProfile.countDocuments(filter as any)
+        ]);
+
+        res.status(200).json({
+            success: true,
+            count: profiles.length,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum),
+            profiles,
+            data: profiles
+        });
+    } catch (error: any) {
+        console.error("Get pending talent profiles error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching pending talent profiles" });
+    }
+};
+
+export const getTalentProfileById = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const targetId = extractTargetUserId(req);
+        let profile = await findTalentProfileByIdOrVismayaId(targetId);
+
+        if (!profile) {
+            const user = await findUserByIdOrVismayaId(targetId);
+            if (!user) {
+                return res.status(404).json({ success: false, message: `Talent profile not found for identifier: ${targetId || "unspecified"}` });
+            }
+            // Synthesize profile representation just like getTalentDirectory does for unprofiled users
+            profile = {
+                _id: user._id,
+                id: user._id.toString(),
+                userId: user,
+                vismayaId: `VIS-${user._id.toString().slice(-6).toUpperCase()}`,
+                stageName: user.name || "Artist",
+                category: "open_talent",
+                currentCity: "Mumbai",
+                currentState: "Maharashtra",
+                primaryProfession: "Actor / Performer",
+                status: user.status === "suspended" ? "suspended" : (user.status === "active" ? "pending" : user.status),
+                isProfileApproved: user.status === "active",
+                isVerified: false,
+                profileCompletionPercentage: 35,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            };
+        }
+
+        res.status(200).json({
+            success: true,
+            profile,
+            data: profile
+        });
+    } catch (error: any) {
+        console.error("Get talent profile by ID error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching talent profile" });
+    }
+};
+
+export const approveUser = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const targetId = extractTargetUserId(req);
+        const user = await findUserByIdOrVismayaId(targetId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: `User not found for identifier: ${targetId || "unspecified"}` });
+        }
+
+        const prevStatus = user.status;
+        user.status = "active";
+        await user.save();
+
+        // Synchronize associated TalentProfile in database
+        await TalentProfile.updateMany(
+            { userId: user._id },
+            {
+                $set: {
+                    status: "approved",
+                    isVerified: true,
+                    isProfileApproved: true,
+                    verifiedAt: new Date(),
+                    badgeType: "verified"
+                }
+            }
+        );
+
+        // Synchronize associated Organization in database
+        await Organization.updateMany(
+            { userId: user._id },
+            {
+                $set: {
+                    status: "active",
+                    isVerified: true
+                }
+            }
+        );
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "APPROVE_USER",
+            targetType: "User",
+            targetId: user._id,
+            details: `User status changed from ${prevStatus} to active`
+        });
+
+        await notifyUser({
+            recipientId: user._id,
+            type: "account_status",
+            title: "Account Approved",
+            message: "Your Vismaya Creative Studios account has been approved by admin."
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "User approved successfully",
+            user: {
+                id: user._id.toString(),
+                _id: user._id.toString(),
+                userId: user._id.toString(),
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                status: user.status
+            }
+        });
+    } catch (error: any) {
+        console.error("Approve user error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while approving user" });
+    }
+};
+
+export const getPendingUsers = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const users = await User.find({ status: "pending" }).select("-password");
+        res.status(200).json({ success: true, count: users.length, users });
+    } catch (error: any) {
+        console.error("Get pending users error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching pending users" });
+    }
+};
+
+export const rejectUser = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const targetId = extractTargetUserId(req);
+        const { reason } = req.body || {};
+        const user = await findUserByIdOrVismayaId(targetId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: `User not found for identifier: ${targetId || "unspecified"}` });
+        }
+
+        user.status = "rejected";
+        await user.save();
+
+        await TalentProfile.updateMany(
+            { userId: user._id },
+            { $set: { status: "rejected", isProfileApproved: false } }
+        );
+
+        await Organization.updateMany(
+            { userId: user._id },
+            { $set: { status: "rejected", isVerified: false } }
+        );
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "REJECT_USER",
+            targetType: "User",
+            targetId: user._id,
+            details: `User rejected. Reason: ${reason || "Not specified"}`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "User rejected successfully",
+            user: {
+                id: user._id.toString(),
+                _id: user._id.toString(),
+                userId: user._id.toString(),
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                status: user.status
+            }
+        });
+    } catch (error: any) {
+        console.error("Reject user error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while rejecting user" });
+    }
+};
+
+export const suspendUser = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const targetId = extractTargetUserId(req);
+        const { reason } = req.body || {};
+        const user = await findUserByIdOrVismayaId(targetId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: `User not found for identifier: ${targetId || "unspecified"}` });
+        }
+
+        user.status = "suspended";
+        await user.save();
+
+        await TalentProfile.updateMany(
+            { userId: user._id },
+            { $set: { status: "suspended", isProfileApproved: false } }
+        );
+
+        await Organization.updateMany(
+            { userId: user._id },
+            { $set: { status: "suspended", isVerified: false } }
+        );
+
+        await revokeAllUserSessions(user._id);
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "SUSPEND_USER",
+            targetType: "User",
+            targetId: user._id,
+            details: `User suspended. Reason: ${reason || "Violation of terms"}`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "User suspended successfully",
+            user: {
+                id: user._id.toString(),
+                _id: user._id.toString(),
+                userId: user._id.toString(),
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                status: user.status
+            }
+        });
+    } catch (error: any) {
+        console.error("Suspend user error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while suspending user" });
+    }
+};
+
+export const reactivateUser = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const targetId = extractTargetUserId(req);
+        const user = await findUserByIdOrVismayaId(targetId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: `User not found for identifier: ${targetId || "unspecified"}` });
+        }
+
+        user.status = "active";
+        await user.save();
+
+        await TalentProfile.updateMany(
+            { userId: user._id },
+            { $set: { status: "active", isVerified: true, isProfileApproved: true } }
+        );
+
+        await Organization.updateMany(
+            { userId: user._id },
+            { $set: { status: "active", isVerified: true } }
+        );
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "REACTIVATE_USER",
+            targetType: "User",
+            targetId: user._id,
+            details: "User reactivated to active status"
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "User reactivated successfully",
+            user: {
+                id: user._id.toString(),
+                _id: user._id.toString(),
+                userId: user._id.toString(),
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                status: user.status
+            }
+        });
+    } catch (error: any) {
+        console.error("Reactivate user error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while reactivating user" });
+    }
+};
+
+export const banUser = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const targetId = extractTargetUserId(req);
+        const { reason } = req.body || {};
+        const user = await findUserByIdOrVismayaId(targetId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: `User not found for identifier: ${targetId || "unspecified"}` });
+        }
+
+        user.status = "banned";
+        await user.save();
+
+        await revokeAllUserSessions(user._id);
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "BAN_USER",
+            targetType: "User",
+            targetId: user._id,
+            details: `User banned. Reason: ${reason || "Administrative ban"}`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "User banned successfully and all active sessions revoked",
+            user: { id: user._id, name: user.name, email: user.email, role: user.role, status: user.status }
+        });
+    } catch (error: any) {
+        console.error("Ban user error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while banning user" });
+    }
+};
+
+export const unbanUser = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const targetId = extractTargetUserId(req);
+        const user = await findUserByIdOrVismayaId(targetId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: `User not found for identifier: ${targetId || "unspecified"}` });
+        }
+
+        user.status = "active";
+        await user.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "UNBAN_USER",
+            targetType: "User",
+            targetId: user._id,
+            details: "User unbanned to active status"
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "User unbanned successfully",
+            user: { id: user._id, name: user.name, email: user.email, role: user.role, status: user.status }
+        });
+    } catch (error: any) {
+        console.error("Unban user error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while unbanning user" });
+    }
+};
+
+export const finalizeUserDeletion = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const targetId = extractTargetUserId(req);
+        const user = await findUserByIdOrVismayaId(targetId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: `User not found for identifier: ${targetId || "unspecified"}` });
+        }
+
+        user.status = "deleted";
+        user.name = "Deleted User";
+        user.email = `deleted_${user._id}@deleted.local`;
+        user.mobile = undefined;
+        await user.save();
+
+        await revokeAllUserSessions(user._id);
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "FINALIZE_USER_DELETION",
+            targetType: "User",
+            targetId: user._id,
+            details: "User account finalized as deleted and PII scrubbed"
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "User account permanently finalized as deleted and PII scrubbed"
+        });
+    } catch (error: any) {
+        console.error("Finalize deletion error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while finalizing user deletion" });
+    }
+};
+
+
+export const getAllUsers = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { role, status, page = 1, limit = 20 } = req.query;
+        const filter: any = {};
+        if (role) filter.role = role;
+        if (status) filter.status = status;
+
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 20, 1), 100);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [users, total] = await Promise.all([
+            User.find(filter).select("-password").sort({ createdAt: -1 }).skip(skip).limit(limitNum),
+            User.countDocuments(filter)
+        ]);
+
+        res.status(200).json({
+            success: true,
+            count: users.length,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum),
+            users
+        });
+    } catch (error: any) {
+        console.error("Get all users error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching users" });
+    }
+};
+
+// --- DIRECTORIES ---
+
+export const getTalentDirectory = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { profession, city, status, search, page = 1, limit = 50 } = req.query;
+        const filter: any = {};
+        if (profession) filter.primaryProfession = new RegExp(escapeRegex(profession), "i");
+        if (city) filter.currentCity = new RegExp(escapeRegex(city), "i");
+
+        const andConditions: any[] = [];
+
+        if (status && status !== "all") {
+            const st = String(status).toLowerCase().trim();
+            if (st === "pending") {
+                andConditions.push({
+                    $or: [
+                        { status: "pending" },
+                        { isProfileApproved: false },
+                        { isProfileApproved: { $exists: false } }
+                    ]
+                });
+            } else if (st === "approved" || st === "active" || st === "verified") {
+                andConditions.push({
+                    $or: [
+                        { status: { $in: ["approved", "active"] } },
+                        { isProfileApproved: true }
+                    ]
+                });
+            } else if (st === "rejected") {
+                andConditions.push({ status: "rejected" });
+            } else if (st === "suspended") {
+                andConditions.push({ status: "suspended" });
+            } else {
+                andConditions.push({ status: st });
+            }
+        }
+
+        if (search && String(search).trim()) {
+            const searchRegex = new RegExp(escapeRegex(String(search).trim()), "i");
+            const searchOr: any[] = [
+                { stageName: searchRegex },
+                { firstName: searchRegex },
+                { lastName: searchRegex },
+                { vismayaId: searchRegex },
+                { currentCity: searchRegex },
+                { primaryProfession: searchRegex }
+            ];
+
+            const matchingUsers = await User.find({
+                $or: [{ name: searchRegex }, { email: searchRegex }],
+                role: "talent"
+            }).select("_id");
+
+            if (matchingUsers.length > 0) {
+                searchOr.push({ userId: { $in: matchingUsers.map(u => u._id) } });
+            }
+
+            andConditions.push({ $or: searchOr });
+        }
+
+        if (andConditions.length > 0) {
+            filter.$and = andConditions;
+        }
+
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 50, 1), 100);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [profiles, total] = await Promise.all([
+            TalentProfile.find(filter as any)
+                .populate("userId", "name email mobile status isPaid createdAt")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            TalentProfile.countDocuments(filter as any)
+        ]);
+
+        // Synthesize only if searching all or specific unprofiled matches
+        let syntheticProfiles: any[] = [];
+        if (!status || status === "all" || status === "pending" || status === "active" || status === "suspended") {
+            const profileUserIds = profiles.map(p => p.userId?._id?.toString()).filter(Boolean);
+            const userFilter: any = {
+                role: "talent",
+                _id: { $nin: profileUserIds }
+            };
+            if (status === "pending") userFilter.status = "pending";
+            if (status === "active") userFilter.status = "active";
+            if (status === "suspended") userFilter.status = "suspended";
+
+            const unprofiledUsers = await User.find(userFilter as any)
+                .select("-password")
+                .sort({ createdAt: -1 })
+                .limit(20);
+
+            syntheticProfiles = unprofiledUsers.map((u: any) => ({
+                _id: u._id,
+                userId: u,
+                stageName: u.name,
+                currentCity: "Mumbai",
+                currentState: "Maharashtra",
+                primaryProfession: "Actor / Performer",
+                gender: "Any",
+                status: u.status === "active" ? "active" : (u.status === "suspended" ? "suspended" : "pending"),
+                isProfileApproved: u.status === "active",
+                createdAt: u.createdAt,
+                photos: []
+            }));
+        }
+
+        const allProfiles = [...profiles, ...syntheticProfiles];
+
+        res.status(200).json({
+            success: true,
+            count: allProfiles.length,
+            total: total + syntheticProfiles.length,
+            page: pageNum,
+            totalPages: Math.ceil((total + syntheticProfiles.length) / limitNum) || 1,
+            profiles: allProfiles,
+            data: allProfiles
+        });
+    } catch (error: any) {
+        console.error("Get talent directory error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching talent directory" });
+    }
+};
+
+export const getOrganizationDirectory = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { type, page = 1, limit = 50 } = req.query;
+        const filter: any = {};
+        if (type) filter.organizationType = new RegExp(escapeRegex(type), "i");
+
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 50, 1), 100);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [organizations, total] = await Promise.all([
+            Organization.find(filter)
+                .populate("userId", "name email mobile status isPaid createdAt")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            Organization.countDocuments(filter)
+        ]);
+
+        const orgUserIds = organizations.map(o => o.userId?._id?.toString()).filter(Boolean);
+        const unprofiledUsers = await User.find({
+            role: "organization",
+            _id: { $nin: orgUserIds }
+        }).select("-password").sort({ createdAt: -1 }).limit(limitNum);
+
+        const syntheticOrgs = unprofiledUsers.map((u: any) => ({
+            _id: u._id,
+            userId: u,
+            organizationName: u.name,
+            contactPerson: u.name,
+            contactEmail: u.email,
+            contactNumber: u.mobile,
+            organizationType: "Production House",
+            status: u.status,
+            createdAt: u.createdAt
+        }));
+
+        const allOrgs = [...organizations, ...syntheticOrgs];
+
+        res.status(200).json({
+            success: true,
+            count: allOrgs.length,
+            total: total + unprofiledUsers.length,
+            page: pageNum,
+            totalPages: Math.ceil((total + unprofiledUsers.length) / limitNum),
+            organizations: allOrgs
+        });
+    } catch (error: any) {
+        console.error("Get organization directory error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching organization directory" });
+    }
+};
+
+// --- OPPORTUNITIES ADMIN QUEUE ---
+
+export const getAllOpportunitiesAdmin = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { status, organizationId, projectId, page = 1, limit = 100 } = req.query;
+        const filter: any = {};
+        if (status && status !== "ALL") {
+            const s = String(status).trim();
+            if (s.toLowerCase() === "submitted" || s.toLowerCase() === "pending") {
+                filter.status = { $in: ["pending", "under_vismaya_review"] };
+            } else if (s.toLowerCase() === "changes requested" || s.toLowerCase() === "corrections_requested") {
+                filter.status = "corrections_requested";
+            } else if (s.toLowerCase() === "cancel requested" || s.toLowerCase() === "cancellation_requested") {
+                filter.status = "cancellation_requested";
+            } else {
+                filter.status = s.toLowerCase();
+            }
+        }
+        if (organizationId) {
+            const orgProjects = await Project.find({ organizationId } as any).select("_id");
+            filter.projectId = { $in: orgProjects.map((p: any) => p._id) };
+        } else if (projectId) {
+            filter.projectId = projectId;
+        }
+
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 100, 1), 200);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [opportunities, total] = await Promise.all([
+            Opportunity.find(filter)
+                .populate({
+                    path: "projectId",
+                    select: "projectName organizationId projectType title type",
+                    populate: {
+                        path: "organizationId",
+                        select: "organizationName contactPerson contactEmail contactNumber"
+                    }
+                })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            Opportunity.countDocuments(filter)
+        ]);
+
+        res.status(200).json({
+            success: true,
+            count: opportunities.length,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum),
+            opportunities
+        });
+    } catch (error: any) {
+        console.error("Get all admin opportunities error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching opportunities" });
+    }
+};
+
+export const getAllApplicationsAdmin = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { opportunityId, talentId, status, page = 1, limit = 100 } = req.query;
+        const filter: any = {};
+        if (opportunityId) filter.opportunityId = opportunityId;
+        if (talentId) filter.talentId = talentId;
+        if (status && status !== "ALL") {
+            filter.status = String(status).toLowerCase().replace(/\s+/g, "_");
+        }
+
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 100, 1), 200);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [applications, total] = await Promise.all([
+            Application.find(filter)
+                .populate({
+                    path: "opportunityId",
+                    select: "title role projectId remuneration location deadline",
+                    populate: {
+                        path: "projectId",
+                        select: "projectName organizationId"
+                    }
+                })
+                .populate("talentId", "name email mobile status role")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            Application.countDocuments(filter)
+        ]);
+
+        const talentUserIds = applications.map(a => a.talentId?._id).filter(Boolean);
+        const profiles = await TalentProfile.find({ userId: { $in: talentUserIds } });
+        const profileMap = new Map(profiles.map(p => [p.userId.toString(), p]));
+
+        const enrichedApplications = applications.map((app: any) => {
+            const appObj = app.toObject();
+            const prof: any = app.talentId?._id ? profileMap.get(app.talentId._id.toString()) : null;
+            if (prof) {
+                appObj.talentProfile = prof;
+                appObj.talentName = prof.stageName || prof.personalDetails?.stageName || prof.personalDetails?.fullName || appObj.talentId?.name;
+                appObj.talentAvatar = prof.profilePhoto || prof.avatar;
+            } else if (appObj.talentId) {
+                appObj.talentName = appObj.talentId.name;
+            }
+            return appObj;
+        });
+
+        res.status(200).json({
+            success: true,
+            count: enrichedApplications.length,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum),
+            applications: enrichedApplications
+        });
+    } catch (error: any) {
+        console.error("Get all admin applications error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching applications" });
+    }
+};
+
+export const getAllProjectsAdmin = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { organizationId, status, page = 1, limit = 100 } = req.query;
+        const filter: any = {};
+        if (organizationId) filter.organizationId = organizationId;
+        if (status && status !== "ALL") filter.status = String(status).toLowerCase();
+
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 100, 1), 200);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [projects, total] = await Promise.all([
+            Project.find(filter)
+                .populate("organizationId", "organizationName contactPerson contactEmail contactNumber")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            Project.countDocuments(filter)
+        ]);
+
+        res.status(200).json({
+            success: true,
+            count: projects.length,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum),
+            projects
+        });
+    } catch (error: any) {
+        console.error("Get all admin projects error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching projects" });
+    }
+};
+
+export const getPendingOpportunities = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const opportunities = await Opportunity.find({
+            status: { $in: ["pending", "under_vismaya_review"] }
+        }).populate({
+            path: "projectId",
+            select: "projectName organizationId projectType",
+            populate: {
+                path: "organizationId",
+                select: "organizationName contactPerson contactEmail contactNumber"
+            }
+        }).sort({ createdAt: -1 });
+
+        res.status(200).json({ success: true, count: opportunities.length, opportunities });
+    } catch (error: any) {
+        console.error("Get pending opportunities error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching pending opportunities" });
+    }
+};
+
+export const approveOpportunity = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const oppId = req.params.opportunityId || req.params.id || req.body?.opportunityId || req.body?.id;
+        const opportunity = await Opportunity.findById(oppId);
+
+        if (!opportunity) {
+            return res.status(404).json({ success: false, message: "Opportunity not found" });
+        }
+
+        opportunity.status = "published";
+        opportunity.publishedAt = new Date();
+        opportunity.approvedAt = new Date();
+        opportunity.approvedBy = req.user?.userId as any;
+        await opportunity.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "APPROVE_OPPORTUNITY",
+            targetType: "opportunity",
+            targetId: opportunity._id,
+            details: `Approved opportunity: ${opportunity.title}`
+        });
+
+        res.status(200).json({ success: true, message: "Opportunity approved and published successfully", opportunity });
+    } catch (error: any) {
+        console.error("Approve opportunity error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while approving opportunity" });
+    }
+};
+
+export const rejectOpportunity = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const oppId = req.params.opportunityId || req.params.id || req.body?.opportunityId || req.body?.id;
+        const { rejectionReason } = req.body || {};
+
+        const opportunity = await Opportunity.findById(oppId);
+        if (!opportunity) {
+            return res.status(404).json({ success: false, message: "Opportunity not found" });
+        }
+
+        opportunity.status = "rejected";
+        opportunity.rejectionReason = rejectionReason || "Does not meet Vismaya standards";
+        await opportunity.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "REJECT_OPPORTUNITY",
+            targetType: "opportunity",
+            targetId: opportunity._id,
+            details: `Rejected opportunity. Reason: ${opportunity.rejectionReason}`
+        });
+
+        res.status(200).json({ success: true, message: "Opportunity rejected", opportunity });
+    } catch (error: any) {
+        console.error("Reject opportunity error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while rejecting opportunity" });
+    }
+};
+
+export const requestOpportunityCorrections = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const oppId = req.params.opportunityId || req.params.id || req.body?.opportunityId || req.body?.id;
+        const { correctionNotes } = req.body || {};
+
+        if (!correctionNotes) {
+            return res.status(400).json({ success: false, message: "Correction notes are required" });
+        }
+
+        const opportunity = await Opportunity.findById(oppId);
+        if (!opportunity) {
+            return res.status(404).json({ success: false, message: "Opportunity not found" });
+        }
+
+        opportunity.status = "corrections_requested";
+        opportunity.correctionNotes = correctionNotes;
+        opportunity.correctionRequestedAt = new Date();
+        opportunity.correctionRequestedBy = req.user?.userId as any;
+        await opportunity.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "REQUEST_OPPORTUNITY_CORRECTIONS",
+            targetType: "opportunity",
+            targetId: opportunity._id,
+            details: `Corrections requested: ${correctionNotes}`
+        });
+
+        res.status(200).json({ success: true, message: "Corrections requested from organization", opportunity });
+    } catch (error: any) {
+        console.error("Request corrections error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while requesting corrections" });
+    }
+};
+
+export const getCancellationRequests = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const opportunities = await Opportunity.find({ status: "cancellation_requested" })
+            .populate({
+                path: "projectId",
+                select: "projectName organizationId projectType",
+                populate: {
+                    path: "organizationId",
+                    select: "organizationName contactPerson contactEmail contactNumber"
+                }
+            })
+            .sort({ cancellationRequestedAt: -1 });
+
+        res.status(200).json({ success: true, count: opportunities.length, opportunities });
+    } catch (error: any) {
+        console.error("Get cancellation requests error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching cancellation requests" });
+    }
+};
+
+export const reviewOpportunityCancellation = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { opportunityId } = req.params;
+        const { action } = req.body; // "approve" or "reject"
+
+        const opportunity = await Opportunity.findById(opportunityId);
+        if (!opportunity) {
+            return res.status(404).json({ success: false, message: "Opportunity not found" });
+        }
+
+        if (action === "approve") {
+            opportunity.status = "cancelled";
+        } else {
+            const isExpired = (opportunity as any).applicationDeadline && new Date((opportunity as any).applicationDeadline) < new Date();
+            opportunity.status = (isExpired ? "closed" : (opportunity.statusBeforeCancellationRequest || "published")) as any;
+        }
+
+        opportunity.cancellationReviewedAt = new Date();
+        opportunity.cancellationReviewedBy = req.user?.userId as any;
+        await opportunity.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: `CANCELLATION_${action.toUpperCase()}`,
+            targetType: "Opportunity",
+            targetId: opportunity._id,
+            details: `Cancellation request ${action}d`
+        });
+
+        res.status(200).json({ success: true, message: `Cancellation request ${action}d successfully`, opportunity });
+    } catch (error: any) {
+        console.error("Review cancellation error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while reviewing cancellation" });
+    }
+};
+
+export const completeOpportunity = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const opportunityId = req.params.opportunityId || req.params.id;
+        const opportunity = await Opportunity.findById(opportunityId);
+        if (!opportunity) {
+            return res.status(404).json({ success: false, message: "Opportunity not found" });
+        }
+
+        opportunity.status = "completed";
+        opportunity.completedAt = new Date();
+        opportunity.completionRequested = false;
+        await opportunity.save();
+
+        // Delete temporary shortlists for this completed opportunity
+        await ProjectShortlist.deleteMany({ opportunityId: opportunity._id });
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "COMPLETE_OPPORTUNITY",
+            targetType: "Opportunity",
+            targetId: opportunity._id,
+            details: `Opportunity completed and closed: ${opportunity.title}`
+        });
+
+        // Notify organization owner
+        const org = await Organization.findById((opportunity as any).organizationId);
+        if (org) {
+            await notifyUser({
+                recipientId: org.userId,
+                type: "opportunity_status",
+                title: "Opportunity Completed",
+                message: `Your opportunity "${opportunity.title}" has been successfully completed by Vismaya Admin.`
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Opportunity marked as completed successfully",
+            opportunity
+        });
+    } catch (error: any) {
+        console.error("Complete opportunity error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while completing opportunity" });
+    }
+};
+
+// --- REPORTS MANAGEMENT ---
+
+export const getReports = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { status, targetType, page = 1, limit = 20 } = req.query;
+        const filter: any = {};
+        if (status) filter.status = status;
+        if (targetType) filter.targetType = targetType;
+
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 20, 1), 100);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [reports, total] = await Promise.all([
+            Report.find(filter)
+                .populate("reporterId", "name email role")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            Report.countDocuments(filter)
+        ]);
+
+        res.status(200).json({
+            success: true,
+            count: reports.length,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum),
+            reports
+        });
+    } catch (error: any) {
+        console.error("Get reports error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching reports" });
+    }
+};
+
+export const reviewReport = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { reportId } = req.params;
+        const { action, resolutionNotes } = req.body; // "resolve" or "dismiss"
+
+        if (!["resolve", "dismiss", "resolved", "dismissed"].includes(action)) {
+            return res.status(400).json({ success: false, message: "Action must be resolve or dismiss" });
+        }
+
+        const report = await Report.findById(reportId);
+        if (!report) {
+            return res.status(404).json({ success: false, message: "Report not found" });
+        }
+
+        const statusMapped = action.startsWith("resolve") ? "resolved" : "dismissed";
+        report.status = statusMapped;
+        report.adminNotes = resolutionNotes || "";
+        report.resolvedAt = new Date();
+        report.resolvedBy = req.user?.userId as any;
+        await report.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: `REPORT_${statusMapped.toUpperCase()}`,
+            targetType: "Report",
+            targetId: report._id,
+            details: `Report ${statusMapped}. Notes: ${resolutionNotes || "None"}`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: `Report ${statusMapped} successfully`,
+            report
+        });
+    } catch (error: any) {
+        console.error("Review report error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while reviewing report" });
+    }
+};
+
+// --- AUDITIONS QUEUE & REVIEW ---
+
+export const getPendingAuditions = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { page = 1, limit = 50, status, all } = req.query;
+        const filter: any = {};
+        if (String(all) === "true") {
+            // No approval filter, return all
+        } else if (status && status !== "ALL") {
+            const s = String(status).toLowerCase().replace(/\s+/g, "_");
+            if (s === "requested") {
+                filter.status = "requested";
+            } else if (s.includes("relay")) {
+                filter.status = "relayed_to_talent";
+            } else if (s.includes("self_tape") || s.includes("submitted")) {
+                filter.status = { $in: ["submitted", "self_tape_received", "self_tape_submitted"] };
+            } else if (s.includes("forward")) {
+                filter.status = "forwarded_to_org";
+            } else {
+                filter.status = s;
+            }
+        } else {
+            filter.vismayaApproval = "pending";
+        }
+
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 50, 1), 100);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [auditions, total] = await Promise.all([
+            Audition.find(filter)
+                .populate("talentId", "name email mobile")
+                .populate("organizationId", "organizationName")
+                .populate("opportunityId", "title role location remuneration")
+                .populate("projectId", "projectName")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            Audition.countDocuments(filter)
+        ]);
+
+        res.status(200).json({
+            success: true,
+            count: auditions.length,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum),
+            auditions
+        });
+    } catch (error: any) {
+        console.error("Get pending auditions error:", error);
+        res.status(500).json({ success: false, message: "Failed to fetch pending auditions" });
+    }
+};
+
+export const reviewAudition = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const auditionId = req.params.auditionId || req.params.id;
+        const { action, scriptUrl, rejectionReason } = req.body; // "approve" or "reject"
+
+        const audition = await Audition.findById(auditionId);
+        if (!audition) {
+            return res.status(404).json({ success: false, message: "Audition not found" });
+        }
+
+        if (action === "approve") {
+            audition.vismayaApproval = "approved";
+            audition.vismayaReviewedBy = req.user?.userId as any;
+            audition.vismayaReviewedAt = new Date();
+            if (scriptUrl) {
+                audition.scriptUrl = scriptUrl;
+            }
+            await audition.save();
+
+            await logAdminAction({
+                adminId: (req.user?.userId as any),
+                action: "AUDITION_APPROVE",
+                targetType: "Audition",
+                targetId: audition._id,
+                details: `Audition approved for application ${audition.applicationId}`
+            });
+
+            // Notify talent via email + in-app per U1
+            const opp = await Opportunity.findById(audition.opportunityId);
+            await notifyUser({
+                recipientId: audition.talentId,
+                type: "audition_invitation",
+                title: `Audition Invitation: ${audition.type.replace(/_/g, " ")}`,
+                message: `You have received an audition request for "${opp?.title || 'Opportunity'}".`,
+                referenceId: audition._id,
+                referenceType: "Audition",
+                sendEmailAlert: true,
+                emailSubject: `Audition Invitation: ${opp?.title || 'Opportunity'}`
+            });
+
+            res.status(200).json({
+                success: true,
+                message: "Audition approved and invitation sent to talent",
+                audition
+            });
+        } else {
+            audition.vismayaApproval = "rejected";
+            audition.vismayaReviewedBy = req.user?.userId as any;
+            audition.vismayaReviewedAt = new Date();
+            audition.vismayaRejectionReason = rejectionReason || "Does not meet guidelines";
+            audition.status = "cancelled";
+            await audition.save();
+
+            await logAdminAction({
+                adminId: (req.user?.userId as any),
+                action: "AUDITION_REJECT",
+                targetType: "Audition",
+                targetId: audition._id,
+                details: `Audition rejected. Reason: ${audition.vismayaRejectionReason}`
+            });
+
+            // Notify organization
+            const org = await Organization.findById(audition.organizationId);
+            if (org) {
+                await notifyUser({
+                    recipientId: org.userId,
+                    type: "audition_rejected",
+                    title: "Audition Request Rejected",
+                    message: `Your audition request was rejected by Vismaya moderation. Reason: ${audition.vismayaRejectionReason}`,
+                    referenceId: audition._id,
+                    referenceType: "Audition"
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: "Audition request rejected",
+                audition
+            });
+        }
+    } catch (error: any) {
+        console.error("Review audition error:", error);
+        res.status(500).json({ success: false, message: "Failed to review audition" });
+    }
+};
+
+// --- REAPPLICATIONS ---
+
+export const getReapplicationRequests = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const applications = await Application.find({
+            status: "withdrawn",
+            reapplicationRequested: true,
+            reapplicationReviewedAt: { $exists: false }
+        }).populate("talentId", "name email").populate("opportunityId", "title").sort({ reapplicationRequestedAt: -1 });
+
+        res.status(200).json({ success: true, count: applications.length, applications });
+    } catch (error: any) {
+        console.error("Get reapplication requests error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching reapplication requests" });
+    }
+};
+
+export const reviewReapplication = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { applicationId } = req.params;
+        const { action, decisionNotes } = req.body; // "approve" or "reject"
+
+        const application = await Application.findById(applicationId);
+        if (!application) {
+            return res.status(404).json({ success: false, message: "Application not found" });
+        }
+
+        application.reapplicationApproved = action === "approve";
+        application.reapplicationReviewedAt = new Date();
+        application.reapplicationReviewedBy = req.user?.userId as any;
+        application.reapplicationDecisionNotes = decisionNotes || "";
+
+        // If approved, delete old withdrawn record so talent can apply fresh
+        if (action === "approve") {
+            await Application.deleteOne({ _id: application._id });
+        } else {
+            await application.save();
+        }
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: `REAPPLICATION_${action.toUpperCase()}`,
+            targetType: "application",
+            targetId: application._id,
+            details: `Reapplication ${action}d. Notes: ${decisionNotes || "None"}`
+        });
+
+        res.status(200).json({ success: true, message: `Reapplication request ${action}d successfully` });
+    } catch (error: any) {
+        console.error("Review reapplication error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while reviewing reapplication" });
+    }
+};
+
+// --- VERIFICATIONS ---
+
+export const getPendingVerifications = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const verifications = await Verification.find({ status: "pending" })
+            .populate("userId", "name email role")
+            .sort({ submittedAt: -1 });
+
+        res.status(200).json({ success: true, count: verifications.length, verifications });
+    } catch (error: any) {
+        console.error("Get pending verifications error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching verifications" });
+    }
+};
+
+export const reviewVerification = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { verificationId } = req.params;
+        const { action, notes, rejectionReason } = req.body; // "approve" or "reject"
+
+        const verification = await Verification.findById(verificationId);
+        if (!verification) {
+            return res.status(404).json({ success: false, message: "Verification record not found" });
+        }
+
+        if (action === "approve") {
+            // T9: Professional verification requirements check
+            if (verification.verificationType === "professional") {
+                const profile = await TalentProfile.findOne({ userId: verification.userId });
+                const liveMediaCount = await MediaItem.countDocuments({ owner: verification.userId, moderationState: "live" });
+                const creditsCount = profile?.credits?.length || 0;
+
+                if (profile?.careerStage === "aspiring" && creditsCount === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Aspiring talent with zero credits cannot be granted professional verification."
+                    });
+                }
+
+                if (creditsCount < 1 || liveMediaCount < 1) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Professional verification requires at least 1 credit and 1 live portfolio media item."
+                    });
+                }
+            }
+
+            verification.status = "verified";
+            (verification as any).verifiedAt = new Date();
+            (verification as any).verifiedBy = req.user?.userId;
+            (verification as any).reviewNotes = notes || "";
+            verification.rejectionReason = undefined;
+
+            await TalentProfile.findOneAndUpdate(
+                { userId: verification.userId },
+                {
+                    isVerified: true,
+                    verifiedAt: new Date(),
+                    badgeType: "verified"
+                }
+            );
+        } else {
+            verification.status = "rejected";
+            (verification as any).verifiedAt = undefined;
+            (verification as any).verifiedBy = req.user?.userId;
+            (verification as any).reviewNotes = notes || "";
+            verification.rejectionReason = rejectionReason || "Documents insufficient";
+        }
+
+        await verification.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: `VERIFICATION_${action.toUpperCase()}`,
+            targetType: "Verification",
+            targetId: verification._id,
+            details: `Verification ${action}d for user ${verification.userId}`
+        });
+
+        res.status(200).json({ success: true, message: `Verification ${action}d successfully`, verification });
+    } catch (error: any) {
+        console.error("Review verification error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while reviewing verification" });
+    }
+};
+
+// --- MEDIA MODERATION ---
+
+export const getPendingMedia = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const media = await MediaItem.find({
+            moderationState: { $in: ["admin_review", "uploaded", "restricted"] }
+        })
+            .populate("owner", "name email role")
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({ success: true, count: media.length, media });
+    } catch (error: any) {
+        console.error("Get pending media error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching media moderation queue" });
+    }
+};
+
+export const reviewMediaItem = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { mediaId } = req.params;
+        const { action, moderationReason } = req.body; // "approve", "reject", "restrict"
+
+        if (!["approve", "reject", "restrict"].includes(action)) {
+            return res.status(400).json({ success: false, message: "Action must be approve, reject, or restrict" });
+        }
+
+        const media = await MediaItem.findById(mediaId);
+        if (!media) {
+            return res.status(404).json({ success: false, message: "Media item not found" });
+        }
+
+        const stateMap = {
+            approve: "live",
+            reject: "removed",
+            restrict: "restricted"
+        };
+
+        media.moderationState = (stateMap as any)[action];
+        media.moderatedAt = new Date();
+        media.moderatedBy = req.user?.userId as any;
+        media.moderationNotes = moderationReason || "";
+        await media.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: `MEDIA_MODERATION_${action.toUpperCase()}`,
+            targetType: "media",
+            targetId: media._id,
+            details: `Media ${action}d. Reason: ${moderationReason || "None"}`
+        });
+
+        res.status(200).json({ success: true, message: `Media item ${action}d successfully`, media });
+    } catch (error: any) {
+        console.error("Review media error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while reviewing media" });
+    }
+};
+
+// --- TRANSACTIONS & CREDITS ---
+
+export const getPaymentTransactions = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { status, packageType, page = 1, limit = 20 } = req.query;
+        const filter: any = {};
+        if (status) filter.status = status;
+        if (packageType) filter.packageType = packageType;
+
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 20, 1), 100);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [transactions, total] = await Promise.all([
+            PaymentTransaction.find(filter)
+                .populate("userId", "name email role")
+                .populate("organizationId", "organizationName")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            PaymentTransaction.countDocuments(filter)
+        ]);
+
+        res.status(200).json({
+            success: true,
+            count: transactions.length,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum),
+            transactions
+        });
+    } catch (error: any) {
+        console.error("Get payment transactions error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching transactions" });
+    }
+};
+
+export const adjustCreditBalance = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { organizationId, amount, reason } = req.body;
+
+        if (!organizationId || typeof amount !== "number" || amount === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "organizationId and non-zero amount number are required"
+            });
+        }
+
+        let ledger = await CreditLedger.findOne({ organizationId });
+        if (!ledger) {
+            ledger = await CreditLedger.create({
+                organizationId,
+                balance: 0,
+                totalPurchased: 0,
+                totalConsumed: 0
+            } as any);
+        }
+
+        const prevBalance = ledger.balance;
+        const newBalance = Math.max(0, prevBalance + amount);
+        ledger.balance = newBalance;
+        if (amount > 0) (ledger as any).totalPurchased += amount;
+        await ledger.save();
+
+        await CreditTransaction.create({
+            organizationId,
+            transactionType: amount > 0 ? "admin_grant" : "admin_deduct",
+            amount: Math.abs(amount),
+            balanceAfter: newBalance,
+            description: reason || `Admin credit adjustment by ${(req.user as any)?.email || "admin"}`
+        } as any);
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "ADJUST_CREDITS",
+            targetType: "organization",
+            targetId: organizationId,
+            details: `Adjusted credits by ${amount}. Previous: ${prevBalance}, New: ${newBalance}. Reason: ${reason || "None"}`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Credit balance adjusted successfully",
+            organizationId,
+            previousBalance: prevBalance,
+            currentBalance: newBalance
+        });
+    } catch (error: any) {
+        console.error("Adjust credits error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while adjusting credits" });
+    }
+};
+
+// --- COUPON MANAGEMENT ---
+
+export const getCoupons = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const coupons = await Coupon.find().sort({ createdAt: -1 });
+        res.status(200).json({ success: true, count: coupons.length, coupons });
+    } catch (error: any) {
+        console.error("Get coupons error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching coupons" });
+    }
+};
+
+export const createCoupon = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const validation = validateCouponInput(req.body);
+        if (!validation.isValid) {
+            return res.status(400).json({ success: false, message: validation.errors[0] });
+        }
+
+        const { code, discountType, discountValue, minOrderAmount, maxDiscountAmount, applicablePackages, maxUses, validUntil } = req.body;
+
+        const cleanCode = String(code).trim().toUpperCase();
+        const existing = await Coupon.findOne({ code: cleanCode });
+        if (existing) {
+            return res.status(409).json({ success: false, message: "Coupon code already exists" });
+        }
+
+        const coupon = await Coupon.create({
+            code: cleanCode,
+            discountType,
+            discountValue,
+            minOrderAmount: minOrderAmount || 0,
+            maxDiscountAmount,
+            applicablePackages: applicablePackages || [],
+            maxUses: maxUses || 100,
+            validUntil: validUntil ? new Date(validUntil) : undefined,
+            createdBy: req.user?.userId
+        });
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "CREATE_COUPON",
+            targetType: "coupon",
+            targetId: coupon._id,
+            details: `Created coupon ${cleanCode}`
+        });
+
+        res.status(201).json({ success: true, message: "Coupon created successfully", coupon });
+    } catch (error: any) {
+        console.error("Create coupon error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while creating coupon" });
+    }
+};
+
+export const updateCoupon = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { couponId } = req.params;
+        const coupon = await Coupon.findById(couponId);
+        if (!coupon) {
+            return res.status(404).json({ success: false, message: "Coupon not found" });
+        }
+
+        const allowedFields = ["discountType", "discountValue", "minOrderAmount", "maxDiscountAmount", "applicablePackages", "maxUses", "validUntil", "isActive"];
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                (coupon as any)[field] = req.body[field];
+            }
+        }
+
+        await coupon.save();
+
+        res.status(200).json({ success: true, message: "Coupon updated successfully", coupon });
+    } catch (error: any) {
+        console.error("Update coupon error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while updating coupon" });
+    }
+};
+
+export const deleteCoupon = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { couponId } = req.params;
+        await Coupon.findByIdAndDelete(couponId);
+        res.status(200).json({ success: true, message: "Coupon deleted successfully" });
+    } catch (error: any) {
+        console.error("Delete coupon error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while deleting coupon" });
+    }
+};
+
+// --- DASHBOARD & ANALYTICS ---
+
+export const getDashboardMetrics = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const [
+            totalUsers,
+            talentCount,
+            orgCount,
+            pendingUsers,
+            verifiedTalentCount,
+            activeOrgCount,
+            totalOpportunities,
+            publishedOpportunities,
+            pendingOpportunities,
+            pendingCancellations,
+            totalApplications,
+            totalAuditions,
+            pendingAuditionsToRelay,
+            selfTapesToForward,
+            totalRevenueAgg,
+            pendingVerifications,
+            pendingMediaCount,
+            categoryAgg,
+            cityAgg,
+            underReviewApps,
+            shortlistedApps,
+            selectedApps,
+            appMonthlyAgg,
+            userMonthlyAgg
+        ] = await Promise.all([
+            User.countDocuments(),
+            User.countDocuments({ role: "talent" } as any),
+            User.countDocuments({ role: "organization" } as any),
+            User.countDocuments({ status: "pending" }),
+            User.countDocuments({ role: "talent", status: { $in: ["active", "approved", "verified"] } } as any),
+            User.countDocuments({ role: "organization", status: { $in: ["active", "approved", "verified"] } } as any),
+            Opportunity.countDocuments(),
+            Opportunity.countDocuments({ status: "published" } as any),
+            Opportunity.countDocuments({ status: { $in: ["pending", "under_vismaya_review"] } } as any),
+            Opportunity.countDocuments({ status: "cancellation_requested" }),
+            Application.countDocuments(),
+            Audition.countDocuments(),
+            Audition.countDocuments({ status: "requested" }),
+            Audition.countDocuments({ status: { $in: ["submitted", "self_tape_received", "self_tape_submitted"] } } as any),
+            PaymentTransaction.aggregate([
+                { $match: { status: "successful" } },
+                { $group: { _id: null, total: { $sum: "$amount" } } }
+            ]),
+            Verification.countDocuments({ status: "pending" }),
+            MediaItem.countDocuments({ status: "pending" }),
+            Project.aggregate([
+                { $match: { projectType: { $exists: true, $ne: "" } } },
+                { $group: { _id: "$projectType", count: { $sum: 1 } } },
+                { $sort: { count: -1 } }
+            ]),
+            TalentProfile.aggregate([
+                { $match: { currentCity: { $exists: true, $ne: "" } } },
+                { $group: { _id: "$currentCity", count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 5 }
+            ]),
+            Application.countDocuments({ status: { $in: ["under_review", "shortlisted", "selected"] } }),
+            Application.countDocuments({ status: { $in: ["shortlisted", "selected"] } }),
+            Application.countDocuments({ status: "selected" }),
+            Application.aggregate([
+                {
+                    $group: {
+                        _id: {
+                            year: { $year: "$createdAt" },
+                            month: { $month: "$createdAt" }
+                        },
+                        count: { $sum: 1 }
+                    }
+                }
+            ]),
+            User.aggregate([
+                {
+                    $group: {
+                        _id: {
+                            year: { $year: "$createdAt" },
+                            month: { $month: "$createdAt" },
+                            role: "$role"
+                        },
+                        count: { $sum: 1 }
+                    }
+                }
+            ])
+        ]);
+
+        const totalRevenue = totalRevenueAgg[0]?.total || 0;
+
+        // Formulate 6-month timeline labels
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const now = new Date();
+        const past6Months = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            past6Months.push({
+                year: d.getFullYear(),
+                month: d.getMonth() + 1,
+                name: monthNames[d.getMonth()]
+            });
+        }
+
+        const applicationsMonthly = past6Months.map(m => {
+            const found = (appMonthlyAgg || []).find(a => a._id?.year === m.year && a._id?.month === m.month);
+            return {
+                month: m.name,
+                count: found ? found.count : 0
+            };
+        });
+
+        let cumTalent = 0;
+        let cumRecruiter = 0;
+        const userGrowth = past6Months.map(m => {
+            const tFound = (userMonthlyAgg || []).find(u => u._id?.year === m.year && u._id?.month === m.month && u._id?.role === "talent");
+            const rFound = (userMonthlyAgg || []).find(u => u._id?.year === m.year && u._id?.month === m.month && u._id?.role === "organization");
+            cumTalent += (tFound ? tFound.count : 0);
+            cumRecruiter += (rFound ? rFound.count : 0);
+            return {
+                label: m.name,
+                talent: cumTalent,
+                recruiters: cumRecruiter
+            };
+        });
+
+        const totalCategoryCount = (categoryAgg || []).reduce((sum, c) => sum + c.count, 0) || 1;
+        const categories = (categoryAgg && categoryAgg.length > 0)
+            ? categoryAgg.map(c => ({
+                name: c._id || "Other",
+                value: Math.round((c.count / totalCategoryCount) * 100),
+                count: c.count
+            }))
+            : [];
+
+        const topCities = (cityAgg && cityAgg.length > 0)
+            ? cityAgg.map(c => ({
+                city: c._id,
+                count: c.count,
+                share: talentCount > 0 ? Math.round((c.count / talentCount) * 100) : 0
+            }))
+            : [];
+
+        const funnel = [
+            { stage: "Applications Submitted", count: totalApplications, percent: 100 },
+            { stage: "Under Review", count: underReviewApps, percent: totalApplications > 0 ? Math.round((underReviewApps / totalApplications) * 100) : 0 },
+            { stage: "Shortlisted for Audition", count: shortlistedApps, percent: totalApplications > 0 ? Math.round((shortlistedApps / totalApplications) * 100) : 0 },
+            { stage: "Final Bookings & Selected", count: selectedApps, percent: totalApplications > 0 ? Math.round((selectedApps / totalApplications) * 100) : 0 }
+        ];
+
+        res.status(200).json({
+            success: true,
+            metrics: {
+                users: {
+                    total: totalUsers,
+                    talent: talentCount,
+                    organization: orgCount,
+                    pending: pendingUsers,
+                    verifiedTalent: verifiedTalentCount,
+                    activeOrganization: activeOrgCount
+                },
+                opportunities: {
+                    total: totalOpportunities,
+                    published: publishedOpportunities,
+                    pendingReview: pendingOpportunities,
+                    cancellationRequests: pendingCancellations
+                },
+                applications: { total: totalApplications },
+                auditions: {
+                    total: totalAuditions,
+                    pendingRelay: pendingAuditionsToRelay,
+                    selfTapesToForward: selfTapesToForward
+                },
+                revenue: { totalINR: totalRevenue },
+                moderation: {
+                    pendingVerifications,
+                    pendingMedia: pendingMediaCount
+                },
+                analytics: {
+                    userGrowth,
+                    categories,
+                    topCities,
+                    funnel,
+                    applicationsMonthly
+                }
+            }
+        });
+    } catch (error: any) {
+        console.error("Dashboard metrics error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while generating dashboard metrics" });
+    }
+};
+
+export const getAuditLogs = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { action, targetType, page = 1, limit = 50 } = req.query;
+        const filter: any = {};
+        if (action) filter.action = action;
+        if (targetType) filter.targetType = targetType;
+
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 50, 1), 100);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [logs, total] = await Promise.all([
+            AdminAuditLog.find(filter)
+                .populate("adminId", "name email")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            AdminAuditLog.countDocuments(filter)
+        ]);
+
+        res.status(200).json({
+            success: true,
+            count: logs.length,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum),
+            logs
+        });
+    } catch (error: any) {
+        console.error("Get audit logs error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching audit logs" });
+    }
+};
+
+export const globalAdminSearch = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { q, search } = req.query;
+        const queryText = String(q || search || "").trim();
+
+        if (!queryText) {
+            return res.status(400).json({ success: false, message: "Search query 'q' is required" });
+        }
+
+        const escapedQuery = escapeRegex(queryText);
+        const regex = new RegExp(escapedQuery, "i");
+
+        const [users, organizations, opportunities, payments, talentProfiles] = await Promise.all([
+            User.find({ $or: [{ name: regex }, { email: regex }, { mobile: regex }] }).select("name email role status isPaid createdAt").limit(10).lean(),
+            Organization.find({ $or: [{ organizationName: regex }, { organizationType: regex }] }).populate("userId", "name email status").limit(10).lean(),
+            Opportunity.find({ $or: [{ title: regex }, { role: regex }, { summary: regex }] }).populate("projectId", "projectName").limit(10).lean(),
+            PaymentTransaction.find({ $or: [{ orderId: regex }, { paymentId: regex }, { invoiceNumber: regex }] }).populate("userId", "name email").limit(10).lean(),
+            TalentProfile.find({ $or: [{ vismayaId: regex }, { stageName: regex }, { firstName: regex }, { lastName: regex }, { primaryProfession: regex }] }).select("vismayaId stageName firstName lastName primaryProfession").limit(10).lean()
+        ]);
+
+        res.status(200).json({
+            success: true,
+            query: queryText,
+            results: {
+                users,
+                talentProfiles,
+                organizations,
+                opportunities,
+                payments
+            }
+        });
+    } catch (error: any) {
+        console.error("Global admin search error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong during admin search" });
+    }
+};
+
+// --- PROFILE CHANGES & TRENDING MANAGEMENT ---
+
+export const getPendingProfileChanges = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const profiles = await TalentProfile.find({
+            pendingChanges: { $ne: null }
+        })
+            .populate("userId", "name email mobile")
+            .sort({ pendingChangesSubmittedAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: profiles.length,
+            profiles
+        });
+    } catch (error: any) {
+        console.error("Get pending profile changes error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching pending profile changes" });
+    }
+};
+
+export const reviewProfileChange = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { profileId } = req.params;
+        const { action, rejectionReason } = req.body; // "approve" or "reject"
+
+        const profile = await TalentProfile.findById(profileId);
+        if (!profile) {
+            return res.status(404).json({ success: false, message: "Talent profile not found" });
+        }
+
+        if (!profile.pendingChanges) {
+            return res.status(400).json({ success: false, message: "Profile has no pending changes to review" });
+        }
+
+        if (action === "approve") {
+            const pending = profile.pendingChanges;
+            Object.assign(profile, pending);
+            profile.pendingChanges = undefined as any;
+            profile.pendingChangesSubmittedAt = undefined as any;
+
+            // Recalculate completion and searchability
+            const completion = calculateProfileCompletion(profile);
+            profile.profileCompletionPercentage = completion;
+            const user = await User.findById(profile.userId).select("isPaid status");
+            profile.isSearchable = completion >= 60 && !!user?.isPaid && user?.status === "active";
+
+            await profile.save();
+
+            await logAdminAction({
+                adminId: (req.user?.userId as any),
+                action: "PROFILE_CHANGE_APPROVE",
+                targetType: "User",
+                targetId: (profile.userId as any),
+                details: "Critical profile changes approved and merged into active profile"
+            });
+
+            await notifyUser({
+                recipientId: profile.userId,
+                type: "profile_change",
+                title: "Profile Changes Approved",
+                message: "Your requested profile updates have been approved by Vismaya Admin and are now live."
+            });
+
+            res.status(200).json({
+                success: true,
+                message: "Profile changes approved successfully",
+                profile
+            });
+        } else {
+            profile.pendingChanges = undefined as any;
+            profile.pendingChangesSubmittedAt = undefined as any;
+            await profile.save();
+
+            await logAdminAction({
+                adminId: (req.user?.userId as any),
+                action: "PROFILE_CHANGE_REJECT",
+                targetType: "User",
+                targetId: (profile.userId as any),
+                details: `Critical profile changes rejected. Reason: ${rejectionReason || "Not approved"}`
+            });
+
+            await notifyUser({
+                recipientId: profile.userId,
+                type: "profile_change",
+                title: "Profile Changes Rejected",
+                message: `Your requested profile updates were not approved. Reason: ${rejectionReason || "Updates do not meet verification criteria."}`
+            });
+
+            res.status(200).json({
+                success: true,
+                message: "Profile changes rejected successfully",
+                profile
+            });
+        }
+    } catch (error: any) {
+        console.error("Review profile change error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while reviewing profile change" });
+    }
+};
+
+export const exportAdminData = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { type } = req.params;
+        let csvContent = "";
+
+        if (type === "users") {
+            const users = await User.find().select("name email role status isPaid createdAt").lean();
+            csvContent = "ID,Name,Email,Role,Status,IsPaid,CreatedAt\n" +
+                users.map(u => `"${u._id}","${u.name || ''}","${u.email}","${u.role}","${u.status}",${!!u.isPaid},"${u.createdAt?.toISOString() || ''}"`).join("\n");
+        } else if (type === "organizations") {
+            const orgs = await Organization.find().select("organizationName slug organizationType verifiedStatus createdAt").lean();
+            csvContent = "ID,OrganizationName,Slug,OrganizationType,VerifiedStatus,CreatedAt\n" +
+                orgs.map(o => `"${o._id}","${o.organizationName || ''}","${o.slug || ''}","${o.organizationType || ''}","${(o as any).verifiedStatus || ''}","${o.createdAt?.toISOString() || ''}"`).join("\n");
+        } else if (type === "opportunities") {
+            const opps = await Opportunity.find().select("title role location category status positionsCount applicationDeadline createdAt").lean();
+            csvContent = "ID,Title,Role,Location,Category,Status,PositionsCount,Deadline,CreatedAt\n" +
+                opps.map(op => `"${op._id}","${op.title || ''}","${op.role || ''}","${op.location || ''}","${(op as any).category || ''}","${op.status}",${op.positionsCount || 0},"${(op as any).applicationDeadline?.toISOString() || ''}","${op.createdAt?.toISOString() || ''}"`).join("\n");
+        } else if (type === "applications") {
+            const apps = await Application.find().select("opportunityId talentId status consentGiven createdAt").lean();
+            csvContent = "ID,OpportunityId,TalentId,Status,ConsentGiven,CreatedAt\n" +
+                apps.map(a => `"${a._id}","${a.opportunityId}","${a.talentId}","${a.status}",${!!a.consentGiven},"${a.createdAt?.toISOString() || ''}"`).join("\n");
+        } else if (type === "transactions") {
+            const txs = await PaymentTransaction.find().select("userId orderId paymentId amount status invoiceNumber createdAt").lean();
+            csvContent = "ID,UserId,OrderId,PaymentId,Amount,Status,InvoiceNumber,CreatedAt\n" +
+                txs.map(t => `"${t._id}","${t.userId}","${t.orderId || ''}","${t.paymentId || ''}",${t.amount || 0},"${t.status}","${t.invoiceNumber || ''}","${t.createdAt?.toISOString() || ''}"`).join("\n");
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: `Unsupported export type '${type}'. Supported types: users, organizations, opportunities, applications, transactions`
+            });
+        }
+
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader("Content-Disposition", `attachment; filename="export-${type}.csv"`);
+        return res.status(200).send(csvContent);
+    } catch (error: any) {
+        console.error("Export admin data error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while exporting data" });
+    }
+};
+
+export const updateTalentTrendingStatus = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { talentId } = req.params;
+        const { remove, isTrending } = req.body;
+
+        const profile = await TalentProfile.findOne({
+            $or: [{ _id: talentId }, { userId: talentId }]
+        });
+
+        if (!profile) {
+            return res.status(404).json({ success: false, message: "Talent profile not found" });
+        }
+
+        if (remove === true) {
+            profile.trendingExcluded = true;
+            profile.isTrending = false;
+        } else if (isTrending !== undefined) {
+            profile.isTrending = isTrending === true;
+        }
+
+        await profile.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "UPDATE_TRENDING_STATUS",
+            targetType: "User",
+            targetId: (profile.userId as any),
+            details: `Trending status updated. Excluded: ${profile.trendingExcluded}, isTrending: ${profile.isTrending}`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Talent trending status updated successfully",
+            profile
+        });
+    } catch (error: any) {
+        console.error("Update talent trending error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while updating trending status" });
+    }
+};
+

@@ -1,20 +1,22 @@
-require("dotenv").config();
-const mongoose = require("mongoose");
+import "dotenv/config";
+import mongoose from "mongoose";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
-const User = require("../src/models/user.model");
-const TalentProfile = require("../src/models/talentProfile.model");
-const Organization = require("../src/models/organization.model");
-const Application = require("../src/models/application.model");
-const Opportunity = require("../src/models/opportunity.model");
-const Audition = require("../src/models/audition.model");
-const MediaItem = require("../src/models/mediaItem.model");
-const CreditLedger = require("../src/models/creditLedger.model");
-const CreditTransaction = require("../src/models/creditTransaction.model");
-const CreditViewHistory = require("../src/models/creditViewHistory.model");
-const ProjectShortlist = require("../src/models/projectShortlist.model");
-const PaymentTransaction = require("../src/models/paymentTransaction.model");
-const Notification = require("../src/models/notification.model");
-const AdminAuditLog = require("../src/models/adminAuditLog.model");
+import User from "../src/models/user.model.js";
+import TalentProfile from "../src/models/talentProfile.model.js";
+import Organization from "../src/models/organization.model.js";
+import Application from "../src/models/application.model.js";
+import Opportunity from "../src/models/opportunity.model.js";
+import Audition from "../src/models/audition.model.js";
+import MediaItem from "../src/models/mediaItem.model.js";
+import CreditLedger from "../src/models/creditLedger.model.js";
+import CreditTransaction from "../src/models/creditTransaction.model.js";
+import CreditViewHistory from "../src/models/creditViewHistory.model.js";
+import ProjectShortlist from "../src/models/projectShortlist.model.js";
+import PaymentTransaction from "../src/models/paymentTransaction.model.js";
+import Notification from "../src/models/notification.model.js";
+import AdminAuditLog from "../src/models/adminAuditLog.model.js";
 
 const runVerification = async () => {
     let failed = 0;
@@ -32,7 +34,7 @@ const runVerification = async () => {
         let mongoUri = process.env.MONGODB_URI_TEST;
         if (!mongoUri) {
             try {
-                const { MongoMemoryServer } = require("mongodb-memory-server");
+                const { MongoMemoryServer } = await import("mongodb-memory-server");
                 mongod = await MongoMemoryServer.create();
                 mongoUri = mongod.getUri();
             } catch (e) {
@@ -192,8 +194,18 @@ const runVerification = async () => {
     }
 };
 
-if (require.main === module) {
+const isMainModule = () => {
+    if (!process.argv[1]) return false;
+    try {
+        return path.resolve(fileURLToPath(import.meta.url)) === path.resolve(process.argv[1]);
+    } catch {
+        return false;
+    }
+};
+
+if (isMainModule()) {
     runVerification();
 }
 
-module.exports = runVerification;
+export default runVerification;
+export { runVerification };

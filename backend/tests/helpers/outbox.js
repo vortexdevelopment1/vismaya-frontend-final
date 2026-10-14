@@ -6,30 +6,31 @@
 const emails = [];
 const smsList = [];
 
-const recordEmail = (email) => {
+export const recordEmail = (email) => {
     emails.push({ ...email, sentAt: new Date() });
 };
 
-const recordSms = (sms) => {
+export const recordSms = (sms) => {
     smsList.push({ ...sms, sentAt: new Date() });
 };
 
-const getEmails = () => [...emails];
-const getSmsList = () => [...smsList];
+export const getEmails = () => [...emails];
+export const getOutbox = getEmails;
+export const getSmsList = () => [...smsList];
 
-const getLastEmail = () => emails[emails.length - 1] || null;
-const getLastSms = () => smsList[smsList.length - 1] || null;
+export const getLastEmail = () => emails[emails.length - 1] || null;
+export const getLastSms = () => smsList[smsList.length - 1] || null;
 
-const clearOutbox = () => {
+export const clearOutbox = () => {
     emails.length = 0;
     smsList.length = 0;
 };
 
-module.exports = {
+export default {
     recordEmail,
     recordSms,
     getEmails,
-    getOutbox: getEmails,
+    getOutbox,
     getSmsList,
     getLastEmail,
     getLastSms,

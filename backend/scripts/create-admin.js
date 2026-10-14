@@ -1,9 +1,11 @@
-require("dotenv").config();
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const User = require("../src/models/user.model");
+import "dotenv/config";
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import User from "../src/models/user.model.js";
 
-const createAdmin = async () => {
+export const createAdmin = async () => {
     try {
         const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URI_TEST || "mongodb://127.0.0.1:27017/vismaya";
         await mongoose.connect(mongoUri);
@@ -41,8 +43,17 @@ const createAdmin = async () => {
     }
 };
 
-if (require.main === module) {
+const isMainModule = () => {
+    if (!process.argv[1]) return false;
+    try {
+        return path.resolve(fileURLToPath(import.meta.url)) === path.resolve(process.argv[1]);
+    } catch {
+        return false;
+    }
+};
+
+if (isMainModule()) {
     createAdmin();
 }
 
-module.exports = createAdmin;
+export default createAdmin;

@@ -9,9 +9,11 @@
  *   node scripts/migrate-career-stage.js --apply   (apply changes)
  */
 
-const mongoose = require("mongoose");
-const TalentProfile = require("../src/models/talentProfile.model");
-require("dotenv").config();
+import "dotenv/config";
+import mongoose from "mongoose";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import TalentProfile from "../src/models/talentProfile.model.js";
 
 const MAPPING = {
     early_career: "emerging",
@@ -19,7 +21,7 @@ const MAPPING = {
     veteran: "experienced"
 };
 
-async function runMigration() {
+export async function runMigration() {
     const isApply = process.argv.includes("--apply") || process.argv.includes("--execute");
     const mongoUri = process.env.MONGODB_URI || "mongodb://localhost:27017/vismaya-backend";
 
@@ -53,11 +55,20 @@ async function runMigration() {
     await mongoose.disconnect();
 }
 
-if (require.main === module) {
+const isMainModule = () => {
+    if (!process.argv[1]) return false;
+    try {
+        return path.resolve(fileURLToPath(import.meta.url)) === path.resolve(process.argv[1]);
+    } catch {
+        return false;
+    }
+};
+
+if (isMainModule()) {
     runMigration().catch(err => {
         console.error("Migration error:", err);
         process.exit(1);
     });
 }
 
-module.exports = { runMigration };
+export default { runMigration };

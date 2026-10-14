@@ -1,31 +1,12 @@
-const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
-const clientMetadata = require("mongodb/lib/cmap/handshake/client_metadata");
-
-// Fix MongoDB driver client metadata generation inside Jest VM
-if (clientMetadata && typeof clientMetadata.makeClientMetadata === "function") {
-    clientMetadata.makeClientMetadata = async () => {
-        return {
-            driver: {
-                name: "nodejs|mongoose",
-                version: "6.0.0"
-            },
-            os: {
-                type: "Windows_NT",
-                name: "win32",
-                architecture: "x64"
-            },
-            platform: "Node.js"
-        };
-    };
-}
+import mongoose from "mongoose";
+import { MongoMemoryServer } from "mongodb-memory-server";
 
 let mongod = null;
 
 /**
  * Connect to in-memory MongoDB instance for tests
  */
-const connectDB = async () => {
+export const connectDB = async () => {
     if (mongoose.connection.readyState === 1) {
         return;
     }
@@ -60,7 +41,7 @@ const connectDB = async () => {
 /**
  * Clear all data from all collections between test runs
  */
-const clearDB = async () => {
+export const clearDB = async () => {
     if (mongoose.connection.readyState !== 1) return;
     const collections = mongoose.connection.collections;
     for (const key in collections) {
@@ -72,7 +53,7 @@ const clearDB = async () => {
 /**
  * Close database connection and stop memory server
  */
-const disconnectDB = async () => {
+export const disconnectDB = async () => {
     if (mongoose.connection.readyState !== 0) {
         await mongoose.disconnect();
     }
@@ -82,7 +63,7 @@ const disconnectDB = async () => {
     }
 };
 
-module.exports = {
+export default {
     connectDB,
     clearDB,
     disconnectDB

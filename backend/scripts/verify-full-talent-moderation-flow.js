@@ -1,12 +1,12 @@
-require("dotenv").config();
-const dns = require("dns");
-const mongoose = require("mongoose");
-const request = require("supertest");
-const app = require("../src/app");
+import "dotenv/config";
+import dns from "node:dns";
+import mongoose from "mongoose";
+import request from "supertest";
+import app from "../src/app.js";
 
-const User = require("../src/models/user.model");
-const TalentProfile = require("../src/models/talentProfile.model");
-const { generateAuthToken } = require("../tests/helpers/auth");
+import User from "../src/models/user.model.js";
+import TalentProfile from "../src/models/talentProfile.model.js";
+import { generateAuthToken } from "../tests/helpers/auth.js";
 
 const logStep = (step, msg) => console.log(`\n\x1b[36m[STEP ${step}]\x1b[0m \x1b[1m${msg}\x1b[0m`);
 const logPass = (desc, detail = "") => console.log(`  \x1b[32m✔ PASS:\x1b[0m ${desc} ${detail ? `\x1b[90m(${detail})\x1b[0m` : ""}`);

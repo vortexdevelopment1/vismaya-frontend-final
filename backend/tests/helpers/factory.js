@@ -1,16 +1,17 @@
-const bcrypt = require("bcrypt");
-const crypto = require("crypto");
-const User = require("../../src/models/user.model");
-const TalentProfile = require("../../src/models/talentProfile.model");
-const Organization = require("../../src/models/organization.model");
-const Project = require("../../src/models/project.model");
-const Opportunity = require("../../src/models/opportunity.model");
-const Application = require("../../src/models/application.model");
+import bcrypt from "bcrypt";
+import crypto from "node:crypto";
+import User from "../../src/models/user.model.js";
+import TalentProfile from "../../src/models/talentProfile.model.js";
+import Organization from "../../src/models/organization.model.js";
+import Project from "../../src/models/project.model.js";
+import Opportunity from "../../src/models/opportunity.model.js";
+import Application from "../../src/models/application.model.js";
+import { generateAuthToken } from "./auth.js";
 
 /**
  * Factory for creating test users and domain models
  */
-const createUser = async (overrides = {}) => {
+export const createUser = async (overrides = {}) => {
     const randomSuffix = crypto.randomBytes(4).toString("hex");
     const defaultPassword = overrides.password || "Password@123";
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
@@ -30,7 +31,7 @@ const createUser = async (overrides = {}) => {
     return user;
 };
 
-const createTalent = async (userOverrides = {}, profileOverrides = {}) => {
+export const createTalent = async (userOverrides = {}, profileOverrides = {}) => {
     const user = await createUser({ role: "talent", ...userOverrides });
     const randomDigits = Math.floor(100000 + Math.random() * 900000);
 
@@ -54,7 +55,7 @@ const createTalent = async (userOverrides = {}, profileOverrides = {}) => {
     return { user, profile };
 };
 
-const createOrganization = async (userOverrides = {}, orgOverrides = {}) => {
+export const createOrganization = async (userOverrides = {}, orgOverrides = {}) => {
     const user = await createUser({ role: "organization", ...userOverrides });
     const randomSuffix = crypto.randomBytes(4).toString("hex");
 
@@ -73,9 +74,7 @@ const createOrganization = async (userOverrides = {}, orgOverrides = {}) => {
     return { user, org };
 };
 
-const { generateAuthToken } = require("./auth");
-
-const createAdmin = async (overrides = {}) => {
+export const createAdmin = async (overrides = {}) => {
     return await createUser({
         role: "admin",
         status: "active",
@@ -86,25 +85,25 @@ const createAdmin = async (overrides = {}) => {
     });
 };
 
-const createTalentUser = async (userOverrides = {}) => {
+export const createTalentUser = async (userOverrides = {}) => {
     const user = await createUser({ role: "talent", ...userOverrides });
     const { token, bearerHeader } = await generateAuthToken(user);
     return { user, token, bearerHeader };
 };
 
-const createOrgUser = async (userOverrides = {}) => {
+export const createOrgUser = async (userOverrides = {}) => {
     const { user, org } = await createOrganization(userOverrides);
     const { token, bearerHeader } = await generateAuthToken(user);
     return { user, org, token, bearerHeader };
 };
 
-const createAdminUser = async (overrides = {}) => {
+export const createAdminUser = async (overrides = {}) => {
     const admin = await createAdmin(overrides);
     const { token, bearerHeader } = await generateAuthToken(admin);
     return { admin, token, bearerHeader };
 };
 
-module.exports = {
+export default {
     createUser,
     createTalent,
     createOrganization,
@@ -113,4 +112,3 @@ module.exports = {
     createOrgUser,
     createAdminUser
 };
-

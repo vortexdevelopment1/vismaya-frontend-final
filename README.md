@@ -19,18 +19,21 @@ vismaya/
 │   ├── package.json           # Frontend scripts & dependencies
 │   └── next.config.mjs        # Next.js configuration
 │
-├── backend/                   # Node.js / Express / MongoDB REST API
+├── backend/                   # TypeScript / Express / MongoDB REST API (ES Modules, "type": "module")
 │   ├── src/
 │   │   ├── controllers/       # Route controllers (Auth, Opportunity, Credit, etc.)
-│   │   ├── models/            # Mongoose data models
+│   │   ├── models/            # Typed Mongoose data models
 │   │   ├── routes/            # Express router modules (/api/...)
 │   │   ├── services/          # Business logic, Cloudinary, Razorpay, Notifications
 │   │   ├── middleware/        # Auth, CORS, Helmet, Rate limiting, Uploads
 │   │   ├── config/            # Database and service configs
-│   │   └── app.js             # Express application setup
+│   │   ├── types/             # Shared TypeScript declarations
+│   │   ├── app.ts             # Express application setup
+│   │   └── server.ts          # Server entry point (starts on port 5000)
+│   ├── dist/                  # Compiled JavaScript output (tsc)
 │   ├── scripts/               # DB seeders and administrative scripts
-│   ├── tests/                 # Jest integration and security tests
-│   ├── server.js              # Server entry point (starts on port 5000)
+│   ├── tests/                 # Integration and security tests
+│   ├── tsconfig.json          # TypeScript compiler configuration
 │   ├── .env.example           # Backend environment variable template
 │   └── package.json           # Backend scripts & dependencies
 │
@@ -127,10 +130,11 @@ All commands can be executed directly from the root directory:
 | :--- | :--- |
 | `npm run install:all` | Installs dependencies in both `frontend/` and `backend/`. |
 | `npm run dev:frontend` | Starts the Next.js development server on port 3000. |
-| `npm run dev:backend` | Starts the Express development server on port 5000. |
+| `npm run dev:backend` | Starts the Express development server with tsx watch on port 5000. |
 | `npm run build:frontend` | Creates an optimized production build of Next.js. |
+| `npm run build:backend` | Compiles TypeScript source to `backend/dist` using `tsc`. |
 | `npm run start:frontend` | Starts the Next.js production server. |
-| `npm run start:backend` | Starts the Express server using `node server.js`. |
+| `npm run start:backend` | Starts the Express production server using `node backend/dist/server.js`. |
 
 ---
 

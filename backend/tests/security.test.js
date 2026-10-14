@@ -4,18 +4,18 @@
  * input sanitization, cryptographic safety, security headers, and error handling.
  */
 
-const assert = require("assert");
-const http = require("http");
-const jwt = require("jsonwebtoken");
-const crypto = require("crypto");
-const bcrypt = require("bcrypt");
+import assert from "node:assert";
+import http from "node:http";
+import jwt from "jsonwebtoken";
+import crypto from "node:crypto";
+import bcrypt from "bcrypt";
 
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET = process.env.JWT_SECRET || "vismaya_test_jwt_secret_must_be_over_32_characters_long_1234567890";
 
 // Import application and utilities
-const app = require("../src/app");
-const { escapeRegex, isValidEmail, sanitizeEmail, isSafeUrl } = require("../src/utils/sanitize.util");
+import app from "../src/app.js";
+import { escapeRegex, isValidEmail, sanitizeEmail, isSafeUrl } from "../src/utils/sanitize.util.js";
 
 let server;
 let baseUrl;
@@ -279,7 +279,7 @@ const runSecurityTests = async () => {
 
         // --- PHASE 7: Cloudinary & Multer File Upload Security ---
         await test("Cloudinary Service: Upload utilities and signature generator exist", async () => {
-            const cloudinaryService = require("../src/services/cloudinary.service");
+            const cloudinaryService = await import("../src/services/cloudinary.service.js");
             assert.strictEqual(typeof cloudinaryService.uploadFileBuffer, "function");
             assert.strictEqual(typeof cloudinaryService.deleteFile, "function");
             assert.strictEqual(typeof cloudinaryService.generateSignedUploadParams, "function");

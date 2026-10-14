@@ -1,11 +1,11 @@
-const jwt = require("jsonwebtoken");
-const crypto = require("crypto");
-const Session = require("../../src/models/session.model");
+import jwt from "jsonwebtoken";
+import crypto from "node:crypto";
+import Session from "../../src/models/session.model.js";
 
 /**
  * Generate a valid Bearer token for a given user object
  */
-const generateAuthToken = async (user, options = {}) => {
+export const generateAuthToken = async (user, options = {}) => {
     let sessionId = options.sessionId;
     
     if (!options.noSession && !sessionId) {
@@ -40,12 +40,11 @@ const generateAuthToken = async (user, options = {}) => {
     };
 };
 
-const getAuthHeader = (token) => {
+export const getAuthHeader = (token) => {
     return token.startsWith("Bearer ") ? token : `Bearer ${token}`;
 };
 
-module.exports = {
+export default {
     generateAuthToken,
     getAuthHeader
 };
-
