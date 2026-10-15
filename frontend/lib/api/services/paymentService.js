@@ -625,8 +625,7 @@ export const paymentService = {
    * Get organization credits ledger and balance
    */
   async getCredits(orgId = "org-1") {
-    // TODO: Real backend GET /api/credits/balance
-    if (isRealMode("payments")) {
+    if (isRealMode("credits") || isRealMode("payments")) {
       const res = await apiClient.get("/api/credits/balance");
       return res?.data || res;
     }

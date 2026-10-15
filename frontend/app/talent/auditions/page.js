@@ -26,6 +26,7 @@ import Skeleton from "@/components/shared/Skeleton";
 import VideoPlayer from "@/components/shared/VideoPlayer";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
+import { mediaService } from "@/lib/api/services/mediaService";
 
 export default function TalentAuditionsPage() {
   const { auditions, getOpportunity, getProject, submitSelfTape, isHydrated } = useWorkflow();
@@ -83,7 +84,7 @@ export default function TalentAuditionsPage() {
     });
   };
 
-  const handleSubmitTape = (audId) => {
+  const handleSubmitTape = async (audId) => {
     const fileData = selectedFiles[audId];
     if (!fileData || !fileData.previewUrl) {
       addToast({
@@ -98,12 +99,13 @@ export default function TalentAuditionsPage() {
 
     const note = auditionNotes[audId] || "Self-tape recorded and submitted as per script sides.";
 
-    setTimeout(() => {
-      try {
-        // TODO: upload to storage (e.g. AWS S3 / Cloudflare R2 / Supabase Storage) and get permanent CDN URL
-        const selfTapeUrl = fileData.previewUrl;
-
-        submitSelfTape(audId, selfTapeUrl, note);
+    try {
+        const uploaded = await mediaService.uploadFile(fileData.file, { folder: "vismaya/self-tapes" });
+        await submitSelfTape(audId, uploaded.url, note, {
+          thumbnailUrl: uploaded.thumbnailUrl,
+          durationSeconds: uploaded.duration,
+          fileSizeBytes: uploaded.bytes,
+        });
         addToast({
           type: "success",
           title: "Self-Tape Submitted!",
@@ -120,7 +122,6 @@ export default function TalentAuditionsPage() {
       } finally {
         setIsSubmittingMap((prev) => ({ ...prev, [audId]: false }));
       }
-    }, 400);
   };
 
   return (

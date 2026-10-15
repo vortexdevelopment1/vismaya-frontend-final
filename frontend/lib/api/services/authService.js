@@ -204,7 +204,7 @@ export const authService = {
 
   /**
    * Google OAuth sign-in / registration
-   * TODO: Backend endpoint POST /api/auth/google pending
+   * Backend endpoint: POST /api/auth/google
    * @param {string} idToken Google ID token / credential from Google Identity Services
    * @param {string} [role] Optional role selected during registration ('talent' | 'organization')
    */

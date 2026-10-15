@@ -2363,8 +2363,9 @@ export function WorkflowProvider({ children }) {
     if (isRealMode("applications")) {
       try {
         const res = await talentService.applyToOpportunity(opportunityId, {
-          roleName: roleApplied,
-          notes: talentProfile?.bio,
+          roleApplied,
+          coverNote: talentProfile?.bio,
+          consentGiven: true,
         });
         if (res?.data) {
           dispatch({
@@ -2375,6 +2376,7 @@ export function WorkflowProvider({ children }) {
         }
       } catch (err) {
         console.warn("Real applyToOpportunity failed:", err);
+        throw err;
       }
     }
     dispatch({
@@ -2386,9 +2388,10 @@ export function WorkflowProvider({ children }) {
   const withdrawApplication = async (applicationId, reason) => {
     if (isRealMode("applications")) {
       try {
-        await talentService.withdrawApplication(applicationId);
+        await talentService.withdrawApplication(applicationId, { withdrawalReason: reason, confirm: true });
       } catch (err) {
         console.warn("Real withdrawApplication failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "WITHDRAW_APPLICATION", payload: { applicationId, reason } });
@@ -2400,6 +2403,7 @@ export function WorkflowProvider({ children }) {
         await recruiterService.updateCandidateStatus(applicationId, newStatus);
       } catch (err) {
         console.warn("Real setApplicationStatus failed:", err);
+        throw err;
       }
     }
     dispatch({
@@ -2415,9 +2419,10 @@ export function WorkflowProvider({ children }) {
   const requestAudition = async ({ applicationId, type, note }) => {
     if (isRealMode("recruiter")) {
       try {
-        await recruiterService.requestAudition(applicationId, { type, notes: note });
+        await recruiterService.requestAudition(applicationId, { type: type === "Audition" ? "self_tape" : type, instructions: note });
       } catch (err) {
         console.warn("Real requestAudition failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "REQUEST_AUDITION", payload: { applicationId, type, note } });
@@ -2434,12 +2439,13 @@ export function WorkflowProvider({ children }) {
     dispatch({ type: "ADMIN_RELAY_AUDITION", payload: { auditionId, note } });
   };
 
-  const submitSelfTape = async (auditionId, selfTapeUrl, note) => {
+  const submitSelfTape = async (auditionId, selfTapeUrl, note, media = {}) => {
     if (isRealMode("talent")) {
       try {
-        await talentService.submitSelfTape(auditionId, { selfTapeUrl, notes: note });
+        await talentService.submitSelfTape(auditionId, { videoUrl: selfTapeUrl, notes: note, ...media });
       } catch (err) {
         console.warn("Real submitSelfTape failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "SUBMIT_SELF_TAPE", payload: { auditionId, selfTapeUrl, note } });
@@ -2462,6 +2468,7 @@ export function WorkflowProvider({ children }) {
         await notificationService.markAsRead(notificationId);
       } catch (err) {
         console.warn("Real markNotificationRead failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "MARK_NOTIFICATION_READ", payload: { notificationId } });
@@ -2473,6 +2480,7 @@ export function WorkflowProvider({ children }) {
         await notificationService.markAllAsRead();
       } catch (err) {
         console.warn("Real markAllNotificationsRead failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "MARK_ALL_NOTIFICATIONS_READ", payload: { role, userId } });

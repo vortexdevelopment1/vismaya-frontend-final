@@ -12,6 +12,18 @@ import { initialMediaQueue } from "../../admin/mockData.js";
 import { mockMediaQueue } from "./mockSeedData.js";
 
 export const mediaService = {
+  /** Upload a file through the authenticated backend/Cloudinary boundary. */
+  async uploadFile(file, { folder = "vismaya/media" } = {}) {
+    if (!isRealMode("media") && !isRealMode("uploads")) {
+      throw new Error("Real media uploads are not enabled.");
+    }
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", folder);
+    const res = await apiClient.post("/api/media/upload", formData);
+    return res?.data || res;
+  },
+
   /**
    * Fetch authenticated user's uploaded media
    */
@@ -281,4 +293,3 @@ export const mediaService = {
     });
   },
 };
-

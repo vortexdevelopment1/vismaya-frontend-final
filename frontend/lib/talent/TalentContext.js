@@ -404,9 +404,9 @@ export function TalentProvider({ children }) {
     if (isRealMode("applications")) {
       try {
         const res = await talentService.applyToOpportunity(callId, {
-          roleName,
-          submittedClipName,
-          notes: applicantNote,
+          roleApplied: roleName,
+          coverNote: applicantNote,
+          consentGiven: true,
         });
         if (res?.data) {
           setApplications((prev) => [res.data, ...prev]);
@@ -489,7 +489,9 @@ export function TalentProvider({ children }) {
   const withdrawApplication = async (appId) => {
     if (isRealMode("applications")) {
       try {
-        await talentService.withdrawApplication(appId);
+        const res = await talentService.withdrawApplication(appId, { withdrawalReason: "Application withdrawn by talent.", confirm: true });
+        setApplications((prev) => prev.map((application) => application.id === appId ? res.data : application));
+        return res.data;
       } catch (err) {
         addToast({
           type: "danger",

@@ -245,30 +245,6 @@ export async function uploadMedia({
         } catch (err) {
           reject(new ApiError("Invalid response from server.", xhr.status));
         }
-      } else if (xhr.status === 404) {
-        // Fallback: Check if unsigned direct upload is enabled
-        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-        const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-        if (cloudName && uploadPreset) {
-          try {
-            const fallbackResult = await directCloudinaryUpload({
-              file,
-              cloudName,
-              uploadPreset,
-              onProgress,
-            });
-            resolve(fallbackResult);
-          } catch (fbErr) {
-            reject(fbErr);
-          }
-        } else {
-          let errData;
-          try {
-            errData = JSON.parse(xhr.responseText);
-          } catch {}
-          reject(new ApiError(errData?.message || "Media upload endpoint not found.", 404));
-        }
       } else {
         let errMessage = "Upload failed.";
         try {
@@ -288,55 +264,6 @@ export async function uploadMedia({
       reject(new ApiError("Network error during file upload. Please check your connection.", 0));
     };
 
-    xhr.send(formData);
-  });
-}
-
-/**
- * Fallback direct Cloudinary upload (Unsigned preset)
- */
-async function directCloudinaryUpload({ file, cloudName, uploadPreset, onProgress }) {
-  const isVideo = file.type?.startsWith("video/");
-  const resourceType = isVideo ? "video" : "image";
-  const url = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", uploadPreset);
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-
-    if (xhr.upload && onProgress) {
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          onProgress(Math.round((e.loaded / e.total) * 100));
-        }
-      };
-    }
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const data = JSON.parse(xhr.responseText);
-          resolve({
-            url: data.secure_url || data.url,
-            thumbnailUrl: data.secure_url || data.url,
-            publicId: data.public_id,
-            mimeType: data.format,
-            fileSizeBytes: data.bytes,
-            status: "Pending",
-          });
-        } catch (e) {
-          reject(new Error("Failed to parse Cloudinary response."));
-        }
-      } else {
-        reject(new Error("Cloudinary direct upload failed."));
-      }
-    };
-
-    xhr.onerror = () => reject(new Error("Network error during Cloudinary upload."));
     xhr.send(formData);
   });
 }
