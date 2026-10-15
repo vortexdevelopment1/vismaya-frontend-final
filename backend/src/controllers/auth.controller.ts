@@ -52,6 +52,14 @@ const getAccountStatusError = (status: string): string => {
 
 export const registerUser = async (req: Request, res: Response): Promise<any> => {
     try {
+        // Reject admin registration via public endpoint immediately with 403 Forbidden (F-08)
+        if (req.body?.role === "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Administrative registration is disabled"
+            });
+        }
+
         const validation = validateRegisterInput(req.body);
         if (!validation.isValid) {
             return res.status(400).json({
@@ -1160,7 +1168,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<any> =
 
         if (resetToken) {
             try {
-                const decoded = jwt.verify(resetToken, process.env.JWT_SECRET as string) as any;
+                const decoded = jwt.verify(resetToken, process.env.JWT_SECRET as string, { algorithms: ["HS256"] }) as any;
                 if (decoded.purpose !== "password_reset") {
                     return res.status(400).json({
                         success: false,
@@ -1427,7 +1435,7 @@ export const verify2FALogin = async (req: Request, res: Response): Promise<any> 
 
         let decoded: any;
         try {
-            decoded = jwt.verify(twoFactorToken, process.env.JWT_SECRET as string);
+            decoded = jwt.verify(twoFactorToken, process.env.JWT_SECRET as string, { algorithms: ["HS256"] });
             if (decoded.purpose !== "2fa_pending") {
                 return res.status(400).json({ success: false, message: "Invalid 2FA token purpose" });
             }

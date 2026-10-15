@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import express, { Router, Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
@@ -38,14 +39,29 @@ router.post("/setup-test-user", async (req: Request, res: Response) => {
     if (process.env.NODE_ENV === "production") {
         return res.status(403).json({ success: false, message: "Forbidden in production" });
     }
+
+    // F-02: Restrict test route to local loopback or require valid X-Test-Secret
+    const clientIp = req.ip || req.socket.remoteAddress || "";
+    const isLoopback = ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(clientIp) || clientIp.includes("127.0.0.1");
+    const testSecretHeader = req.headers["x-test-secret"];
+    const expectedSecret = process.env.TEST_SECRET;
+
+    if (!isLoopback && (!expectedSecret || testSecretHeader !== expectedSecret)) {
+        return res.status(403).json({
+            success: false,
+            message: "Access forbidden: test endpoints are restricted to localhost or require valid X-Test-Secret header"
+        });
+    }
+
     try {
-        const { email, role, name } = req.body;
+        const { email, role, name, password } = req.body;
         let user = await User.findOne({ email: email?.toLowerCase() });
         if (!user) {
+            const hashedPassword = await bcrypt.hash(password || "Test@12345", 10);
             user = await User.create({
                 name: name || "Test User",
                 email: email?.toLowerCase(),
-                passwordHash: "test_dummy_hash",
+                password: hashedPassword,
                 role: role || "talent",
                 status: "active",
                 isEmailVerified: true,
@@ -56,14 +72,17 @@ router.post("/setup-test-user", async (req: Request, res: Response) => {
             user.isEmailVerified = true;
             user.isPaid = true;
             if (role) user.role = role;
+            if (password) {
+                user.password = await bcrypt.hash(password, 10);
+            }
             await user.save();
         }
 
-        const { sessionId }: any = await createSession({
-            userId: user._id,
-            userAgent: "IntegrationTestRunner/1.0",
-            ipAddress: "127.0.0.1"
+        const session = await createSession(user._id, {
+            ip: "127.0.0.1",
+            headers: { "user-agent": "IntegrationTestRunner/1.0" }
         });
+        const sessionId = session?.sessionId;
 
         const token = jwt.sign(
             { userId: user._id.toString(), role: user.role, email: user.email, sessionId },

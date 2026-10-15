@@ -2523,6 +2523,11 @@ export const globalAdminSearch = async (req: Request, res: Response): Promise<an
             return res.status(400).json({ success: false, message: "Search query 'q' is required" });
         }
 
+        // F-06: Cap search query length to 100 characters to prevent ReDoS attacks
+        if (queryText.length > 100) {
+            return res.status(400).json({ success: false, message: "Search query cannot exceed 100 characters" });
+        }
+
         const escapedQuery = escapeRegex(queryText);
         const regex = new RegExp(escapedQuery, "i");
 

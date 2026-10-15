@@ -5,7 +5,8 @@ import {
  } from "../middleware/auth.middleware.js";
 
 import { 
-    uploadMedia
+    uploadMedia,
+    verifyUploadMagicBytes
  } from "../middleware/upload.middleware.js";
 
 import { 
@@ -36,6 +37,7 @@ router.post(
     "/upload",
     authenticateUser,
     uploadMedia.single("file"),
+    verifyUploadMagicBytes,
     uploadMediaFile
 );
 
@@ -43,6 +45,7 @@ router.post(
     "/upload-multiple",
     authenticateUser,
     uploadMedia.array("files", 5),
+    verifyUploadMagicBytes,
     uploadMultipleMediaFiles
 );
 
@@ -57,6 +60,7 @@ router.post(
     "/",
     authenticateUser,
     uploadMedia.single("file"),
+    verifyUploadMagicBytes,
     addMediaItem
 );
 

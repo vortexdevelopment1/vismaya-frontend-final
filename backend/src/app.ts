@@ -60,7 +60,7 @@ app.use(cors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
         // Allow requests with no origin (like mobile apps, curl, server-to-server)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin) || allowedOrigins.includes("*") || process.env.NODE_ENV !== "production") {
+        if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
             return callback(null, true);
         }
         return callback(new Error("CORS policy violation: Origin not allowed"), false);

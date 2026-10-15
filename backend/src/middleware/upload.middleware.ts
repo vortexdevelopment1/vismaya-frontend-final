@@ -70,9 +70,98 @@ export const uploadMedia = multer({
     fileFilter: fileFilter(["images", "videos", "documents"])
 });
 
+/**
+ * Validate file magic bytes against declared MIME type to prevent disguised file execution
+ */
+export const validateMagicBytes = (buffer: Buffer, mimetype: string): boolean => {
+    if (!buffer || buffer.length < 4) return false;
+
+    // JPEG: FF D8 FF
+    if (mimetype === "image/jpeg" || mimetype === "image/jpg") {
+        return buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF;
+    }
+
+    // PNG: 89 50 4E 47 (0x89 'P' 'N' 'G')
+    if (mimetype === "image/png") {
+        return buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
+    }
+
+    // GIF: 47 49 46 38 ('G' 'I' 'F' '8')
+    if (mimetype === "image/gif") {
+        return buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38;
+    }
+
+    // WebP: RIFF .... WEBP
+    if (mimetype === "image/webp") {
+        return buffer.length >= 12 &&
+            buffer.toString("ascii", 0, 4) === "RIFF" &&
+            buffer.toString("ascii", 8, 12) === "WEBP";
+    }
+
+    // PDF: %PDF (25 50 44 46)
+    if (mimetype === "application/pdf") {
+        return buffer.toString("ascii", 0, 4) === "%PDF";
+    }
+
+    // MP4 / QuickTime / MOV: ....ftyp
+    if (mimetype === "video/mp4" || mimetype === "video/quicktime") {
+        if (buffer.length >= 12) {
+            const brand = buffer.toString("ascii", 4, 8);
+            return brand === "ftyp" || brand === "wide" || brand === "mdat" || brand === "moov";
+        }
+        return true;
+    }
+
+    // WebM / Matroska: 1A 45 DF A3
+    if (mimetype === "video/webm" || mimetype === "video/x-matroska") {
+        return buffer[0] === 0x1A && buffer[1] === 0x45 && buffer[2] === 0xDF && buffer[3] === 0xA3;
+    }
+
+    // Office Documents (DOCX / ZIP): PK.. (50 4B 03 04)
+    if (mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+        return buffer[0] === 0x50 && buffer[1] === 0x4B && (buffer[2] === 0x03 || buffer[2] === 0x05);
+    }
+
+    // Legacy DOC: D0 CF 11 E0
+    if (mimetype === "application/msword") {
+        return buffer[0] === 0xD0 && buffer[1] === 0xCF && buffer[2] === 0x11 && buffer[3] === 0xE0;
+    }
+
+    // HEIC / HEIF / AVIF: ftyp
+    if (mimetype === "image/heic" || mimetype === "image/heif" || mimetype === "image/avif") {
+        if (buffer.length >= 12) {
+            return buffer.toString("ascii", 4, 8) === "ftyp";
+        }
+        return true;
+    }
+
+    return false;
+};
+
+/**
+ * Middleware to enforce magic bytes inspection on in-memory buffers
+ */
+export const verifyUploadMagicBytes = (req: Request, res: any, next: any): any => {
+    const files: Express.Multer.File[] = [];
+    if (req.file) files.push(req.file);
+    if (req.files && Array.isArray(req.files)) files.push(...(req.files as Express.Multer.File[]));
+
+    for (const f of files) {
+        if (f.buffer && !validateMagicBytes(f.buffer, f.mimetype)) {
+            return res.status(400).json({
+                success: false,
+                message: `Uploaded file signature does not match declared MIME type (${f.mimetype}). File rejected for security.`
+            });
+        }
+    }
+    next();
+};
+
 export default {
     uploadImage,
     uploadVideo,
     uploadDocument,
-    uploadMedia
+    uploadMedia,
+    validateMagicBytes,
+    verifyUploadMagicBytes
 };

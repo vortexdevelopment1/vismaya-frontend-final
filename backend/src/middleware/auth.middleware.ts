@@ -19,7 +19,8 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
 
         const decoded = jwt.verify(
             token,
-            process.env.JWT_SECRET!
+            process.env.JWT_SECRET!,
+            { algorithms: ["HS256"] }
         ) as JwtCustomPayload;
 
         // Verify that the user exists and is active in the database
@@ -87,7 +88,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
         }
 
         const token = authHeader.split(" ")[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtCustomPayload;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ["HS256"] }) as JwtCustomPayload;
         const user = await User.findById(decoded.userId).select("_id role status email isPaid");
 
         if (user && user.status === "active") {

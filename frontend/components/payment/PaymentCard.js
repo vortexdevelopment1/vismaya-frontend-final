@@ -17,6 +17,7 @@ import {
 import { PRICING_CONFIG } from "@/lib/config/pricing";
 import { paymentService, PACKAGE_TYPE_MAP } from "@/lib/api/services/paymentService";
 import { isRealMode } from "@/lib/api/config";
+import { getAuthToken } from "@/lib/api/client";
 import Link from "next/link";
 
 export default function PaymentCard({
@@ -41,13 +42,30 @@ export default function PaymentCard({
   useEffect(() => {
     let mounted = true;
     async function initOrder() {
-      const res = await paymentService.createPaymentOrder(type, {
-        userName,
-        userEmail,
-        couponCode: appliedCoupon?.code,
-      });
-      if (mounted && res.success) {
-        setOrder(res.data || res.order || res);
+      if (isRealMode("payments") && !getAuthToken()) {
+        if (mounted) {
+          setPaymentState("failed");
+          setErrorMessage("Please verify your account and sign in before starting a payment.");
+        }
+        return;
+      }
+
+      try {
+        const res = await paymentService.createPaymentOrder(type, {
+          userName,
+          userEmail,
+          couponCode: appliedCoupon?.code,
+        });
+        if (mounted && res.success) {
+          setOrder(res.data || res.order || res);
+        }
+      } catch (err) {
+        if (mounted) {
+          setPaymentState("failed");
+          setErrorMessage(err?.status === 401
+            ? "Please verify your account and sign in before starting a payment."
+            : (err?.message || "Unable to initialize payment. Please try again."));
+        }
       }
     }
     initOrder();
