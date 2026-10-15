@@ -5,6 +5,12 @@
  * Mock mode is the DEFAULT (NEXT_PUBLIC_USE_MOCK=true).
  */
 
+// Comma-separated list of enabled modules when USE_MOCK is false (e.g. "auth,public")
+const rawModules = (process.env.NEXT_PUBLIC_API_MODULES || "").toLowerCase().trim();
+export const API_MODULES = rawModules
+  ? rawModules.split(",").map((m) => m.trim()).filter(Boolean)
+  : [];
+
 const rawUseMock = process.env.NEXT_PUBLIC_USE_MOCK;
 // Default to mock mode (true) if not explicitly set to false, or if no real API modules are configured
 export const USE_MOCK =
@@ -24,14 +30,14 @@ export const SUPPORTED_MODULES = [
   "notifications",
   "uploads",
   "media",
-  "payments"
+  "payments",
+  "applications",
+  "auditions",
+  "credits",
+  "opportunities",
+  "projects",
+  "verifications",
 ];
-
-// Comma-separated list of enabled modules when USE_MOCK is false (e.g. "auth,public")
-const rawModules = (process.env.NEXT_PUBLIC_API_MODULES || "").toLowerCase().trim();
-export const API_MODULES = rawModules
-  ? rawModules.split(",").map((m) => m.trim()).filter(Boolean)
-  : [];
 
 /**
  * Checks whether a specific feature module should use the real backend API.

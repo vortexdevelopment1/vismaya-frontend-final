@@ -141,6 +141,7 @@ export default function GoogleAuthButton({
       </div>
 
       <button
+        suppressHydrationWarning
         type="button"
         className="v-btn-google"
         onClick={handleButtonClick}

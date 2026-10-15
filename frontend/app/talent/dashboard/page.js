@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Eye,
   Trophy,
+  ArrowRight,
 } from "lucide-react";
 import PageHeader from "@/components/shared/PageHeader";
 import StatCard from "@/components/shared/StatCard";

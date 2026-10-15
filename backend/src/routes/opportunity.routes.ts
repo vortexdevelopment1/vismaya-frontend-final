@@ -72,16 +72,16 @@ router.get(
     getOrganizationOpportunities
 );
 
-// Opportunity details by ID (authenticated users only)
+// Opportunity details by ID — optionalAuth: guests see published only; draft/pending/rejected require owner/admin
 router.get(
     "/view/:opportunityId",
-    authenticateUser,
+    optionalAuth,
     getOpportunityById
 );
 
 router.get(
     "/:opportunityId",
-    authenticateUser,
+    optionalAuth,
     getOpportunityById
 );
 

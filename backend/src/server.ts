@@ -57,6 +57,20 @@ export const validateEnvironment = (env: NodeJS.ProcessEnv = process.env): boole
         }
     }
 
+    // 3. PAYMENT_MODE validation: in production, mock mode is strictly prohibited
+    const paymentMode = (env.PAYMENT_MODE as string) || "mock";
+    if (env.NODE_ENV === "production" && paymentMode === "mock") {
+        errors.push("FATAL: PAYMENT_MODE cannot be 'mock' in production environment. Set PAYMENT_MODE=razorpay and provide valid RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.");
+    }
+    if (paymentMode === "razorpay" && env.NODE_ENV !== "test") {
+        if (!env.RAZORPAY_KEY_ID || typeof env.RAZORPAY_KEY_ID !== "string" || env.RAZORPAY_KEY_ID.trim().length === 0) {
+            errors.push("RAZORPAY_KEY_ID is missing or empty when PAYMENT_MODE=razorpay.");
+        }
+        if (!env.RAZORPAY_KEY_SECRET || typeof env.RAZORPAY_KEY_SECRET !== "string" || env.RAZORPAY_KEY_SECRET.trim().length === 0) {
+            errors.push("RAZORPAY_KEY_SECRET is missing or empty when PAYMENT_MODE=razorpay.");
+        }
+    }
+
     if (errors.length > 0) {
         const errorMessage = `FATAL CONFIGURATION ERROR:\n- ${errors.join("\n- ")}`;
         console.error(errorMessage);

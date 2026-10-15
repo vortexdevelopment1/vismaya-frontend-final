@@ -238,7 +238,7 @@ function LoginFormContent() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <form suppressHydrationWarning onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div>
           <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
             Email Address
@@ -246,6 +246,7 @@ function LoginFormContent() {
           <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
             <Mail size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
             <input
+              suppressHydrationWarning
               type="email"
               placeholder="name@example.com"
               value={email}
@@ -276,6 +277,7 @@ function LoginFormContent() {
         </div>
 
         <button
+          suppressHydrationWarning
           type="submit"
           disabled={isSubmitting}
           className="btn-primary"

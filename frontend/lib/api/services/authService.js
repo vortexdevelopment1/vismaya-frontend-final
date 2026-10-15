@@ -6,6 +6,7 @@
 import { apiClient } from "../client.js";
 import { isRealMode } from "../config.js";
 import { mapUser } from "../mappers/index.js";
+import { toBackendRole } from "../roles.js";
 
 export const authService = {
   /**
@@ -27,7 +28,8 @@ export const authService = {
       };
     }
 
-    const res = await apiClient.post("/api/auth/register", payload);
+    const backendPayload = { ...payload, role: toBackendRole(payload.role) };
+    const res = await apiClient.post("/api/auth/register", backendPayload);
     const data = res?.data || res;
     const rawUser = res?.user || res?.data?.user || (data?.email ? data : null);
     const token = res?.token || res?.data?.token || data?.token;
@@ -222,7 +224,8 @@ export const authService = {
     }
 
     // Call backend POST /api/auth/google with { idToken, role }
-    const res = await apiClient.post("/api/auth/google", { idToken, role });
+    // Map frontend role ("recruiter") to backend enum ("organization") before sending
+    const res = await apiClient.post("/api/auth/google", { idToken, role: toBackendRole(role) });
     const data = res?.data || res;
     const rawUser = res?.user || res?.data?.user || (data?.email ? data : null);
     const token = res?.token || res?.data?.token || data?.token;

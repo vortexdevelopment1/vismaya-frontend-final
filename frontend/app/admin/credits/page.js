@@ -40,8 +40,12 @@ export default function AdminCreditsPage() {
   const loadData = async () => {
     const res = await paymentService.getAdminCredits();
     if (res) {
-      setOrgSummaries(res.orgSummaries || []);
+      const summaries = res.orgSummaries || [];
+      setOrgSummaries(summaries);
       setLedger(res.ledger || []);
+      if (summaries.length > 0 && (!selectedOrgId || selectedOrgId === "org-1")) {
+        setSelectedOrgId(summaries[0].orgId);
+      }
     }
   };
 
@@ -80,14 +84,29 @@ export default function AdminCreditsPage() {
 
   // Filtered Ledger
   const filteredLedger = ledger.filter((l) => {
+    const orgNameText = (l.orgName || l.organization?.organizationName || "").toLowerCase();
+    const notesText = (l.notes || l.description || "").toLowerCase();
+    const refText = (l.reference || l._id || "").toLowerCase();
+    const search = searchTerm.toLowerCase();
+
     const matchesSearch =
-      l.orgName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (l.notes && l.notes.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (l.reference && l.reference.toLowerCase().includes(searchTerm.toLowerCase()));
+      orgNameText.includes(search) ||
+      notesText.includes(search) ||
+      refText.includes(search);
 
     if (!matchesSearch) return false;
     if (typeFilter === "all") return true;
-    return l.type === typeFilter;
+
+    if (l.type === typeFilter) return true;
+    if (typeFilter === "included" && (l.type === "included" || l.type === "registration_included")) return true;
+    if (typeFilter === "purchased" && (l.type === "purchased" || l.type === "bundle_purchase" || l.type === "single_purchase")) return true;
+    if (typeFilter === "consumed" && (l.type === "consumed" || l.type === "profile_view_deduction")) return true;
+    if (typeFilter === "adjusted" && (l.type === "adjusted" || l.type === "admin_adjustment")) return true;
+    if (typeFilter === "registration_included" && (l.type === "included" || l.type === "registration_included")) return true;
+    if ((typeFilter === "bundle_purchase" || typeFilter === "single_purchase") && (l.type === "purchased" || l.type === typeFilter)) return true;
+    if (typeFilter === "profile_view_deduction" && (l.type === "consumed" || l.type === "profile_view_deduction")) return true;
+    if (typeFilter === "admin_adjustment" && (l.type === "adjusted" || l.type === "admin_adjustment")) return true;
+    return false;
   });
 
   return (
@@ -101,7 +120,9 @@ export default function AdminCreditsPage() {
           <button
             type="button"
             onClick={() => {
-              setSelectedOrgId("org-1");
+              if (orgSummaries.length > 0 && (!selectedOrgId || selectedOrgId === "org-1")) {
+                setSelectedOrgId(orgSummaries[0].orgId);
+              }
               setIsDeduct(false);
               setAdjustAmount(25);
               setAdjustReason("");
@@ -384,6 +405,11 @@ export default function AdminCreditsPage() {
               style={{ height: "38px", padding: "0 12px", borderRadius: "6px", border: "1px solid #E8E2D4", fontSize: "13px" }}
             >
               <option value="all">All Movements</option>
+              <option value="included">Included</option>
+              <option value="purchased">Purchased</option>
+              <option value="consumed">Consumed</option>
+              <option value="adjusted">Adjusted</option>
+              <option value="other">Other</option>
               <option value="registration_included">Registration Included (+100)</option>
               <option value="bundle_purchase">Bundle Purchases (+25)</option>
               <option value="single_purchase">Single Purchases (+1)</option>
@@ -407,9 +433,9 @@ export default function AdminCreditsPage() {
               </thead>
               <tbody>
                 {filteredLedger.map((row) => (
-                  <tr key={row.id} style={{ borderBottom: "1px solid #E8E2D4" }}>
+                  <tr key={row.id || row._id} style={{ borderBottom: "1px solid #E8E2D4" }}>
                     <td style={{ padding: "12px", color: "#5A584F", whiteSpace: "nowrap" }}>
-                      {new Date(row.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      {row.date ? new Date(row.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "-"}
                     </td>
                     <td style={{ padding: "12px", fontWeight: "600", color: "#2B2D2A" }}>
                       {row.orgName}
@@ -425,11 +451,11 @@ export default function AdminCreditsPage() {
                           color: "#5A584F",
                         }}
                       >
-                        {row.typeLabel || row.type}
+                        {row.typeLabel || row.type || "Other"}
                       </span>
                     </td>
-                    <td style={{ padding: "12px", fontWeight: "700", color: row.change > 0 ? "#8A6B2E" : "#C53030" }}>
-                      {row.change > 0 ? `+${row.change}` : row.change}
+                    <td style={{ padding: "12px", fontWeight: "700", color: (row.change || row.amount) > 0 ? "#8A6B2E" : "#C53030" }}>
+                      {(row.change || row.amount) > 0 ? `+${row.change || row.amount}` : (row.change || row.amount || 0)}
                     </td>
                     <td style={{ padding: "12px", fontWeight: "600", color: "#2B2D2A" }}>
                       {row.balanceAfter}
@@ -447,7 +473,7 @@ export default function AdminCreditsPage() {
           <div className="admin-credits-mobile-cards" style={{ display: "none", flexDirection: "column", gap: "10px" }}>
             {filteredLedger.map((row) => (
               <div
-                key={row.id}
+                key={row.id || row._id}
                 style={{
                   backgroundColor: "#FAF9F7",
                   border: "1px solid #E8E2D4",
@@ -461,11 +487,11 @@ export default function AdminCreditsPage() {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <strong style={{ color: "#2B2D2A" }}>{row.orgName}</strong>
-                  <span style={{ fontWeight: "700", color: row.change > 0 ? "#8A6B2E" : "#C53030" }}>
-                    {row.change > 0 ? `+${row.change}` : row.change}
+                  <span style={{ fontWeight: "700", color: (row.change || row.amount) > 0 ? "#8A6B2E" : "#C53030" }}>
+                    {(row.change || row.amount) > 0 ? `+${row.change || row.amount}` : (row.change || row.amount || 0)}
                   </span>
                 </div>
-                <div style={{ color: "#5A584F" }}>{row.typeLabel} • Balance After: {row.balanceAfter}</div>
+                <div style={{ color: "#5A584F" }}>{row.typeLabel || row.type || "Other"} • Balance After: {row.balanceAfter}</div>
                 <div style={{ fontSize: "11.5px", color: "#777970" }}>{row.notes}</div>
               </div>
             ))}

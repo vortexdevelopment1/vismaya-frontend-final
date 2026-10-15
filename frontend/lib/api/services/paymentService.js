@@ -7,7 +7,151 @@
 import { apiClient } from "../client.js";
 import { isRealMode } from "../config.js";
 import { PRICING_CONFIG } from "../../config/pricing.js";
-import { mapPayment } from "../mappers/index.js";
+import { mapPayment, mapAdminCreditLedgerRow } from "../mappers/index.js";
+
+/**
+ * Dynamically loads the Razorpay checkout script on-demand (not bundled).
+ * Safe to call multiple times — resolves immediately if already loaded.
+ * @returns {Promise<void>}
+ */
+function loadRazorpayScript() {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") {
+      reject(new Error("Razorpay cannot be loaded server-side"));
+      return;
+    }
+    if (window.Razorpay) {
+      resolve();
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Razorpay checkout script"));
+    document.head.appendChild(script);
+  });
+}
+
+/**
+ * Open the Razorpay checkout modal and handle verify on success.
+ * @param {Object} orderData  Response from POST /api/payments/create-order or normalized order
+ *   { orderId, razorpayOrderId, amount, currency, keyId, description, prefill, userName, userEmail }
+ * @param {Object} options    { onSuccess, onFailure, onDismiss }
+ * @returns {Promise<void>}
+ */
+export async function openRazorpayCheckout(orderData, options = {}) {
+  await loadRazorpayScript();
+
+  const razorpayKey =
+    orderData.keyId ||
+    orderData.key_id ||
+    orderData.key ||
+    process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+    "";
+
+  const orderId = orderData.orderId || orderData.razorpayOrderId || orderData.order_id;
+  const razorpayOrderId = orderData.razorpayOrderId || orderData.orderId || orderData.order_id;
+
+  let amountInPaise;
+  if (typeof orderData.amount === "number") {
+    amountInPaise = orderData.amount < 10000 ? Math.round(orderData.amount * 100) : orderData.amount;
+  }
+
+  return new Promise((resolve) => {
+    const rzpOptions = {
+      key: razorpayKey,
+      order_id: razorpayOrderId,
+      name: "Vismaya",
+      description: orderData.description || orderData.label || "Vismaya Platform Payment",
+      prefill: orderData.prefill || {
+        name: orderData.userName || "",
+        email: orderData.userEmail || "",
+      },
+      theme: { color: "#6366f1" },
+      handler: async function (response) {
+        // response: { razorpay_order_id, razorpay_payment_id, razorpay_signature }
+        // Map Razorpay Checkout handler names to backend contract: { orderId, paymentId, signature }
+        try {
+          const verifyPayload = {
+            orderId: orderId, // use the orderId returned by create-order (stored in DB)
+            paymentId: response.razorpay_payment_id,
+            signature: response.razorpay_signature,
+          };
+          const verifyRes = await apiClient.post("/api/payments/verify", verifyPayload);
+          const data = verifyRes?.data || verifyRes;
+          if (options.onSuccess) options.onSuccess(data);
+        } catch (err) {
+          const errorMsg =
+            err?.status === 400 || err?.statusCode === 400 || err?.response?.status === 400
+              ? "Payment verification failed, please retry or contact support"
+              : (err?.message || "Payment verification failed, please retry or contact support");
+          const customErr = new Error(errorMsg);
+          customErr.status = err?.status || 400;
+          customErr.statusCode = err?.status || 400;
+          customErr.originalError = err;
+          if (options.onFailure) options.onFailure(customErr);
+        }
+        resolve();
+      },
+      modal: {
+        ondismiss: function () {
+          if (options.onDismiss) options.onDismiss();
+          resolve();
+        },
+      },
+    };
+
+    if (amountInPaise) {
+      rzpOptions.amount = amountInPaise;
+    }
+    if (orderData.currency) {
+      rzpOptions.currency = orderData.currency;
+    }
+
+    const rzp = new window.Razorpay(rzpOptions);
+    rzp.on("payment.failed", function (failResponse) {
+      const errorMsg = failResponse?.error?.description || "Payment failed at checkout gateway";
+      const err = new Error(errorMsg);
+      err.details = failResponse?.error;
+      if (options.onFailure) options.onFailure(err);
+    });
+    rzp.open();
+  });
+}
+
+/**
+ * Verify payment directly with backend contract { orderId, paymentId, signature }
+ * In mock mode: { orderId }
+ * In razorpay mode: { orderId, paymentId, signature }
+ */
+export async function verifyPayment({ orderId, paymentId, signature } = {}) {
+  if (isRealMode("payments")) {
+    const body = { orderId };
+    if (paymentId) body.paymentId = paymentId;
+    if (signature) body.signature = signature;
+
+    try {
+      const res = await apiClient.post("/api/payments/verify", body);
+      return res?.data || res;
+    } catch (err) {
+      if (err?.status === 400 || err?.statusCode === 400 || err?.response?.status === 400) {
+        const customError = new Error("Payment verification failed, please retry or contact support");
+        customError.status = 400;
+        customError.statusCode = 400;
+        customError.originalError = err;
+        throw customError;
+      }
+      throw err;
+    }
+  }
+
+  return {
+    success: true,
+    message: "Payment verified successfully",
+    mode: "mock",
+  };
+}
 
 // Safe local storage helpers
 const STORAGE_KEYS = {
@@ -129,20 +273,55 @@ const SEED_CREDIT_LEDGER = [
   },
 ];
 
+// Package type mapping: frontend type -> backend packageType identifier
+export const PACKAGE_TYPE_MAP = {
+  talent_registration:       "talent_annual_999",
+  organization_registration: "industry_annual_4999",
+  industry_registration:     "industry_annual_4999",
+  bundle_views:              "credit_bundle_25_2000",
+  single_view:               "credit_single_100",
+};
+
 export const paymentService = {
   /**
    * Apply promotional coupon code
    * @param {string} code Coupon code string
    * @param {number} baseAmount Original amount before coupon
+   * @param {string} [packageType] Backend or frontend package type
    */
-  async applyCoupon(code, baseAmount) {
-    // TODO: Real backend POST /api/payments/apply-coupon
-    if (isRealMode("payments")) {
-      const res = await apiClient.post("/api/payments/apply-coupon", { code, baseAmount });
-      return res?.data || res;
+  async applyCoupon(code, baseAmount, packageType) {
+    const cleanCode = (code || "").trim().toUpperCase();
+    if (!cleanCode) {
+      return {
+        success: false,
+        message: "Please enter a coupon code.",
+      };
     }
 
-    const cleanCode = (code || "").trim().toUpperCase();
+    const normalizedPackageType = PACKAGE_TYPE_MAP[packageType] || packageType;
+
+    // Real backend POST /api/payments/apply-coupon
+    if (isRealMode("payments")) {
+      if (!normalizedPackageType) {
+        return {
+          success: false,
+          message: "Please select a plan before applying a coupon.",
+        };
+      }
+      try {
+        const res = await apiClient.post("/api/payments/apply-coupon", {
+          couponCode: cleanCode,
+          packageType: normalizedPackageType,
+        });
+        return res?.data || res;
+      } catch (err) {
+        return {
+          success: false,
+          message: err?.message || "Invalid or expired coupon code.",
+        };
+      }
+    }
+
     const coupon = PRICING_CONFIG.VALID_COUPONS[cleanCode];
 
     if (!coupon) {
@@ -178,10 +357,49 @@ export const paymentService = {
    * @param {Object} metadata Extra data like couponCode, userId, etc.
    */
   async createPaymentOrder(type, metadata = {}) {
-    // TODO: Real backend POST /api/payments/create-order
+    const packageType = PACKAGE_TYPE_MAP[type] || type;
+
     if (isRealMode("payments")) {
-      const res = await apiClient.post("/api/payments/create-order", { type, ...metadata });
-      return res?.data || res;
+      const body = { packageType, ...metadata };
+      // Pass couponCode explicitly if present
+      if (metadata.couponCode) {
+        body.couponCode = metadata.couponCode;
+      }
+      const res = await apiClient.post("/api/payments/create-order", body);
+      const raw = res?.data || res;
+      const orderInfo = raw?.order || {};
+      const orderId = raw?.orderId || orderInfo.orderId || raw?.razorpayOrderId;
+      const razorpayOrderId = raw?.razorpayOrderId || orderInfo.razorpayOrderId || orderId;
+      const keyId = raw?.keyId || orderInfo.keyId || orderInfo.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+      const mode = raw?.mode || orderInfo.mode || "razorpay";
+      const amount = raw?.amount ?? orderInfo.amount;
+
+      const normalizedData = {
+        orderId,
+        razorpayOrderId,
+        keyId,
+        mode,
+        type,
+        packageType: orderInfo.packageType || packageType,
+        label: orderInfo.packageName || (type === "organization_registration" ? "Organization Registration" : "Talent Registration"),
+        baseAmount: orderInfo.originalAmount ?? amount,
+        discountAmount: orderInfo.discountAmount ?? 0,
+        finalAmount: amount,
+        amount,
+        currency: raw?.currency || orderInfo.currency || "INR",
+        createdAt: new Date().toISOString(),
+        ...orderInfo,
+      };
+
+      return {
+        ...raw,
+        success: raw?.success ?? true,
+        mode,
+        orderId,
+        razorpayOrderId,
+        keyId,
+        data: normalizedData,
+      };
     }
 
     let baseAmount = PRICING_CONFIG.TALENT_FEE;
@@ -200,7 +418,7 @@ export const paymentService = {
 
     let discountAmount = 0;
     if (metadata.couponCode) {
-      const couponRes = await this.applyCoupon(metadata.couponCode, baseAmount);
+      const couponRes = await this.applyCoupon(metadata.couponCode, baseAmount, packageType);
       if (couponRes.success) {
         discountAmount = couponRes.data.discountAmount;
       }
@@ -211,6 +429,7 @@ export const paymentService = {
 
     return {
       success: true,
+      mode: "mock",
       data: {
         orderId,
         type,
@@ -218,8 +437,10 @@ export const paymentService = {
         baseAmount,
         discountAmount,
         finalAmount,
+        amount: finalAmount,
         currency: PRICING_CONFIG.CURRENCY,
         createdAt: new Date().toISOString(),
+        mode: "mock",
       },
     };
   },
@@ -240,10 +461,62 @@ export const paymentService = {
     // Simulate 1.5s gateway latency
     await new Promise((res) => setTimeout(res, 1500));
 
-    // TODO: Real backend POST /api/payments/verify
+    // Real backend POST /api/payments/verify
     if (isRealMode("payments")) {
-      const res = await apiClient.post("/api/payments/verify", { orderId, outcome, ...payload });
-      return res?.data || res;
+      if (shouldFail) {
+        return {
+          success: false,
+          status: "Pending",
+          message: "Payment transaction could not be processed. Your card was not debited.",
+          orderId,
+        };
+      }
+
+      try {
+        const verifyBody = {
+          orderId,
+        };
+        const paymentId = payload.paymentId || payload.razorpayPaymentId || payload.razorpay_payment_id;
+        const signature = payload.signature || payload.razorpaySignature || payload.razorpay_signature;
+        if (paymentId) verifyBody.paymentId = paymentId;
+        if (signature) verifyBody.signature = signature;
+
+        const res = await apiClient.post("/api/payments/verify", verifyBody);
+        const data = res?.data || res;
+        const tx = data?.transaction || {};
+        return {
+          success: data?.success ?? true,
+          status: "Successful",
+          mode: data?.mode,
+          transaction: tx,
+          receipt: {
+            receiptNumber: tx.invoiceNumber || `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+            transactionId: tx.paymentId || tx.orderId || orderId,
+            orderId: tx.orderId || orderId,
+            amount: tx.amount || payload.amount,
+            currency: tx.currency || "INR",
+            issuedAt: tx.paidAt || tx.createdAt || new Date().toISOString(),
+            type: tx.packageType || payload.type,
+            typeLabel: payload.label || "Platform Payment",
+            userName: payload.userName || "Verified User",
+            userEmail: payload.userEmail || "user@vismaya.io",
+            status: "Paid",
+          },
+          message: data?.message || "Payment verified and membership/credits activated successfully",
+        };
+      } catch (err) {
+        const errorMsg =
+          err?.status === 400 || err?.statusCode === 400 || err?.response?.status === 400
+            ? "Payment verification failed, please retry or contact support"
+            : (err?.message || "Payment verification failed, please retry or contact support");
+        return {
+          success: false,
+          status: "Failed",
+          message: errorMsg,
+          orderId,
+          error: err,
+        };
+      }
     }
 
     const txId = `pay_tx_${Date.now()}`;
@@ -563,9 +836,9 @@ export const paymentService = {
    * Fetch all platform transactions for admin console
    */
   async getAdminTransactions() {
-    // TODO: Real backend GET /api/admin/payments/transactions
     if (isRealMode("payments")) {
-      const res = await apiClient.get("/api/admin/payments/transactions");
+      // Correct backend route: GET /api/admin/transactions
+      const res = await apiClient.get("/api/admin/transactions");
       return res?.data || res;
     }
 
@@ -576,10 +849,62 @@ export const paymentService = {
    * Fetch organization credits and ledger for admin console
    */
   async getAdminCredits() {
-    // TODO: Real backend GET /api/admin/credits/ledger
     if (isRealMode("payments")) {
-      const res = await apiClient.get("/api/admin/credits/ledger");
-      return res?.data || res;
+      try {
+        const res = await apiClient.get("/api/admin/credits/ledger");
+        const data = res?.data || res;
+        const rawLedger = Array.isArray(data?.ledger) ? data.ledger : [];
+
+        // Build organization summaries from ledger rows and embedded orgBalance
+        const orgMap = new Map();
+        for (const entry of rawLedger) {
+          const org = entry.organization;
+          const orgId = typeof org === "object" ? (org?._id ? String(org._id) : "") : (org ? String(org) : "");
+          if (!orgId) continue;
+
+          if (!orgMap.has(orgId)) {
+            const orgName = (typeof org === "object" ? org?.organizationName : "") || `Organization (${orgId.slice(-6)})`;
+            const ob = entry.orgBalance || {};
+            orgMap.set(orgId, {
+              orgId,
+              orgName,
+              contactPerson: "Studio Desk",
+              contactEmail: "-",
+              currentBalance: typeof ob.balance === "number" ? ob.balance : (entry.balanceAfter || 0),
+              includedCredits: typeof ob.includedCredits === "number" ? ob.includedCredits : 0,
+              purchasedCredits: typeof ob.purchasedCredits === "number" ? ob.purchasedCredits : 0,
+              consumedCredits: typeof ob.consumedCredits === "number" ? ob.consumedCredits : 0,
+              status: "Active",
+              lastActivity: entry.createdAt || new Date().toISOString(),
+            });
+          }
+        }
+
+        const mappedLedger = rawLedger.map((row) => mapAdminCreditLedgerRow(row));
+
+        return {
+          success: data?.success ?? true,
+          count: data?.count ?? mappedLedger.length,
+          total: data?.total ?? mappedLedger.length,
+          page: data?.page ?? 1,
+          totalPages: data?.totalPages ?? 1,
+          orgSummaries: Array.from(orgMap.values()),
+          ledger: mappedLedger,
+        };
+      } catch (err) {
+        if (err?.status === 404 || err?.response?.status === 404) {
+          return {
+            success: true,
+            count: 0,
+            total: 0,
+            page: 1,
+            totalPages: 1,
+            orgSummaries: [],
+            ledger: [],
+          };
+        }
+        throw err;
+      }
     }
 
     const ledger = safeGetStorage(STORAGE_KEYS.CREDIT_LEDGER, SEED_CREDIT_LEDGER);
@@ -630,6 +955,11 @@ export const paymentService = {
     ];
 
     return {
+      success: true,
+      count: ledger.length,
+      total: ledger.length,
+      page: 1,
+      totalPages: 1,
       orgSummaries,
       ledger,
     };
@@ -639,6 +969,19 @@ export const paymentService = {
    * Admin adjust organization credit balance
    */
   async adjustCredits(orgId, amount, reason = "Manual Admin Adjustment") {
+    if (isRealMode("payments")) {
+      const res = await apiClient.post("/api/admin/credits/adjust", {
+        organizationId: orgId,
+        amount: Number(amount),
+        reason,
+      });
+      const data = res?.data || res;
+      return {
+        success: data?.success ?? true,
+        newBalance: data?.ledger?.balance,
+        message: data?.message || `Adjusted credit balance by ${amount > 0 ? "+" + amount : amount}.`,
+      };
+    }
     const current = safeGetStorage(STORAGE_KEYS.CREDITS, {
       balance: 100,
       includedCredits: 100,
@@ -673,6 +1016,9 @@ export const paymentService = {
       message: `Adjusted credit balance by ${amount > 0 ? "+" + amount : amount}. New balance: ${newBalance}.`,
     };
   },
+
+  openRazorpayCheckout,
+  verifyPayment,
 };
 
 export default paymentService;

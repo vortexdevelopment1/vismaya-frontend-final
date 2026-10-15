@@ -2049,6 +2049,99 @@ export const getPaymentTransactions = async (req: Request, res: Response): Promi
     }
 };
 
+/**
+ * GET /api/admin/credits/ledger
+ * Admin: Paginated credit transaction ledger with org-wise balance summary.
+ * Filters: organizationId, type, dateFrom, dateTo
+ */
+export const getAdminCreditLedger = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const {
+            organizationId,
+            type,
+            dateFrom,
+            dateTo,
+            page = 1,
+            limit = 20
+        } = req.query;
+
+        const filter: any = {};
+
+        if (organizationId) {
+            filter.organizationId = organizationId;
+        }
+
+        if (type) {
+            filter.type = type;
+        }
+
+        if (dateFrom || dateTo) {
+            filter.createdAt = {};
+            if (dateFrom) filter.createdAt.$gte = new Date(String(dateFrom));
+            if (dateTo) filter.createdAt.$lte = new Date(String(dateTo));
+        }
+
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 20, 1), 100);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [rows, total] = await Promise.all([
+            CreditTransaction.find(filter)
+                .populate("organizationId", "organizationName")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum),
+            CreditTransaction.countDocuments(filter)
+        ]);
+
+        // Build per-org balance summary from CreditLedger for orgs visible in this page
+        const orgIds = [...new Set(rows.map(r => String(r.organizationId)))];
+        const ledgers = orgIds.length > 0
+            ? await CreditLedger.find({ organizationId: { $in: orgIds } })
+                .select("organizationId includedCredits purchasedCredits consumedCredits balance")
+            : [];
+
+        const ledgerMap: Record<string, any> = {};
+        for (const l of ledgers) {
+            ledgerMap[String(l.organizationId)] = {
+                includedCredits: l.includedCredits,
+                purchasedCredits: l.purchasedCredits,
+                consumedCredits: l.consumedCredits,
+                balance: l.balance
+            };
+        }
+
+        const ledgerRows = rows.map(r => {
+            const orgIdStr = String(r.organizationId);
+            return {
+                _id: r._id,
+                organization: r.organizationId,   // populated: { _id, organizationName }
+                type: r.type,
+                amount: r.amount,
+                balanceAfter: r.balanceAfter,
+                description: r.description,
+                adminId: r.adminId,
+                paymentTransactionId: r.paymentTransactionId,
+                createdAt: r.createdAt,
+                orgBalance: ledgerMap[orgIdStr] || null
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            count: ledgerRows.length,
+            total,
+            page: pageNum,
+            totalPages: Math.ceil(total / limitNum),
+            ledger: ledgerRows
+        });
+
+    } catch (error: any) {
+        console.error("Get admin credit ledger error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching credit ledger" });
+    }
+};
+
 export const adjustCreditBalance = async (req: Request, res: Response): Promise<any> => {
     try {
         const { organizationId, amount, reason } = req.body;

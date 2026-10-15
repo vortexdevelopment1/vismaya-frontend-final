@@ -553,13 +553,21 @@ export const adminService = {
 
   /**
    * Adjust organization credit balance
-   * @param {Object} payload { organizationId, delta, reason }
+   * @param {Object} payload { organizationId, delta, amount, reason }
    */
-  async adjustCreditBalance(payload) {
+  async adjustCreditBalance(payload = {}) {
     if (!isRealMode("admin")) {
       return { success: true, message: "Credits adjusted (Mock)" };
     }
-    return apiClient.post("/api/admin/credits/adjust", payload);
+    const organizationId = payload.organizationId || payload.orgId;
+    const amountVal = payload.amount !== undefined ? payload.amount : payload.delta;
+    const amount = Number(amountVal ?? 0);
+    const reason = payload.reason || "Manual Admin Adjustment";
+    return apiClient.post("/api/admin/credits/adjust", {
+      organizationId,
+      amount,
+      reason,
+    });
   },
 
   /**

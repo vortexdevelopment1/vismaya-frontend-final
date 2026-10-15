@@ -1,7 +1,8 @@
 import express, { Router, Request, Response, NextFunction } from "express";
 
 import { 
-    authenticateUser
+    authenticateUser,
+    optionalAuth
  } from "../middleware/auth.middleware.js";
 
 import { 
@@ -65,16 +66,16 @@ router.get(
     getMyAnalytics
 );
 
-// Search & discovery routes (Strictly authenticated per §1 & §7)
+// Search & discovery routes — optionalAuth: guests get masked card data, authenticated users get role-aware cards
 router.get(
     "/search",
-    authenticateUser,
+    optionalAuth,
     searchTalentDirectory
 );
 
 router.get(
     "/featured",
-    authenticateUser,
+    optionalAuth,
     getFeaturedTalent
 );
 
@@ -92,10 +93,10 @@ router.post(
     unlockTalentProfile
 );
 
-// Controlled profile view (masked for preview / consumes credit for full view)
+// Controlled profile view — optionalAuth: guests get locked preview, auth users get role-aware view
 router.get(
     "/:vismayaIdOrId",
-    authenticateUser,
+    optionalAuth,
     getPublicTalentProfile
 );
 

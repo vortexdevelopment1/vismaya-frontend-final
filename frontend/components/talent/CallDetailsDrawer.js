@@ -386,4 +386,3 @@ export default function CallDetailsDrawer({ isOpen, onClose, call, onApply }) {
     </div>
   );
 }
-}

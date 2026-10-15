@@ -1,9 +1,34 @@
 import { Request, Response } from "express";
 import crypto from "crypto";
+import Razorpay from "razorpay";
 import PaymentTransaction from "../models/paymentTransaction.model.js";
 import Organization from "../models/organization.model.js";
 import { validateAndApplyCoupon } from "../services/coupon.service.js";
 import { fulfilTransaction, PACKAGE_CONFIG } from "../services/paymentFulfillment.service.js";
+
+/**
+ * Determine payment mode ('mock' | 'razorpay')
+ * Defaults to 'mock' if not set.
+ */
+export const getPaymentMode = (): "mock" | "razorpay" => {
+    return (process.env.PAYMENT_MODE as "mock" | "razorpay") || "mock";
+};
+
+let razorpayClient: Razorpay | null = null;
+const getRazorpayClient = (): Razorpay => {
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) {
+        throw new Error("Razorpay credentials (RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET) are missing or not configured");
+    }
+    if (!razorpayClient) {
+        razorpayClient = new Razorpay({
+            key_id: keyId,
+            key_secret: keySecret
+        });
+    }
+    return razorpayClient;
+};
 
 /**
  * Preview / Apply Coupon Endpoint
@@ -68,6 +93,14 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<a
         const userId = req.user?.userId;
         const role = req.user?.role;
         const { packageType, couponCode } = req.body;
+        const mode = getPaymentMode();
+
+        if (mode === "mock" && process.env.NODE_ENV === "production") {
+            return res.status(500).json({
+                success: false,
+                message: "Mock payment mode is strictly disabled in production"
+            });
+        }
 
         const pkg = (PACKAGE_CONFIG as Record<string, any>)[packageType];
         if (!pkg) {
@@ -120,6 +153,74 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<a
             appliedCouponCode = couponResult.couponCode;
         }
 
+        if (mode === "razorpay") {
+            // Real Razorpay Order via SDK
+            const rzp = getRazorpayClient();
+            const amountInPaise = Math.round(finalAmount * 100);
+
+            let rzpOrder: any;
+            try {
+                rzpOrder = await rzp.orders.create({
+                    amount: amountInPaise,
+                    currency: "INR",
+                    receipt: `rcpt_${Date.now()}_${crypto.randomBytes(3).toString("hex")}`,
+                    notes: {
+                        userId: userId?.toString() || "",
+                        packageType,
+                        organizationId: organizationId ? organizationId.toString() : ""
+                    }
+                });
+            } catch (rzpErr: any) {
+                console.error("Razorpay order creation error:", rzpErr);
+                return res.status(502).json({
+                    success: false,
+                    message: rzpErr?.error?.description || rzpErr?.message || "Failed to create order with Razorpay gateway"
+                });
+            }
+
+            const transaction: any = await PaymentTransaction.create({
+                userId,
+                organizationId: organizationId || undefined,
+                packageType,
+                amount: finalAmount,
+                originalAmount: pkg.amount,
+                discountAmount,
+                couponCode: appliedCouponCode || undefined,
+                currency: "INR",
+                orderId: rzpOrder.id,
+                status: "created",
+                creditsAwarded: pkg.credits,
+                paymentGateway: "razorpay",
+                gatewayResponse: rzpOrder
+            });
+
+            return res.status(201).json({
+                success: true,
+                message: "Payment order created successfully",
+                mode: "razorpay",
+                razorpayOrderId: rzpOrder.id,
+                orderId: rzpOrder.id,
+                keyId: process.env.RAZORPAY_KEY_ID,
+                amount: transaction.amount,
+                currency: transaction.currency,
+                order: {
+                    orderId: rzpOrder.id,
+                    razorpayOrderId: rzpOrder.id,
+                    keyId: process.env.RAZORPAY_KEY_ID,
+                    key: process.env.RAZORPAY_KEY_ID,
+                    amount: transaction.amount,
+                    originalAmount: transaction.originalAmount,
+                    discountAmount: transaction.discountAmount,
+                    couponCode: transaction.couponCode,
+                    currency: transaction.currency,
+                    packageType: transaction.packageType,
+                    packageName: pkg.name,
+                    mode: "razorpay"
+                }
+            });
+        }
+
+        // Mock mode (non-production only)
         const uniqueSuffix = Date.now().toString() + "_" + crypto.randomBytes(4).toString("hex");
         const orderId = `order_vis_${uniqueSuffix}`;
 
@@ -138,9 +239,10 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<a
             paymentGateway: "razorpay"
         });
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Payment order created successfully",
+            mode: "mock",
             order: {
                 orderId: transaction.orderId,
                 amount: transaction.amount,
@@ -150,7 +252,8 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<a
                 currency: transaction.currency,
                 packageType: transaction.packageType,
                 packageName: pkg.name,
-                key: process.env.RAZORPAY_KEY_ID || "rzp_test_mock_key"
+                key: process.env.RAZORPAY_KEY_ID || "rzp_test_mock_key",
+                mode: "mock"
             }
         });
 
@@ -171,12 +274,30 @@ export const verifyPayment = async (req: Request, res: Response): Promise<any> =
     try {
         const userId = req.user?.userId;
         const { orderId, paymentId, signature } = req.body;
+        const mode = getPaymentMode();
 
-        if (!orderId) {
-            return res.status(400).json({
+        if (mode === "mock" && process.env.NODE_ENV === "production") {
+            return res.status(500).json({
                 success: false,
-                message: "orderId is required"
+                message: "Mock payment verification is strictly disabled in production"
             });
+        }
+
+        // Field requirements based on PAYMENT_MODE
+        if (mode === "razorpay") {
+            if (!orderId || !paymentId || !signature) {
+                return res.status(400).json({
+                    success: false,
+                    message: "orderId, paymentId, and signature are required in razorpay mode"
+                });
+            }
+        } else {
+            if (!orderId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "orderId is required"
+                });
+            }
         }
 
         const transaction = await PaymentTransaction.findOne({ orderId });
@@ -195,24 +316,35 @@ export const verifyPayment = async (req: Request, res: Response): Promise<any> =
             });
         }
 
-        // Idempotency check
+        // Idempotency check: if already fulfilled, return cleanly
         if (transaction.status === "successful") {
             return res.status(200).json({
                 success: true,
                 message: "Payment was already verified and fulfilled successfully (Idempotent)",
+                mode,
                 transaction
             });
         }
 
-        // Verify Razorpay signature if provided and secret exists
-        const secret = process.env.RAZORPAY_KEY_SECRET;
-        if (secret && signature && paymentId) {
+        // Signature verification
+        if (mode === "razorpay") {
+            const secret = process.env.RAZORPAY_KEY_SECRET;
+            if (!secret) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Razorpay secret key is not configured"
+                });
+            }
+
             const expectedSignature = crypto
                 .createHmac("sha256", secret)
                 .update(`${orderId}|${paymentId}`)
                 .digest("hex");
 
-            if (signature !== expectedSignature) {
+            const sigBuf = Buffer.from(signature);
+            const expBuf = Buffer.from(expectedSignature);
+
+            if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
                 transaction.status = "failed";
                 await transaction.save();
 
@@ -220,6 +352,28 @@ export const verifyPayment = async (req: Request, res: Response): Promise<any> =
                     success: false,
                     message: "Invalid payment signature verification failed"
                 });
+            }
+        } else {
+            // Mock mode: verify signature only if provided and secret exists
+            const secret = process.env.RAZORPAY_KEY_SECRET;
+            if (secret && signature && paymentId) {
+                const expectedSignature = crypto
+                    .createHmac("sha256", secret)
+                    .update(`${orderId}|${paymentId}`)
+                    .digest("hex");
+
+                const sigBuf = Buffer.from(signature);
+                const expBuf = Buffer.from(expectedSignature);
+
+                if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+                    transaction.status = "failed";
+                    await transaction.save();
+
+                    return res.status(400).json({
+                        success: false,
+                        message: "Invalid payment signature verification failed"
+                    });
+                }
             }
         }
 
@@ -242,6 +396,7 @@ export const verifyPayment = async (req: Request, res: Response): Promise<any> =
             message: fulfillment.alreadyFulfilled
                 ? "Payment was already verified and fulfilled successfully (Idempotent)"
                 : "Payment verified and membership/credits activated successfully",
+            mode,
             transaction: fulfillment.transaction
         });
 

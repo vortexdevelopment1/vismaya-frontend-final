@@ -41,6 +41,9 @@ export const env = {
     get ALLOW_FAKE_GOOGLE_TOKENS(): boolean {
         return process.env.ALLOW_FAKE_GOOGLE_TOKENS === "true";
     },
+    get PAYMENT_MODE(): "mock" | "razorpay" {
+        return (process.env.PAYMENT_MODE as "mock" | "razorpay") || "mock";
+    },
     get RAZORPAY_KEY_ID(): string | undefined {
         return process.env.RAZORPAY_KEY_ID;
     },

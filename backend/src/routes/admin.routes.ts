@@ -36,6 +36,7 @@ import {
     updateTalentTrendingStatus,
     getPaymentTransactions,
     adjustCreditBalance,
+    getAdminCreditLedger,
     getCoupons,
     createCoupon,
     updateCoupon,
@@ -200,6 +201,7 @@ router.patch("/media/:mediaId/review", authenticateUser, authorizeRoles("admin")
 
 // Transactions & Credit Balances
 router.get("/transactions", authenticateUser, authorizeRoles("admin"), getPaymentTransactions);
+router.get("/credits/ledger", authenticateUser, authorizeRoles("admin"), getAdminCreditLedger);
 router.post("/credits/adjust", authenticateUser, authorizeRoles("admin"), adjustCreditBalance);
 
 // Coupons Management

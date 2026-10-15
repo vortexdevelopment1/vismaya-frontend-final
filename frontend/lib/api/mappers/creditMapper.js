@@ -52,10 +52,62 @@ export function fromApiTransaction(tx) {
   };
 }
 
+export function mapCreditTypeToUi(type) {
+  switch (type) {
+    case "registration_bonus":
+    case "registration_included":
+      return { type: "included", label: "Included" };
+    case "purchase":
+    case "bundle_purchase":
+    case "single_purchase":
+      return { type: "purchased", label: "Purchased" };
+    case "profile_view_deduction":
+      return { type: "consumed", label: "Consumed" };
+    case "admin_adjustment":
+      return { type: "adjusted", label: "Adjusted" };
+    default:
+      return { type: "other", label: type || "Other" };
+  }
+}
+
+export function fromApiAdminLedgerRow(row) {
+  if (!row) return null;
+  const id = row._id ? String(row._id) : (row.id ? String(row.id) : "");
+  const createdIso = safeIsoDate(row.createdAt, new Date().toISOString());
+  const typeMapping = mapCreditTypeToUi(row.type);
+
+  const org = row.organization;
+  const orgId = typeof org === "object" ? (org?._id ? String(org._id) : "") : (org ? String(org) : "");
+  const orgName = (typeof org === "object" ? org?.organizationName : "") || "Unknown Studio";
+
+  return {
+    _id: id,
+    id,
+    organization: typeof org === "object" ? org : { _id: orgId, organizationName: orgName },
+    orgId,
+    orgName,
+    type: typeMapping.type,
+    typeLabel: typeMapping.label,
+    rawType: row.type,
+    amount: Number(row.amount) || 0,
+    change: Number(row.amount) || 0,
+    balanceAfter: Number(row.balanceAfter) || 0,
+    description: row.description || "",
+    notes: row.description || "",
+    createdAt: createdIso,
+    date: createdIso,
+    orgBalance: row.orgBalance || null,
+    reference: row.paymentTransactionId ? String(row.paymentTransactionId) : "",
+  };
+}
+
 export const fromApi = fromApiTransaction;
 
 export default {
   fromApi,
   fromApiLedger,
   fromApiTransaction,
+  fromApiAdminLedgerRow,
+  mapCreditTypeToUi,
 };
+

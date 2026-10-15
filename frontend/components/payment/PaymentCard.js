@@ -15,7 +15,8 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { PRICING_CONFIG } from "@/lib/config/pricing";
-import { paymentService } from "@/lib/api/services/paymentService";
+import { paymentService, PACKAGE_TYPE_MAP } from "@/lib/api/services/paymentService";
+import { isRealMode } from "@/lib/api/config";
 import Link from "next/link";
 
 export default function PaymentCard({
@@ -46,7 +47,7 @@ export default function PaymentCard({
         couponCode: appliedCoupon?.code,
       });
       if (mounted && res.success) {
-        setOrder(res.data);
+        setOrder(res.data || res.order || res);
       }
     }
     initOrder();
@@ -60,11 +61,17 @@ export default function PaymentCard({
     e.preventDefault();
     if (!couponCode.trim()) return;
 
+    const pkgType = order?.packageType || (PACKAGE_TYPE_MAP && PACKAGE_TYPE_MAP[type]) || type;
+    if (!pkgType) {
+      setCouponError("Please select a plan before applying a coupon.");
+      return;
+    }
+
     setIsApplyingCoupon(true);
     setCouponError("");
 
     const base = order?.baseAmount || (type === "organization_registration" ? PRICING_CONFIG.INDUSTRY_FEE : PRICING_CONFIG.TALENT_FEE);
-    const res = await paymentService.applyCoupon(couponCode, base);
+    const res = await paymentService.applyCoupon(couponCode, base, pkgType);
 
     setIsApplyingCoupon(false);
     if (res.success) {
@@ -88,6 +95,65 @@ export default function PaymentCard({
     setPaymentState("processing");
     setErrorMessage("");
 
+    const mode = order.mode || (isRealMode("payments") ? "razorpay" : "mock");
+
+    // Real Razorpay Mode
+    if (mode === "razorpay") {
+      try {
+        await paymentService.openRazorpayCheckout(
+          {
+            orderId: order.orderId || order.razorpayOrderId,
+            razorpayOrderId: order.razorpayOrderId || order.orderId,
+            keyId: order.keyId,
+            amount: order.finalAmount || order.amount,
+            currency: order.currency || "INR",
+            userName,
+            userEmail,
+            description: order.label || "Vismaya Platform Payment",
+            prefill: {
+              name: userName,
+              email: userEmail,
+            },
+          },
+          {
+            onSuccess: (verifyRes) => {
+              const tx = verifyRes?.transaction || {};
+              const receiptData = verifyRes?.receipt || {
+                receiptNumber: tx.invoiceNumber || `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+                transactionId: tx.paymentId || tx.orderId || order.orderId,
+                typeLabel: order.label || "Platform Payment",
+                amount: tx.amount || order.finalAmount,
+                issuedAt: tx.paidAt || tx.createdAt || new Date().toISOString(),
+              };
+              setReceipt(receiptData);
+              setPaymentState("success");
+            },
+            onFailure: (err) => {
+              setPaymentState("failed");
+              const msg =
+                err?.status === 400 || err?.statusCode === 400 || err?.response?.status === 400
+                  ? "Payment verification failed, please retry or contact support"
+                  : (err?.message || "Payment verification failed, please retry or contact support");
+              setErrorMessage(msg);
+            },
+            onDismiss: () => {
+              setPaymentState("failed");
+              setErrorMessage("Payment was cancelled. You can retry whenever you are ready.");
+            },
+          }
+        );
+      } catch (err) {
+        setPaymentState("failed");
+        const msg =
+          err?.status === 400 || err?.statusCode === 400 || err?.response?.status === 400
+            ? "Payment verification failed, please retry or contact support"
+            : (err?.message || "Failed to initialize payment gateway.");
+        setErrorMessage(msg);
+      }
+      return;
+    }
+
+    // Mock Mode: Run existing mock payment flow and call verify with { orderId }
     try {
       const res = await paymentService.confirmPayment(order.orderId, outcome, {
         type: order.type,
@@ -103,11 +169,19 @@ export default function PaymentCard({
         setPaymentState("success");
       } else {
         setPaymentState("failed");
-        setErrorMessage(res.message || "Payment transaction failed.");
+        const msg =
+          res?.error?.status === 400 || res?.status === 400
+            ? "Payment verification failed, please retry or contact support"
+            : (res.message || "Payment transaction failed.");
+        setErrorMessage(msg);
       }
     } catch (err) {
       setPaymentState("failed");
-      setErrorMessage(err.message || "Network error during checkout.");
+      const msg =
+        err?.status === 400 || err?.statusCode === 400 || err?.response?.status === 400
+          ? "Payment verification failed, please retry or contact support"
+          : (err.message || "Network error during checkout.");
+      setErrorMessage(msg);
     }
   };
 

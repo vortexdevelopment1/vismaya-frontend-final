@@ -25,7 +25,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${playfairDisplay.variable} ${inter.variable}`}>
-      <body>
+      <body suppressHydrationWarning>
         <WorkflowProvider>
           <AuthProvider>
             {children}

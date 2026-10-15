@@ -39,6 +39,7 @@ export default function PasswordInput({
         </span>
       )}
       <input
+        suppressHydrationWarning
         id={id}
         name={name}
         type={showPassword ? "text" : "password"}
@@ -56,6 +57,7 @@ export default function PasswordInput({
         }}
       />
       <button
+        suppressHydrationWarning
         type="button"
         onClick={() => setShowPassword((prev) => !prev)}
         aria-label={showPassword ? "Hide password" : "Show password"}

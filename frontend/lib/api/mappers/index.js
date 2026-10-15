@@ -28,6 +28,6 @@ export { fromApi as mapNotification, toApi as mapNotificationToApi } from "./not
 export { fromApi as mapMedia, toApi as mapMediaToApi } from "./mediaMapper.js";
 export { fromApi as mapVerification, toApi as mapVerificationToApi } from "./verificationMapper.js";
 export { fromApi as mapPayment, toApi as mapPaymentToApi, fromApi as mapPaymentTransaction } from "./paymentMapper.js";
-export { fromApiTransaction as mapCreditTransaction, fromApiLedger as mapCreditLedger, fromApiTransaction as mapCreditHistory } from "./creditMapper.js";
+export { fromApiTransaction as mapCreditTransaction, fromApiLedger as mapCreditLedger, fromApiTransaction as mapCreditHistory, fromApiAdminLedgerRow as mapAdminCreditLedgerRow, mapCreditTypeToUi } from "./creditMapper.js";
 export { fromApi as mapBroadcast, toApi as mapBroadcastToApi } from "./broadcastMapper.js";
 
