@@ -137,6 +137,20 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
         });
     }
 
+    // Multer deliberately rejects unsupported media before controllers run.
+    // Convert those operational errors into client-safe 4xx responses rather
+    // than leaking as generic 500s.
+    if (err?.name === "MulterError") {
+        const status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+        return res.status(status).json({
+            success: false,
+            message: err.code === "LIMIT_FILE_SIZE" ? "Uploaded file exceeds the allowed size" : "Invalid upload request"
+        });
+    }
+    if (err?.message && String(err.message).startsWith("Unsupported file type:")) {
+        return res.status(400).json({ success: false, message: err.message });
+    }
+
     // Handle Mongoose CastError / Invalid ObjectId (S10)
     if (err.name === "CastError") {
         return res.status(400).json({

@@ -30,9 +30,9 @@ export const uploadMediaFile = async (req: Request, res: Response): Promise<any>
         });
     } catch (error: any) {
         console.error("Cloudinary upload error:", error);
-        res.status(500).json({
+        res.status(502).json({
             success: false,
-            message: error.message || "Something went wrong while uploading file to Cloudinary"
+            message: "Media storage upload failed. Please try again shortly."
         });
     }
 };
@@ -62,9 +62,9 @@ export const uploadMultipleMediaFiles = async (req: Request, res: Response): Pro
         });
     } catch (error: any) {
         console.error("Multiple upload error:", error);
-        res.status(500).json({
+        res.status(502).json({
             success: false,
-            message: error.message || "Something went wrong while uploading files"
+            message: "Media storage upload failed. Please try again shortly."
         });
     }
 };
