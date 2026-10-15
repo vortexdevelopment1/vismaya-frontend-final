@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import Opportunity from "../models/opportunity.model.js";
 import Project from "../models/project.model.js";
 import Organization from "../models/organization.model.js";
@@ -13,6 +14,54 @@ const getApplicantCountApprox = (count: number): string => {
     if (count < 50) return "10+";
     if (count < 100) return "50+";
     return "100+";
+};
+
+/** Resolve a project without ever allowing an organization to reference another org's project. */
+const resolveOpportunityProject = async (
+    organizationId: any,
+    projectId?: unknown,
+    projectName?: unknown
+) => {
+    if (projectId) {
+        if (!mongoose.isValidObjectId(String(projectId))) {
+            return { error: { status: 400, message: "Invalid project ID" } };
+        }
+        const project = await Project.findById(String(projectId));
+        if (!project) return { error: { status: 404, message: "Project not found" } };
+        if (String(project.organizationId) !== String(organizationId)) {
+            return { error: { status: 403, message: "You can only use projects from your own organization" } };
+        }
+        return { project };
+    }
+
+    const normalizedName = typeof projectName === "string" ? projectName.trim() : "";
+    if (normalizedName) {
+        const exactName = new RegExp(`^${normalizedName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
+        let project = await Project.findOne({ organizationId, projectName: exactName });
+        if (!project) {
+            project = await Project.create({
+                organizationId,
+                projectName: normalizedName,
+                projectType: "Casting",
+                description: "Project created automatically for a casting opportunity.",
+                status: "active"
+            });
+        }
+        return { project };
+    }
+
+    let project = await Project.findOne({ organizationId, isSystemDefault: true });
+    if (!project) {
+        project = await Project.create({
+            organizationId,
+            projectName: "General Casting",
+            projectType: "Casting",
+            description: "System default project for casting opportunities.",
+            isSystemDefault: true,
+            status: "active"
+        });
+    }
+    return { project };
 };
 
 const computeEligibilityMatch = (opportunity: any, profile: any): { matches: boolean; missing: string[] } => {
@@ -136,6 +185,7 @@ export const createOpportunity = async (req: Request, res: Response): Promise<an
 
         const {
             projectId,
+            projectName,
             title,
             summary,
             role,
@@ -147,18 +197,7 @@ export const createOpportunity = async (req: Request, res: Response): Promise<an
             customQuestions
         } = req.body;
 
-        const project = await Project.findById(String(projectId));
-        if (!project) {
-            return res.status(404).json({
-                success: false,
-                message: "Project not found"
-            });
-        }
-
         let organization = await Organization.findOne({ userId });
-        if (!organization && (req.user?.role === "admin" || req.user?.role === "recruiter")) {
-            organization = (project.organizationId ? await Organization.findById(project.organizationId) : null) || await Organization.findOne();
-        }
 
         if (!organization) {
             return res.status(404).json({
@@ -167,12 +206,9 @@ export const createOpportunity = async (req: Request, res: Response): Promise<an
             });
         }
 
-        if (req.user?.role !== "admin" && project.organizationId.toString() !== organization._id.toString()) {
-            return res.status(403).json({
-                success: false,
-                message: "You can only create opportunities for your own projects"
-            });
-        }
+        const resolved = await resolveOpportunityProject(organization._id, projectId, projectName);
+        if (resolved.error) return res.status(resolved.error.status).json({ success: false, message: resolved.error.message });
+        const project = resolved.project!;
 
         // O2: Opportunity submission requires an isPaid org in production
         if (process.env.NODE_ENV === "production" && !req.user?.isPaid) {
@@ -183,7 +219,7 @@ export const createOpportunity = async (req: Request, res: Response): Promise<an
         }
 
         const opportunity = await Opportunity.create({
-            projectId: String(projectId),
+            projectId: project._id,
             title: String(title).trim(),
             summary: String(summary).trim(),
             role: String(role).trim(),
@@ -197,6 +233,7 @@ export const createOpportunity = async (req: Request, res: Response): Promise<an
             submittedAt: new Date()
         });
 
+        await opportunity.populate("projectId", "projectName");
         res.status(201).json({
             success: true,
             message: "Opportunity submitted successfully and is pending Vismaya review",
@@ -254,6 +291,12 @@ export const updateOpportunity = async (req: Request, res: Response): Promise<an
             });
         }
 
+        if (req.body.projectId !== undefined || req.body.projectName !== undefined) {
+            const resolved = await resolveOpportunityProject(organization._id, req.body.projectId, req.body.projectName);
+            if (resolved.error) return res.status(resolved.error.status).json({ success: false, message: resolved.error.message });
+            opportunity.projectId = resolved.project!._id;
+        }
+
         const allowedFields = [
             "title", "summary", "role", "location", "deadline", "remuneration",
             "positionsCount", "eligibility", "customQuestions"
@@ -278,6 +321,7 @@ export const updateOpportunity = async (req: Request, res: Response): Promise<an
         }
 
         await opportunity.save();
+        await opportunity.populate("projectId", "projectName");
 
         res.status(200).json({
             success: true,

@@ -5,6 +5,8 @@ export interface IProject extends Document {
     projectName: string;
     description?: string;
     projectType?: string;
+    /** Internal fallback project used when an organization has not supplied one. */
+    isSystemDefault?: boolean;
     status: "active" | "completed" | "cancelled";
     completedAt?: Date;
     completedBy?: Types.ObjectId;
@@ -36,6 +38,11 @@ const projectSchema = new Schema<IProject>(
             trim: true
         },
 
+        isSystemDefault: {
+            type: Boolean,
+            default: false
+        },
+
         status: {
             type: String,
             enum: ["active", "completed", "cancelled"],
@@ -57,6 +64,7 @@ const projectSchema = new Schema<IProject>(
 );
 
 projectSchema.index({ organizationId: 1, status: 1 });
+projectSchema.index({ organizationId: 1, isSystemDefault: 1 });
 
 export const Project: Model<IProject> = mongoose.model<IProject>("Project", projectSchema);
 export default Project;

@@ -131,6 +131,7 @@ export function toApi(opp) {
 
   const payload = {
     projectId: opp.projectId,
+    ...(opp.projectName && !opp.projectId ? { projectName: opp.projectName.trim() } : {}),
     title: opp.title?.trim(),
     summary: opp.summary?.trim() || opp.fullBrief?.trim() || opp.description?.trim() || "",
     role: firstRole?.roleName?.trim() || opp.role?.trim() || opp.title?.trim(),

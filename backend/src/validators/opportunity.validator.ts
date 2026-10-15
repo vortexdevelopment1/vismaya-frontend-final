@@ -1,6 +1,7 @@
 export const validateOpportunityCreate = (data: any): { isValid: boolean; errors: string[] } => {
     const {
         projectId,
+        projectName,
         title,
         summary,
         role,
@@ -14,7 +15,12 @@ export const validateOpportunityCreate = (data: any): { isValid: boolean; errors
 
     const errors: string[] = [];
 
-    if (!projectId) errors.push("Project ID is required");
+    if (projectId !== undefined && (typeof projectId !== "string" || !projectId.trim())) {
+        errors.push("Project ID must be a non-empty string");
+    }
+    if (projectName !== undefined && (typeof projectName !== "string" || !projectName.trim())) {
+        errors.push("Project name must be a non-empty string");
+    }
     if (!title || typeof title !== "string" || !title.trim()) errors.push("Title is required");
     if (!summary || typeof summary !== "string" || !summary.trim()) errors.push("Summary is required");
     if (!role || typeof role !== "string" || !role.trim()) errors.push("Role title is mandatory");
@@ -59,6 +65,12 @@ export const validateOpportunityUpdate = (data: any): { isValid: boolean; errors
         if (isNaN(pCount) || pCount < 1) {
             errors.push("Positions count must be at least 1");
         }
+    }
+    if (data?.projectId !== undefined && (typeof data.projectId !== "string" || !data.projectId.trim())) {
+        errors.push("Project ID must be a non-empty string");
+    }
+    if (data?.projectName !== undefined && (typeof data.projectName !== "string" || !data.projectName.trim())) {
+        errors.push("Project name must be a non-empty string");
     }
     return {
         isValid: errors.length === 0,

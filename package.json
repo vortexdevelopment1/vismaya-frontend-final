@@ -11,6 +11,7 @@
     "build:backend": "npm --prefix backend run build",
     "typecheck:backend": "npm --prefix backend run typecheck",
     "start:frontend": "npm --prefix frontend run start",
-    "start:backend": "npm --prefix backend run start"
+    "start:backend": "npm --prefix backend run start",
+    "e2e": "node scripts/e2e/run-all.mjs"
   }
 }

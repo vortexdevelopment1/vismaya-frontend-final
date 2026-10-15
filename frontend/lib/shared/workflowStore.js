@@ -2171,7 +2171,7 @@ export function WorkflowProvider({ children }) {
       if (isRealMode("opportunities")) {
         try {
           const oppsRes = await publicService.getPublishedOpportunities();
-          if (mounted && oppsRes?.data && Array.isArray(oppsRes.data) && oppsRes.data.length > 0) {
+          if (mounted && oppsRes?.data && Array.isArray(oppsRes.data)) {
             dispatch({
               type: "HYDRATE_STATE",
               payload: {
@@ -2183,8 +2183,10 @@ export function WorkflowProvider({ children }) {
             return;
           }
         } catch (err) {
-          console.warn("Real opportunities fetch failed, using local/seed store:", err);
+          console.warn("Real opportunities fetch failed:", err);
         }
+        if (mounted) setIsHydrated(true);
+        return;
       }
 
       // 2. Mock mode / fallback local storage hydration
@@ -2238,9 +2240,9 @@ export function WorkflowProvider({ children }) {
     return () => clearInterval(interval);
   }, [isHydrated]);
 
-  // Persist state to localStorage whenever state changes after hydration (mock mode only)
+  // Persist mock workflow state only. Real mode must not retain server data locally.
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!isHydrated || isRealMode("opportunities")) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (err) {
@@ -2272,6 +2274,7 @@ export function WorkflowProvider({ children }) {
         }
       } catch (err) {
         console.warn("Real createProject failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "CREATE_PROJECT", payload: projectData });
@@ -2291,6 +2294,7 @@ export function WorkflowProvider({ children }) {
         }
       } catch (err) {
         console.warn("Real submitOpportunity failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "SUBMIT_OPPORTUNITY", payload: opportunityData });
