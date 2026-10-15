@@ -31,6 +31,8 @@ import { PRICING_CONFIG } from "@/lib/config/pricing";
 import { getAuthToken } from "@/lib/api/client";
 import { isRealMode } from "@/lib/api/config";
 import { authService } from "@/lib/api/services/authService";
+import { talentService } from "@/lib/api/services/talentService";
+import { recruiterService } from "@/lib/api/services/recruiterService";
 
 function RegisterPageContent() {
   const router = useRouter();
@@ -369,6 +371,38 @@ function RegisterPageContent() {
 
       const res = await register(payload);
       if (res.success && res.user) {
+        if (selectedRole === "talent") {
+          try {
+            await talentService.saveProfile({
+              stageName: name.trim(),
+              primaryProfession: primaryCraft,
+              skills: skills ? skills.split(",").map((s) => s.trim()).filter(Boolean) : [],
+              bio: bio.trim(),
+              currentCity: city,
+              profilePhoto: photoUrl,
+              experienceRange: "1-3 years",
+            });
+          } catch (profErr) {
+            console.warn("Could not auto-save talent profile:", profErr?.message);
+          }
+        } else if (selectedRole === "organization") {
+          try {
+            await recruiterService.saveOrganizationProfile({
+              companyName: name.trim(),
+              companyType,
+              phone: orgPhone,
+              city,
+              website,
+              about: aboutStudio,
+              genres: genres ? genres.split(",").map((g) => g.trim()).filter(Boolean) : [],
+              cinNumber,
+              gstNumber,
+            });
+          } catch (orgErr) {
+            console.warn("Could not auto-save organization profile:", orgErr?.message);
+          }
+        }
+
         // Clear registration draft from database upon successful onboarding
         const tokenToDelete = draftToken || (typeof window !== "undefined" ? sessionStorage.getItem("vismaya_draft_token") : null);
         if (tokenToDelete) {

@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  FolderKanban,
   PlusCircle,
   Briefcase,
   Users,
@@ -14,6 +15,12 @@ export const recruiterNav = [
     href: "/recruiter/dashboard",
     icon: LayoutDashboard,
     match: ["/recruiter/dashboard"],
+  },
+  {
+    title: "Projects",
+    href: "/recruiter/projects",
+    icon: FolderKanban,
+    match: ["/recruiter/projects", "/recruiter/projects/"],
   },
   {
     title: "Submit opportunity",

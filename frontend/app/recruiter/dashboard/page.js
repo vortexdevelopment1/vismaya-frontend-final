@@ -28,6 +28,7 @@ import PaymentCard from "@/components/payment/PaymentCard";
 import { paymentService } from "@/lib/api/services/paymentService";
 import { PRICING_CONFIG } from "@/lib/config/pricing";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { isRealMode } from "@/lib/api/config";
 
 export default function OrganizationDashboardPage() {
   const [credits, setCredits] = React.useState({ balance: 100, lowBalanceWarning: false });
@@ -47,18 +48,35 @@ export default function OrganizationDashboardPage() {
   React.useEffect(() => {
     loadCredits();
   }, [loadCredits]);
+
   const {
     projects,
     opportunities,
     applications,
     auditions,
     isHydrated,
+    refreshProjects,
   } = useWorkflow();
 
+  React.useEffect(() => {
+    if (refreshProjects) {
+      refreshProjects();
+    }
+  }, [refreshProjects]);
+
   // Active organization scope (default org-1: Zee Films)
+  const isReal = isRealMode("projects") || isRealMode("recruiter");
   const orgId = "org-1";
-  const orgProjects = projects.filter((p) => p.orgId === orgId);
-  const orgOpportunities = opportunities.filter((o) => o.orgId === orgId);
+  const orgProjects = projects.filter((p) => {
+    if (!p) return false;
+    if (isReal) return p.orgId !== "org-2";
+    return p.orgId === orgId || !p.orgId;
+  });
+  const orgOpportunities = opportunities.filter((o) => {
+    if (!o) return false;
+    if (isReal) return o.orgId !== "org-2";
+    return o.orgId === orgId || !o.orgId;
+  });
   const orgOppIds = orgOpportunities.map((o) => o.id);
 
   const orgApplications = applications.filter((a) => orgOppIds.includes(a.opportunityId));

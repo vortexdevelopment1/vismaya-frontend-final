@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useState, useMemo } from "react";
 import { isRealMode } from "@/lib/api/config";
+import { getAuthToken } from "@/lib/api/client";
 import { publicService } from "@/lib/api/services/publicService";
 import { recruiterService } from "@/lib/api/services/recruiterService";
 import { talentService } from "@/lib/api/services/talentService";
@@ -1037,21 +1038,37 @@ function workflowReducer(state, action) {
     // ------------------------------------------------------------------------
     // PROJECT ACTIONS
     // ------------------------------------------------------------------------
+    case "SET_PROJECTS": {
+      return {
+        ...state,
+        projects: Array.isArray(action.payload) ? action.payload : state.projects,
+      };
+    }
+
     case "CREATE_PROJECT": {
-      const { orgId, title, type, description } = action.payload;
-      if (!title || !orgId) {
-        console.error("Workflow Error: Project title and orgId are required");
+      const projectData = action.payload || {};
+      const title = projectData.title || projectData.projectName;
+      if (!title) {
+        console.error("Workflow Error: Project title is required");
         return state;
       }
 
+      const id = projectData.id || projectData._id || `proj-${Date.now()}`;
+      const orgId = projectData.orgId || projectData.organizationId || "org-1";
+
       const newProject = {
-        id: `proj-${Date.now()}`,
+        id,
+        _id: projectData._id || id,
         orgId,
+        organizationId: orgId,
         title: title.trim(),
-        type: type || "OTT Series",
-        description: description || "",
-        status: "Active",
-        createdAt: new Date().toISOString(),
+        projectName: title.trim(),
+        type: projectData.type || projectData.projectType || "OTT Series",
+        projectType: projectData.projectType || projectData.type || "OTT Series",
+        description: projectData.description || "",
+        status: projectData.status || "Active",
+        createdAt: projectData.createdAt || new Date().toISOString(),
+        ...projectData,
       };
 
       const newNotif = {
@@ -1065,9 +1082,13 @@ function workflowReducer(state, action) {
         link: "/recruiter/opportunities",
       };
 
+      const otherProjects = (state.projects || []).filter(
+        (p) => p.id !== id && p._id !== id
+      );
+
       return {
         ...state,
-        projects: [newProject, ...state.projects],
+        projects: [newProject, ...otherProjects],
         notifications: [newNotif, ...state.notifications],
       };
     }
@@ -2167,23 +2188,38 @@ export function WorkflowProvider({ children }) {
     let mounted = true;
 
     async function initStore() {
-      // 1. If in Real Mode, try fetching live published opportunities
-      if (isRealMode("opportunities")) {
+      // 1. If in Real Mode, try fetching live published opportunities AND live recruiter projects
+      if (isRealMode("opportunities") || isRealMode("projects") || isRealMode("recruiter")) {
         try {
-          const oppsRes = await publicService.getPublishedOpportunities();
-          if (mounted && oppsRes?.data && Array.isArray(oppsRes.data)) {
+          const [oppsRes, projsRes] = await Promise.allSettled([
+            isRealMode("opportunities") ? publicService.getPublishedOpportunities() : Promise.resolve({ data: [] }),
+            getAuthToken() && (isRealMode("projects") || isRealMode("recruiter"))
+              ? recruiterService.getProjects()
+              : Promise.resolve({ data: [] }),
+          ]);
+
+          const liveOpps = oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data) && oppsRes.value.data.length > 0
+            ? oppsRes.value.data
+            : defaultWorkflowState.opportunities;
+
+          const liveProjs = projsRes.status === "fulfilled" && Array.isArray(projsRes.value?.data) && projsRes.value.data.length > 0
+            ? projsRes.value.data
+            : defaultWorkflowState.projects;
+
+          if (mounted) {
             dispatch({
               type: "HYDRATE_STATE",
               payload: {
                 ...defaultWorkflowState,
-                opportunities: oppsRes.data,
+                opportunities: liveOpps,
+                projects: liveProjs,
               },
             });
             setIsHydrated(true);
             return;
           }
         } catch (err) {
-          console.warn("Real opportunities fetch failed:", err);
+          console.warn("Real store hydration fetch failed:", err);
         }
         if (mounted) setIsHydrated(true);
         return;
@@ -2263,13 +2299,32 @@ export function WorkflowProvider({ children }) {
     return () => clearInterval(interval);
   }, []);
 
+  const refreshProjects = async () => {
+    if (getAuthToken() && (isRealMode("projects") || isRealMode("recruiter"))) {
+      try {
+        const res = await recruiterService.getProjects();
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          dispatch({
+            type: "SET_PROJECTS",
+            payload: res.data,
+          });
+          return res.data;
+        }
+      } catch (err) {
+        console.warn("refreshProjects failed:", err);
+      }
+    }
+    return null;
+  };
+
   // Action Dispatchers
   const createProject = async (projectData) => {
-    if (isRealMode("recruiter")) {
+    if (isRealMode("recruiter") || isRealMode("projects")) {
       try {
         const res = await recruiterService.createProject(projectData);
         if (res?.data) {
           dispatch({ type: "CREATE_PROJECT", payload: res.data });
+          await refreshProjects();
           return res.data;
         }
       } catch (err) {
@@ -2278,6 +2333,7 @@ export function WorkflowProvider({ children }) {
       }
     }
     dispatch({ type: "CREATE_PROJECT", payload: projectData });
+    return projectData;
   };
 
   const markProjectCompleted = (projectId) => {
@@ -2608,6 +2664,7 @@ export function WorkflowProvider({ children }) {
 
       // Actions
       createProject,
+      refreshProjects,
       markProjectCompleted,
       submitOpportunity,
       adminApproveAndPublish,

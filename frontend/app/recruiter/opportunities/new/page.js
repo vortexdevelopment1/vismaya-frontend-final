@@ -20,6 +20,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { isRealMode } from "@/lib/api/config";
 
 const OPPORTUNITY_TYPES = [
   "Acting",
@@ -40,9 +41,21 @@ function SubmitOpportunityForm() {
   const preselectedProjectId = searchParams.get("projectId") || "";
   const editId = searchParams.get("edit") || "";
 
-  const { opportunities, projects, createProject, submitOpportunity } = useWorkflow();
+  const { opportunities, projects, createProject, submitOpportunity, refreshProjects } = useWorkflow();
+
+  React.useEffect(() => {
+    if (refreshProjects) {
+      refreshProjects();
+    }
+  }, [refreshProjects]);
+
   const orgId = "org-1";
-  const orgProjects = projects.filter((p) => p.orgId === orgId);
+  const isReal = isRealMode("projects") || isRealMode("recruiter");
+  const orgProjects = projects.filter((p) => {
+    if (!p) return false;
+    if (isReal) return p.orgId !== "org-2";
+    return p.orgId === orgId || !p.orgId;
+  });
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formErrors, setFormErrors] = useState({});
@@ -228,18 +241,19 @@ function SubmitOpportunityForm() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep === 1 && validateStep1()) {
       if (isInlineProject && !formData.projectId) {
         const newProj = {
-          id: `proj-${Date.now()}`,
           orgId,
           title: inlineProjTitle.trim(),
+          projectName: inlineProjTitle.trim(),
           type: inlineProjType,
+          projectType: inlineProjType,
           description: inlineProjDesc.trim(),
         };
-        createProject(newProj);
-        setFormData((prev) => ({ ...prev, projectId: newProj.id }));
+        const created = await createProject(newProj);
+        setFormData((prev) => ({ ...prev, projectId: created?.id || created?._id || newProj.id }));
       }
       setCurrentStep(2);
     } else if (currentStep === 2 && validateStep2()) {
@@ -256,18 +270,19 @@ function SubmitOpportunityForm() {
     }
   };
 
-  const handleFormSubmit = (isDraft = false) => {
+  const handleFormSubmit = async (isDraft = false) => {
     let resolvedProjectId = formData.projectId;
     if (isInlineProject && (!resolvedProjectId || resolvedProjectId === "")) {
       const newProj = {
-        id: `proj-${Date.now()}`,
         orgId,
         title: inlineProjTitle.trim(),
+        projectName: inlineProjTitle.trim(),
         type: inlineProjType,
+        projectType: inlineProjType,
         description: inlineProjDesc.trim(),
       };
-      createProject(newProj);
-      resolvedProjectId = newProj.id;
+      const created = await createProject(newProj);
+      resolvedProjectId = created?.id || created?._id || newProj.id;
     }
 
     if (!resolvedProjectId) {

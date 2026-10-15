@@ -666,6 +666,7 @@ export const recruiterService = {
   async getMyOrganization() { return this.getOrganizationProfile(); },
   async updateOrganization(payload) { return this.saveOrganizationProfile(payload); },
   async getOpportunities() { return this.getMyOpportunities(); },
+  async getProjects() { return this.getMyProjects(); },
   async requestCancellation(opportunityId, payload) { return this.requestOpportunityCancellation(opportunityId, payload); },
   async deleteOpportunity(opportunityId, payload) { return this.requestOpportunityCancellation(opportunityId, payload); },
 };
