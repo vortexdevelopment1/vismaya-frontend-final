@@ -34,8 +34,14 @@ export default function OrganizationDashboardPage() {
   const [buyPlan, setBuyPlan] = React.useState(null);
 
   const loadCredits = React.useCallback(async () => {
-    const res = await paymentService.getCredits("org-1");
-    setCredits(res);
+    try {
+      const res = await paymentService.getCredits("org-1");
+      if (res) {
+        setCredits(res);
+      }
+    } catch (err) {
+      console.warn("Could not load organization credits:", err?.message);
+    }
   }, []);
 
   React.useEffect(() => {

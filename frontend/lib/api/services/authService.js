@@ -75,6 +75,49 @@ export const authService = {
   },
 
   /**
+   * Save registration draft directly to MongoDB database
+   * @param {Object} payload { email, role, currentStep, formData }
+   * @param {string} draftToken
+   */
+  async saveDraft(payload, draftToken = null) {
+    if (!isRealMode("auth")) {
+      return { success: true, draft: payload };
+    }
+    const headers = {};
+    if (draftToken) headers["x-draft-token"] = draftToken;
+    const res = await apiClient.post("/api/auth/draft", payload, { headers });
+    return res?.data || res;
+  },
+
+  /**
+   * Get registration draft from MongoDB database
+   * @param {string} draftToken
+   * @param {string} email
+   */
+  async getDraft(draftToken, email = null) {
+    if (!isRealMode("auth") || !draftToken) {
+      return { success: false };
+    }
+    const headers = { "x-draft-token": draftToken };
+    const query = email ? `?email=${encodeURIComponent(email)}` : "";
+    const res = await apiClient.get(`/api/auth/draft${query}`, { headers });
+    return res?.data || res;
+  },
+
+  /**
+   * Delete registration draft from MongoDB database
+   * @param {string} draftToken
+   */
+  async deleteDraft(draftToken) {
+    if (!isRealMode("auth") || !draftToken) {
+      return { success: true };
+    }
+    const headers = { "x-draft-token": draftToken };
+    const res = await apiClient.delete("/api/auth/draft", { headers });
+    return res?.data || res;
+  },
+
+  /**
    * Log in an existing user
    * @param {Object} credentials { email, password }
    */

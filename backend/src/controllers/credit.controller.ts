@@ -8,11 +8,34 @@ import { consumeProfileViewCredit, initializeOrganizationCredits } from "../serv
 import { toFullProfile, toCard } from "../utils/serializers/talent.js";
 import { recordProfileView } from "../services/analytics.service.js";
 
+import User from "../models/user.model.js";
+
+const getOrCreateOrganization = async (userId: string | any) => {
+    if (!userId) return null;
+    let organization = await Organization.findOne({ userId });
+    if (!organization) {
+        const user = await User.findById(userId);
+        if (user && user.role === "organization") {
+            const baseName = user.name || "My Organization";
+            const cleanSlug = baseName
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/(^-|-$)+/g, "");
+            organization = await Organization.create({
+                userId,
+                organizationName: baseName,
+                slug: `${cleanSlug || "org"}-${user._id.toString().slice(-4)}`
+            });
+        }
+    }
+    return organization;
+};
+
 export const getMyCreditBalance = async (req: Request, res: Response): Promise<any> => {
     try {
         const userId = req.user?.userId;
 
-        const organization = await Organization.findOne({ userId });
+        const organization = await getOrCreateOrganization(userId);
         if (!organization) {
             return res.status(404).json({
                 success: false,
@@ -54,7 +77,7 @@ export const getCreditHistory = async (req: Request, res: Response): Promise<any
         const userId = req.user?.userId;
         const { page = 1, limit = 20 } = req.query as { page?: string; limit?: string };
 
-        const organization = await Organization.findOne({ userId });
+        const organization = await getOrCreateOrganization(userId);
         if (!organization) {
             return res.status(404).json({
                 success: false,
@@ -101,7 +124,7 @@ export const getViewedTalents = async (req: Request, res: Response): Promise<any
         const userId = req.user?.userId;
         const { page = 1, limit = 12 } = req.query as { page?: string; limit?: string };
 
-        const organization = await Organization.findOne({ userId });
+        const organization = await getOrCreateOrganization(userId);
         if (!organization) {
             return res.status(404).json({ success: false, message: "Organization not found" });
         }
@@ -162,7 +185,7 @@ export const unlockFullTalentProfile = async (req: Request, res: Response): Prom
         const { talentIdOrVismayaId } = req.params;
 
         // 1. Verify Organization Account
-        const organization = await Organization.findOne({ userId });
+        const organization = await getOrCreateOrganization(userId);
         if (!organization) {
             return res.status(404).json({
                 success: false,

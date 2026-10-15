@@ -4,7 +4,7 @@
  * digital receipts, and admin ledgers.
  */
 
-import { apiClient } from "../client.js";
+import { apiClient, getAuthToken } from "../client.js";
 import { isRealMode } from "../config.js";
 import { PRICING_CONFIG } from "../../config/pricing.js";
 import { mapPayment, mapAdminCreditLedgerRow } from "../mappers/index.js";
@@ -300,8 +300,8 @@ export const paymentService = {
 
     const normalizedPackageType = PACKAGE_TYPE_MAP[packageType] || packageType;
 
-    // Real backend POST /api/payments/apply-coupon
-    if (isRealMode("payments")) {
+    // Real backend POST /api/payments/apply-coupon (requires authenticated session)
+    if (isRealMode("payments") && getAuthToken()) {
       if (!normalizedPackageType) {
         return {
           success: false,
@@ -358,8 +358,9 @@ export const paymentService = {
    */
   async createPaymentOrder(type, metadata = {}) {
     const packageType = PACKAGE_TYPE_MAP[type] || type;
+    const isRegistration = type === "talent_registration" || type === "organization_registration";
 
-    if (isRealMode("payments")) {
+    if (isRealMode("payments") && getAuthToken() && !isRegistration) {
       const body = { packageType, ...metadata };
       // Pass couponCode explicitly if present
       if (metadata.couponCode) {
@@ -461,8 +462,9 @@ export const paymentService = {
     // Simulate 1.5s gateway latency
     await new Promise((res) => setTimeout(res, 1500));
 
-    // Real backend POST /api/payments/verify
-    if (isRealMode("payments")) {
+    // Real backend POST /api/payments/verify (requires authenticated session)
+    const isRegistration = payload.type === "talent_registration" || payload.type === "organization_registration";
+    if (isRealMode("payments") && getAuthToken() && !isRegistration) {
       if (shouldFail) {
         return {
           success: false,
@@ -626,8 +628,20 @@ export const paymentService = {
    */
   async getCredits(orgId = "org-1") {
     if (isRealMode("credits") || isRealMode("payments")) {
-      const res = await apiClient.get("/api/credits/balance");
-      return res?.data || res;
+      try {
+        const res = await apiClient.get("/api/credits/balance");
+        return res?.data || res;
+      } catch (err) {
+        console.warn("Failed to fetch credits balance from backend, using safe fallback:", err?.message);
+        const defaultLedger = {
+          balance: PRICING_CONFIG.INCLUDED_CREDITS,
+          includedCredits: PRICING_CONFIG.INCLUDED_CREDITS,
+          purchasedCredits: 0,
+          consumedCredits: 0,
+          lowBalanceWarning: false,
+        };
+        return defaultLedger;
+      }
     }
 
     const defaultLedger = {

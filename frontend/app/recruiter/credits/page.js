@@ -35,11 +35,15 @@ export default function RecruiterCreditsPage() {
   const [isSuccessToast, setIsSuccessToast] = useState("");
 
   const loadData = async () => {
-    const credRes = await paymentService.getCredits("org-1");
-    setCredits(credRes);
+    try {
+      const credRes = await paymentService.getCredits("org-1");
+      if (credRes) setCredits(credRes);
 
-    const viewedRes = await paymentService.getViewedTalents();
-    setViewedTalents(viewedRes || []);
+      const viewedRes = await paymentService.getViewedTalents();
+      setViewedTalents(viewedRes || []);
+    } catch (err) {
+      console.warn("Could not load credits data:", err?.message);
+    }
   };
 
   useEffect(() => {

@@ -8,6 +8,7 @@ import {
   AlertCircle,
   CreditCard,
   ArrowRight,
+  ArrowLeft,
   RefreshCw,
   Sparkles,
   FileText,
@@ -38,40 +39,45 @@ export default function PaymentCard({
   const [receipt, setReceipt] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Initialize Order
-  useEffect(() => {
-    let mounted = true;
-    async function initOrder() {
-      if (isRealMode("payments") && !getAuthToken()) {
-        if (mounted) {
-          setPaymentState("failed");
-          setErrorMessage("Please verify your account and sign in before starting a payment.");
-        }
-        return;
-      }
+  const isRegistration = type === "talent_registration" || type === "organization_registration";
 
-      try {
-        const res = await paymentService.createPaymentOrder(type, {
-          userName,
-          userEmail,
-          couponCode: appliedCoupon?.code,
-        });
-        if (mounted && res.success) {
-          setOrder(res.data || res.order || res);
-        }
-      } catch (err) {
-        if (mounted) {
-          setPaymentState("failed");
-          setErrorMessage(err?.status === 401
-            ? "Please verify your account and sign in before starting a payment."
-            : (err?.message || "Unable to initialize payment. Please try again."));
-        }
-      }
+  // Initialize Order function callable for both initial load and manual retries
+  const initOrder = async () => {
+    if (isRealMode("payments") && !getAuthToken() && !isRegistration) {
+      setPaymentState("failed");
+      setErrorMessage("Please verify your account and sign in before starting a payment.");
+      return;
     }
+
+    try {
+      setPaymentState("processing");
+      setErrorMessage("");
+      const res = await paymentService.createPaymentOrder(type, {
+        userName,
+        userEmail,
+        couponCode: appliedCoupon?.code,
+      });
+      if (res && (res.success || res.orderId || res.data?.orderId)) {
+        setOrder(res.data || res.order || res);
+        setPaymentState("idle");
+        setErrorMessage("");
+      } else {
+        setPaymentState("failed");
+        setErrorMessage(res?.message || "Unable to initialize payment. Please try again.");
+      }
+    } catch (err) {
+      setPaymentState("failed");
+      setErrorMessage(
+        err?.status === 401
+          ? "Please verify your account and sign in before starting a payment."
+          : (err?.message || "Unable to initialize payment. Please try again.")
+      );
+    }
+  };
+
+  // Initialize Order on mount or dependency changes
+  useEffect(() => {
     initOrder();
-    return () => {
-      mounted = false;
-    };
   }, [type, userName, userEmail, appliedCoupon]);
 
   // Handle Coupon Application
@@ -107,9 +113,21 @@ export default function PaymentCard({
     setCouponError("");
   };
 
+  const handleRetryPayment = async () => {
+    setErrorMessage("");
+    if (!order) {
+      await initOrder();
+    } else {
+      setPaymentState("idle");
+    }
+  };
+
   // Trigger Checkout
   const handlePayNow = async (outcome = "success") => {
-    if (!order) return;
+    if (!order) {
+      await initOrder();
+      return;
+    }
     setPaymentState("processing");
     setErrorMessage("");
 
@@ -443,7 +461,7 @@ export default function PaymentCard({
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
             <button
               type="button"
-              onClick={() => handlePayNow("success")}
+              onClick={handleRetryPayment}
               className="v-pay-btn-primary"
               style={{
                 width: "100%",
@@ -465,22 +483,59 @@ export default function PaymentCard({
               <span>Retry Payment</span>
             </button>
 
-            <Link
-              href="/contact"
-              style={{
-                fontSize: "13px",
-                color: "#8A6B2E",
-                textDecoration: "none",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-                marginTop: "6px",
-              }}
-            >
-              <HelpCircle size={14} />
-              <span>Contact Support</span>
-            </Link>
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                style={{
+                  width: "100%",
+                  height: "44px",
+                  backgroundColor: "transparent",
+                  color: "#5A584F",
+                  border: "1px solid #E8E2D4",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                }}
+              >
+                <ArrowLeft size={16} />
+                <span>Go Back & Edit Registration</span>
+              </button>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "14px", marginTop: "4px" }}>
+              <Link
+                href="/login"
+                style={{
+                  fontSize: "13px",
+                  color: "#8A6B2E",
+                  textDecoration: "underline",
+                  fontWeight: "600",
+                }}
+              >
+                Sign In to Account
+              </Link>
+              <span style={{ color: "#D1C9B8" }}>•</span>
+              <Link
+                href="/contact"
+                style={{
+                  fontSize: "13px",
+                  color: "#8A6B2E",
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <HelpCircle size={14} />
+                <span>Contact Support</span>
+              </Link>
+            </div>
           </div>
         </div>
       )}

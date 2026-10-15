@@ -28,6 +28,9 @@ import {
   Briefcase,
 } from "lucide-react";
 import { PRICING_CONFIG } from "@/lib/config/pricing";
+import { getAuthToken } from "@/lib/api/client";
+import { isRealMode } from "@/lib/api/config";
+import { authService } from "@/lib/api/services/authService";
 
 function RegisterPageContent() {
   const router = useRouter();
@@ -88,46 +91,146 @@ function RegisterPageContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  // Restore draft from localStorage if available
-  useEffect(() => {
+  // Store only the lightweight draft session identifier (no form data in localStorage)
+  const [draftToken, setDraftToken] = useState(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem("vismaya_registration_draft");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed.role) setSelectedRole(parsed.role);
-          if (parsed.name) setName(parsed.name);
-          if (parsed.email) setEmail(parsed.email);
-          if (parsed.isPaid) setIsPaid(true);
-          if (parsed.orderReceipt) setOrderReceipt(parsed.orderReceipt);
-          if (parsed.step) {
-            // If already paid, resume at post-payment step
-            if (parsed.isPaid) {
-              const minStep = parsed.role === "organization" ? 4 : 5;
-              setCurrentStep(Math.max(parsed.step, minStep));
-            } else {
-              setCurrentStep(parsed.step);
-            }
-          }
+        return sessionStorage.getItem("vismaya_draft_token") || null;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  // Reset draft from database (MongoDB) and restart registration from step 1
+  const handleResetRegistration = async () => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("vismaya_registration_draft");
+        const token = sessionStorage.getItem("vismaya_draft_token") || draftToken;
+        if (token) {
+          await authService.deleteDraft(token).catch(() => {});
+          sessionStorage.removeItem("vismaya_draft_token");
         }
       } catch (e) {}
     }
+    setDraftToken(null);
+    setCurrentStep(1);
+    setIsPaid(false);
+    setOrderReceipt(null);
+    setFormError("");
+    setOtp("");
+    setOtpSent(false);
+    setEmail("");
+    setName("");
+    setPassword("secretpassword123");
+    setConfirmPassword("secretpassword123");
+  };
+
+  // Restore registration draft directly from MongoDB database
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // Purge any legacy localStorage draft key so no form data resides in localStorage
+      try {
+        localStorage.removeItem("vismaya_registration_draft");
+      } catch (e) {}
+
+      const isResetRequested = searchParams?.get("reset") === "true" || searchParams?.get("new") === "true";
+      const token = sessionStorage.getItem("vismaya_draft_token");
+
+      if (isResetRequested) {
+        if (token) {
+          authService.deleteDraft(token).catch(() => {});
+          sessionStorage.removeItem("vismaya_draft_token");
+        }
+        setDraftToken(null);
+        setCurrentStep(1);
+        return;
+      }
+
+      if (token) {
+        authService.getDraft(token).then((res) => {
+          if (res?.success && res?.draft) {
+            const d = res.draft;
+            const f = d.formData || {};
+            if (d.role) setSelectedRole(d.role);
+            if (d.email) setEmail(d.email);
+            if (f.name) setName(f.name);
+            if (f.phone) {
+              if (d.role === "organization") setOrgPhone(f.phone);
+              else setPhone(f.phone);
+            }
+            if (f.city) setCity(f.city);
+            if (f.photoUrl) setPhotoUrl(f.photoUrl);
+            if (f.companyType) setCompanyType(f.companyType);
+            if (f.website) setWebsite(f.website);
+            if (f.aboutStudio) setAboutStudio(f.aboutStudio);
+            if (f.genres) setGenres(f.genres);
+            if (f.cinNumber) setCinNumber(f.cinNumber);
+            if (f.gstNumber) setGstNumber(f.gstNumber);
+            if (f.primaryCraft) setPrimaryCraft(f.primaryCraft);
+            if (f.skills) setSkills(f.skills);
+            if (f.bio) setBio(f.bio);
+            if (f.isPaid) setIsPaid(true);
+            if (f.orderReceipt) setOrderReceipt(f.orderReceipt);
+            if (d.currentStep) {
+              if (f.isPaid) {
+                const minStep = d.role === "organization" ? 4 : 5;
+                setCurrentStep(Math.max(d.currentStep, minStep));
+              } else {
+                setCurrentStep(d.currentStep);
+              }
+            }
+          }
+        }).catch(() => {});
+      }
+    }
   }, []);
 
-  // Sync draft to localStorage
-  const saveDraft = (updated = {}) => {
-    if (typeof window !== "undefined") {
-      try {
-        const draft = {
-          role: selectedRole,
-          step: updated.step || currentStep,
-          name,
-          email,
-          isPaid: updated.isPaid !== undefined ? updated.isPaid : isPaid,
-          orderReceipt: updated.orderReceipt || orderReceipt,
-        };
-        localStorage.setItem("vismaya_registration_draft", JSON.stringify(draft));
-      } catch (e) {}
+  // Save registration draft directly to MongoDB database
+  const saveDraft = async (updated = {}) => {
+    const targetEmail = updated.email || email;
+    if (!targetEmail || !targetEmail.includes("@")) return;
+
+    const payload = {
+      email: targetEmail.toLowerCase().trim(),
+      role: updated.role || selectedRole,
+      currentStep: updated.step || currentStep,
+      formData: {
+        name: updated.name !== undefined ? updated.name : name,
+        phone: selectedRole === "organization" ? orgPhone : phone,
+        city,
+        age,
+        photoUrl,
+        companyType,
+        website,
+        aboutStudio,
+        genres,
+        cinNumber,
+        gstNumber,
+        primaryCraft,
+        skills,
+        bio,
+        isPaid: updated.isPaid !== undefined ? updated.isPaid : isPaid,
+        orderReceipt: updated.orderReceipt || orderReceipt,
+      },
+    };
+
+    try {
+      const activeToken = draftToken || (typeof window !== "undefined" ? sessionStorage.getItem("vismaya_draft_token") : null);
+      const res = await authService.saveDraft(payload, activeToken);
+      if (res?.draftToken) {
+        setDraftToken(res.draftToken);
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem("vismaya_draft_token", res.draftToken);
+            localStorage.removeItem("vismaya_registration_draft");
+          } catch (e) {}
+        }
+      }
+    } catch (err) {
+      console.warn("Could not sync registration draft to database:", err?.message);
     }
   };
 
@@ -266,9 +369,16 @@ function RegisterPageContent() {
 
       const res = await register(payload);
       if (res.success && res.user) {
-        // Clear registration draft upon successful onboarding
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("vismaya_registration_draft");
+        // Clear registration draft from database upon successful onboarding
+        const tokenToDelete = draftToken || (typeof window !== "undefined" ? sessionStorage.getItem("vismaya_draft_token") : null);
+        if (tokenToDelete) {
+          authService.deleteDraft(tokenToDelete).catch(() => {});
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.removeItem("vismaya_draft_token");
+              localStorage.removeItem("vismaya_registration_draft");
+            } catch (e) {}
+          }
         }
         router.push(getDashboardPath());
       } else {
@@ -351,6 +461,28 @@ function RegisterPageContent() {
         />
 
         <div className="public-container" style={{ position: "relative", zIndex: 5, display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+          {/* Restart option when past step 1 */}
+          {currentStep > 1 && (
+            <div style={{ width: "100%", maxWidth: "520px", display: "flex", justifyContent: "flex-end", marginBottom: "8px" }}>
+              <button
+                type="button"
+                onClick={handleResetRegistration}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#8A6B2E",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  padding: "4px 8px",
+                }}
+              >
+                ← Start over / Register with different email
+              </button>
+            </div>
+          )}
+
           {/* Stepper Progress Indicator */}
           <div
             className="register-stepper"
@@ -843,8 +975,25 @@ function RegisterPageContent() {
                   userName={name}
                   userEmail={email}
                   onSuccess={handlePaymentSuccess}
-                  onCancel={canGoBack() ? handleBack : null}
+                  onCancel={handleBack}
                 />
+                <div style={{ marginTop: "14px", textAlign: "center" }}>
+                  <button
+                    type="button"
+                    onClick={handleResetRegistration}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#8A6B2E",
+                      fontSize: "13px",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    Want to use a different email? Clear draft and start over
+                  </button>
+                </div>
               </div>
             )}
 
@@ -858,8 +1007,25 @@ function RegisterPageContent() {
                   userName={name}
                   userEmail={email}
                   onSuccess={handlePaymentSuccess}
-                  onCancel={canGoBack() ? handleBack : null}
+                  onCancel={handleBack}
                 />
+                <div style={{ marginTop: "14px", textAlign: "center" }}>
+                  <button
+                    type="button"
+                    onClick={handleResetRegistration}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#8A6B2E",
+                      fontSize: "13px",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    Want to use a different email? Clear draft and start over
+                  </button>
+                </div>
               </div>
             )}
 
