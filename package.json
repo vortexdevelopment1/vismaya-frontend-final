@@ -1,22 +1,18 @@
 {
-  "name": "vismaya-2",
-  "version": "0.1.0",
+  "name": "vismaya",
+  "version": "1.0.0",
   "private": true,
+  "description": "Vismaya Casting Platform Monorepo (Next.js Frontend + Express Backend)",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "lucide-react": "^1.49.0",
-    "next": "16.3.8",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
-  },
-  "devDependencies": {
-    "eslint": "^9",
-    "eslint-config-next": "16.3.8",
-    "playwright": "^1.64.0"
+    "install:all": "npm --prefix frontend install && npm --prefix backend install",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "typecheck:backend": "npm --prefix backend run typecheck",
+    "start:frontend": "npm --prefix frontend run start",
+    "start:backend": "npm --prefix backend run start",
+    "admin:create": "npm --prefix backend run create-admin",
+    "e2e": "node scripts/e2e/run-all.mjs"
   }
 }

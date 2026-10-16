@@ -1,0 +1,95 @@
+# ============================================================================
+# Render Blueprint for Vismaya Casting Platform Monorepo
+# Two web services: Frontend (Next.js) & Backend (Node/Express/MongoDB)
+# ============================================================================
+services:
+  # --------------------------------------------------------------------------
+  # 1. Frontend Service (Next.js Web Application)
+  # --------------------------------------------------------------------------
+  - type: web
+    name: vismaya-frontend
+    runtime: node
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Backend API Base URL
+      # NOTE: NEXT_PUBLIC_* variables are baked into static assets during `npm run build`.
+      # Replace placeholder with your live backend service URL on Render (e.g. https://vismaya-backend.onrender.com).
+      - key: NEXT_PUBLIC_API_URL
+        value: https://vismaya-backend.onrender.com
+      # Set to 'false' to connect to real backend, or 'true' to run in mock demo mode
+      - key: NEXT_PUBLIC_USE_MOCK
+        value: "false"
+      # Real modules enabled when mock mode is false ('*' enables all modules)
+      - key: NEXT_PUBLIC_API_MODULES
+        value: "*"
+      - key: NEXT_PUBLIC_MEDIA_UPLOAD_MODE
+        value: backend
+      - key: NEXT_PUBLIC_GOOGLE_AUTH_ENABLED
+        value: "false"
+      - key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+        sync: false
+      - key: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+        sync: false
+
+  # --------------------------------------------------------------------------
+  # 2. Backend Service (Express REST API)
+  # --------------------------------------------------------------------------
+  - type: web
+    name: vismaya-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: TRUST_PROXY_HOPS
+        value: "1"
+      # CORS: Frontend origin allowed to make API requests
+      # Replace placeholder with your live frontend service URL on Render (e.g. https://vismaya-frontend.onrender.com).
+      - key: CORS_ORIGIN
+        value: https://vismaya-frontend.onrender.com
+      - key: CLIENT_URL
+        value: https://vismaya-frontend.onrender.com
+      # Secrets (Set securely in Render Dashboard; sync: false prevents committing secrets)
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        value: no-reply@vismayastudios.com
