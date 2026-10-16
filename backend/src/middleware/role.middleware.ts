@@ -26,6 +26,25 @@ export const authorizeRoles = (...allowedRoles: string[]): RequestHandler => {
     };
 };
 
+export const requireSuperAdmin: RequestHandler = (req: Request, res: Response, next: NextFunction): any => {
+    if (!req.user) {
+        return res.status(401).json({
+            success: false,
+            message: "User is not authenticated"
+        });
+    }
+
+    if (req.user.role === "admin" && (req.user.isSuperAdmin === true || (req.user as any).superAdmin === true)) {
+        return next();
+    }
+
+    return res.status(403).json({
+        success: false,
+        message: "Super-admin privileges required for this action"
+    });
+};
+
 export default {
-    authorizeRoles
+    authorizeRoles,
+    requireSuperAdmin
 };

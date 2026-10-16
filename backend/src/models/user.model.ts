@@ -12,6 +12,9 @@ export interface IUser extends Document {
     isEmailVerified: boolean;
     twoFactorEnabled: boolean;
     twoFactorSecret?: string;
+    isSuperAdmin?: boolean;
+    adminLockUntil?: Date | null;
+    failedAdminLoginAttempts?: number;
     deletionRequestedAt?: Date;
     pendingEmail?: string;
     isPaid: boolean;
@@ -115,6 +118,21 @@ const userSchema = new Schema<IUser>(
             select: false
         },
 
+        isSuperAdmin: {
+            type: Boolean,
+            default: false
+        },
+
+        adminLockUntil: {
+            type: Date,
+            default: null
+        },
+
+        failedAdminLoginAttempts: {
+            type: Number,
+            default: 0
+        },
+
         deletionRequestedAt: {
             type: Date
         },
@@ -136,6 +154,23 @@ const userSchema = new Schema<IUser>(
 );
 
 userSchema.index({ mobile: 1 }, { unique: true, sparse: true });
+
+// Single-Admin Enforcement Guard:
+// The system strictly allows exactly one administrator account.
+// Prevents direct DB or code-path creation or promotion of a second admin account.
+userSchema.pre("save", async function (this: any) {
+    if (this.isModified("role") && this.role === "admin") {
+        const existingAdminCount = await mongoose.model("User").countDocuments({
+            role: "admin",
+            _id: { $ne: this._id }
+        });
+        if (existingAdminCount >= 1) {
+            throw new Error(
+                "SINGLE_ADMIN_VIOLATION: System is strictly restricted to a single administrator account. Cannot create or promote additional admin."
+            );
+        }
+    }
+});
 
 export const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
 export default User;

@@ -157,6 +157,10 @@ export interface ITalentProfile extends Document {
     isPaid: boolean;
     paidAt?: Date;
     isSearchable: boolean;
+    isInformational?: boolean;
+    isClaimable?: boolean;
+    claimedBy?: Types.ObjectId;
+    claimedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -478,6 +482,25 @@ const talentProfileSchema = new Schema<ITalentProfile>(
         isSearchable: {
             type: Boolean,
             default: false
+        },
+
+        isInformational: {
+            type: Boolean,
+            default: false
+        },
+
+        isClaimable: {
+            type: Boolean,
+            default: false
+        },
+
+        claimedBy: {
+            type: Schema.Types.ObjectId,
+            ref: "User"
+        },
+
+        claimedAt: {
+            type: Date
         }
     },
     {

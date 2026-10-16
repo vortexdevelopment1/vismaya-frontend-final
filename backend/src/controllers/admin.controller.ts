@@ -1872,9 +1872,24 @@ export const reviewReapplication = async (req: Request, res: Response): Promise<
 
 export const getPendingVerifications = async (req: Request, res: Response): Promise<any> => {
     try {
-        const verifications = await Verification.find({ status: "pending" })
+        const { verificationType, department, status } = req.query;
+        const filter: any = {};
+        if (status && status !== "all") {
+            filter.status = status;
+        } else if (!status) {
+            filter.status = "pending";
+        }
+        if (verificationType && verificationType !== "all") {
+            filter.verificationType = verificationType;
+        }
+        if (department && department !== "all") {
+            filter.department = department;
+        }
+
+        const verifications = await Verification.find(filter)
             .populate("userId", "name email role")
-            .sort({ submittedAt: -1 });
+            .sort({ submittedAt: -1 })
+            .lean();
 
         res.status(200).json({ success: true, count: verifications.length, verifications });
     } catch (error: any) {
@@ -1886,7 +1901,7 @@ export const getPendingVerifications = async (req: Request, res: Response): Prom
 export const reviewVerification = async (req: Request, res: Response): Promise<any> => {
     try {
         const { verificationId } = req.params;
-        const { action, notes, rejectionReason } = req.body; // "approve" or "reject"
+        const { action, notes, rejectionReason } = req.body; // "approve", "reject", "request_more_info"
 
         const verification = await Verification.findById(verificationId);
         if (!verification) {
@@ -1929,12 +1944,36 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
                     badgeType: "verified"
                 }
             );
+
+            await notifyUser({
+                recipientId: verification.userId,
+                type: "verification_update",
+                title: "Verification Approved",
+                message: `Your ${verification.verificationType || "account"} verification has been approved by Vismaya Admin.`
+            });
+        } else if (action === "request_more_info") {
+            verification.status = "more_info_needed" as any;
+            (verification as any).reviewNotes = notes || "Additional documentation required.";
+
+            await notifyUser({
+                recipientId: verification.userId,
+                type: "verification_update",
+                title: "More Verification Information Requested",
+                message: notes || "Vismaya Admin requested additional verification documents to complete your review."
+            });
         } else {
             verification.status = "rejected";
             (verification as any).verifiedAt = undefined;
             (verification as any).verifiedBy = req.user?.userId;
             (verification as any).reviewNotes = notes || "";
             verification.rejectionReason = rejectionReason || "Documents insufficient";
+
+            await notifyUser({
+                recipientId: verification.userId,
+                type: "verification_update",
+                title: "Verification Not Approved",
+                message: `Your verification request was not approved. Reason: ${rejectionReason || "Documents provided were insufficient."}`
+            });
         }
 
         await verification.save();
@@ -1954,7 +1993,7 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
     }
 };
 
-// --- MEDIA MODERATION ---
+// --- CONTENT MODERATION ---
 
 export const getPendingMedia = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -2009,6 +2048,254 @@ export const reviewMediaItem = async (req: Request, res: Response): Promise<any>
     } catch (error: any) {
         console.error("Review media error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while reviewing media" });
+    }
+};
+
+/**
+ * Featured Work selection (max 4 per profile - Spec Section 15 & 44)
+ */
+export const setMediaFeaturedWork = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { mediaId } = req.params;
+        const { isFeatured } = req.body;
+
+        const media = await MediaItem.findById(mediaId);
+        if (!media) {
+            return res.status(404).json({ success: false, message: "Media item not found" });
+        }
+
+        const profile = await TalentProfile.findOne({ userId: media.owner });
+        if (!profile) {
+            return res.status(404).json({ success: false, message: "Talent profile not found for media owner" });
+        }
+
+        if (isFeatured) {
+            const currentFeaturedCount = await MediaItem.countDocuments({
+                owner: media.owner,
+                isFeatured: true,
+                _id: { $ne: media._id }
+            });
+
+            if (currentFeaturedCount >= 4) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Maximum 4 featured works allowed per talent profile (Spec §15)."
+                });
+            }
+
+            media.isFeatured = true;
+            if (!profile.featuredWork.map(id => id.toString()).includes(media._id.toString())) {
+                profile.featuredWork.push(media._id as any);
+            }
+        } else {
+            media.isFeatured = false;
+            profile.featuredWork = profile.featuredWork.filter(id => id.toString() !== media._id.toString());
+        }
+
+        await Promise.all([media.save(), profile.save()]);
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: isFeatured ? "FEATURE_WORK_APPROVE" : "FEATURE_WORK_REMOVE",
+            targetType: "MediaItem",
+            targetId: media._id,
+            details: `Media item ${media._id} ${isFeatured ? "selected as Featured Work (max 4)" : "unfeatured"}.`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: `Media item ${isFeatured ? "marked as featured" : "unfeatured"} successfully`,
+            media,
+            featuredCount: profile.featuredWork.length
+        });
+    } catch (error: any) {
+        console.error("Set media featured work error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while updating featured work" });
+    }
+};
+
+/**
+ * Copyright Dispute Management (temporarily hide/restore disputed media - Spec Section 40 & 44)
+ */
+export const handleCopyrightDispute = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { mediaId } = req.params;
+        const { disputeState, reason, disputeReason } = req.body; // "disputed", "resolved", "none"
+        const effectiveReason = disputeReason || reason;
+
+        if (!["none", "disputed", "resolved"].includes(disputeState)) {
+            return res.status(400).json({ success: false, message: "disputeState must be 'none', 'disputed', or 'resolved'" });
+        }
+
+        const media = await MediaItem.findById(mediaId);
+        if (!media) {
+            return res.status(404).json({ success: false, message: "Media item not found" });
+        }
+
+        media.disputeState = disputeState;
+        if (disputeState === "disputed") {
+            media.disputeReason = effectiveReason || "Copyright claim received. Temporarily hidden per spec Section 40.";
+            media.moderationState = "restricted";
+        } else if (disputeState === "resolved") {
+            media.moderationState = "live";
+            media.disputeReason = effectiveReason ? `Resolved: ${effectiveReason}` : "Dispute resolved by admin";
+        }
+
+        await media.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: `COPYRIGHT_DISPUTE_${disputeState.toUpperCase()}`,
+            targetType: "MediaItem",
+            targetId: media._id,
+            details: `Copyright dispute updated to '${disputeState}'. Notes: ${effectiveReason || "None"}`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: `Copyright dispute status updated to '${disputeState}'`,
+            media,
+            mediaItem: media
+        });
+    } catch (error: any) {
+        console.error("Handle copyright dispute error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while updating copyright dispute" });
+    }
+};
+
+/**
+ * Informational Profiles (Spec Section 41 & 44)
+ * Vismaya may create informational profiles for selected established/notable professionals only.
+ */
+export const createInformationalProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const {
+            firstName,
+            lastName,
+            stageName,
+            primaryProfession,
+            category = "open_talent",
+            headline,
+            bio,
+            profilePhoto,
+            currentCity,
+            currentState,
+            country = "India",
+            notableCredits = [],
+            isClaimable = true
+        } = req.body;
+
+        if (!firstName && !stageName) {
+            return res.status(400).json({ success: false, message: "First name or stage name is required" });
+        }
+
+        if (!primaryProfession) {
+            return res.status(400).json({ success: false, message: "Primary profession is required" });
+        }
+
+        // Normalize category enum for TalentProfile
+        let resolvedCategory: any = "open_talent";
+        const allowedCategories = ["open_talent", "film_and_tv", "voice_over", "dance_and_performing_arts", "crew_and_production"];
+        if (allowedCategories.includes(category)) {
+            resolvedCategory = category;
+        } else if (category === "screen" || category === "film" || category === "television") {
+            resolvedCategory = "film_and_tv";
+        } else if (category === "voice" || category === "voiceover") {
+            resolvedCategory = "voice_over";
+        } else if (category === "dance" || category === "theatre") {
+            resolvedCategory = "dance_and_performing_arts";
+        } else if (category === "crew" || category === "technical") {
+            resolvedCategory = "crew_and_production";
+        }
+
+        // Generate distinct Vismaya ID
+        let vismayaId = "";
+        let unique = false;
+        let attempts = 0;
+        while (!unique && attempts < 10) {
+            attempts++;
+            const randomDigits = Math.floor(100000 + Math.random() * 900000);
+            vismayaId = `VIS-INFO-${randomDigits}`;
+            const existing = await TalentProfile.findOne({ vismayaId });
+            if (!existing) unique = true;
+        }
+
+        // Create virtual placeholder User for informational profile
+        const infoEmail = `info-${Date.now()}-${Math.floor(Math.random() * 1000)}@vismaya.placeholder`;
+        const user = await User.create({
+            name: `${firstName || ""} ${lastName || ""}`.trim() || stageName,
+            email: infoEmail,
+            password: crypto.randomBytes(24).toString("hex") + "A1!",
+            role: "talent",
+            status: "active",
+            isEmailVerified: true,
+            isPaid: true
+        });
+
+        const profile = await TalentProfile.create({
+            userId: user._id,
+            vismayaId,
+            firstName,
+            lastName,
+            stageName,
+            headline: headline || `Notable ${primaryProfession}`,
+            bio: bio || "Informational profile created by Vismaya Creative Studios.",
+            profilePhoto,
+            category: resolvedCategory,
+            primaryProfession,
+            currentCity,
+            currentState,
+            country,
+            credits: (notableCredits || []).map((c: any) => ({
+                projectTitle: c.projectTitle || c.title || "Project",
+                roleOrDesignation: c.role || c.roleOrDesignation || primaryProfession,
+                year: c.year || new Date().getFullYear(),
+                projectStatus: "released",
+                isVerifiedCredit: true
+            })),
+            isInformational: true,
+            isClaimable: isClaimable !== false,
+            status: "approved",
+            isProfileApproved: true,
+            isVerified: true,
+            isSearchable: true,
+            profileCompletionPercentage: 80,
+            isPaid: true
+        });
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "CREATE_INFORMATIONAL_PROFILE",
+            targetType: "TalentProfile",
+            targetId: profile._id,
+            details: `Created informational profile for notable professional '${profile.stageName || profile.firstName}' (${vismayaId}). Claimable: ${profile.isClaimable}`
+        });
+
+        res.status(201).json({
+            success: true,
+            message: "Informational profile created successfully",
+            profile
+        });
+    } catch (error: any) {
+        console.error("Create informational profile error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while creating informational profile" });
+    }
+};
+
+export const getInformationalProfiles = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const profiles = await TalentProfile.find({ isInformational: true })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        res.status(200).json({
+            success: true,
+            count: profiles.length,
+            profiles
+        });
+    } catch (error: any) {
+        console.error("Get informational profiles error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching informational profiles" });
     }
 };
 

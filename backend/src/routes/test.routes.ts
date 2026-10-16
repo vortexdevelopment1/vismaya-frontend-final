@@ -55,7 +55,23 @@ router.post("/setup-test-user", async (req: Request, res: Response) => {
 
     try {
         const { email, role, name, password } = req.body;
+
+        if (role && !["talent", "organization"].includes(role)) {
+            return res.status(400).json({
+                success: false,
+                message: "Role must be 'talent' or 'organization'. Admin creation via test route is strictly forbidden."
+            });
+        }
+
         let user = await User.findOne({ email: email?.toLowerCase() });
+
+        if (user && (user.role === "admin" || (user as any).isSuperAdmin)) {
+            return res.status(403).json({
+                success: false,
+                message: "Forbidden: Cannot modify admin users via test routes."
+            });
+        }
+
         if (!user) {
             const hashedPassword = await bcrypt.hash(password || "Test@12345", 10);
             user = await User.create({

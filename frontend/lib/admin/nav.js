@@ -12,6 +12,10 @@ import {
   CreditCard,
   Bell,
   BarChart3,
+  ShieldCheck,
+  Sparkles,
+  UserCheck,
+  History,
 } from "lucide-react";
 
 export const adminNavSections = [
@@ -27,7 +31,7 @@ export const adminNavSections = [
     ],
   },
   {
-    group: "PEOPLE",
+    group: "PEOPLE & PROFILES",
     items: [
       {
         title: "Talent Management",
@@ -43,15 +47,28 @@ export const adminNavSections = [
         icon: Building2,
         badgeKey: "pendingOrganizations",
       },
+      {
+        title: "Informational Profiles",
+        label: "Informational Profiles",
+        href: "/admin/informational-profiles",
+        icon: UserCheck,
+      },
     ],
   },
   {
     group: "REVIEW QUEUES",
     items: [
       {
-        title: "Media Moderation",
-        label: "Media moderation",
-        href: "/admin/media-moderation",
+        title: "Verification Queues",
+        label: "Verification",
+        href: "/admin/verifications",
+        icon: ShieldCheck,
+        badgeKey: "pendingVerifications",
+      },
+      {
+        title: "Content & Media Moderation",
+        label: "Content moderation",
+        href: "/admin/content-moderation",
         icon: ImageIcon,
         badgeKey: "pendingMedia",
       },
@@ -68,6 +85,13 @@ export const adminNavSections = [
         href: "/admin/auditions",
         icon: Video,
         badgeKey: "pendingAuditions",
+      },
+      {
+        title: "Success Stories Approval",
+        label: "Success Stories",
+        href: "/admin/success-stories",
+        icon: Sparkles,
+        badgeKey: "pendingStories",
       },
       {
         title: "Cancellation Requests",
@@ -111,13 +135,19 @@ export const adminNavSections = [
         href: "/admin/credits",
         icon: CreditCard,
       },
+      {
+        title: "Audit Trail",
+        label: "Audit Log",
+        href: "/admin/audit-logs",
+        icon: History,
+      },
     ],
   },
   {
     group: "COMMUNICATION & INSIGHTS",
     items: [
       {
-        title: "Notifications & Broadcasts",
+        title: "Platform Broadcasts (Operational Notices Only)",
         label: "Broadcasts",
         href: "/admin/notifications",
         icon: Bell,

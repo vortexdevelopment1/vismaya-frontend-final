@@ -1,6 +1,10 @@
 import express, { Router, Request, Response, NextFunction } from "express";
-import {  authLimiter, otpLimiter, draftLimiter  } from "../middleware/rateLimit.middleware.js";
+import {  authLimiter, otpLimiter, draftLimiter, adminLoginLimiter  } from "../middleware/rateLimit.middleware.js";
 import {  authenticateUser  } from "../middleware/auth.middleware.js";
+import {
+    adminLogin,
+    adminVerify2FA
+} from "../controllers/adminAuth.controller.js";
 
 import { 
     registerUser,
@@ -30,6 +34,10 @@ import {
  } from "../controllers/auth.controller.js";
 
 const router = express.Router();
+
+// Dedicated Admin Authentication
+router.post("/admin/login", adminLoginLimiter, adminLogin);
+router.post("/admin/verify-2fa", otpLimiter, adminVerify2FA);
 
 // Registration & Verification
 router.post("/register", authLimiter, registerUser);

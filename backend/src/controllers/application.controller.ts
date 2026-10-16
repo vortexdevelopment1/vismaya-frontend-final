@@ -6,6 +6,8 @@ import Organization from "../models/organization.model.js";
 import TalentProfile from "../models/talentProfile.model.js";
 import CreditViewHistory from "../models/creditViewHistory.model.js";
 import ProjectShortlist from "../models/projectShortlist.model.js";
+import MediaItem from "../models/mediaItem.model.js";
+import Verification from "../models/verification.model.js";
 import { notifyUser } from "../services/notification.service.js";
 
 export const applyForOpportunity = async (req: Request, res: Response): Promise<any> => {
@@ -426,8 +428,9 @@ export const getOpportunityApplications = async (req: Request, res: Response): P
                 status: app.status,
                 coverNote: app.coverNote,
                 customAnswers: app.customAnswers,
+                consentGiven: app.consentGiven,
                 eligibilityWarnings: app.eligibilityWarnings,
-                profileUnlockRequired: !isUnlocked,
+                profileUnlockRequired: false, // Applicant profile view is exempt from credits per client spec
                 createdAt: app.createdAt
             };
         });
@@ -447,6 +450,140 @@ export const getOpportunityApplications = async (req: Request, res: Response): P
     }
 };
 
+/**
+ * Get Applicant Portfolio
+ * Full applicant portfolio view under Section 39 privacy rules:
+ * - Public and Industry-only items returned; Private items NEVER.
+ * - Disputed/hidden items NEVER.
+ * - Strips forbidden contact info (email, phone, guardian) and hidden attributes (physical, remuneration).
+ * - Direct applicant viewing from own opportunity does NOT consume a profile-view credit.
+ */
+export const getApplicantPortfolio = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const userId = req.user?.userId;
+        const { applicationId } = req.params;
+
+        const application = await Application.findById(String(applicationId));
+        if (!application) {
+            return res.status(404).json({ success: false, message: "Application not found" });
+        }
+
+        const opportunity = await Opportunity.findById(application.opportunityId);
+        if (!opportunity) {
+            return res.status(404).json({ success: false, message: "Opportunity not found" });
+        }
+
+        const project = await Project.findById(opportunity.projectId);
+        const organization = await Organization.findOne({ userId });
+
+        if (!organization || !project || project.organizationId.toString() !== organization._id.toString()) {
+            return res.status(403).json({ success: false, message: "Access denied. You can only view applicants of your own opportunities." });
+        }
+
+        const profile = await TalentProfile.findOne({ userId: application.talentId });
+        if (!profile) {
+            return res.status(404).json({ success: false, message: "Talent profile not found for this applicant" });
+        }
+
+        // Verification Badges
+        const verifications = await Verification.find({
+            userId: application.talentId,
+            status: "verified"
+        }).select("verificationType");
+
+        const verificationBadges = {
+            identityVerified: verifications.some(v => v.verificationType === "identity") || Boolean(profile.isVerified),
+            professionalVerified: verifications.some(v => v.verificationType === "professional")
+        };
+
+        // Media items: only public & industry_only, not disputed, not restricted/removed
+        const mediaItems = await MediaItem.find({
+            owner: application.talentId,
+            visibility: { $in: ["public", "industry_only"] },
+            disputeState: { $ne: "disputed" },
+            moderationState: { $nin: ["restricted", "removed"] }
+        }).sort({ displayOrder: 1, createdAt: -1 }).lean();
+
+        const photos = mediaItems.filter(m => m.mediaType === "photo");
+        const videos = mediaItems.filter(m => m.mediaType === "video");
+        const documents = mediaItems.filter(m => m.mediaType === "document");
+        const externalLinks = mediaItems.filter(m => m.mediaType === "external_link");
+
+        // Section 39 Clean Portfolio (no email, mobile, guardian, physical, remuneration)
+        const safePortfolio = {
+            vismayaId: profile.vismayaId,
+            name: `${profile.firstName || ""} ${profile.lastName || ""}`.trim() || profile.stageName || "Talent Candidate",
+            stageName: profile.stageName,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            headline: profile.headline,
+            bio: profile.bio,
+            profilePhoto: profile.profilePhoto,
+            category: profile.category,
+            primaryProfession: profile.primaryProfession,
+            secondaryProfessions: profile.secondaryProfessions || [],
+            primaryDepartment: profile.primaryDepartment,
+            primaryDesignation: profile.primaryDesignation,
+            specializations: profile.specializations || [],
+            careerStage: profile.careerStage,
+            currentCity: profile.currentCity,
+            currentState: profile.currentState,
+            country: profile.country,
+            workingCities: profile.workingCities || [],
+            skills: profile.skills || [],
+            languages: profile.languages || [],
+            credits: (profile.credits || []).map((c: any) => ({
+                _id: c._id,
+                projectTitle: c.projectTitle,
+                projectType: c.projectType,
+                projectStatus: c.projectStatus,
+                roleOrDesignation: c.roleOrDesignation,
+                year: c.year,
+                directorOrProduction: c.directorOrProduction,
+                characterName: c.characterName,
+                referenceLink: c.referenceLink,
+                isVerifiedCredit: c.isVerifiedCredit
+            })),
+            training: profile.training || [],
+            awards: profile.awards || [],
+            verificationBadges,
+            media: {
+                photos,
+                videos,
+                documents,
+                externalLinks
+            },
+            profileCompletionPercentage: profile.profileCompletionPercentage,
+            creditConsumed: false,
+            creditExemptReason: "Direct application to organization opportunity"
+        };
+
+        const applicationDetails = {
+            _id: application._id,
+            opportunityId: application.opportunityId,
+            opportunityTitle: opportunity.title,
+            role: opportunity.role,
+            projectId: project._id,
+            projectName: project.projectName,
+            status: application.status,
+            coverNote: application.coverNote,
+            customAnswers: application.customAnswers || [],
+            consentGiven: application.consentGiven,
+            eligibilityWarnings: application.eligibilityWarnings || [],
+            appliedAt: application.createdAt
+        };
+
+        res.status(200).json({
+            success: true,
+            application: applicationDetails,
+            portfolio: safePortfolio
+        });
+    } catch (error) {
+        console.error("Get applicant portfolio error:", error);
+        res.status(500).json({ success: false, message: "Failed to retrieve applicant portfolio" });
+    }
+};
+
 export const markApplicationUnderReview = async (req: Request, res: Response): Promise<any> => {
     try {
         const userId = req.user?.userId;
@@ -462,11 +599,34 @@ export const markApplicationUnderReview = async (req: Request, res: Response): P
         const organization = await Organization.findOne({ userId });
 
         if (!organization || !project || project.organizationId.toString() !== organization._id.toString()) {
-            return res.status(403).json({ success: false, message: "Access denied" });
+            return res.status(403).json({ success: false, message: "Access denied. You can only act on applicants of your own opportunities." });
+        }
+
+        // Status Ladder: Applied -> Under Review
+        if (application.status === "under_review") {
+            return res.status(200).json({
+                success: true,
+                message: "Application is already under review",
+                application
+            });
+        }
+
+        if (application.status !== "applied") {
+            return res.status(400).json({
+                success: false,
+                message: `Cannot move to 'under_review' from status '${application.status}'. Application must be in 'applied' status.`
+            });
         }
 
         application.status = "under_review";
         await application.save();
+
+        await notifyUser({
+            recipientId: application.talentId,
+            type: "application_status_changed",
+            title: "Application Under Review",
+            message: `Your application for '${opportunity?.title}' is now under review.`
+        });
 
         res.status(200).json({
             success: true,
@@ -494,7 +654,23 @@ export const shortlistApplication = async (req: Request, res: Response): Promise
         const organization = await Organization.findOne({ userId });
 
         if (!organization || !project || project.organizationId.toString() !== organization._id.toString()) {
-            return res.status(403).json({ success: false, message: "Access denied" });
+            return res.status(403).json({ success: false, message: "Access denied. You can only act on applicants of your own opportunities." });
+        }
+
+        // Status Ladder: Under Review (or Applied) -> Shortlisted
+        if (application.status === "shortlisted") {
+            return res.status(200).json({
+                success: true,
+                message: "Application is already shortlisted",
+                application
+            });
+        }
+
+        if (["selected", "not_selected", "withdrawn"].includes(application.status)) {
+            return res.status(400).json({
+                success: false,
+                message: `Cannot shortlist application from status '${application.status}'.`
+            });
         }
 
         application.status = "shortlisted";
@@ -551,7 +727,30 @@ export const selectApplication = async (req: Request, res: Response): Promise<an
         const organization = await Organization.findOne({ userId });
 
         if (!organization || !project || project.organizationId.toString() !== organization._id.toString()) {
-            return res.status(403).json({ success: false, message: "Access denied" });
+            return res.status(403).json({ success: false, message: "Access denied. You can only act on applicants of your own opportunities." });
+        }
+
+        // Status Ladder: Shortlisted (or Under Review) -> Selected
+        if (application.status === "selected") {
+            return res.status(200).json({
+                success: true,
+                message: "Application is already marked as selected",
+                application
+            });
+        }
+
+        if (application.status === "applied") {
+            return res.status(400).json({
+                success: false,
+                message: "Applicant must be reviewed and shortlisted before final selection."
+            });
+        }
+
+        if (["not_selected", "withdrawn"].includes(application.status)) {
+            return res.status(400).json({
+                success: false,
+                message: `Cannot select application from status '${application.status}'.`
+            });
         }
 
         application.status = "selected";
@@ -599,7 +798,30 @@ export const rejectApplication = async (req: Request, res: Response): Promise<an
         const organization = await Organization.findOne({ userId });
 
         if (!organization || !project || project.organizationId.toString() !== organization._id.toString()) {
-            return res.status(403).json({ success: false, message: "Access denied" });
+            return res.status(403).json({ success: false, message: "Access denied. You can only act on applicants of your own opportunities." });
+        }
+
+        // Status Ladder: Cannot reject already selected or withdrawn
+        if (application.status === "not_selected") {
+            return res.status(200).json({
+                success: true,
+                message: "Application is already marked as not selected",
+                application
+            });
+        }
+
+        if (application.status === "selected") {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot mark a selected candidate as not selected."
+            });
+        }
+
+        if (application.status === "withdrawn") {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot reject a withdrawn application."
+            });
         }
 
         application.status = "not_selected";

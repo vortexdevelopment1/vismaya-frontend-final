@@ -850,12 +850,80 @@ export const paymentService = {
    */
   async getAdminTransactions() {
     if (isRealMode("payments")) {
-      // Correct backend route: GET /api/admin/transactions
-      const res = await apiClient.get("/api/admin/transactions");
-      return res?.data || res;
+      try {
+        // Correct backend route: GET /api/admin/transactions
+        const res = await apiClient.get("/api/admin/transactions");
+        const rawList = Array.isArray(res?.transactions)
+          ? res.transactions
+          : Array.isArray(res?.data?.transactions)
+          ? res.data.transactions
+          : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+          ? res
+          : [];
+
+        return rawList.map((tx) => {
+          // Normalize status: "successful" -> "Successful", "failed" -> "Failed", "attempted" / "created" -> "Pending"
+          let normalizedStatus = "Pending";
+          const rawStatus = String(tx.status || "").toLowerCase();
+          if (rawStatus === "successful" || rawStatus === "paid") {
+            normalizedStatus = "Successful";
+          } else if (rawStatus === "failed") {
+            normalizedStatus = "Failed";
+          } else if (tx.status === "Successful") {
+            normalizedStatus = "Successful";
+          }
+
+          // Normalize type: "talent_annual_999" -> "talent_registration", "industry_annual_4999" -> "organization_registration", etc.
+          let normalizedType = tx.type || "talent_registration";
+          let typeLabel = tx.typeLabel;
+          if (tx.packageType === "talent_annual_999" || tx.type === "talent_registration") {
+            normalizedType = "talent_registration";
+            typeLabel = typeLabel || "Talent Registration Fee";
+          } else if (tx.packageType === "industry_annual_4999" || tx.type === "organization_registration") {
+            normalizedType = "organization_registration";
+            typeLabel = typeLabel || "Organization Registration Fee";
+          } else if (tx.packageType === "credit_bundle_25_2000" || tx.type === "bundle_views") {
+            normalizedType = "bundle_views";
+            typeLabel = typeLabel || "Credit Bundle (25 Views)";
+          } else if (tx.packageType === "credit_single_100" || tx.type === "single_view") {
+            normalizedType = "single_view";
+            typeLabel = typeLabel || "Single View Top-up";
+          }
+
+          const userObj = typeof tx.userId === "object" ? tx.userId : null;
+          const orgObj = typeof tx.organizationId === "object" ? tx.organizationId : null;
+          const userName = tx.userName || userObj?.name || orgObj?.organizationName || "User";
+          const userEmail = tx.userEmail || userObj?.email || "—";
+
+          return {
+            id: tx._id || tx.id || `tx-${Date.now()}`,
+            orderId: tx.orderId || "—",
+            userId: userObj?._id || tx.userId || "—",
+            userName,
+            userEmail,
+            type: normalizedType,
+            typeLabel: typeLabel || normalizedType,
+            amount: tx.amount || 0,
+            currency: tx.currency || "INR",
+            status: normalizedStatus,
+            paymentGateway: tx.paymentGateway || "Razorpay",
+            invoiceNumber: tx.invoiceNumber || `INV-${String(tx._id || Date.now()).slice(-6).toUpperCase()}`,
+            date: tx.paidAt ? new Date(tx.paidAt).toISOString().split("T")[0] : tx.createdAt ? new Date(tx.createdAt).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+            paidAt: tx.paidAt || tx.createdAt || new Date().toISOString(),
+            raw: tx,
+          };
+        });
+      } catch (err) {
+        console.error("Failed to fetch real admin transactions:", err);
+        const fallback = safeGetStorage(STORAGE_KEYS.TRANSACTIONS, SEED_TRANSACTIONS);
+        return Array.isArray(fallback) ? fallback : [];
+      }
     }
 
-    return safeGetStorage(STORAGE_KEYS.TRANSACTIONS, SEED_TRANSACTIONS);
+    const mockTxs = safeGetStorage(STORAGE_KEYS.TRANSACTIONS, SEED_TRANSACTIONS);
+    return Array.isArray(mockTxs) ? mockTxs : [];
   },
 
   /**

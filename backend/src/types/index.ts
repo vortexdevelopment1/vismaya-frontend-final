@@ -3,6 +3,7 @@ export interface AuthUser {
     role: string;
     email: string;
     status: string;
+    isSuperAdmin?: boolean;
     isPaid?: boolean;
     sessionId?: string | null;
 }
@@ -10,8 +11,10 @@ export interface AuthUser {
 export interface JwtCustomPayload {
     userId: string;
     role?: string;
+    isSuperAdmin?: boolean;
     sessionId?: string | null;
     email?: string;
+    purpose?: string;
     iat?: number;
     exp?: number;
 }

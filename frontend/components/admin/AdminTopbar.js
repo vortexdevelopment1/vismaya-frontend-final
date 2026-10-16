@@ -1,15 +1,105 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, Bell } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Menu,
+  Bell,
+  Search,
+  Download,
+  FileSpreadsheet,
+  X,
+  Loader2,
+  User,
+  Building2,
+  Briefcase,
+  CreditCard,
+  Sparkles,
+} from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { adminService } from "@/lib/api/services/adminService";
 
 export default function AdminTopbar({ onOpenMobile }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { notifications = [], markNotificationRead } = useWorkflow();
   const [showNotifMenu, setShowNotifMenu] = useState(false);
+
+  // Global Search State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const searchContainerRef = useRef(null);
+
+  // Export State
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [exportingType, setExportingType] = useState(null);
+  const exportRef = useRef(null);
+
+  // Debounced Search
+  useEffect(() => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+      setSearchResults(null);
+      setIsSearching(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await adminService.globalSearch(searchQuery.trim());
+        if (res && res.data) {
+          setSearchResults(res.data);
+          setShowSearchDropdown(true);
+        }
+      } catch (err) {
+        console.error("Global search error:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 280);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Click outside listener
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+        setShowSearchDropdown(false);
+      }
+      if (exportRef.current && !exportRef.current.contains(e.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleExport = async (type) => {
+    setExportingType(type);
+    try {
+      const res = await adminService.exportAdminData(type);
+      if (typeof window !== "undefined") {
+        const blob = new Blob([typeof res === "string" ? res : JSON.stringify(res)], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `vismaya-export-${type}-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (err) {
+      console.error("Export error:", err);
+      alert(`Export failed: ${err?.message || "Error generating CSV"}`);
+    } finally {
+      setExportingType(null);
+      setShowExportMenu(false);
+    }
+  };
 
   const adminNotifications = notifications.filter(
     (n) => n.toRole === "vismaya" || (!n.toRole && !n.toUserId)
@@ -20,13 +110,18 @@ export default function AdminTopbar({ onOpenMobile }) {
     if (pathname === "/admin/dashboard" || pathname === "/admin") return "Dashboard";
     if (pathname === "/admin/talent-management") return "Talent Management";
     if (pathname === "/admin/recruiter-management") return "Organization Management";
+    if (pathname === "/admin/informational-profiles") return "Informational Profiles";
+    if (pathname === "/admin/verifications") return "Verification Queues";
     if (pathname === "/admin/opportunity-review") return "Opportunity Review";
     if (pathname === "/admin/opportunities") return "Opportunities Directory";
     if (pathname === "/admin/applications") return "Applications Registry";
     if (pathname === "/admin/auditions") return "Auditions & Self-Tapes";
-    if (pathname === "/admin/media-moderation") return "Media Moderation";
+    if (pathname === "/admin/success-stories") return "Success Stories Approval";
+    if (pathname === "/admin/media-moderation" || pathname === "/admin/content-moderation") return "Content Moderation";
     if (pathname === "/admin/projects") return "Projects Directory";
     if (pathname === "/admin/payments") return "Escrow & Payments";
+    if (pathname === "/admin/credits") return "Organization Credits";
+    if (pathname === "/admin/audit-logs") return "Security & Operations Audit Trail";
     if (pathname === "/admin/cancellation-requests") return "Cancellation Requests";
     if (pathname === "/admin/analytics") return "Platform Analytics";
     if (pathname === "/admin/notifications") return "Notifications & Broadcasts";
@@ -53,11 +148,12 @@ export default function AdminTopbar({ onOpenMobile }) {
         zIndex: 40,
         width: "100%",
         boxSizing: "border-box",
+        gap: "16px",
       }}
       className="admin-topbar-header"
     >
       {/* Left: Mobile hamburger & title, Desktop Single Title + Muted Subtitle */}
-      <div className="admin-topbar-left" style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0, flex: "1 1 auto" }}>
+      <div className="admin-topbar-left" style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0, flex: "0 1 auto" }}>
         {/* Mobile Hamburger */}
         <button
           onClick={onOpenMobile}
@@ -81,13 +177,13 @@ export default function AdminTopbar({ onOpenMobile }) {
         </button>
 
         {/* Page Title & Subtitle */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0, flex: "1 1 auto" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0 }}>
           <h1
             className="admin-topbar-title"
             style={{
               fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
-              fontSize: "22px",
-              lineHeight: "28px",
+              fontSize: "20px",
+              lineHeight: "26px",
               fontWeight: 600,
               color: "#2B2D2A",
               margin: 0,
@@ -103,7 +199,7 @@ export default function AdminTopbar({ onOpenMobile }) {
           <span
             className="admin-desktop-subtitle"
             style={{
-              fontSize: "12px",
+              fontSize: "11px",
               fontWeight: "600",
               color: "#5A584F",
               letterSpacing: "0.08em",
@@ -111,13 +207,337 @@ export default function AdminTopbar({ onOpenMobile }) {
               whiteSpace: "nowrap",
             }}
           >
-            Super-Admin Desk &bull; Vismaya Control Center
+            Super-Admin &bull; Vismaya
           </span>
         </div>
       </div>
 
-      {/* Right Controls: System Status Chip + Bell + Avatar */}
-      <div className="admin-topbar-right" style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+      {/* Center: Global Search Bar (Spec Section 44) */}
+      <div
+        ref={searchContainerRef}
+        style={{
+          flex: "1 1 auto",
+          maxWidth: "460px",
+          minWidth: "180px",
+          position: "relative",
+        }}
+        className="admin-global-search-container"
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            backgroundColor: "#F8F6F2",
+            border: "1px solid #E8E2D4",
+            borderRadius: "12px",
+            padding: "0 12px",
+            height: "40px",
+            transition: "all 0.15s ease",
+          }}
+        >
+          {isSearching ? (
+            <Loader2 size={16} className="animate-spin" style={{ color: "#8A6B2E", flexShrink: 0 }} />
+          ) : (
+            <Search size={16} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+          )}
+          <input
+            type="text"
+            placeholder="Global search users, orgs, opportunities, IDs..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setShowSearchDropdown(true);
+            }}
+            onFocus={() => {
+              if (searchResults) setShowSearchDropdown(true);
+            }}
+            style={{
+              border: "none",
+              backgroundColor: "transparent",
+              outline: "none",
+              width: "100%",
+              fontSize: "13px",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+              color: "#2B2D2A",
+              paddingLeft: "8px",
+            }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setSearchResults(null);
+                setShowSearchDropdown(false);
+              }}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "#5A584F",
+                cursor: "pointer",
+                padding: "2px",
+                display: "flex",
+              }}
+              aria-label="Clear search"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Global Search Results Dropdown */}
+        {showSearchDropdown && searchResults && (
+          <div
+            style={{
+              position: "absolute",
+              top: "46px",
+              left: 0,
+              right: 0,
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E8E2D4",
+              borderRadius: "14px",
+              boxShadow: "0 12px 32px rgba(43, 45, 42, 0.12)",
+              maxHeight: "380px",
+              overflowY: "auto",
+              padding: "12px",
+              zIndex: 60,
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
+          >
+            {/* Talent Profiles / Vismaya IDs */}
+            {(searchResults.talentProfiles || []).length > 0 && (
+              <div>
+                <div style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", marginBottom: "6px", letterSpacing: "0.05em" }}>
+                  Talent Profiles &amp; Vismaya IDs
+                </div>
+                {searchResults.talentProfiles.map((tp) => (
+                  <Link
+                    key={tp._id}
+                    href={`/admin/talent-management?search=${encodeURIComponent(tp.vismayaId || tp.stageName || "")}`}
+                    onClick={() => setShowSearchDropdown(false)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "8px 10px",
+                      borderRadius: "8px",
+                      backgroundColor: "#FAF9F7",
+                      border: "1px solid #F0EEEA",
+                      textDecoration: "none",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <User size={14} style={{ color: "#8A6B2E" }} />
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A" }}>
+                        {tp.stageName || `${tp.firstName || ""} ${tp.lastName || ""}`.trim() || "Talent"}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", backgroundColor: "#F3EFE6", padding: "2px 6px", borderRadius: "4px" }}>
+                      {tp.vismayaId || "ID"}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Organizations */}
+            {(searchResults.organizations || []).length > 0 && (
+              <div>
+                <div style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", marginBottom: "6px", letterSpacing: "0.05em" }}>
+                  Organizations
+                </div>
+                {searchResults.organizations.map((org) => (
+                  <Link
+                    key={org._id}
+                    href={`/admin/recruiter-management?search=${encodeURIComponent(org.organizationName || "")}`}
+                    onClick={() => setShowSearchDropdown(false)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "8px 10px",
+                      borderRadius: "8px",
+                      backgroundColor: "#FAF9F7",
+                      border: "1px solid #F0EEEA",
+                      textDecoration: "none",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    <Building2 size={14} style={{ color: "#8A6B2E" }} />
+                    <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A" }}>
+                      {org.organizationName}
+                    </span>
+                    <span style={{ fontSize: "11px", color: "#5A584F" }}>({org.organizationType || "Org"})</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Opportunities */}
+            {(searchResults.opportunities || []).length > 0 && (
+              <div>
+                <div style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", marginBottom: "6px", letterSpacing: "0.05em" }}>
+                  Opportunities
+                </div>
+                {searchResults.opportunities.map((opp) => (
+                  <Link
+                    key={opp._id}
+                    href={`/admin/opportunities?search=${encodeURIComponent(opp.title || "")}`}
+                    onClick={() => setShowSearchDropdown(false)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "8px 10px",
+                      borderRadius: "8px",
+                      backgroundColor: "#FAF9F7",
+                      border: "1px solid #F0EEEA",
+                      textDecoration: "none",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <Briefcase size={14} style={{ color: "#8A6B2E" }} />
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A" }}>
+                        {opp.title}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: "11px", color: "#5A584F" }}>{opp.role}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Users */}
+            {(searchResults.users || []).length > 0 && (
+              <div>
+                <div style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", marginBottom: "6px", letterSpacing: "0.05em" }}>
+                  Users
+                </div>
+                {searchResults.users.map((u) => (
+                  <Link
+                    key={u._id}
+                    href={`/admin/${u.role === "organization" ? "recruiter-management" : "talent-management"}?search=${encodeURIComponent(u.email || u.name || "")}`}
+                    onClick={() => setShowSearchDropdown(false)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "8px 10px",
+                      borderRadius: "8px",
+                      backgroundColor: "#FAF9F7",
+                      border: "1px solid #F0EEEA",
+                      textDecoration: "none",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <User size={14} style={{ color: "#5A584F" }} />
+                      <span style={{ fontSize: "13px", color: "#2B2D2A" }}>{u.name || u.email}</span>
+                    </div>
+                    <span style={{ fontSize: "11px", color: "#8A6B2E", textTransform: "capitalize" }}>{u.role}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {(!searchResults.talentProfiles?.length && !searchResults.organizations?.length && !searchResults.opportunities?.length && !searchResults.users?.length) && (
+              <div style={{ padding: "16px", textAlign: "center", fontSize: "13px", color: "#5A584F" }}>
+                No records found matching &ldquo;{searchQuery}&rdquo;.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Right Controls: Exports + System Status Chip + Bell + Avatar */}
+      <div className="admin-topbar-right" style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+        {/* Export Data Control (Spec Section 44) */}
+        <div ref={exportRef} style={{ position: "relative" }}>
+          <button
+            onClick={() => setShowExportMenu(!showExportMenu)}
+            style={{
+              height: "36px",
+              paddingInline: "12px",
+              borderRadius: "10px",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E8E2D4",
+              color: "#2B2D2A",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+              fontSize: "12px",
+              fontWeight: "600",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+            title="Download Operational CSV Reports (Spec §44)"
+          >
+            {exportingType ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} style={{ color: "#8A6B2E" }} />}
+            <span className="admin-export-btn-text">Exports</span>
+          </button>
+
+          {showExportMenu && (
+            <div
+              style={{
+                position: "absolute",
+                top: "44px",
+                right: 0,
+                width: "220px",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #E8E2D4",
+                borderRadius: "12px",
+                boxShadow: "0 12px 28px rgba(43, 45, 42, 0.12)",
+                padding: "8px",
+                zIndex: 60,
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+              }}
+            >
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#5A584F", padding: "6px 8px", textTransform: "uppercase" }}>
+                Export CSV Reports
+              </div>
+              {[
+                { type: "users", label: "Users Registry" },
+                { type: "organizations", label: "Organizations" },
+                { type: "opportunities", label: "Opportunities" },
+                { type: "applications", label: "Applications" },
+                { type: "transactions", label: "Payment Transactions" },
+              ].map((exp) => (
+                <button
+                  key={exp.type}
+                  onClick={() => handleExport(exp.type)}
+                  disabled={!!exportingType}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    border: "none",
+                    backgroundColor: "transparent",
+                    color: "#2B2D2A",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "background 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F3EFE6")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                >
+                  <FileSpreadsheet size={14} style={{ color: "#8A6B2E" }} />
+                  <span>{exp.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* System Status Chip (Neutral bg #F3EFE6, charcoal text, gold-brown dot) */}
         <div
           style={{

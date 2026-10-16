@@ -52,71 +52,90 @@ export default function AdminPaymentsPage() {
   // Load platform transactions
   useEffect(() => {
     async function loadTransactions() {
-      const txs = await paymentService.getAdminTransactions();
-      setPlatformTransactions(txs || []);
+      try {
+        const txs = await paymentService.getAdminTransactions();
+        if (Array.isArray(txs)) {
+          setPlatformTransactions(txs);
+        } else if (txs && Array.isArray(txs.transactions)) {
+          setPlatformTransactions(txs.transactions);
+        } else {
+          setPlatformTransactions([]);
+        }
+      } catch (err) {
+        console.error("Error loading platform transactions:", err);
+        setPlatformTransactions([]);
+      }
     }
     loadTransactions();
   }, []);
 
+  // Safe array references to prevent runtime TypeError: .filter is not a function
+  const safePlatformTransactions = Array.isArray(platformTransactions)
+    ? platformTransactions
+    : (Array.isArray(platformTransactions?.transactions) ? platformTransactions.transactions : []);
+
+  const safePayments = Array.isArray(payments) ? payments : [];
+  const safeSubscriptions = Array.isArray(subscriptions) ? subscriptions : [];
+
   // Platform Metrics
-  const totalPlatformRevenue = platformTransactions
+  const totalPlatformRevenue = safePlatformTransactions
     .filter((tx) => tx.status === "Successful")
     .reduce((acc, tx) => acc + (tx.amount || 0), 0);
-  const totalTalentRegistrations = platformTransactions.filter(
+  const totalTalentRegistrations = safePlatformTransactions.filter(
     (tx) => tx.type === "talent_registration" && tx.status === "Successful"
   ).length;
-  const totalOrgRegistrations = platformTransactions.filter(
+  const totalOrgRegistrations = safePlatformTransactions.filter(
     (tx) => tx.type === "organization_registration" && tx.status === "Successful"
   ).length;
-  const totalViewPurchases = platformTransactions.filter(
+  const totalViewPurchases = safePlatformTransactions.filter(
     (tx) => (tx.type === "bundle_views" || tx.type === "single_view") && tx.status === "Successful"
   ).length;
 
-  const platformSuccessfulCount = platformTransactions.filter((tx) => tx.status === "Successful").length;
-  const platformFailedCount = platformTransactions.filter((tx) => tx.status === "Failed").length;
-  const platformPendingCount = platformTransactions.filter((tx) => tx.status === "Pending").length;
+  const platformSuccessfulCount = safePlatformTransactions.filter((tx) => tx.status === "Successful").length;
+  const platformFailedCount = safePlatformTransactions.filter((tx) => tx.status === "Failed").length;
+  const platformPendingCount = safePlatformTransactions.filter((tx) => tx.status === "Pending").length;
 
   const platformStatusTabs = [
-    { key: "all", label: "All Platform Fees", count: platformTransactions.length },
+    { key: "all", label: "All Platform Fees", count: safePlatformTransactions.length },
     { key: "Successful", label: "Successful", count: platformSuccessfulCount },
     { key: "Failed", label: "Failed", count: platformFailedCount },
     { key: "Pending", label: "Pending", count: platformPendingCount },
   ];
 
-  const filteredPlatformTransactions = platformTransactions.filter((tx) => {
+  const filteredPlatformTransactions = safePlatformTransactions.filter((tx) => {
     if (platformStatusTab !== "all" && tx.status !== platformStatusTab) return false;
     if (platformTypeFilter !== "all" && tx.type !== platformTypeFilter) return false;
     return true;
   });
 
   // Live Calculated Financial Metrics
-  const totalGrossReceived = payments
+  const totalGrossReceived = safePayments
     .filter((p) => p.status === "Received" || p.status === "Paid Out")
     .reduce((acc, p) => acc + (p.grossAmount || 0), 0);
 
-  const totalCommission = payments.reduce((acc, p) => acc + (p.commissionAmount || 0), 0);
+  const totalCommission = safePayments.reduce((acc, p) => acc + (p.commissionAmount || 0), 0);
 
-  const totalTalentPayouts = payments
+  const totalTalentPayouts = safePayments
     .filter((p) => p.status === "Paid Out")
     .reduce((acc, p) => acc + (p.talentPayout || 0), 0);
 
-  const pendingPayouts = payments
+  const pendingPayouts = safePayments
     .filter((p) => p.status === "Payout Pending")
     .reduce((acc, p) => acc + (p.talentPayout || 0), 0);
 
   // Status Filter Tabs
-  const receivedCount = payments.filter((p) => p.status === "Received").length;
-  const pendingCount = payments.filter((p) => p.status === "Payout Pending").length;
-  const paidOutCount = payments.filter((p) => p.status === "Paid Out").length;
+  const receivedCount = safePayments.filter((p) => p.status === "Received").length;
+  const pendingCount = safePayments.filter((p) => p.status === "Payout Pending").length;
+  const paidOutCount = safePayments.filter((p) => p.status === "Paid Out").length;
 
   const statusTabs = [
-    { key: "all", label: "All Transactions", count: payments.length },
+    { key: "all", label: "All Transactions", count: safePayments.length },
     { key: "Received", label: "Received", count: receivedCount },
     { key: "Payout Pending", label: "Payout Pending", count: pendingCount },
     { key: "Paid Out", label: "Paid Out", count: paidOutCount },
   ];
 
-  const filteredPayments = payments.filter((p) => {
+  const filteredPayments = safePayments.filter((p) => {
     if (activeStatusTab === "all") return true;
     return p.status === activeStatusTab;
   });
@@ -876,7 +895,7 @@ export default function AdminPaymentsPage() {
               fontFamily: "var(--font-body), 'Inter', sans-serif",
             }}
           >
-            Platform Registration &amp; Views ({platformTransactions.length})
+            Platform Registration &amp; Views ({safePlatformTransactions.length})
           </button>
 
           <button
@@ -896,7 +915,7 @@ export default function AdminPaymentsPage() {
               fontFamily: "var(--font-body), 'Inter', sans-serif",
             }}
           >
-            Production Invoices &amp; Payouts ({payments.length})
+            Production Invoices &amp; Payouts ({safePayments.length})
           </button>
 
           <button
@@ -916,7 +935,7 @@ export default function AdminPaymentsPage() {
               fontFamily: "var(--font-body), 'Inter', sans-serif",
             }}
           >
-            Subscriptions &amp; Membership Fees ({subscriptions.length})
+            Subscriptions &amp; Membership Fees ({safeSubscriptions.length})
           </button>
         </div>
 
@@ -992,9 +1011,9 @@ export default function AdminPaymentsPage() {
         {activeSection === "subscriptions" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <DataTable
-              title={`Corporate & Artist Subscription Plans (${subscriptions.length})`}
+              title={`Corporate & Artist Subscription Plans (${safeSubscriptions.length})`}
               columns={subscriptionColumns}
-              data={subscriptions}
+              data={safeSubscriptions}
               searchable={true}
               searchPlaceholder="Search by name, plan, type..."
               pageSize={6}

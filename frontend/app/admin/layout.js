@@ -1,16 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { AdminProvider, useAdmin } from "@/lib/admin/AdminContext";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminTopbar from "@/components/admin/AdminTopbar";
 import ToastContainer from "@/components/shared/Toast";
+import { adminService } from "@/lib/api/services/adminService";
+import { USE_MOCK } from "@/lib/api/config";
+import { Loader2 } from "lucide-react";
 
 function AdminLayoutContent({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { toasts, removeToast } = useAdmin();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof document !== "undefined") {
       document.body.style.overflow = mobileOpen ? "hidden" : "";
     }
@@ -120,14 +124,93 @@ function AdminLayoutContent({ children }) {
   );
 }
 
-import RequireRole from "@/components/auth/RequireRole";
+function VerifiedAdminGuard({ children }) {
+  const router = useRouter();
+  const [authStatus, setAuthStatus] = useState(USE_MOCK ? "authorized" : "verifying");
 
-export default function AdminLayout({ children }) {
-  return (
-    <RequireRole allowedRoles={["admin"]}>
+  useEffect(() => {
+    if (USE_MOCK) return;
+
+    let isMounted = true;
+    async function checkServerSession() {
+      try {
+        const res = await adminService.verifyAdminSession();
+        if (!isMounted) return;
+
+        if (res.success && res.isAdmin) {
+          setAuthStatus("authorized");
+        } else {
+          setAuthStatus("unauthorized");
+          router.replace("/admin/login");
+        }
+      } catch {
+        if (isMounted) {
+          setAuthStatus("unauthorized");
+          router.replace("/admin/login");
+        }
+      }
+    }
+
+    checkServerSession();
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
+
+  // In mock mode, render immediately
+  if (USE_MOCK) {
+    return (
       <AdminProvider>
         <AdminLayoutContent>{children}</AdminLayoutContent>
       </AdminProvider>
-    </RequireRole>
+    );
+  }
+
+  // While verifying with server, show secure spinner (NO UI flash of admin layout or data)
+  if (authStatus === "verifying") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#161715",
+          color: "#EDEAE4",
+          gap: "16px",
+        }}
+      >
+        <Loader2 size={36} className="animate-spin" style={{ color: "#C8A96A" }} />
+        <p style={{ fontSize: "13px", letterSpacing: "0.06em", textTransform: "uppercase", color: "#C8A96A" }}>
+          Verifying Administrator Privileges...
+        </p>
+      </div>
+    );
+  }
+
+  if (authStatus === "unauthorized") {
+    return null;
+  }
+
+  return (
+    <AdminProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </AdminProvider>
   );
+}
+
+export default function AdminLayout({ children }) {
+  const pathname = usePathname();
+
+  // Public admin authentication page is rendered directly without admin frame or route guard
+  const isAuthPage =
+    pathname === "/admin/login" ||
+    pathname?.startsWith("/admin/login");
+
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+
+  return <VerifiedAdminGuard>{children}</VerifiedAdminGuard>;
 }

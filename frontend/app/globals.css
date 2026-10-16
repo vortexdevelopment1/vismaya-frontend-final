@@ -465,6 +465,29 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(155, 122, 63, 0.15);
 }
 
+/* Prevent Chrome / Edge blue autofill background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active,
+input:autofill,
+input:autofill:hover,
+input:autofill:focus,
+input:autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+  box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+  -webkit-text-fill-color: var(--text-primary, #292C29) !important;
+  caret-color: var(--text-primary, #292C29) !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
+input:-webkit-autofill:focus,
+input:autofill:focus {
+  -webkit-box-shadow: 0 0 0 3px rgba(128, 99, 46, 0.15), 0 0 0 1000px #FFFFFF inset !important;
+  box-shadow: 0 0 0 3px rgba(128, 99, 46, 0.15), 0 0 0 1000px #FFFFFF inset !important;
+  border-color: var(--gold) !important;
+}
+
 select {
   cursor: pointer;
   background-color: #FFFFFF;

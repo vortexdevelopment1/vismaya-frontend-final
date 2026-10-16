@@ -26,7 +26,8 @@ export const validateRegisterInput = (data: any): { isValid: boolean; errors: st
         errors.push("Password cannot exceed 128 characters");
     }
 
-    if (!["talent", "organization"].includes(role)) {
+    const ALLOWED_PUBLIC_ROLES = ["talent", "organization"];
+    if (!role || typeof role !== "string" || !ALLOWED_PUBLIC_ROLES.includes(role)) {
         errors.push("Role must be either 'talent' or 'organization'");
     }
 
@@ -38,7 +39,7 @@ export const validateRegisterInput = (data: any): { isValid: boolean; errors: st
             email: normalizedEmail,
             mobile: mobile ? String(mobile).replace(/[^0-9+]/g, "").trim() : undefined,
             password,
-            role
+            role: ALLOWED_PUBLIC_ROLES.includes(role) ? role : undefined
         }
     };
 };

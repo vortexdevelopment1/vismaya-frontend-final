@@ -24,7 +24,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
         ) as JwtCustomPayload;
 
         // Verify that the user exists and is active in the database
-        const user = await User.findById(decoded.userId).select("_id role status email isPaid");
+        const user = await User.findById(decoded.userId).select("_id role status email isPaid isSuperAdmin");
 
         if (!user) {
             return res.status(401).json({
@@ -66,6 +66,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
             email: user.email,
             status: user.status,
             isPaid: user.isPaid,
+            isSuperAdmin: (user as any).isSuperAdmin || false,
             sessionId: decoded.sessionId || null
         };
 

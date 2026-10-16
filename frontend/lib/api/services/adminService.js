@@ -694,6 +694,65 @@ export const adminService = {
     return apiClient.get(`/api/admin/export/${type}`);
   },
 
+  /**
+   * Featured Work selection (max 4 per profile - Spec §15 & §44)
+   */
+  async setMediaFeaturedWork(mediaId, isFeatured) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: `Media ${isFeatured ? "featured" : "unfeatured"} (Mock)` };
+    }
+    return apiClient.patch(`/api/admin/media/${mediaId}/feature`, { isFeatured });
+  },
+
+  /**
+   * Copyright dispute hide / restore (Spec §40 & §44)
+   */
+  async handleCopyrightDispute(mediaId, payload) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Dispute status updated (Mock)" };
+    }
+    return apiClient.patch(`/api/admin/media/${mediaId}/dispute`, payload);
+  },
+
+  /**
+   * Create Informational Profile (Spec §41 & §44)
+   */
+  async createInformationalProfile(payload) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Informational profile created (Mock)" };
+    }
+    return apiClient.post("/api/admin/informational-profiles", payload);
+  },
+
+  /**
+   * Get Informational Profiles
+   */
+  async getInformationalProfiles() {
+    if (!isRealMode("admin")) {
+      return { success: true, data: [] };
+    }
+    const res = await apiClient.get("/api/admin/informational-profiles");
+    return { success: true, data: res?.profiles || res?.data || [] };
+  },
+
+  /**
+   * Success Stories Review Queue (Spec §42 & §44)
+   */
+  async getSuccessStories() {
+    if (!isRealMode("admin")) {
+      return { success: true, data: [] };
+    }
+    const res = await apiClient.get("/api/admin/success-stories");
+    return { success: true, data: res?.stories || res?.data || [] };
+  },
+
+  async reviewSuccessStory(storyId, payload) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Success story reviewed (Mock)" };
+    }
+    return apiClient.patch(`/api/admin/success-stories/${storyId}/review`, payload);
+  },
+
   // Aliases for backward compatibility & dispatching
   async reviewOpportunity(opportunityId, payload = {}) {
     const status = String(payload.status || "").toLowerCase().trim();
@@ -840,5 +899,183 @@ export const adminService = {
       success: true,
       data: res?.data || res,
     };
+  },
+
+  /**
+   * Dedicated Admin Login
+   */
+  async adminLogin({ email, password }) {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        requires2FA: false,
+        token: "mock_admin_jwt_" + Date.now(),
+        user: { id: "usr_mock_superadmin", email, role: "admin", isSuperAdmin: true, name: "Mock Super Admin" },
+      };
+    }
+    const res = await apiClient.post("/api/auth/admin/login", { email, password });
+    return res?.data || res;
+  },
+
+  /**
+   * Verify Admin 2FA OTP
+   */
+  async adminVerify2FA({ email, otp, tempToken, twoFactorToken }) {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        token: "mock_admin_jwt_" + Date.now(),
+        user: { id: "usr_mock_superadmin", email, role: "admin", isSuperAdmin: true, name: "Mock Super Admin" },
+      };
+    }
+    const token = twoFactorToken || tempToken;
+    const res = await apiClient.post("/api/auth/admin/verify-2fa", {
+      email,
+      otp,
+      tempToken: token,
+      twoFactorToken: token,
+    });
+    return res?.data || res;
+  },
+
+  /**
+   * Verified Server-Side Admin Session Check
+   */
+  async verifyAdminSession() {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        isAdmin: true,
+        isSuperAdmin: true,
+      };
+    }
+    try {
+      // Calling /api/admin/dashboard tests both JWT validity AND authorizeRoles('admin')
+      const res = await apiClient.get("/api/admin/dashboard");
+      return {
+        success: true,
+        isAdmin: true,
+        data: res?.data || res,
+      };
+    } catch (err) {
+      return {
+        success: false,
+        isAdmin: false,
+        status: err?.status,
+        message: err?.message,
+      };
+    }
+  },
+
+  /**
+   * Set Featured Work on media item (max 4 per Spec Section 15)
+   */
+  async setMediaFeaturedWork(mediaId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Featured work updated (Mock)" };
+    }
+    const res = await apiClient.patch(`/api/admin/media/${mediaId}/feature`, payload);
+    return res?.data || res;
+  },
+
+  /**
+   * Handle copyright dispute on media (Spec Section 40)
+   */
+  async handleCopyrightDispute(mediaId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Dispute updated (Mock)" };
+    }
+    const res = await apiClient.patch(`/api/admin/media/${mediaId}/dispute`, payload);
+    return res?.data || res;
+  },
+
+  /**
+   * Create Informational Profile (Spec Section 41)
+   */
+  async createInformationalProfile(payload) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Informational profile created (Mock)" };
+    }
+    const res = await apiClient.post("/api/admin/informational-profiles", payload);
+    return res?.data || res;
+  },
+
+  /**
+   * Fetch Informational Profiles
+   */
+  async getInformationalProfiles(params = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, data: [] };
+    }
+    const res = await apiClient.get("/api/admin/informational-profiles", { params });
+    return {
+      success: true,
+      data: res?.data || res?.profiles || res || [],
+    };
+  },
+
+  /**
+   * Fetch Success Stories moderation queue (Spec Section 42)
+   */
+  async getSuccessStories(params = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, data: [] };
+    }
+    const res = await apiClient.get("/api/admin/success-stories", { params });
+    return {
+      success: true,
+      data: res?.data || res?.stories || res || [],
+    };
+  },
+
+  /**
+   * Review a Success Story submission
+   */
+  async reviewSuccessStory(storyId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Success story reviewed (Mock)" };
+    }
+    const res = await apiClient.patch(`/api/admin/success-stories/${storyId}/review`, payload);
+    return res?.data || res;
+  },
+
+  /**
+   * Fetch Audit Logs
+   */
+  async getAuditLogs(params = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, data: [] };
+    }
+    const res = await apiClient.get("/api/admin/audit-logs", { params });
+    return {
+      success: true,
+      data: res?.data || res?.logs || res || [],
+    };
+  },
+
+  /**
+   * Global Admin Search
+   */
+  async globalSearch(q) {
+    if (!isRealMode("admin")) {
+      return { success: true, data: { users: [], organizations: [], opportunities: [], applications: [] } };
+    }
+    const res = await apiClient.get("/api/admin/search", { params: { q } });
+    return res?.data || res;
+  },
+
+  /**
+   * Export operational data as CSV
+   */
+  async exportData(type) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Data exported (Mock)" };
+    }
+    const res = await apiClient.get(`/api/admin/export/${type}`);
+    return res?.data || res;
+  },
+
+  async exportAdminData(type) {
+    return this.exportData(type);
   },
 };

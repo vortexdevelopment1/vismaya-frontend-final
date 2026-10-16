@@ -18,8 +18,17 @@ import {
   ArrowLeft,
   FolderKanban,
   Calendar,
+  ShieldCheck,
+  Award,
+  FileText,
+  File,
+  Check,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { recruiterService } from "@/lib/api/services/recruiterService";
+import { isRealMode } from "@/lib/api/config";
 import Modal from "@/components/shared/Modal";
 import VideoPlayer from "@/components/shared/VideoPlayer";
 
@@ -53,18 +62,87 @@ export default function ShortlistAuditionsPage() {
 
   const orgId = "org-1";
 
+  // Real data state
+  const [realOpportunities, setRealOpportunities] = useState([]);
+  const [realProjects, setRealProjects] = useState([]);
+  const [realApplications, setRealApplications] = useState([]);
+  const [isLoadingReal, setIsLoadingReal] = useState(false);
+
+  // Review Portfolio Modal State
+  const [reviewPortfolioModalApp, setReviewPortfolioModalApp] = useState(null);
+  const [portfolioData, setPortfolioData] = useState(null);
+  const [loadingPortfolio, setLoadingPortfolio] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadInitial() {
+      if (isRealMode("opportunities") || isRealMode("recruiter")) {
+        try {
+          setIsLoadingReal(true);
+          const [oppsRes, projsRes] = await Promise.all([
+            recruiterService.getMyOpportunities(),
+            recruiterService.getMyProjects(),
+          ]);
+          if (!isMounted) return;
+          if (oppsRes?.data) setRealOpportunities(oppsRes.data);
+          if (projsRes?.data) setRealProjects(projsRes.data);
+        } catch (err) {
+          console.error("Error loading recruiter opps/projects:", err);
+        } finally {
+          if (isMounted) setIsLoadingReal(false);
+        }
+      }
+    }
+    loadInitial();
+    return () => { isMounted = false; };
+  }, []);
+
+  const effectiveOpportunities = realOpportunities.length > 0 ? realOpportunities : opportunities;
+  const effectiveProjects = realProjects.length > 0 ? realProjects : projects;
+
   // Filter org opportunities
   const orgOpportunities = useMemo(() => {
+    if (realOpportunities.length > 0) return realOpportunities;
     return opportunities.filter((o) => o.orgId === orgId || !o.orgId);
-  }, [opportunities]);
+  }, [opportunities, realOpportunities, orgId]);
 
   // Read opportunity from URL query parameter (?opportunity=id or ?opp=id)
   const oppParam = searchParams?.get("opportunity") || searchParams?.get("opp") || null;
 
   const selectedOpp = useMemo(() => {
     if (!oppParam || oppParam === "ALL") return null;
-    return orgOpportunities.find((o) => o.id === oppParam) || null;
+    return orgOpportunities.find((o) => o.id === oppParam || String(o._id) === String(oppParam)) || null;
   }, [orgOpportunities, oppParam]);
+
+  // When selectedOpp changes, fetch real applications if in real mode
+  useEffect(() => {
+    let isMounted = true;
+    async function loadApps() {
+      const oppId = selectedOpp?._id || selectedOpp?.id;
+      if (!oppId) {
+        setRealApplications([]);
+        return;
+      }
+      // If it's a mock opportunity (e.g., opp-104), mock applications from local state are used
+      if (!/^[0-9a-fA-F]{24}$/.test(String(oppId))) {
+        setRealApplications([]);
+        return;
+      }
+      if (isRealMode("applications") || isRealMode("recruiter")) {
+        try {
+          const res = await recruiterService.getOpportunityApplications(oppId);
+          if (!isMounted) return;
+          if (res?.data) {
+            setRealApplications(res.data);
+          }
+        } catch (err) {
+          console.error("Error fetching opportunity applications:", err);
+        }
+      }
+    }
+    loadApps();
+    return () => { isMounted = false; };
+  }, [selectedOpp?.id, selectedOpp?._id]);
 
   // Read initial filter values for Level 2
   const initialStage = searchParams?.get("stage") || "all";
@@ -151,39 +229,63 @@ export default function ShortlistAuditionsPage() {
   const [notSelectedReason, setNotSelectedReason] = useState("");
 
   // Helpers for opportunity statistics (Level 1)
-  const getOpportunityStats = (oppId) => {
-    const apps = applications.filter((a) => a.opportunityId === oppId);
+  const getOpportunityStats = (opp) => {
+    if (opp?.applicantStats) {
+      return {
+        applied: opp.applicantStats.applied || 0,
+        under_review: opp.applicantStats.under_review || 0,
+        shortlist: opp.applicantStats.shortlisted || 0,
+        selected: opp.applicantStats.selected || 0,
+        audition: 0,
+        total: opp.applicantStats.total || 0,
+      };
+    }
+    const oppId = opp?.id || opp?._id || opp;
+    const sourceApps = realApplications.length > 0 ? realApplications : applications;
+    const apps = sourceApps.filter((a) => {
+      const aOppId = a.opportunityId?._id || a.opportunityId?.id || a.opportunityId;
+      return String(aOppId) === String(oppId);
+    });
     const auds = auditions.filter(
       (aud) => aud.opportunityId === oppId || apps.some((a) => a.id === aud.applicationId)
     );
-    const applied = apps.length;
-    const shortlist = apps.filter(
-      (a) => a.status === "Shortlisted" || a.status === "Selected"
-    ).length;
+    const applied = apps.filter((a) => {
+      const st = (a.status || "").toLowerCase().replace(/[\s-]/g, "_");
+      return st === "applied" || !st;
+    }).length;
+    const under_review = apps.filter((a) => (a.status || "").toLowerCase().replace(/[\s-]/g, "_") === "under_review").length;
+    const shortlist = apps.filter((a) => (a.status || "").toLowerCase().replace(/[\s-]/g, "_") === "shortlisted").length;
+    const selected = apps.filter((a) => (a.status || "").toLowerCase().replace(/[\s-]/g, "_") === "selected").length;
     const audition = auds.length;
-    return { applied, shortlist, audition };
+    return { applied, under_review, shortlist, selected, audition, total: apps.length };
   };
 
   // Applications belonging to selected opportunity (Level 2)
   const oppApplications = useMemo(() => {
     if (!selectedOpp) return [];
-    return applications.filter((app) => app.opportunityId === selectedOpp.id);
-  }, [applications, selectedOpp]);
+    const sourceApps = realApplications.length > 0 ? realApplications : applications;
+    const targetId = selectedOpp.id || selectedOpp._id;
+    return sourceApps.filter((app) => {
+      const oppId = app.opportunityId?._id || app.opportunityId?.id || app.opportunityId;
+      return String(oppId) === String(targetId) || String(oppId) === String(selectedOpp.id) || String(oppId) === String(selectedOpp._id);
+    });
+  }, [applications, realApplications, selectedOpp]);
 
   // Auditions for selected opportunity (Level 2)
   const oppAuditions = useMemo(() => {
     if (!selectedOpp) return [];
-    const appIds = oppApplications.map((a) => a.id);
+    const appIds = oppApplications.map((a) => a.id || a._id);
     return auditions.filter(
       (aud) => aud.opportunityId === selectedOpp.id || appIds.includes(aud.applicationId)
     );
   }, [auditions, selectedOpp, oppApplications]);
 
-  // Map application to stage key: 'rev' | 'short' | 'req' | 'tal' | 'sel' | 'no' | 'applied'
+  // Map application to stage key: 'rev' | 'short' | 'req' | 'tal' | 'sel' | 'no' | 'under_review' | 'applied'
   const getAppStage = (app) => {
-    if (app.status === "Selected") return "sel";
-    if (app.status === "Not Selected") return "no";
-    const aud = auditions.find((a) => a.applicationId === app.id);
+    const st = (app.status || "").toLowerCase().replace(/[\s-]/g, "_");
+    if (st === "selected") return "sel";
+    if (st === "not_selected" || st === "rejected") return "no";
+    const aud = auditions.find((a) => a.applicationId === (app.id || app._id));
     if (aud) {
       if (aud.status === "Forwarded to Organization" || aud.status === "Self-tape Received") {
         return "rev";
@@ -193,14 +295,15 @@ export default function ShortlistAuditionsPage() {
       }
       return "req";
     }
-    if (app.status === "Shortlisted") return "short";
+    if (st === "shortlisted") return "short";
+    if (st === "under_review") return "under_review";
     return "applied";
   };
 
-  const STAGE_PRIORITY = ["rev", "short", "req", "tal", "applied", "sel", "no"];
+  const STAGE_PRIORITY = ["rev", "under_review", "short", "req", "tal", "applied", "sel", "no"];
 
   const getAuditionForApp = (appId) => auditions.find((a) => a.applicationId === appId);
-  const getProjectForOpp = (opp) => (opp ? projects.find((p) => p.id === opp.projectId) : null);
+  const getProjectForOpp = (opp) => (opp ? (projects.find((p) => p.id === opp.projectId) || realProjects.find((p) => p.id === opp.projectId || p._id === opp.projectId)) : null);
 
   const getProjectRoleSubtitle = (proj, opp) => {
     const oppTitle = opp?.title || "";
@@ -221,6 +324,7 @@ export default function ShortlistAuditionsPage() {
     () => [
       { key: "all", label: "All", filter: () => true },
       { key: "applied", label: "Applied", filter: (app) => getAppStage(app) === "applied" },
+      { key: "under_review", label: "Under Review", filter: (app) => getAppStage(app) === "under_review" },
       { key: "short", label: "Shortlisted", filter: (app) => getAppStage(app) === "short" },
       {
         key: "aud",
@@ -249,7 +353,7 @@ export default function ShortlistAuditionsPage() {
   const needActionCount = useMemo(() => {
     return oppApplications.filter((app) => {
       const s = getAppStage(app);
-      return s === "short" || s === "rev" || s === "applied";
+      return s === "short" || s === "rev" || s === "applied" || s === "under_review";
     }).length;
   }, [oppApplications, auditions]);
 
@@ -261,9 +365,9 @@ export default function ShortlistAuditionsPage() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter((app) => {
-        const name = (app.talentName || "").toLowerCase();
-        const role = (app.roleApplied || "").toLowerCase();
-        const city = (app.talentProfile?.city || "").toLowerCase();
+        const name = (app.talentName || app.name || "").toLowerCase();
+        const role = (app.roleApplied || app.role || "").toLowerCase();
+        const city = (app.talentProfile?.city || app.city || "").toLowerCase();
         return name.includes(q) || role.includes(q) || city.includes(q);
       });
     }
@@ -280,26 +384,92 @@ export default function ShortlistAuditionsPage() {
     return list;
   }, [TABS, currentTab, oppApplications, searchQuery, auditions]);
 
-  // Action handlers
-  const handleShortlistApplicant = (app) => {
-    setApplicationStatus(
-      app.id,
-      "Shortlisted",
-      "Shortlisted for casting callback / audition.",
-      "Zee Films"
-    );
-    showToast(`${app.talentName} has been shortlisted.`);
+  // Portfolio Review Modal handler
+  const handleOpenReviewPortfolio = async (app) => {
+    setActiveMenuAppId(null);
+    setReviewPortfolioModalApp(app);
+    setLoadingPortfolio(true);
+    setPortfolioData(null);
+    try {
+      const res = await recruiterService.getApplicantPortfolio(app.id || app._id);
+      if (res?.data) {
+        setPortfolioData(res.data);
+      } else {
+        setPortfolioData({
+          application: app,
+          portfolio: app.talentProfile || {}
+        });
+      }
+    } catch (err) {
+      console.error("Error loading portfolio:", err);
+      setPortfolioData({
+        application: app,
+        portfolio: app.talentProfile || {}
+      });
+    } finally {
+      setLoadingPortfolio(false);
+    }
+  };
+
+  // Status Action handlers
+  const handleMarkUnderReview = async (app) => {
+    const appId = app.id || app._id;
+    try {
+      const res = await recruiterService.markApplicationUnderReview(appId);
+      if (res?.success) {
+        showToast(`${app.talentName || app.name || "Applicant"} marked as Under Review.`);
+        setRealApplications((prev) =>
+          prev.map((a) => ((a.id === appId || a._id === appId) ? { ...a, status: "Under Review" } : a))
+        );
+        setApplicationStatus(appId, "Under Review", "Application moved to under review", "Zee Films");
+        if (reviewPortfolioModalApp && (reviewPortfolioModalApp.id === appId || reviewPortfolioModalApp._id === appId)) {
+          setReviewPortfolioModalApp(prev => ({ ...prev, status: "Under Review" }));
+        }
+      } else {
+        showToast(res?.message || "Failed to mark as Under Review");
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to update status";
+      showToast(msg);
+    }
+  };
+
+  const handleShortlistApplicant = async (app) => {
+    const appId = app.id || app._id;
+    try {
+      const res = await recruiterService.shortlistApplication(appId);
+      if (res?.success) {
+        showToast(`${app.talentName || app.name || "Applicant"} has been shortlisted.`);
+        setRealApplications((prev) =>
+          prev.map((a) => ((a.id === appId || a._id === appId) ? { ...a, status: "Shortlisted" } : a))
+        );
+        setApplicationStatus(
+          appId,
+          "Shortlisted",
+          "Shortlisted for casting callback / audition.",
+          "Zee Films"
+        );
+        if (reviewPortfolioModalApp && (reviewPortfolioModalApp.id === appId || reviewPortfolioModalApp._id === appId)) {
+          setReviewPortfolioModalApp(prev => ({ ...prev, status: "Shortlisted" }));
+        }
+      } else {
+        showToast(res?.message || "Failed to shortlist applicant");
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to shortlist";
+      showToast(msg);
+    }
   };
 
   const handleOpenAuditionModal = (app) => {
     setActiveMenuAppId(null);
-    const opp = opportunities.find((o) => o.id === app.opportunityId);
+    const opp = selectedOpp || opportunities.find((o) => o.id === app.opportunityId);
     setAuditionModalApp(app);
     setAuditionType("Audition");
     setAuditionDate("");
     setAuditionNote(
       opp
-        ? `Please record a self-tape for '${app.roleApplied}' focusing on natural dialogue delivery and camera presence.`
+        ? `Please record a self-tape for '${app.roleApplied || app.role || "this role"}' focusing on natural dialogue delivery and camera presence.`
         : ""
     );
   };
@@ -308,44 +478,78 @@ export default function ShortlistAuditionsPage() {
     e.preventDefault();
     if (!auditionModalApp) return;
     requestAudition({
-      applicationId: auditionModalApp.id,
+      applicationId: auditionModalApp.id || auditionModalApp._id,
       type: auditionType,
       note: auditionNote,
       preferredDate: auditionDate || undefined,
     });
-    showToast(`Audition request for ${auditionModalApp.talentName} sent to Vismaya Casting Desk.`);
+    showToast(`Audition request for ${auditionModalApp.talentName || auditionModalApp.name} sent to Vismaya Casting Desk.`);
     setAuditionModalApp(null);
   };
 
-  const handleConfirmSelect = (e) => {
+  const handleConfirmSelect = async (e) => {
     e.preventDefault();
     if (!selectedModalApp) return;
-    setApplicationStatus(
-      selectedModalApp.id,
-      "Selected",
-      selectedNote || "Final selection confirmed for production.",
-      "Zee Films"
-    );
-    showToast(`${selectedModalApp.talentName} has been marked as Selected for the role.`);
-    setSelectedModalApp(null);
-    if (reviewVideoModalApp?.id === selectedModalApp.id) {
-      setReviewVideoModalApp(null);
+    const appId = selectedModalApp.id || selectedModalApp._id;
+    try {
+      const res = await recruiterService.selectApplication(appId, { note: selectedNote });
+      if (res?.success) {
+        showToast(`${selectedModalApp.talentName || selectedModalApp.name} has been marked as Selected for the role.`);
+        setRealApplications((prev) =>
+          prev.map((a) => ((a.id === appId || a._id === appId) ? { ...a, status: "Selected" } : a))
+        );
+        setApplicationStatus(
+          appId,
+          "Selected",
+          selectedNote || "Final selection confirmed for production.",
+          "Zee Films"
+        );
+        setSelectedModalApp(null);
+        if (reviewPortfolioModalApp && (reviewPortfolioModalApp.id === appId || reviewPortfolioModalApp._id === appId)) {
+          setReviewPortfolioModalApp(prev => ({ ...prev, status: "Selected" }));
+        }
+        if (reviewVideoModalApp?.id === appId || reviewVideoModalApp?._id === appId) {
+          setReviewVideoModalApp(null);
+        }
+      } else {
+        showToast(res?.message || "Failed to select candidate");
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to select candidate";
+      showToast(msg);
     }
   };
 
-  const handleConfirmNotSelected = (e) => {
+  const handleConfirmNotSelected = async (e) => {
     e.preventDefault();
     if (!notSelectedModalApp) return;
-    setApplicationStatus(
-      notSelectedModalApp.id,
-      "Not Selected",
-      notSelectedReason || "Candidate not selected for this role.",
-      "Zee Films"
-    );
-    showToast(`${notSelectedModalApp.talentName} has been marked as Not Selected.`);
-    setNotSelectedModalApp(null);
-    if (reviewVideoModalApp?.id === notSelectedModalApp.id) {
-      setReviewVideoModalApp(null);
+    const appId = notSelectedModalApp.id || notSelectedModalApp._id;
+    try {
+      const res = await recruiterService.markNotSelected(appId, { reason: notSelectedReason });
+      if (res?.success) {
+        showToast(`${notSelectedModalApp.talentName || notSelectedModalApp.name} has been marked as Not Selected.`);
+        setRealApplications((prev) =>
+          prev.map((a) => ((a.id === appId || a._id === appId) ? { ...a, status: "Not Selected" } : a))
+        );
+        setApplicationStatus(
+          appId,
+          "Not Selected",
+          notSelectedReason || "Candidate not selected for this role.",
+          "Zee Films"
+        );
+        setNotSelectedModalApp(null);
+        if (reviewPortfolioModalApp && (reviewPortfolioModalApp.id === appId || reviewPortfolioModalApp._id === appId)) {
+          setReviewPortfolioModalApp(prev => ({ ...prev, status: "Not Selected" }));
+        }
+        if (reviewVideoModalApp?.id === appId || reviewVideoModalApp?._id === appId) {
+          setReviewVideoModalApp(null);
+        }
+      } else {
+        showToast(res?.message || "Failed to update candidate status");
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to update candidate status";
+      showToast(msg);
     }
   };
 
@@ -372,6 +576,14 @@ export default function ShortlistAuditionsPage() {
           <span className="v-pill-dot" />
           <span>Self-tape ready</span>
           <span className="v-pill-time">01:24</span>
+        </span>
+      );
+    }
+    if (stage === "under_review") {
+      return (
+        <span className="v-stage-status-pill under-review" style={{ background: "#F5EFE1", color: "#8A6B2E", borderColor: "#E8DECA" }}>
+          <span className="v-pill-dot" style={{ background: "#8A6B2E" }} />
+          <span>Under Review</span>
         </span>
       );
     }
@@ -503,9 +715,16 @@ export default function ShortlistAuditionsPage() {
                       }
                     }}
                   >
-                    {/* 1. Top Row: Type Badge + Status Pill */}
+                    {/* 1. Top Row: Type Badge + Project Label + Status Pill */}
                     <div className="v-opp-card-top-row">
-                      <span className="v-opp-type-badge">{typeBadge}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                        <span className="v-opp-type-badge">{typeBadge}</span>
+                        {(opp.projectName || opp.projectId?.projectName || effectiveProjects.find(p => p.id === opp.projectId || p._id === opp.projectId)?.title) && (
+                          <span style={{ fontSize: "11px", fontWeight: 600, color: "#8A6B2E", background: "#F5EFE1", padding: "2px 8px", borderRadius: "10px", border: "1px solid #E8DECA" }}>
+                            {opp.projectName || opp.projectId?.projectName || effectiveProjects.find(p => p.id === opp.projectId || p._id === opp.projectId)?.title}
+                          </span>
+                        )}
+                      </div>
                       {isClosed ? (
                         <span className="v-opp-status-pill closed">CLOSED</span>
                       ) : (
@@ -525,19 +744,23 @@ export default function ShortlistAuditionsPage() {
                       <span>Posted {postedDate}</span>
                     </div>
 
-                    {/* 4. 3 Count Boxes Row: APPLIED, SHORTLIST, AUDITION */}
-                    <div className="v-opp-count-boxes-row">
+                    {/* 4. 4 Count Boxes Row: APPLIED, REVIEW, SHORTLIST, SELECTED */}
+                    <div className="v-opp-count-boxes-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
                       <div className="v-opp-count-box">
                         <span className="v-opp-count-num">{stats.applied}</span>
                         <span className="v-opp-count-lbl">APPLIED</span>
+                      </div>
+                      <div className="v-opp-count-box">
+                        <span className="v-opp-count-num">{stats.under_review}</span>
+                        <span className="v-opp-count-lbl">REVIEW</span>
                       </div>
                       <div className="v-opp-count-box">
                         <span className="v-opp-count-num">{stats.shortlist}</span>
                         <span className="v-opp-count-lbl">SHORTLIST</span>
                       </div>
                       <div className="v-opp-count-box">
-                        <span className="v-opp-count-num">{stats.audition}</span>
-                        <span className="v-opp-count-lbl">AUDITION</span>
+                        <span className="v-opp-count-num">{stats.selected}</span>
+                        <span className="v-opp-count-lbl">SELECTED</span>
                       </div>
                     </div>
 
@@ -725,32 +948,38 @@ export default function ShortlistAuditionsPage() {
                           />
                         ) : (
                           <div className="v-candidate-avatar initials">
-                            {getInitials(app.talentName)}
+                            {getInitials(app.talentName || app.name)}
                           </div>
                         )}
                       </Link>
 
                       <div className="v-candidate-name-col">
-                        <Link
-                          href={profileUrl}
-                          className="v-candidate-name-link"
-                          title={app.talentName}
-                        >
-                          <span className="v-candidate-name-text">
-                            {app.talentName}
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReviewPortfolio(app)}
+                            className="v-candidate-name-link"
+                            style={{ background: "none", border: "none", padding: 0, textAlign: "left", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                            title={app.talentName || app.name}
+                          >
+                            <span className="v-candidate-name-text">
+                              {app.talentName || app.name}
+                            </span>
+                          </button>
+                          <span style={{ fontSize: "11px", fontWeight: 600, color: "#2B5E3B", background: "#EBF5ED", padding: "1px 6px", borderRadius: "8px", border: "1px solid #D1E7D6" }}>
+                            Match
                           </span>
-                          <ExternalLink size={13} className="v-link-icon" />
-                        </Link>
+                        </div>
                         <span className="v-candidate-meta-text">
-                          {prof.age ? `${prof.age} yrs` : "—"} · {prof.city || "Mumbai"}
+                          <strong style={{ color: "#2B2D2A", fontWeight: 600 }}>{prof.primaryProfession || app.primaryProfession || "Actor"}</strong> · {prof.age ? `${prof.age} yrs` : "—"} · {prof.city || app.currentCity || "Mumbai"}
                         </span>
                       </div>
                     </div>
 
                     {/* Role Applied & Project Subtitle */}
                     <div className="v-candidate-info-col">
-                      <div className="v-candidate-role-text" title={app.roleApplied}>
-                        {app.roleApplied}
+                      <div className="v-candidate-role-text" title={app.roleApplied || app.role}>
+                        {app.roleApplied || app.role || "Role Candidate"}
                       </div>
                       <div className="v-candidate-applied-date">
                         Applied on {formatPostedDate(app.appliedDate || app.appliedAt || app.createdAt)}
@@ -762,24 +991,65 @@ export default function ShortlistAuditionsPage() {
                       {renderStatusPill(stage, app)}
                     </div>
 
-                    {/* Actions Row */}
-                    <div className="v-card-actions-row">
-                      {/* VIEW button */}
-                      <Link
-                        href={profileUrl}
-                        className="v-card-view-btn"
-                        title="View talent profile and comp-card"
+                    {/* Actions Row with Review Portfolio Button */}
+                    <div className="v-card-actions-row" style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                      {/* REVIEW PORTFOLIO button (Touch friendly >= 44px min height) */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenReviewPortfolio(app)}
+                        className="v-card-action-btn primary"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "6px",
+                          padding: "8px 12px",
+                          minHeight: "44px",
+                          background: "#FAF9F7",
+                          border: "1.5px solid #8A6B2E",
+                          color: "#8A6B2E",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                        title="Review complete applicant portfolio"
                       >
-                        <Eye size={14} />
-                        <span>VIEW</span>
-                      </Link>
+                        <FileText size={15} />
+                        <span>REVIEW PORTFOLIO</span>
+                      </button>
 
-                      {/* Primary contextual action */}
+                      {/* Primary contextual status ladder action */}
                       {isApplied ? (
+                        <div style={{ display: "flex", gap: "6px" }}>
+                          <button
+                            type="button"
+                            onClick={() => handleMarkUnderReview(app)}
+                            className="v-card-action-btn secondary"
+                            style={{ minHeight: "44px", padding: "8px 10px", fontSize: "11px", fontWeight: 600 }}
+                            title="Mark Under Review"
+                          >
+                            <Clock size={13} />
+                            <span>REVIEW</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleShortlistApplicant(app)}
+                            className="v-card-action-btn primary"
+                            style={{ minHeight: "44px" }}
+                            title="Shortlist applicant"
+                          >
+                            <Sparkles size={14} />
+                            <span>SHORTLIST</span>
+                          </button>
+                        </div>
+                      ) : stage === "under_review" ? (
                         <button
                           type="button"
                           onClick={() => handleShortlistApplicant(app)}
                           className="v-card-action-btn primary"
+                          style={{ minHeight: "44px" }}
+                          title="Shortlist applicant"
                         >
                           <Sparkles size={14} />
                           <span>SHORTLIST</span>
@@ -789,6 +1059,7 @@ export default function ShortlistAuditionsPage() {
                           type="button"
                           onClick={() => handleOpenAuditionModal(app)}
                           className="v-card-action-btn primary"
+                          style={{ minHeight: "44px" }}
                         >
                           <Video size={14} />
                           <span>INVITE</span>
@@ -798,6 +1069,7 @@ export default function ShortlistAuditionsPage() {
                           type="button"
                           onClick={() => handleOpenReviewModal(app)}
                           className="v-card-action-btn primary"
+                          style={{ minHeight: "44px" }}
                         >
                           <Play size={14} />
                           <span>TAPE</span>
@@ -807,6 +1079,7 @@ export default function ShortlistAuditionsPage() {
                           type="button"
                           onClick={() => handleOpenAuditionModal(app)}
                           className="v-card-action-btn secondary"
+                          style={{ minHeight: "44px" }}
                         >
                           <Clock size={14} />
                           <span>AUDITION</span>
@@ -819,6 +1092,7 @@ export default function ShortlistAuditionsPage() {
                             setSelectedNote("");
                           }}
                           className="v-card-action-btn secondary"
+                          style={{ minHeight: "44px" }}
                         >
                           <CheckCircle2 size={14} />
                           <span>SELECT</span>
@@ -1118,6 +1392,264 @@ export default function ShortlistAuditionsPage() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* MODAL 5: Review Applicant Portfolio */}
+      {reviewPortfolioModalApp && (
+        <Modal
+          isOpen={!!reviewPortfolioModalApp}
+          onClose={() => setReviewPortfolioModalApp(null)}
+          title={`Applicant Portfolio: ${portfolioData?.portfolio?.name || reviewPortfolioModalApp.talentName || reviewPortfolioModalApp.name || "Talent"}`}
+          subtitle={`Applied for ${reviewPortfolioModalApp.roleApplied || reviewPortfolioModalApp.role || "Role"} • ${selectedOpp?.title || "Opportunity"}`}
+          maxWidth="760px"
+        >
+          {loadingPortfolio ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 24px", gap: "12px" }}>
+              <Loader2 size={32} className="v-spinner" style={{ color: "#8A6B2E", animation: "spin 1s linear infinite" }} />
+              <span style={{ fontSize: "14px", color: "#5A584F" }}>Loading applicant portfolio...</span>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              {/* Privacy Notice Banner */}
+              <div style={{ background: "#FBF8F1", border: "1px solid #E8DECA", borderRadius: "10px", padding: "12px 16px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                <ShieldCheck size={20} style={{ color: "#8A6B2E", flexShrink: 0, marginTop: "2px" }} />
+                <div style={{ fontSize: "12.5px", color: "#5A584F", lineHeight: 1.45 }}>
+                  <strong style={{ color: "#2B2D2A" }}>Section 39 Privacy Protected:</strong> Direct applicant portfolio view is <strong style={{ color: "#8A6B2E" }}>free of profile-view credits</strong>. Contact numbers, personal emails, physical attributes, and private files remain withheld in accordance with Vismaya privacy rules.
+                </div>
+              </div>
+
+              {/* Talent Profile Header Card */}
+              <div style={{ background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "12px", padding: "16px 20px", display: "flex", gap: "16px", alignItems: "center" }}>
+                {portfolioData?.portfolio?.profilePhoto || reviewPortfolioModalApp.talentProfile?.avatar ? (
+                  <img
+                    src={portfolioData?.portfolio?.profilePhoto || reviewPortfolioModalApp.talentProfile?.avatar}
+                    alt="Applicant"
+                    style={{ width: "72px", height: "72px", borderRadius: "50%", objectFit: "cover", border: "2px solid #E8DECA" }}
+                  />
+                ) : (
+                  <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "#FAF9F7", border: "2px solid #E8DECA", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "20px", color: "#8A6B2E" }}>
+                    {getInitials(portfolioData?.portfolio?.name || reviewPortfolioModalApp.talentName || reviewPortfolioModalApp.name)}
+                  </div>
+                )}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                    <h3 style={{ margin: 0, fontSize: "18px", fontFamily: "var(--font-heading), 'Playfair Display', serif", color: "#2B2D2A" }}>
+                      {portfolioData?.portfolio?.name || reviewPortfolioModalApp.talentName || reviewPortfolioModalApp.name}
+                    </h3>
+                    {portfolioData?.portfolio?.vismayaId && (
+                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#8A6B2E", background: "#F5EFE1", padding: "2px 8px", borderRadius: "6px" }}>
+                        {portfolioData.portfolio.vismayaId}
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ fontSize: "13px", color: "#5A584F" }}>
+                    <strong style={{ color: "#2B2D2A" }}>{portfolioData?.portfolio?.primaryProfession || reviewPortfolioModalApp.primaryProfession || "Actor"}</strong> · {portfolioData?.portfolio?.currentCity || reviewPortfolioModalApp.talentProfile?.city || "Mumbai"}, {portfolioData?.portfolio?.currentState || "India"}
+                  </div>
+
+                  {portfolioData?.portfolio?.headline && (
+                    <div style={{ fontSize: "12.5px", color: "#6A685F", fontStyle: "italic" }}>
+                      "{portfolioData.portfolio.headline}"
+                    </div>
+                  )}
+
+                  {/* Badges */}
+                  <div style={{ display: "flex", gap: "8px", marginTop: "4px", flexWrap: "wrap" }}>
+                    {portfolioData?.portfolio?.verificationBadges?.identityVerified && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", fontWeight: 600, color: "#2B5E3B", background: "#EBF5ED", padding: "2px 8px", borderRadius: "8px" }}>
+                        <ShieldCheck size={12} /> Identity Verified
+                      </span>
+                    )}
+                    {portfolioData?.portfolio?.verificationBadges?.professionalVerified && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", fontWeight: 600, color: "#8A6B2E", background: "#FBF8F1", padding: "2px 8px", borderRadius: "8px" }}>
+                        <Award size={12} /> Credits Verified
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Application Pitch / Cover Note */}
+              <div style={{ background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "12px", padding: "16px 20px" }}>
+                <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#2B2D2A", marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <FileText size={16} style={{ color: "#8A6B2E" }} />
+                  <span>Application Statement / Cover Pitch</span>
+                </div>
+                <p style={{ margin: 0, fontSize: "13px", color: "#4A483F", lineHeight: 1.55, background: "#FAF9F7", padding: "12px 14px", borderRadius: "8px", border: "1px solid #F0EBE0" }}>
+                  {portfolioData?.application?.coverNote || reviewPortfolioModalApp.coverNote || "No cover note provided by applicant."}
+                </p>
+
+                {/* Custom Answers if any */}
+                {portfolioData?.application?.customAnswers && portfolioData.application.customAnswers.length > 0 && (
+                  <div style={{ marginTop: "14px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#2B2D2A" }}>Screening Question Responses:</div>
+                    {portfolioData.application.customAnswers.map((ca, idx) => (
+                      <div key={idx} style={{ fontSize: "12px", color: "#5A584F", background: "#FAF9F7", padding: "8px 12px", borderRadius: "6px" }}>
+                        <strong style={{ color: "#2B2D2A", display: "block" }}>{ca.questionText || `Question ${idx + 1}`}:</strong>
+                        <span>{ca.answer || "No answer provided"}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Verified Credits & Work Experience */}
+              <div style={{ background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "12px", padding: "16px 20px" }}>
+                <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#2B2D2A", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Award size={16} style={{ color: "#8A6B2E" }} />
+                  <span>Credits &amp; Work Experience ({portfolioData?.portfolio?.credits?.length || 0})</span>
+                </div>
+                {portfolioData?.portfolio?.credits && portfolioData.portfolio.credits.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {portfolioData.portfolio.credits.map((cr, idx) => (
+                      <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", background: "#FAF9F7", borderRadius: "8px", border: "1px solid #F0EBE0" }}>
+                        <div>
+                          <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{cr.projectTitle}</strong>
+                          <div style={{ fontSize: "12px", color: "#5A584F" }}>
+                            {cr.roleOrDesignation} · {cr.directorOrProduction || "Independent Production"}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <span style={{ fontSize: "12px", color: "#8A6B2E", fontWeight: 600 }}>{cr.year || "2024"}</span>
+                          {cr.isVerifiedCredit && (
+                            <span style={{ display: "block", fontSize: "10px", color: "#2B5E3B", fontWeight: 600 }}>Verified</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: "12.5px", color: "#6A685F", fontStyle: "italic" }}>
+                    No credits listed or credits verification pending.
+                  </div>
+                )}
+              </div>
+
+              {/* Portfolio Media: Photos, Videos, Documents */}
+              <div style={{ background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "12px", padding: "16px 20px" }}>
+                <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#2B2D2A", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <FolderKanban size={16} style={{ color: "#8A6B2E" }} />
+                  <span>Portfolio Media (Public &amp; Industry-Only)</span>
+                </div>
+
+                {/* Photos */}
+                {portfolioData?.portfolio?.media?.photos && portfolioData.portfolio.media.photos.length > 0 && (
+                  <div style={{ marginBottom: "14px" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "6px" }}>Photos / Headshots:</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "8px" }}>
+                      {portfolioData.portfolio.media.photos.map((p, idx) => (
+                        <a key={idx} href={p.url} target="_blank" rel="noopener noreferrer" style={{ display: "block", borderRadius: "8px", overflow: "hidden", border: "1px solid #E8E2D4", aspectRatio: "3/4" }}>
+                          <img src={p.url} alt={p.title || "Photo"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Videos */}
+                {portfolioData?.portfolio?.media?.videos && portfolioData.portfolio.media.videos.length > 0 && (
+                  <div style={{ marginBottom: "14px" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "6px" }}>Reels &amp; Video Samples:</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {portfolioData.portfolio.media.videos.map((v, idx) => (
+                        <div key={idx} style={{ padding: "8px 12px", background: "#FAF9F7", borderRadius: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#2B2D2A" }}>{v.title || "Showreel Clip"}</span>
+                          <a href={v.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#8A6B2E", fontWeight: 600, textDecoration: "none" }}>Watch Video →</a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Documents */}
+                {portfolioData?.portfolio?.media?.documents && portfolioData.portfolio.media.documents.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "6px" }}>Documents &amp; Comp Cards:</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      {portfolioData.portfolio.media.documents.map((d, idx) => (
+                        <div key={idx} style={{ padding: "8px 12px", background: "#FAF9F7", borderRadius: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: "12.5px", color: "#2B2D2A" }}>{d.title || "Resume / Portfolio Document"}</span>
+                          <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#8A6B2E", fontWeight: 600 }}>Download Document</a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(!portfolioData?.portfolio?.media?.photos?.length && !portfolioData?.portfolio?.media?.videos?.length && !portfolioData?.portfolio?.media?.documents?.length) && (
+                  <div style={{ fontSize: "12.5px", color: "#6A685F", fontStyle: "italic" }}>
+                    No public or industry media uploaded by candidate yet.
+                  </div>
+                )}
+              </div>
+
+              {/* Status Actions Bar */}
+              <div style={{ background: "#FAF9F7", border: "1px solid #E8E2D4", borderRadius: "12px", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontSize: "12px", color: "#5A584F", fontWeight: 600 }}>CURRENT STAGE:</span>
+                  {renderStatusPill(getAppStage(reviewPortfolioModalApp), reviewPortfolioModalApp)}
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                  {getAppStage(reviewPortfolioModalApp) === "applied" && (
+                    <button
+                      type="button"
+                      onClick={() => handleMarkUnderReview(reviewPortfolioModalApp)}
+                      style={{ padding: "8px 14px", minHeight: "40px", borderRadius: "8px", background: "#FFFFFF", border: "1px solid #8A6B2E", color: "#8A6B2E", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
+                    >
+                      Mark Under Review
+                    </button>
+                  )}
+
+                  {(getAppStage(reviewPortfolioModalApp) === "applied" || getAppStage(reviewPortfolioModalApp) === "under_review") && (
+                    <button
+                      type="button"
+                      onClick={() => handleShortlistApplicant(reviewPortfolioModalApp)}
+                      style={{ padding: "8px 14px", minHeight: "40px", borderRadius: "8px", background: "#8A6B2E", border: "none", color: "#FFFFFF", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
+                    >
+                      Shortlist Candidate
+                    </button>
+                  )}
+
+                  {getAppStage(reviewPortfolioModalApp) === "short" && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAuditionModal(reviewPortfolioModalApp)}
+                      style={{ padding: "8px 14px", minHeight: "40px", borderRadius: "8px", background: "#FAF9F7", border: "1px solid #8A6B2E", color: "#8A6B2E", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
+                    >
+                      Request Audition / Self-Tape
+                    </button>
+                  )}
+
+                  {(getAppStage(reviewPortfolioModalApp) === "short" || getAppStage(reviewPortfolioModalApp) === "rev") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedModalApp(reviewPortfolioModalApp);
+                        setSelectedNote("");
+                      }}
+                      style={{ padding: "8px 14px", minHeight: "40px", borderRadius: "8px", background: "#2B5E3B", border: "none", color: "#FFFFFF", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
+                    >
+                      Select for Role
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNotSelectedModalApp(reviewPortfolioModalApp);
+                      setNotSelectedReason("");
+                    }}
+                    style={{ padding: "8px 14px", minHeight: "40px", borderRadius: "8px", background: "#FFFFFF", border: "1px solid #D9534F", color: "#D9534F", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
+                  >
+                    Not Selected
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </Modal>
       )}
 
@@ -2455,25 +2987,27 @@ export default function ShortlistAuditionsPage() {
             gap: 6px !important;
             margin-top: 6px !important;
             padding-top: 8px !important;
+            flex-wrap: wrap !important;
           }
           .v-card-actions-row .v-card-view-btn,
-          .v-card-actions-row .v-card-action-btn {
-            flex: 1 1 0 !important;
-            width: 100% !important;
-            height: 36px !important;
-            min-height: 36px !important;
+          .v-card-actions-row .v-card-action-btn,
+          .v-card-actions-row .v-card-review-portfolio-btn {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            height: 40px !important;
+            min-height: 40px !important;
             font-size: 11.5px !important;
-            padding: 0 6px !important;
+            padding: 0 8px !important;
             justify-content: center !important;
             border-radius: 8px !important;
             white-space: nowrap !important;
           }
           .v-card-actions-row .v-card-menu-btn {
-            flex: 0 0 36px !important;
-            width: 36px !important;
-            height: 36px !important;
-            min-width: 36px !important;
-            min-height: 36px !important;
+            flex: 0 0 38px !important;
+            width: 38px !important;
+            height: 40px !important;
+            min-width: 38px !important;
+            min-height: 40px !important;
             border-radius: 8px !important;
           }
 

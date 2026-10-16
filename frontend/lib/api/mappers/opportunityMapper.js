@@ -117,6 +117,7 @@ export function fromApi(opp) {
     cancellationRequestedAt: safeIsoDate(opp.cancellationRequestedAt, null),
     createdAt: safeIsoDate(opp.createdAt, new Date().toISOString()),
     publishedAt: safeIsoDate(opp.publishedAt, null),
+    applicantStats: opp.applicantStats || null,
   };
 }
 

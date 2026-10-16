@@ -37,7 +37,6 @@ async function runAndPersistFlow() {
 
     const timestamp = Date.now().toString().slice(-6);
     const sharedPasswordHash = await bcrypt.hash("Password@12345", 10);
-    const adminPasswordHash = await bcrypt.hash("Admin@12345", 10);
 
     const adminEmail = `portal_admin_${timestamp}@vismaya.io`;
     const orgEmail = `dharma_casting_${timestamp}@vismaya.io`;
@@ -54,19 +53,25 @@ async function runAndPersistFlow() {
         // ---------------------------------------------------------------------
         logStep(1, "Creating Real Persistent Users & Profiles with UI-Ready Passwords");
 
-        // 1.1 Admin
-        adminUser = await User.create({
-            name: "Super Admin Officer",
-            email: adminEmail,
-            password: adminPasswordHash,
-            role: "admin",
-            status: "active",
-            isEmailVerified: true,
-            isPaid: true
-        });
+        // 1.1 Admin (reuses existing admin or creates one with dynamic credentials)
+        adminUser = await User.findOne({ role: "admin", status: "active" });
+        if (!adminUser) {
+            const dynamicPass = crypto.randomBytes(16).toString("hex") + "!Aa1";
+            const adminPasswordHash = await bcrypt.hash(dynamicPass, 10);
+            adminUser = await User.create({
+                name: "Super Admin Officer",
+                email: adminEmail,
+                password: adminPasswordHash,
+                role: "admin",
+                isSuperAdmin: true,
+                status: "active",
+                isEmailVerified: true,
+                isPaid: true
+            });
+        }
         const adminAuth = await generateAuthToken(adminUser);
         adminToken = adminAuth.token;
-        logPass("Admin Created", `Email: ${adminEmail} | Password: Admin@12345`);
+        logPass("Admin Ready", `Email: ${adminUser.email}`);
 
         // 1.2 Organization / Recruiter
         orgUser = await User.create({

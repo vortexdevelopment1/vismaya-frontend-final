@@ -14,6 +14,7 @@ import {
     withdrawApplication,
     requestReapplication,
     getOpportunityApplications,
+    getApplicantPortfolio,
     markApplicationUnderReview,
     shortlistApplication,
     selectApplication,
@@ -81,6 +82,13 @@ router.get(
     authenticateUser,
     authorizeRoles("organization"),
     getOpportunityApplications
+);
+
+router.get(
+    "/:applicationId/portfolio",
+    authenticateUser,
+    authorizeRoles("organization"),
+    getApplicantPortfolio
 );
 
 router.patch(

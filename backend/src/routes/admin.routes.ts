@@ -1,7 +1,7 @@
 import express, { Router, Request, Response, NextFunction } from "express";
 
 import {  authenticateUser  } from "../middleware/auth.middleware.js";
-import {  authorizeRoles  } from "../middleware/role.middleware.js";
+import {  authorizeRoles, requireSuperAdmin  } from "../middleware/role.middleware.js";
 import { 
     approveUser,
     getPendingUsers,
@@ -53,8 +53,17 @@ import {
     suspendTalentProfile,
     reactivateTalentProfile,
     getPendingTalentProfiles,
-    getTalentProfileById
+    getTalentProfileById,
+    setMediaFeaturedWork,
+    handleCopyrightDispute,
+    createInformationalProfile,
+    getInformationalProfiles
  } from "../controllers/admin.controller.js";
+
+import {
+    getPendingStories,
+    reviewSuccessStory
+ } from "../controllers/successStory.controller.js";
 
 import { 
     sendBroadcast,
@@ -78,6 +87,10 @@ router.param("profileId", validateObjectIdParam);
 router.param("reportId", validateObjectIdParam);
 router.param("auditionId", validateObjectIdParam);
 router.param("broadcastId", validateObjectIdParam);
+
+// Universal Mounting-Level Security Barrier:
+// Every single /api/admin/** route enforces valid authentication AND the admin role
+router.use(authenticateUser, authorizeRoles("admin"));
 
 // Talent Profile Management
 router.get("/talents/pending", authenticateUser, authorizeRoles("admin"), getPendingTalentProfiles);
@@ -133,8 +146,8 @@ router.patch("/users/:userId/ban", authenticateUser, authorizeRoles("admin"), ba
 router.post("/users/:userId/ban", authenticateUser, authorizeRoles("admin"), banUser);
 router.patch("/users/:userId/unban", authenticateUser, authorizeRoles("admin"), unbanUser);
 router.post("/users/:userId/unban", authenticateUser, authorizeRoles("admin"), unbanUser);
-router.post("/users/:userId/finalize-deletion", authenticateUser, authorizeRoles("admin"), finalizeUserDeletion);
-router.delete("/users/:userId", authenticateUser, authorizeRoles("admin"), finalizeUserDeletion);
+router.post("/users/:userId/finalize-deletion", requireSuperAdmin, finalizeUserDeletion);
+router.delete("/users/:userId", requireSuperAdmin, finalizeUserDeletion);
 
 // Organization Directory
 router.get("/organizations", authenticateUser, authorizeRoles("admin"), getOrganizationDirectory);
@@ -194,15 +207,26 @@ router.patch("/reapplications/:applicationId/review", authenticateUser, authoriz
 router.get("/verifications/pending", authenticateUser, authorizeRoles("admin"), getPendingVerifications);
 router.patch("/verifications/:verificationId/review", authenticateUser, authorizeRoles("admin"), reviewVerification);
 
-// Media Moderation Queue & Decisions
+// Media / Content Moderation Queue & Decisions
 router.get("/media", authenticateUser, authorizeRoles("admin"), getPendingMedia);
 router.get("/media/pending", authenticateUser, authorizeRoles("admin"), getPendingMedia);
 router.patch("/media/:mediaId/review", authenticateUser, authorizeRoles("admin"), reviewMediaItem);
+router.patch("/media/:mediaId/feature", authenticateUser, authorizeRoles("admin"), setMediaFeaturedWork);
+router.patch("/media/:mediaId/dispute", authenticateUser, authorizeRoles("admin"), handleCopyrightDispute);
+
+// Informational Profiles (Spec Section 41 & 44)
+router.post("/informational-profiles", authenticateUser, authorizeRoles("admin"), createInformationalProfile);
+router.get("/informational-profiles", authenticateUser, authorizeRoles("admin"), getInformationalProfiles);
+
+// Success Stories Review Queue (Spec Section 42 & 44)
+router.get("/success-stories", authenticateUser, authorizeRoles("admin"), getPendingStories);
+router.get("/success-stories/pending", authenticateUser, authorizeRoles("admin"), getPendingStories);
+router.patch("/success-stories/:storyId/review", authenticateUser, authorizeRoles("admin"), reviewSuccessStory);
 
 // Transactions & Credit Balances
 router.get("/transactions", authenticateUser, authorizeRoles("admin"), getPaymentTransactions);
 router.get("/credits/ledger", authenticateUser, authorizeRoles("admin"), getAdminCreditLedger);
-router.post("/credits/adjust", authenticateUser, authorizeRoles("admin"), adjustCreditBalance);
+router.post("/credits/adjust", requireSuperAdmin, adjustCreditBalance);
 
 // Coupons Management
 router.get("/coupons", authenticateUser, authorizeRoles("admin"), getCoupons);

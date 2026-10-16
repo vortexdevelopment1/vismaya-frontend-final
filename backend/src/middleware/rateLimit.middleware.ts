@@ -57,6 +57,20 @@ export const adminLimiter = rateLimit({
 });
 
 /**
+ * Extra-strict rate limiter for Admin Login attempts (5 requests per 15 min window)
+ */
+export const adminLoginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many admin login attempts from this IP. Account access temporarily locked. Please try again after 15 minutes."
+    }
+});
+
+/**
  * Extra-strict OTP limiter (protects against OTP brute-forcing and email bombing)
  */
 export const otpLimiter = rateLimit({

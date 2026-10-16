@@ -73,12 +73,16 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
         return pendingTalentsCount;
       case "pendingOrganizations":
         return pendingRecruitersCount;
+      case "pendingVerifications":
+        return pendingTalentsCount + pendingRecruitersCount;
       case "pendingMedia":
         return pendingMediaCount;
       case "pendingOpportunities":
         return pendingOpportunitiesCount;
       case "pendingAuditions":
         return pendingAuditionsCount;
+      case "pendingStories":
+        return 0;
       case "pendingCancellations":
         return pendingCancellationsCount;
       case "unreadNotifications":

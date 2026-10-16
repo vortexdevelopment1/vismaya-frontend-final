@@ -23,7 +23,8 @@ export function fromApi(app) {
   // Extract Talent info
   const talentObj = app.talentId && typeof app.talentId === "object" ? app.talentId : null;
   const talentId = talentObj ? String(talentObj._id || talentObj.id) : (app.talentId ? String(app.talentId) : "");
-  const talentName = talentObj?.name || 
+  const talentName = app.name ||
+    talentObj?.name || 
     talentObj?.stageName || 
     talentObj?.userId?.name || 
     talentObj?.personalDetails?.stageName || 
@@ -32,7 +33,10 @@ export function fromApi(app) {
     app.talentName || 
     "Talent Candidate";
   const talentEmail = talentObj?.email || talentObj?.userId?.email || app.talentEmail || "";
-  const talentAvatar = talentObj?.profilePhoto || talentObj?.avatar || app.talentAvatar || "";
+  const talentAvatar = app.profilePhoto || talentObj?.profilePhoto || talentObj?.avatar || app.talentAvatar || "";
+  const primaryProfession = app.primaryProfession || talentObj?.primaryProfession || "";
+  const vismayaId = app.vismayaId || talentObj?.vismayaId || "";
+  const headline = app.headline || talentObj?.headline || "";
 
   // Normalize custom answers
   const customAnswers = Array.isArray(app.customAnswers)
@@ -54,6 +58,11 @@ export function fromApi(app) {
     talentName,
     talentEmail,
     talentAvatar,
+    primaryProfession,
+    vismayaId,
+    headline,
+    skills: app.skills || talentObj?.skills || [],
+    profileUnlockRequired: false,
     roleId: app.roleId || `r-${opportunityId}-1`,
     roleName: app.roleName || oppObj?.role || "Lead Role",
     coverNote: app.coverNote || "",

@@ -129,25 +129,10 @@ export default function ApplicationDetailPage() {
   const [showBuyModal, setShowBuyModal] = useState(false);
 
   const checkProfileAccess = async (confirmed = false) => {
-    if (!application) return;
-    const tId = application.talentId || applicationId;
-    const tInfo = {
-      name: application.talentName || "Talent Candidate",
-      avatar: application.avatar || application.talentProfile?.avatar,
-      role: application.roleApplied || "Artist",
-    };
-    const res = await paymentService.viewTalentProfile(tId, tInfo, confirmed);
-    setCreditStatus(res);
-    if (!res.allowed) {
-      if (res.reason === "zero_credits") {
-        setShowZeroCreditsModal(true);
-      } else if (res.reason === "low_balance_confirm") {
-        setShowLowBalanceModal(true);
-      }
-    } else {
-      setShowLowBalanceModal(false);
-      setShowZeroCreditsModal(false);
-    }
+    // Opening applicant's profile from own opportunity does NOT consume a profile-view credit (Spec §39 & Round 28)
+    setCreditStatus({ allowed: true, exempt: true, reason: "applicant_consent" });
+    setShowLowBalanceModal(false);
+    setShowZeroCreditsModal(false);
   };
 
   useEffect(() => {

@@ -30,6 +30,8 @@ import {
   mockAuditions,
 } from "./mockSeedData.js";
 
+const isMongoId = (id) => typeof id === "string" && /^[0-9a-fA-F]{24}$/.test(id);
+
 export const recruiterService = {
   /**
    * Fetch recruiter's organization profile
@@ -339,7 +341,7 @@ export const recruiterService = {
    * @param {string} opportunityId
    */
   async getOpportunityApplications(opportunityId) {
-    if (!isRealMode("applications")) {
+    if (!isRealMode("applications") || !isMongoId(String(opportunityId || ""))) {
       const shortlisted = initialShortlistedTalent[opportunityId] || [];
       const apps = shortlisted.length > 0
         ? shortlisted
@@ -359,11 +361,70 @@ export const recruiterService = {
   },
 
   /**
+   * Fetch applicant full portfolio under Section 39 privacy rules
+   * Direct applicant viewing from own opportunity does NOT consume a profile-view credit.
+   * @param {string} applicationId
+   */
+  async getApplicantPortfolio(applicationId) {
+    if (!isRealMode("applications") || !isMongoId(String(applicationId || ""))) {
+      const mockApp = mockApplications.find((a) => a.id === applicationId || a._id === applicationId) || {
+        _id: applicationId,
+        id: applicationId,
+        status: "Under Review",
+        coverNote: "I am passionate about this character and have 4 years of theatre experience.",
+        customAnswers: [],
+        consentGiven: true
+      };
+      const talentName = mockApp.talentName || mockApp.name || "Aarav Sharma";
+      return {
+        success: true,
+        data: {
+          application: {
+            _id: mockApp.id || mockApp._id || applicationId,
+            id: mockApp.id || mockApp._id || applicationId,
+            status: mockApp.status || "Under Review",
+            coverNote: mockApp.coverNote || "I am passionate about this character and have 4 years of theatre experience.",
+            customAnswers: mockApp.customAnswers || [],
+            consentGiven: true
+          },
+          portfolio: {
+            name: talentName,
+            stageName: mockApp.stageName || talentName,
+            primaryProfession: mockApp.role || "Actor",
+            vismayaId: mockApp.vismayaId || "VIS-882319",
+            headline: "Theatre & Screen Artist",
+            bio: "Experienced stage and screen actor with training in classical drama.",
+            currentCity: "Mumbai",
+            currentState: "Maharashtra",
+            skills: [{ name: "Method Acting" }, { name: "Stage Combat" }],
+            languages: [{ language: "Hindi", proficiency: "fluent" }, { language: "English", proficiency: "fluent" }],
+            credits: [
+              { projectTitle: "Shadows in the Mist", roleOrDesignation: "Lead Actor", projectStatus: "released", year: 2024, isVerifiedCredit: true }
+            ],
+            verificationBadges: { identityVerified: true, professionalVerified: true },
+            media: {
+              photos: [{ url: mockApp.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800", title: "Headshot" }],
+              videos: [],
+              documents: []
+            }
+          }
+        }
+      };
+    }
+
+    const res = await apiClient.get(`/api/applications/${applicationId}/portfolio`);
+    return {
+      success: true,
+      data: res?.data || res
+    };
+  },
+
+  /**
    * Mark application as under review
    * @param {string} applicationId
    */
   async markApplicationUnderReview(applicationId) {
-    if (!isRealMode("applications")) {
+    if (!isRealMode("applications") || !isMongoId(String(applicationId || ""))) {
       return {
         success: true,
         data: mapApplication({ id: applicationId, status: "Under Review" }),
@@ -384,7 +445,7 @@ export const recruiterService = {
    * @param {Object} payload { note }
    */
   async shortlistApplication(applicationId, payload = {}) {
-    if (!isRealMode("applications")) {
+    if (!isRealMode("applications") || !isMongoId(String(applicationId || ""))) {
       return {
         success: true,
         data: mapApplication({ id: applicationId, status: "Shortlisted" }),
@@ -405,7 +466,7 @@ export const recruiterService = {
    * @param {Object} payload { note }
    */
   async selectApplication(applicationId, payload = {}) {
-    if (!isRealMode("applications")) {
+    if (!isRealMode("applications") || !isMongoId(String(applicationId || ""))) {
       return {
         success: true,
         data: mapApplication({ id: applicationId, status: "Selected" }),
@@ -426,7 +487,7 @@ export const recruiterService = {
    * @param {Object} payload { reason }
    */
   async markNotSelected(applicationId, payload = {}) {
-    if (!isRealMode("applications")) {
+    if (!isRealMode("applications") || !isMongoId(String(applicationId || ""))) {
       return {
         success: true,
         data: mapApplication({ id: applicationId, status: "Not Selected" }),

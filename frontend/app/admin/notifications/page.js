@@ -100,7 +100,7 @@ export default function AdminNotificationsPage() {
     <div className={styles.page}>
       <div className={styles.bc}>Dashboard &nbsp;›&nbsp; <b>Broadcasts</b></div>
       <h1 className={styles.title}>Notifications &amp; Broadcasts</h1>
-      <p className={styles.sub}>Send announcements to talent and organizations, and track system alerts.</p>
+      <p className={styles.sub}>Send platform service and operational notices to talent and organizations (marketing broadcasts disabled per client spec). Track system alerts.</p>
       {toastMessage && <div className={styles.toast}><span>{toastMessage}</span></div>}
       <div className={styles.tabs} role="tablist">
         <button type="button" className={`${styles.tabBtn} ${activeTab === "broadcasts" ? styles.on : ""}`} onClick={() => setActiveTab("broadcasts")}>Broadcasts</button>

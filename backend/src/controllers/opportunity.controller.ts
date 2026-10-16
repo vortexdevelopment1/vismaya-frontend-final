@@ -647,7 +647,34 @@ export const getOrganizationOpportunities = async (req: Request, res: Response):
             .populate("projectId", "projectName")
             .sort({ createdAt: -1 });
 
-        const formatted = opportunities.map(o => formatOpportunityForUser(o, "organization", true));
+        const oppIds = opportunities.map(o => o._id.toString());
+        const appCounts = await Application.aggregate([
+            { $match: { opportunityId: { $in: oppIds } } },
+            { $group: { _id: { oppId: "$opportunityId", status: "$status" }, count: { $sum: 1 } } }
+        ]);
+
+        const statsMap: Record<string, { applied: number; under_review: number; shortlisted: number; selected: number; not_selected: number; total: number }> = {};
+        for (const id of oppIds) {
+            statsMap[id] = { applied: 0, under_review: 0, shortlisted: 0, selected: 0, not_selected: 0, total: 0 };
+        }
+        for (const row of appCounts) {
+            const oppId = row._id.oppId;
+            const status = row._id.status;
+            if (statsMap[oppId]) {
+                statsMap[oppId].total += row.count;
+                if (status === "applied") statsMap[oppId].applied += row.count;
+                else if (status === "under_review") statsMap[oppId].under_review += row.count;
+                else if (status === "shortlisted") statsMap[oppId].shortlisted += row.count;
+                else if (status === "selected") statsMap[oppId].selected += row.count;
+                else if (status === "not_selected") statsMap[oppId].not_selected += row.count;
+            }
+        }
+
+        const formatted = opportunities.map(o => {
+            const formattedOpp = formatOpportunityForUser(o, "organization", true);
+            formattedOpp.applicantStats = statsMap[o._id.toString()] || { applied: 0, under_review: 0, shortlisted: 0, selected: 0, not_selected: 0, total: 0 };
+            return formattedOpp;
+        });
 
         res.status(200).json({
             success: true,

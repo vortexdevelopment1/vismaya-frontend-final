@@ -52,14 +52,6 @@ const getAccountStatusError = (status: string): string => {
 
 export const registerUser = async (req: Request, res: Response): Promise<any> => {
     try {
-        // Reject admin registration via public endpoint immediately with 403 Forbidden (F-08)
-        if (req.body?.role === "admin") {
-            return res.status(403).json({
-                success: false,
-                message: "Administrative registration is disabled"
-            });
-        }
-
         const validation = validateRegisterInput(req.body);
         if (!validation.isValid) {
             return res.status(400).json({
@@ -71,11 +63,11 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
 
         const { name, email, password, role, mobile } = validation.sanitized;
 
-        // Reject admin registration via public endpoint
-        if (role === "admin") {
-            return res.status(403).json({
+        // Double safeguard: ensure role strictly comes from allowlist
+        if (!["talent", "organization"].includes(role)) {
+            return res.status(400).json({
                 success: false,
-                message: "Administrative registration is disabled"
+                message: "Role must be either 'talent' or 'organization'"
             });
         }
 
@@ -361,6 +353,14 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
             });
         }
 
+        // Prevent public login endpoint from serving admin accounts
+        if (user.role === "admin" || (user as any).isSuperAdmin) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+
         // Check password (if local user)
         if (!user.password) {
             return res.status(400).json({
@@ -490,11 +490,11 @@ export const googleLogin = async (req: Request, res: Response): Promise<any> => 
 
         const { idToken, role = "talent" } = req.body;
 
-        // Disallow administrative role request via Google login
-        if (role === "admin") {
+        // Disallow administrative or invalid role request via Google login
+        if (role !== "talent" && role !== "organization") {
             return res.status(400).json({
                 success: false,
-                message: "Cannot create admin account via Google login"
+                message: "Public registration only allows 'talent' and 'organization' roles"
             });
         }
 
@@ -510,10 +510,10 @@ export const googleLogin = async (req: Request, res: Response): Promise<any> => 
         let user = await User.findOne({ email: googlePayload.email });
 
         // Never allow Google login to link or log in an admin account (S1)
-        if (user && user.role === "admin") {
+        if (user && (user.role === "admin" || (user as any).isSuperAdmin)) {
             return res.status(403).json({
                 success: false,
-                message: "Google authentication is disabled for administrative accounts. Please use password login."
+                message: "Google authentication is disabled for administrative accounts. Please use admin login."
             });
         }
 
@@ -1401,6 +1401,10 @@ export const disable2FA = async (req: Request, res: Response): Promise<any> => {
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        if (user.role === "admin" || (user as any).isSuperAdmin) {
+            return res.status(403).json({ success: false, message: "Two-factor authentication is mandatory for administrator accounts" });
         }
 
         if (user.password) {

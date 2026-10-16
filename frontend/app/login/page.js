@@ -142,7 +142,7 @@ function LoginFormContent() {
             Quick Demo Workspace
           </span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
           <Link
             href="/talent/dashboard"
             style={{
@@ -190,30 +190,6 @@ function LoginFormContent() {
             className="demo-btn"
           >
             Studio
-          </Link>
-          <Link
-            href="/admin/dashboard"
-            style={{
-              fontSize: "11px",
-              textAlign: "center",
-              padding: "6px 4px",
-              borderRadius: "var(--radius-btn, 4px)",
-              backgroundColor: "var(--bg-surface, #FFFFFF)",
-              border: "1px solid var(--border-color, #E4E1D9)",
-              color: "var(--text-primary, #292C29)",
-              fontWeight: "600",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              textDecoration: "none",
-              minHeight: "36px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.18s ease",
-            }}
-            className="demo-btn"
-          >
-            Admin
           </Link>
         </div>
       </div>
