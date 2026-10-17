@@ -100,8 +100,49 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
             password: hashedPassword,
             role,
             status: "pending",
-            isEmailVerified: false
+            isEmailVerified: false,
+            isPaid: Boolean(validation.sanitized?.isPaid)
         });
+
+        // Atomically initialize domain profile so data is not lost prior to approval
+        try {
+            if (role === "talent") {
+                let vismayaId = "";
+                let isUnique = false;
+                while (!isUnique) {
+                    vismayaId = `VIS-${crypto.randomInt(100000, 999999)}`;
+                    const existing = await TalentProfile.exists({ vismayaId });
+                    if (!existing) isUnique = true;
+                }
+
+                await TalentProfile.create({
+                    userId: user._id,
+                    vismayaId,
+                    stageName: validation.sanitized.stageName || name,
+                    primaryProfession: validation.sanitized.primaryProfession || "Actor / Screen Artist",
+                    skills: (validation.sanitized.skills || []).map((s: string) => ({ name: s, proficiency: "intermediate" })),
+                    bio: validation.sanitized.bio || "",
+                    currentCity: validation.sanitized.city || "Mumbai",
+                    profilePhoto: validation.sanitized.profilePhoto || "",
+                    isPaid: user.isPaid,
+                    status: "pending"
+                });
+            } else if (role === "organization") {
+                await Organization.create({
+                    userId: user._id,
+                    organizationName: validation.sanitized.studioName || name,
+                    organizationType: validation.sanitized.companyType || "Production House",
+                    location: {
+                        city: validation.sanitized.city || "Mumbai",
+                        country: "India"
+                    },
+                    contactNumber: mobile,
+                    verificationState: "pending"
+                });
+            }
+        } catch (initErr) {
+            console.warn("[RegisterUser] Profile initialization notice:", initErr);
+        }
 
         // Clean up any registration draft for this email
         await RegistrationDraft.deleteOne({ email });

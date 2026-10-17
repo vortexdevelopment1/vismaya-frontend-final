@@ -27,13 +27,22 @@ import VideoPlayer from "@/components/shared/VideoPlayer";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { mediaService } from "@/lib/api/services/mediaService";
+import { useAuth } from "@/context/AuthContext";
+import { isRealMode } from "@/lib/api/config";
 
 export default function TalentAuditionsPage() {
+  const { user } = useAuth();
+  const { profile, addToast } = useTalent();
   const { auditions, getOpportunity, getProject, submitSelfTape, isHydrated } = useWorkflow();
-  const { addToast } = useTalent();
 
-  const currentTalentId = "tal-904";
-  const myAuditions = auditions.filter((a) => a.talentId === currentTalentId);
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
+  const myAuditions = auditions.filter((a) => {
+    if (isRealMode("talent")) {
+      const tId = a.talentId?._id || a.talentId?.id || a.talentId || a.userId;
+      return tId && (tId === currentTalentId || tId === user?.id || tId === user?._id || tId === profile?.id || tId === profile?._id || tId === profile?.vismayaId);
+    }
+    return a.talentId === currentTalentId;
+  });
 
   // Form states per audition card
   const [activeUploadId, setActiveUploadId] = useState(null);

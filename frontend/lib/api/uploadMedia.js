@@ -177,15 +177,15 @@ export async function uploadMedia({
     }
 
     const mockBlobUrl = URL.createObjectURL(file);
-    const mockMediaType = file.type?.startsWith("video/") ? "video" : "photo";
+    const detectedMediaType = file.type?.startsWith("video/") ? "video" : "photo";
 
     return {
       id: "med_mock_" + Date.now(),
       url: mockBlobUrl,
       thumbnailUrl: mockBlobUrl,
       title: title || file.name || "Upload",
-      type: validationType === "video" || mockMediaType === "video" ? "Showreel" : "Headshot",
-      mediaType: mockMediaType,
+      type: validationType === "video" || detectedMediaType === "video" ? "Showreel" : "Headshot",
+      mediaType: detectedMediaType,
       category,
       status: "Pending",
       isMainProfilePhoto: Boolean(isMainProfilePhoto),

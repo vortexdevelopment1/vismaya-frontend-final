@@ -29,8 +29,11 @@ import { paymentService } from "@/lib/api/services/paymentService";
 import { PRICING_CONFIG } from "@/lib/config/pricing";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
+import { useAuth } from "@/context/AuthContext";
+import { isRealMode } from "@/lib/api/config";
 
 export default function TalentDashboardPage() {
+  const { user } = useAuth();
   const {
     applications,
     auditions,
@@ -41,31 +44,52 @@ export default function TalentDashboardPage() {
 
   const {
     profile,
+    applications: talentCtxApplications = [],
+    notifications: talentCtxNotifications = [],
     profileCompletionScore,
     profileChecklist,
   } = useTalent();
 
-  const [isPaid, setIsPaid] = useState(() => paymentService.isTalentPaid());
+  const [isPaid, setIsPaid] = useState(() => {
+    if (isRealMode("payments") && user?.isPaid) return true;
+    return paymentService.isTalentPaid();
+  });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const isUnder60 = (profileCompletionScore || 0) < PRICING_CONFIG.MIN_PROFILE_COMPLETION;
 
-  const currentTalentId = "tal-904";
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
 
   // Filter entities for current talent
-  const myApplications = useMemo(
-    () => applications.filter((a) => a.talentId === currentTalentId),
-    [applications]
-  );
+  const myApplications = useMemo(() => {
+    if (isRealMode("applications") || isRealMode("talent")) {
+      return Array.isArray(talentCtxApplications) && talentCtxApplications.length > 0
+        ? talentCtxApplications
+        : applications.filter((a) => {
+            const tId = a.talentId?._id || a.talentId?.id || a.talentId || a.userId;
+            return tId && (tId === currentTalentId || tId === user?.id || tId === user?._id || tId === profile?.id || tId === profile?._id || tId === profile?.vismayaId);
+          });
+    }
+    return applications.filter((a) => a.talentId === currentTalentId);
+  }, [applications, talentCtxApplications, currentTalentId, user, profile]);
 
-  const myAuditions = useMemo(
-    () => auditions.filter((aud) => aud.talentId === currentTalentId),
-    [auditions]
-  );
+  const myAuditions = useMemo(() => {
+    if (isRealMode("talent")) {
+      return auditions.filter((aud) => {
+        const tId = aud.talentId?._id || aud.talentId?.id || aud.talentId || aud.userId;
+        return tId && (tId === currentTalentId || tId === user?.id || tId === user?._id || tId === profile?.id || tId === profile?._id || tId === profile?.vismayaId);
+      });
+    }
+    return auditions.filter((aud) => aud.talentId === currentTalentId);
+  }, [auditions, currentTalentId, user, profile]);
 
-  const talentNotifications = useMemo(
-    () => getNotificationsForRole("talent", currentTalentId),
-    [getNotificationsForRole]
-  );
+  const talentNotifications = useMemo(() => {
+    if (isRealMode("notifications") || isRealMode("talent")) {
+      return Array.isArray(talentCtxNotifications) && talentCtxNotifications.length > 0
+        ? talentCtxNotifications
+        : getNotificationsForRole("talent", currentTalentId);
+    }
+    return getNotificationsForRole("talent", currentTalentId);
+  }, [talentCtxNotifications, getNotificationsForRole, currentTalentId]);
 
   // Derived dashboard stats
   const totalAppsCount = myApplications.length;
@@ -275,11 +299,17 @@ export default function TalentDashboardPage() {
 
           <div className="talent-welcome-user-info">
             <div className="talent-welcome-title-row">
-              <h1 className="talent-welcome-title">
-                Welcome back, {profile.personal.fullName.split(" ")[0]}!
-              </h1>
+              {(() => {
+                const welcomeName = profile?.personal?.fullName?.trim() || profile?.name?.trim() || profile?.stageName?.trim() || user?.name?.trim() || "Artist";
+                const firstName = welcomeName.split(" ")[0];
+                return (
+                  <h1 className="talent-welcome-title">
+                    Welcome back, {firstName}!
+                  </h1>
+                );
+              })()}
               <div className="talent-welcome-badge">
-                <StatusBadge status={profile.status} size="md" />
+                <StatusBadge status={profile?.status || "pending"} size="md" />
               </div>
             </div>
             <p className="talent-welcome-desc">

@@ -1,21 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import {
-  initialTalents,
-  initialRecruiters,
-  initialMediaQueue,
-  initialRequirementRequests,
-  initialCastingCalls,
-  initialAdminNotifications,
-  initialRecentAdminActivity,
-  initialApplications,
-  initialShortlists,
-  initialBookings,
-  initialPayments,
-  initialSubscriptions,
-  initialBroadcasts,
-} from "./mockData";
 import { isRealMode } from "@/lib/api/config";
 import { adminService } from "@/lib/api/services/adminService";
 import { notificationService } from "@/lib/api/services/notificationService";
@@ -24,43 +9,43 @@ const AdminContext = createContext(null);
 
 export function AdminProvider({ children }) {
   // 1. Talents State
-  const [talents, setTalents] = useState(initialTalents);
+  const [talents, setTalents] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().talents || []));
 
   // 2. Recruiters State
-  const [recruiters, setRecruiters] = useState(initialRecruiters);
+  const [recruiters, setRecruiters] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().recruiters || []));
 
   // 3. Media Moderation Queue State
-  const [mediaQueue, setMediaQueue] = useState(initialMediaQueue);
+  const [mediaQueue, setMediaQueue] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().mediaQueue || []));
 
   // 4. Requirement Requests State
-  const [requirementRequests, setRequirementRequests] = useState(initialRequirementRequests);
+  const [requirementRequests, setRequirementRequests] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().requirementRequests || []));
 
   // 5. Casting Calls State
-  const [castingCalls, setCastingCalls] = useState(initialCastingCalls);
+  const [castingCalls, setCastingCalls] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().castingCalls || []));
 
   // 6. Applications State
-  const [applications, setApplications] = useState(initialApplications);
+  const [applications, setApplications] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().applications || []));
 
   // 7. Shortlists State
-  const [shortlists, setShortlists] = useState(initialShortlists);
+  const [shortlists, setShortlists] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().shortlists || []));
 
   // 8. Bookings State
-  const [bookings, setBookings] = useState(initialBookings);
+  const [bookings, setBookings] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().bookings || []));
 
   // 9. Payments State
-  const [payments, setPayments] = useState(initialPayments);
+  const [payments, setPayments] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().payments || []));
 
   // 10. Subscriptions State
-  const [subscriptions, setSubscriptions] = useState(initialSubscriptions);
+  const [subscriptions, setSubscriptions] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().subscriptions || []));
 
   // 11. Broadcasts State
-  const [broadcasts, setBroadcasts] = useState(initialBroadcasts);
+  const [broadcasts, setBroadcasts] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().broadcasts || []));
 
   // 12. Admin Notifications State
-  const [notifications, setNotifications] = useState(initialAdminNotifications);
+  const [notifications, setNotifications] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().notifications || []));
 
   // 13. Recent Activity Feed State
-  const [activities, setActivities] = useState(initialRecentAdminActivity);
+  const [activities, setActivities] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().activities || []));
 
   // 14. Toasts State
   const [toasts, setToasts] = useState([]);

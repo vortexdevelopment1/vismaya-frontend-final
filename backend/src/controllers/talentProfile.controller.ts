@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import crypto from "crypto";
 import TalentProfile from "../models/talentProfile.model.js";
 import User from "../models/user.model.js";
@@ -92,6 +93,42 @@ export const createOrUpdateProfile = async (req: Request, res: Response): Promis
             }
         }
 
+        // Defensively sanitize physical attributes
+        if (updateData.physicalAttributes && typeof updateData.physicalAttributes === "object") {
+            const pa = { ...updateData.physicalAttributes };
+            if (pa.heightCm !== undefined) {
+                const parsed = Number(pa.heightCm);
+                pa.heightCm = (!isNaN(parsed) && pa.heightCm !== "" && pa.heightCm !== null) ? parsed : undefined;
+                if (pa.heightCm === undefined) delete pa.heightCm;
+            }
+            if (pa.weightKg !== undefined) {
+                const parsed = Number(pa.weightKg);
+                pa.weightKg = (!isNaN(parsed) && pa.weightKg !== "" && pa.weightKg !== null) ? parsed : undefined;
+                if (pa.weightKg === undefined) delete pa.weightKg;
+            }
+            updateData.physicalAttributes = pa;
+        }
+
+        // Clean client-generated non-ObjectId IDs from subdocument arrays
+        const cleanSubdocs = (arr: any[]) => {
+            if (!Array.isArray(arr)) return arr;
+            return arr.map((item: any) => {
+                if (!item || typeof item !== "object") return item;
+                const clean = { ...item };
+                if (clean._id && !mongoose.Types.ObjectId.isValid(clean._id)) {
+                    delete clean._id;
+                }
+                if (clean.id && !mongoose.Types.ObjectId.isValid(clean.id)) {
+                    delete clean.id;
+                }
+                return clean;
+            });
+        };
+
+        if (updateData.credits) updateData.credits = cleanSubdocs(updateData.credits);
+        if (updateData.training) updateData.training = cleanSubdocs(updateData.training);
+        if (updateData.awards) updateData.awards = cleanSubdocs(updateData.awards);
+
         let profile = await TalentProfile.findOne({ userId });
 
         // Under-18 calculation
@@ -179,11 +216,29 @@ export const createOrUpdateProfile = async (req: Request, res: Response): Promis
             pendingChanges: profile.pendingChanges
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Create/update talent profile error:", error);
-        res.status(500).json({
+
+        if (error.name === "ValidationError") {
+            const messages = Object.values(error.errors || {}).map((err: any) => err.message);
+            return res.status(400).json({
+                success: false,
+                message: messages.join("; ") || error.message || "Talent profile validation failed",
+                errors: messages
+            });
+        }
+
+        if (error.name === "CastError") {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid format for ${error.path}: ${error.value}`,
+                errors: [error.message]
+            });
+        }
+
+        res.status(error.status || 500).json({
             success: false,
-            message: "Something went wrong while saving talent profile"
+            message: error.message || "Something went wrong while saving talent profile"
         });
     }
 };

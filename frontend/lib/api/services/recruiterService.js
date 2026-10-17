@@ -23,6 +23,8 @@ import {
   initialCompanyProfile,
   initialRequirements,
   initialShortlistedTalent,
+  initialRecruiterNotifications,
+  initialRecentActivity,
 } from "../../recruiter/mockData.js";
 import {
   mockProjects,
@@ -33,6 +35,24 @@ import {
 const isMongoId = (id) => typeof id === "string" && /^[0-9a-fA-F]{24}$/.test(id);
 
 export const recruiterService = {
+  getInitialState() {
+    if (isRealMode("recruiter")) {
+      return {
+        companyProfile: null,
+        requirements: [],
+        shortlistedTalent: {},
+        notifications: [],
+        activities: [],
+      };
+    }
+    return {
+      companyProfile: initialCompanyProfile,
+      requirements: initialRequirements,
+      shortlistedTalent: initialShortlistedTalent,
+      notifications: initialRecruiterNotifications,
+      activities: initialRecentActivity,
+    };
+  },
   /**
    * Fetch recruiter's organization profile
    */

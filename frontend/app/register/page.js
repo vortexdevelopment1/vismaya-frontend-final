@@ -484,8 +484,8 @@ function RegisterPageContent() {
     e.preventDefault();
     setIsSubmitting(true);
     setFormError("");
-
     try {
+      const contactVal = selectedRole === "organization" ? orgPhone : phone;
       const payload = {
         role: selectedRole === "organization" ? "organization" : "talent",
         email,
@@ -493,9 +493,15 @@ function RegisterPageContent() {
         name: name.trim(),
         studioName: selectedRole === "organization" ? name.trim() : undefined,
         city,
-        phone: selectedRole === "organization" ? orgPhone : phone,
+        phone: contactVal,
+        mobile: contactVal,
         profilePhoto: photoUrl,
         isPaid: true,
+        stageName: name.trim(),
+        primaryProfession: primaryCraft,
+        skills: skills ? skills.split(",").map((s) => s.trim()).filter(Boolean) : [],
+        bio: bio ? bio.trim() : "",
+        companyType: selectedRole === "organization" ? companyType : undefined,
       };
 
       const res = await register(payload);

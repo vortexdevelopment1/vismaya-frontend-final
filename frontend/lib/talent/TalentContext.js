@@ -1,40 +1,142 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import {
-  initialProfileData,
-  initialPortfolioMedia,
-  initialCastingCalls,
-  initialApplications,
-  initialNotifications,
-} from "./mockData";
 
 import { isRealMode } from "@/lib/api/config";
 import { talentService } from "@/lib/api/services/talentService";
 import { mediaService } from "@/lib/api/services/mediaService";
 import { notificationService } from "@/lib/api/services/notificationService";
 import { verificationService } from "@/lib/api/services/verificationService";
+import { publicService } from "@/lib/api/services/publicService";
 import { uploadMedia, validateMediaFile } from "@/lib/api/uploadMedia";
 import { useAuth } from "@/context/AuthContext";
 
 const TalentContext = createContext(null);
+
+export const emptyProfileData = {
+  id: "",
+  status: "pending",
+  statusNote: "Your profile has been submitted and is pending verification by Vismaya Admin.",
+  avatar: "",
+  profilePhoto: "",
+  name: "",
+  stageName: "",
+  firstName: "",
+  lastName: "",
+  bio: "",
+  headline: "",
+  category: "open_talent",
+  careerStage: "aspiring",
+  primaryProfession: "",
+  profession: "",
+  secondaryProfessions: [],
+  city: "",
+  currentCity: "",
+  state: "",
+  currentState: "",
+  location: "",
+  country: "India",
+  dob: "",
+  gender: "prefer_not_to_say",
+  nationality: "Indian",
+  email: "",
+  mobile: "",
+  phone: "",
+  personal: {
+    fullName: "",
+    stageName: "",
+    age: "",
+    dob: "",
+    gender: "prefer_not_to_say",
+    city: "",
+    state: "",
+    phone: "",
+    email: "",
+    bio: "",
+    primaryRole: "",
+    instagram: "",
+    imdb: "",
+    avatar: "",
+    profilePhoto: "",
+  },
+  physical: {
+    height: "",
+    weight: "",
+    skinTone: "",
+    hairColor: "",
+    hairLength: "",
+    eyeColor: "",
+    bodyType: "",
+    chest: "",
+    waist: "",
+    hips: "",
+    shoeSize: "",
+    tattoos: "",
+    piercings: "",
+  },
+  physicalAttributes: {
+    heightCm: null,
+    weightKg: null,
+    eyeColor: "",
+    hairColor: "",
+    skinTone: "",
+    bodyType: "",
+  },
+  skills: [],
+  languages: [],
+  credits: [],
+  training: [],
+  awards: [],
+  portfolio: {
+    photos: [],
+    videos: [],
+    showreelUrl: "",
+  },
+  photos: [],
+  videos: [],
+  showreel: "",
+  availability: {
+    availableDays: [],
+    willingToTravel: true,
+    hasPassport: false,
+    preferredCities: [],
+    noticePeriod: "Immediate",
+  },
+  guardianConsent: {
+    guardianName: "",
+    guardianPhone: "",
+    relationship: "",
+    consentLetterUploaded: false,
+  },
+  profileCompletionPercentage: 0,
+  completionPercentage: 0,
+  isSearchable: false,
+  isFeatured: false,
+  isTrending: false,
+};
 
 export function TalentProvider({ children }) {
   const auth = useAuth();
 
   // 1. Profile State
   const [profile, setProfile] = useState(() => {
+    if (isRealMode("talent")) {
+      return emptyProfileData;
+    }
     if (typeof window !== "undefined") {
       try {
         const saved = localStorage.getItem("vismaya_talent_profile");
         if (saved) return JSON.parse(saved);
       } catch {}
     }
-    return initialProfileData;
+    return talentService.getInitialState().profile || emptyProfileData;
   });
 
   // 2. Portfolio State
   const [portfolio, setPortfolio] = useState(() => {
+    if (isRealMode("media")) {
+      return [];
+    }
     if (typeof window !== "undefined") {
       try {
         const saved = localStorage.getItem("vismaya_talent_portfolio");
@@ -44,38 +146,44 @@ export function TalentProvider({ children }) {
         }
       } catch {}
     }
-    return initialPortfolioMedia;
+    return talentService.getInitialState().portfolio || [];
   });
 
   // 3. Casting Calls State
-  const [castingCalls, setCastingCalls] = useState(initialCastingCalls);
+  const [castingCalls, setCastingCalls] = useState(() => isRealMode("opportunities") ? [] : (talentService.getInitialState().castingCalls || []));
 
   // 4. Applications State
-  const [applications, setApplications] = useState(initialApplications);
+  const [applications, setApplications] = useState(() => isRealMode("applications") || isRealMode("talent") ? [] : (talentService.getInitialState().applications || []));
 
   // 5. Notifications State
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState(() => isRealMode("notifications") || isRealMode("talent") ? [] : (talentService.getInitialState().notifications || []));
 
   // 6. Toasts State
   const [toasts, setToasts] = useState([]);
 
-  // Sync profile avatar with auth user if available
+  // Sync profile data with auth user if available in real mode
   useEffect(() => {
-    if (auth?.user?.profilePhoto || auth?.user?.avatar) {
-      const userPhoto = auth.user.profilePhoto || auth.user.avatar;
-      setProfile((prev) => {
-        if (prev.avatar !== userPhoto && prev.profilePhoto !== userPhoto) {
-          return {
-            ...prev,
-            avatar: userPhoto,
-            profilePhoto: userPhoto,
-            personal: { ...prev.personal, avatar: userPhoto, profilePhoto: userPhoto },
-          };
-        }
-        return prev;
-      });
+    if (auth?.user && isRealMode("talent")) {
+      const uPhoto = auth.user.profilePhoto || auth.user.avatar;
+      setProfile((prev) => ({
+        ...prev,
+        avatar: uPhoto || prev.avatar,
+        profilePhoto: uPhoto || prev.profilePhoto,
+        name: prev.name || auth.user.name || "",
+        email: prev.email || auth.user.email || "",
+        mobile: prev.mobile || auth.user.mobile || auth.user.phone || "",
+        phone: prev.phone || auth.user.mobile || auth.user.phone || "",
+        personal: {
+          ...prev.personal,
+          fullName: prev.personal?.fullName || auth.user.name || "",
+          email: prev.personal?.email || auth.user.email || "",
+          phone: prev.personal?.phone || auth.user.mobile || auth.user.phone || "",
+          avatar: uPhoto || prev.personal?.avatar || "",
+          profilePhoto: uPhoto || prev.personal?.profilePhoto || "",
+        },
+      }));
     }
-  }, [auth?.user?.profilePhoto, auth?.user?.avatar]);
+  }, [auth?.user]);
 
   // Fetch real data on mount when in real API mode
   useEffect(() => {
@@ -84,7 +192,7 @@ export function TalentProvider({ children }) {
     let mounted = true;
     async function loadTalentData() {
       try {
-        const [profRes, mediaRes, appRes, notifRes, audRes, verRes, compRes] = await Promise.allSettled([
+        const [profRes, mediaRes, appRes, notifRes, audRes, verRes, compRes, oppsRes] = await Promise.allSettled([
           isRealMode("talent") ? talentService.getMyProfile() : Promise.reject(),
           isRealMode("media") ? mediaService.getMyMedia() : Promise.reject(),
           isRealMode("talent") ? talentService.getMyApplications() : Promise.reject(),
@@ -92,11 +200,12 @@ export function TalentProvider({ children }) {
           isRealMode("talent") ? talentService.getMyAuditions() : Promise.reject(),
           isRealMode("talent") ? verificationService.getMyVerifications() : Promise.reject(),
           isRealMode("talent") ? talentService.getCompletionStatus() : Promise.reject(),
+          isRealMode("opportunities") ? publicService.getPublishedOpportunities() : Promise.reject(),
         ]);
 
         if (mounted) {
           if (profRes.status === "fulfilled" && profRes.value?.data) {
-            setProfile((prev) => ({ ...prev, ...profRes.value.data }));
+            setProfile(profRes.value.data);
           }
           if (mediaRes.status === "fulfilled" && Array.isArray(mediaRes.value?.data)) {
             setPortfolio(mediaRes.value.data);
@@ -106,6 +215,9 @@ export function TalentProvider({ children }) {
           }
           if (notifRes.status === "fulfilled" && Array.isArray(notifRes.value?.data)) {
             setNotifications(notifRes.value.data);
+          }
+          if (oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data)) {
+            setCastingCalls(oppsRes.value.data);
           }
         }
       } catch (err) {
@@ -139,7 +251,8 @@ export function TalentProvider({ children }) {
   const updateProfile = async (updatedFields) => {
     if (isRealMode("talent")) {
       try {
-        const res = await talentService.saveProfile(updatedFields);
+        const mergedPayload = { ...profile, ...updatedFields };
+        const res = await talentService.saveProfile(mergedPayload);
         if (res?.data) {
           setProfile((prev) => ({ ...prev, ...res.data }));
         } else {
@@ -565,7 +678,7 @@ export function TalentProvider({ children }) {
     const checklist = [];
 
     // Personal details (25 pts)
-    if (profile.personal.fullName && profile.personal.age && profile.personal.bio && profile.personal.city) {
+    if (profile?.personal?.fullName && profile?.personal?.bio && (profile?.personal?.city || profile?.currentCity)) {
       score += 25;
       checklist.push({ label: "Personal Details & Bio Completed", done: true, section: "personal" });
     } else {
@@ -573,7 +686,7 @@ export function TalentProvider({ children }) {
     }
 
     // Physical attributes (20 pts)
-    if (profile.physical.height && profile.physical.skinTone && profile.physical.eyeColor) {
+    if (profile?.physical?.height && profile?.physical?.skinTone && profile?.physical?.eyeColor) {
       score += 20;
       checklist.push({ label: "Physical Measurements & Looks Listed", done: true, section: "physical" });
     } else {
@@ -581,7 +694,7 @@ export function TalentProvider({ children }) {
     }
 
     // Skills & Languages (20 pts)
-    if (profile.skills.length >= 3 && profile.languages.length >= 2) {
+    if (Array.isArray(profile?.skills) && profile.skills.length >= 3 && Array.isArray(profile?.languages) && profile.languages.length >= 2) {
       score += 20;
       checklist.push({ label: "Key Skills & Languages Added", done: true, section: "skills" });
     } else {
@@ -589,7 +702,7 @@ export function TalentProvider({ children }) {
     }
 
     // Experience & Training (15 pts)
-    if (profile.experience.length >= 1 || profile.training.length >= 1) {
+    if ((Array.isArray(profile?.experience) && profile.experience.length >= 1) || (Array.isArray(profile?.training) && profile.training.length >= 1)) {
       score += 15;
       checklist.push({ label: "Acting Experience or Training Provided", done: true, section: "experience" });
     } else {
@@ -597,7 +710,7 @@ export function TalentProvider({ children }) {
     }
 
     // Portfolio uploads (20 pts)
-    const approvedOrPendingMedia = portfolio.filter((m) => m.status !== "Rejected");
+    const approvedOrPendingMedia = Array.isArray(portfolio) ? portfolio.filter((m) => m?.status !== "Rejected") : [];
     if (approvedOrPendingMedia.length >= 3) {
       score += 20;
       checklist.push({ label: "Headshots & Video Showreel Uploaded", done: true, section: "portfolio" });

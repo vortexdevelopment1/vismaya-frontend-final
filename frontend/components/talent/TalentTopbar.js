@@ -1,21 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, Bell } from "lucide-react";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { useAuth } from "@/context/AuthContext";
+import { isRealMode } from "@/lib/api/config";
 
 export default function TalentTopbar({ onOpenMobile }) {
   const pathname = usePathname();
-  const { profile } = useTalent();
+  const { user } = useAuth();
+  const { profile, notifications: ctxNotifications = [] } = useTalent();
   const { getNotificationsForRole, unreadNotificationsCount, markNotificationRead } = useWorkflow();
   const [showNotifMenu, setShowNotifMenu] = useState(false);
 
-  const currentTalentId = "tal-904";
-  const unreadCount = unreadNotificationsCount("talent", currentTalentId);
-  const notifications = getNotificationsForRole("talent", currentTalentId);
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
+
+  const notifications = useMemo(() => {
+    if (isRealMode("notifications") || isRealMode("talent")) {
+      return Array.isArray(ctxNotifications) && ctxNotifications.length > 0
+        ? ctxNotifications
+        : getNotificationsForRole("talent", currentTalentId);
+    }
+    return getNotificationsForRole("talent", currentTalentId);
+  }, [ctxNotifications, getNotificationsForRole, currentTalentId]);
+
+  const unreadCount = isRealMode("notifications")
+    ? (Array.isArray(notifications) ? notifications.filter(n => !n.isRead && !n.read).length : 0)
+    : unreadNotificationsCount("talent", currentTalentId);
 
   const getPageTitle = () => {
     if (pathname === "/talent/dashboard") return "Artist Dashboard";
@@ -29,10 +43,10 @@ export default function TalentTopbar({ onOpenMobile }) {
     return "Talent Portal";
   };
 
-  const recentUnread = notifications.filter((n) => !n.read).slice(0, 4);
+  const recentUnread = notifications.filter((n) => !n.read && !n.isRead).slice(0, 4);
 
   const getInitials = (name) => {
-    if (!name) return "AS";
+    if (!name) return user?.name ? user.name.slice(0, 2).toUpperCase() : "TR";
     return name
       .split(" ")
       .map((n) => n[0])

@@ -1,7 +1,8 @@
 import { isValidEmail, sanitizeEmail } from "../utils/sanitize.util.js";
 
 export const validateRegisterInput = (data: any): { isValid: boolean; errors: string[]; sanitized: any } => {
-    const { name, email, password, role, mobile } = data || {};
+    const rawMobile = data?.mobile || data?.phone;
+    const { name, email, password, role } = data || {};
     const errors: string[] = [];
 
     if (!name || typeof name !== "string" || name.trim().length < 2 || name.trim().length > 100) {
@@ -13,8 +14,9 @@ export const validateRegisterInput = (data: any): { isValid: boolean; errors: st
         errors.push("A valid email address is required");
     }
 
-    if (mobile) {
-        const cleanMobile = String(mobile).replace(/[^0-9+]/g, "").trim();
+    let cleanMobile: string | undefined = undefined;
+    if (rawMobile) {
+        cleanMobile = String(rawMobile).replace(/[^0-9+]/g, "").trim();
         if (!/^(\+91)?[6-9]\d{9}$/.test(cleanMobile)) {
             errors.push("Mobile number must be a valid 10-digit Indian number (e.g. +91XXXXXXXXXX or 9876543210)");
         }
@@ -37,9 +39,19 @@ export const validateRegisterInput = (data: any): { isValid: boolean; errors: st
         sanitized: {
             name: name ? name.trim() : "",
             email: normalizedEmail,
-            mobile: mobile ? String(mobile).replace(/[^0-9+]/g, "").trim() : undefined,
+            mobile: cleanMobile,
+            phone: cleanMobile,
             password,
-            role: ALLOWED_PUBLIC_ROLES.includes(role) ? role : undefined
+            role: ALLOWED_PUBLIC_ROLES.includes(role) ? role : undefined,
+            city: data?.city ? String(data.city).trim() : undefined,
+            profilePhoto: data?.profilePhoto ? String(data.profilePhoto).trim() : undefined,
+            stageName: data?.stageName ? String(data.stageName).trim() : undefined,
+            primaryProfession: data?.primaryProfession ? String(data.primaryProfession).trim() : undefined,
+            skills: Array.isArray(data?.skills) ? data.skills : (data?.skills ? String(data.skills).split(",").map((s: string) => s.trim()).filter(Boolean) : undefined),
+            bio: data?.bio ? String(data.bio).trim() : undefined,
+            companyType: data?.companyType ? String(data.companyType).trim() : undefined,
+            studioName: data?.studioName ? String(data.studioName).trim() : undefined,
+            isPaid: Boolean(data?.isPaid),
         }
     };
 };

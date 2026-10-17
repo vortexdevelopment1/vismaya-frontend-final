@@ -9,13 +9,15 @@ export function fromApi(user) {
   if (!user) return null;
 
   const id = user._id ? String(user._id) : (user.id ? String(user.id) : "");
+  const mobile = user.mobile || user.phone || "";
   
   return {
     id,
     _id: id,
     name: user.name || "",
     email: user.email || "",
-    mobile: user.mobile || "",
+    mobile,
+    phone: mobile,
     role: toFrontendRole(user.role),
     status: toFrontendStatus("user", user.status || "active"),
     rawStatus: user.status || "active",
@@ -28,10 +30,13 @@ export function fromApi(user) {
 export function toApi(user) {
   if (!user) return {};
 
+  const mobile = user.mobile?.trim() || user.phone?.trim();
+
   const payload = {
     name: user.name?.trim(),
     email: user.email?.trim()?.toLowerCase(),
-    mobile: user.mobile?.trim(),
+    mobile,
+    phone: mobile,
     role: toBackendRole(user.role),
   };
 

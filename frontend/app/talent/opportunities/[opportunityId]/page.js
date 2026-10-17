@@ -27,12 +27,15 @@ import Skeleton from "@/components/shared/Skeleton";
 import OpportunityApplyModal from "@/components/talent/OpportunityApplyModal";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
+import { useAuth } from "@/context/AuthContext";
+import { isRealMode } from "@/lib/api/config";
 
 export default function TalentOpportunityDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { opportunityId } = params;
 
+  const { user } = useAuth();
   const { getOpportunity, getProject, organizations, applications, isHydrated } = useWorkflow();
   const { profile } = useTalent();
 
@@ -44,9 +47,14 @@ export default function TalentOpportunityDetailsPage() {
     ? organizations.find((o) => o.id === opportunity.orgId)
     : null;
 
-  const currentTalentId = "tal-904";
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
   const userApplication = applications.find(
-    (a) => a.opportunityId === opportunityId && a.talentId === currentTalentId
+    (a) => a.opportunityId === opportunityId && (
+      a.talentId === currentTalentId ||
+      a.talentId?._id === currentTalentId ||
+      a.talentId?.id === currentTalentId ||
+      a.userId === currentTalentId
+    )
   );
   const isApplied = !!userApplication;
 

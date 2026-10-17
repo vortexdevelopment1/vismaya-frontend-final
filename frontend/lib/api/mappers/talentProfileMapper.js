@@ -17,9 +17,9 @@ export function fromApi(profile) {
   const userIdObj = profile.userId && typeof profile.userId === "object" ? profile.userId : null;
   const userId = userIdObj ? String(userIdObj._id || userIdObj.id) : (profile.userId ? String(profile.userId) : "");
 
-  const userEmail = userIdObj?.email || profile.contactDetails?.email || profile.personal?.email || "";
-  const userMobile = userIdObj?.mobile || profile.contactDetails?.mobile || profile.personal?.phone || "";
-  const userName = userIdObj?.name || profile.contactDetails?.name || profile.personal?.fullName || "";
+  const userEmail = userIdObj?.email || profile.contactDetails?.email || profile.personal?.email || profile.email || "";
+  const userMobile = userIdObj?.mobile || userIdObj?.phone || profile.contactDetails?.mobile || profile.contactDetails?.phone || profile.personal?.phone || profile.personal?.mobile || profile.mobile || profile.phone || "";
+  const userName = userIdObj?.name || profile.contactDetails?.name || profile.personal?.fullName || profile.name || "";
 
   const computedName = profile.stageName?.trim() || 
     profile.personal?.stageName?.trim() ||
@@ -104,17 +104,33 @@ export function fromApi(profile) {
     languages: languagesList,
     languagesDetailed: Array.isArray(profile.languages) ? profile.languages : [],
     accentsAndDialects: Array.isArray(profile.accentsAndDialects) ? profile.accentsAndDialects : [],
+    experience: Array.isArray(profile.experience) ? profile.experience : (Array.isArray(profile.credits) ? profile.credits.map((c) => ({
+      id: c._id ? String(c._id) : (c.id || ""),
+      project: c.projectTitle || c.project || "",
+      role: c.roleOrDesignation || c.role || "",
+      production: c.directorOrProduction || c.production || "",
+      year: c.year ? String(c.year) : "",
+    })) : []),
     credits: Array.isArray(profile.credits) ? profile.credits.map((c) => ({
       id: c._id ? String(c._id) : (c.id || ""),
-      projectTitle: c.projectTitle || "",
+      projectTitle: c.projectTitle || c.project || "",
       projectType: c.projectType || "",
-      roleOrDesignation: c.roleOrDesignation || "",
+      roleOrDesignation: c.roleOrDesignation || c.role || "",
       year: c.year || null,
-      directorOrProduction: c.directorOrProduction || "",
+      directorOrProduction: c.directorOrProduction || c.production || "",
       characterName: c.characterName || "",
       referenceLink: c.referenceLink || "",
       isVerifiedCredit: Boolean(c.isVerifiedCredit),
-    })) : [],
+    })) : (Array.isArray(profile.experience) ? profile.experience.map((e) => ({
+      id: e.id || "",
+      projectTitle: e.project || "",
+      projectType: "Film / Project",
+      roleOrDesignation: e.role || "",
+      year: e.year ? parseInt(e.year, 10) : null,
+      directorOrProduction: e.production || "",
+      characterName: e.role || "",
+      isVerifiedCredit: false
+    })) : []),
     training: Array.isArray(profile.training) ? profile.training.map((t) => ({
       id: t._id ? String(t._id) : (t.id || ""),
       institution: t.institution || "",
@@ -136,13 +152,23 @@ export function fromApi(profile) {
     },
     photos: photosList,
     showreel: showreelUrl,
+    physical: {
+      height: profile.physical?.height || (profile.physicalAttributes?.heightCm ? String(profile.physicalAttributes.heightCm) : ""),
+      weight: profile.physical?.weight || (profile.physicalAttributes?.weightKg ? String(profile.physicalAttributes.weightKg) : ""),
+      skinTone: profile.physical?.skinTone || profile.physicalAttributes?.skinTone || "",
+      hairColor: profile.physical?.hairColor || profile.physicalAttributes?.hairColor || "",
+      hairLength: profile.physical?.hairLength || "",
+      eyeColor: profile.physical?.eyeColor || profile.physicalAttributes?.eyeColor || "",
+      bodyType: profile.physical?.bodyType || profile.physicalAttributes?.bodyType || "",
+      chest: profile.physical?.chest || "",
+    },
     physicalAttributes: {
-      heightCm: profile.physicalAttributes?.heightCm || null,
-      weightKg: profile.physicalAttributes?.weightKg || null,
-      eyeColor: profile.physicalAttributes?.eyeColor || "",
-      hairColor: profile.physicalAttributes?.hairColor || "",
-      skinTone: profile.physicalAttributes?.skinTone || "",
-      bodyType: profile.physicalAttributes?.bodyType || "",
+      heightCm: profile.physicalAttributes?.heightCm || (profile.physical?.height ? parseInt(profile.physical.height, 10) : null),
+      weightKg: profile.physicalAttributes?.weightKg || (profile.physical?.weight ? parseInt(profile.physical.weight, 10) : null),
+      eyeColor: profile.physicalAttributes?.eyeColor || profile.physical?.eyeColor || "",
+      hairColor: profile.physicalAttributes?.hairColor || profile.physical?.hairColor || "",
+      skinTone: profile.physicalAttributes?.skinTone || profile.physical?.skinTone || "",
+      bodyType: profile.physicalAttributes?.bodyType || profile.physical?.bodyType || "",
     },
     remunerationExpectation: {
       ratePerDay: profile.remunerationExpectation?.ratePerDay || null,
@@ -158,6 +184,7 @@ export function fromApi(profile) {
     isUnder18: Boolean(profile.isUnder18),
     email: userEmail,
     mobile: userMobile,
+    phone: userMobile,
     socialLinks: {
       instagram: profile.socialLinks?.instagram || "",
       twitter: profile.socialLinks?.twitter || "",
@@ -166,9 +193,23 @@ export function fromApi(profile) {
       website: profile.socialLinks?.website || "",
       linkedin: profile.socialLinks?.linkedin || "",
     },
+    availability: {
+      availableDays: Array.isArray(profile.availability?.availableDays) ? profile.availability.availableDays : ["Weekdays", "Weekends", "Full Time Shoot"],
+      willingToTravel: profile.willingToTravel !== undefined ? Boolean(profile.willingToTravel) : (profile.availability?.willingToTravel !== undefined ? Boolean(profile.availability.willingToTravel) : true),
+      hasPassport: profile.passportAvailable !== undefined ? Boolean(profile.passportAvailable) : (profile.availability?.hasPassport !== undefined ? Boolean(profile.availability.hasPassport) : false),
+      preferredCities: Array.isArray(profile.workingCities) ? profile.workingCities : (Array.isArray(profile.availability?.preferredCities) ? profile.availability.preferredCities : []),
+      noticePeriod: profile.availability?.noticePeriod || "Immediate",
+    },
+    guardianConsent: {
+      guardianName: profile.guardianDetails?.name || profile.guardianConsent?.guardianName || "",
+      guardianPhone: profile.guardianDetails?.phone || profile.guardianConsent?.guardianPhone || "",
+      relationship: profile.guardianDetails?.relationship || profile.guardianConsent?.relationship || "",
+      consentLetterUploaded: Boolean(profile.guardianDetails?.consentLetter || profile.guardianConsent?.consentLetterUploaded),
+    },
     contactDetails: {
       email: userEmail,
       mobile: userMobile,
+      phone: userMobile,
       name: userName,
     },
   };
@@ -180,15 +221,63 @@ export function toApi(profile) {
   const pers = profile.personalDetails || profile.personal || {};
   const phys = profile.physicalDetails || profile.physical || profile.physicalAttributes || {};
 
+  const normalizeGender = (g) => {
+    if (!g) return undefined;
+    const s = String(g).toLowerCase().trim().replace(/[-\s]+/g, "_");
+    if (["male", "female", "non_binary", "transgender", "prefer_not_to_say", "other"].includes(s)) {
+      return s;
+    }
+    return "other";
+  };
+
+  const parseHeightCm = (h) => {
+    if (h === undefined || h === null || h === "") return undefined;
+    if (typeof h === "number" && !isNaN(h)) return h >= 50 && h <= 260 ? Math.round(h) : undefined;
+    const str = String(h).trim();
+    const cmMatch = str.match(/(\d{2,3})\s*(?:cm)?/i);
+    const ftMatch = str.match(/(\d+)\s*(?:'|ft)\s*(\d+)?/i);
+    if (str.includes("cm") && cmMatch) {
+      const val = parseInt(cmMatch[1], 10);
+      return val >= 50 && val <= 260 ? val : undefined;
+    }
+    if (ftMatch) {
+      const feet = parseInt(ftMatch[1], 10);
+      const inches = ftMatch[2] ? parseInt(ftMatch[2], 10) : 0;
+      const totalCm = Math.round(feet * 30.48 + inches * 2.54);
+      return totalCm >= 50 && totalCm <= 260 ? totalCm : undefined;
+    }
+    if (cmMatch) {
+      const val = parseInt(cmMatch[1], 10);
+      return val >= 50 && val <= 260 ? val : undefined;
+    }
+    const num = parseFloat(str);
+    return !isNaN(num) && num >= 50 && num <= 260 ? Math.round(num) : undefined;
+  };
+
+  const parseWeightKg = (w) => {
+    if (w === undefined || w === null || w === "") return undefined;
+    if (typeof w === "number" && !isNaN(w)) return w >= 20 && w <= 300 ? Math.round(w) : undefined;
+    const str = String(w).trim();
+    const match = str.match(/(\d+(?:\.\d+)?)/);
+    if (match) {
+      const val = parseFloat(match[1]);
+      return !isNaN(val) && val >= 20 && val <= 300 ? Math.round(val) : undefined;
+    }
+    return undefined;
+  };
+
   const payload = {
     stageName: profile.stageName?.trim() || pers.stageName?.trim() || profile.name?.trim() || pers.fullName?.trim(),
     firstName: profile.firstName?.trim() || pers.firstName?.trim(),
     middleName: profile.middleName?.trim() || pers.middleName?.trim(),
     lastName: profile.lastName?.trim() || pers.lastName?.trim(),
-    headline: profile.headline?.trim() || pers.headline?.trim(),
-    bio: profile.bio?.trim() || pers.bio?.trim(),
+    bio: (() => {
+      const raw = profile.bio?.trim() || pers.bio?.trim();
+      if (!raw) return undefined;
+      return raw.length > 1000 ? raw.slice(0, 1000) : raw;
+    })(),
     profilePhoto: profile.profilePhoto || profile.avatar || pers.avatar || pers.profilePhoto,
-    gender: profile.gender || pers.gender,
+    gender: normalizeGender(profile.gender || pers.gender),
     nationality: profile.nationality || pers.nationality || "Indian",
     careerStage: profile.careerStage || pers.careerStage || "aspiring",
     category: profile.category || pers.category || "open_talent",
@@ -207,53 +296,152 @@ export function toApi(profile) {
     passportAvailable: Boolean(profile.passportAvailable !== undefined ? profile.passportAvailable : pers.passportAvailable),
   };
 
-  if (profile.dob || pers.dob) {
-    payload.dob = new Date(profile.dob || pers.dob);
+  const rawDob = profile.dob || pers.dob;
+  if (rawDob) {
+    const d = new Date(rawDob);
+    if (!isNaN(d.getTime())) {
+      payload.dob = d;
+    }
   }
 
   // Format skills
   const rawSkills = profile.skills || pers.skills;
   if (Array.isArray(rawSkills)) {
-    payload.skills = rawSkills.map((s) => {
-      if (typeof s === "string") return { name: s, proficiency: "intermediate" };
-      return { name: s.name, proficiency: s.proficiency || "intermediate" };
-    });
+    payload.skills = rawSkills
+      .map((s) => {
+        if (typeof s === "string") return s.trim() ? { name: s.trim(), proficiency: "intermediate" } : null;
+        if (s?.name) return { name: s.name.trim(), proficiency: s.proficiency || "intermediate" };
+        return null;
+      })
+      .filter(Boolean);
   }
 
   // Format languages
   const rawLangs = profile.languages || pers.languages;
   if (Array.isArray(rawLangs)) {
-    payload.languages = rawLangs.map((l) => {
-      if (typeof l === "string") return { language: l, proficiency: "conversational" };
-      return { language: l.language, proficiency: l.proficiency || "conversational" };
-    });
+    payload.languages = rawLangs
+      .map((l) => {
+        if (typeof l === "string") return l.trim() ? { language: l.trim(), proficiency: "conversational" } : null;
+        if (l?.language) return { language: l.language.trim(), proficiency: l.proficiency || "conversational" };
+        return null;
+      })
+      .filter(Boolean);
   }
 
-  if (Array.isArray(profile.credits)) payload.credits = profile.credits;
-  if (Array.isArray(profile.training)) payload.training = profile.training;
-  if (Array.isArray(profile.awards)) payload.awards = profile.awards;
+  // Format credits / experience
+  const rawCredits = Array.isArray(profile.credits) && profile.credits.length > 0
+    ? profile.credits
+    : (Array.isArray(profile.experience) ? profile.experience : []);
 
+  if (rawCredits.length > 0) {
+    payload.credits = rawCredits
+      .map((c) => {
+        const projectTitle = (c.projectTitle || c.project || "").trim();
+        if (!projectTitle) return null;
+        const item = {
+          projectTitle,
+          projectType: c.projectType || "other",
+          projectStatus: c.projectStatus || "completed",
+          roleOrDesignation: (c.roleOrDesignation || c.role || "").trim() || undefined,
+          directorOrProduction: (c.directorOrProduction || c.production || "").trim() || undefined,
+          year: c.year ? Number(c.year) : undefined,
+          characterName: (c.characterName || c.role || "").trim() || undefined,
+          referenceLink: (c.referenceLink || "").trim() || undefined,
+          isVerifiedCredit: Boolean(c.isVerifiedCredit),
+        };
+        if (c._id && /^[0-9a-fA-F]{24}$/.test(String(c._id))) {
+          item._id = String(c._id);
+        }
+        return item;
+      })
+      .filter(Boolean);
+  }
+
+  // Format training
+  const rawTraining = Array.isArray(profile.training) ? profile.training : [];
+  if (rawTraining.length > 0) {
+    payload.training = rawTraining
+      .map((t) => {
+        const institution = (t.institution || t.institute || "").trim();
+        const courseName = (t.courseName || t.course || "").trim();
+        if (!institution && !courseName) return null;
+        const item = {
+          institution: institution || "Self-Trained / Independent",
+          courseName: courseName || "Performing Arts",
+          mentor: (t.mentor || "").trim() || undefined,
+          yearCompleted: t.yearCompleted ? Number(t.yearCompleted) : (t.year ? Number(t.year) : undefined),
+        };
+        if (t._id && /^[0-9a-fA-F]{24}$/.test(String(t._id))) {
+          item._id = String(t._id);
+        }
+        return item;
+      })
+      .filter(Boolean);
+  }
+
+  // Format awards
+  const rawAwards = Array.isArray(profile.awards) ? profile.awards : [];
+  if (rawAwards.length > 0) {
+    payload.awards = rawAwards
+      .map((a) => {
+        const title = (a.title || "").trim();
+        if (!title) return null;
+        const item = {
+          title,
+          organization: (a.organization || "").trim() || undefined,
+          year: a.year ? Number(a.year) : undefined,
+          category: (a.category || "").trim() || undefined,
+        };
+        if (a._id && /^[0-9a-fA-F]{24}$/.test(String(a._id))) {
+          item._id = String(a._id);
+        }
+        return item;
+      })
+      .filter(Boolean);
+  }
+
+  // Format portfolio
   payload.portfolio = {
     photos: Array.isArray(profile.portfolio?.photos) ? profile.portfolio.photos : (Array.isArray(profile.photos) ? profile.photos : []),
     videos: Array.isArray(profile.portfolio?.videos) ? profile.portfolio.videos : (Array.isArray(profile.videos) ? profile.videos : []),
     showreelUrl: profile.portfolio?.showreelUrl || profile.showreel || "",
   };
 
+  // Format physical attributes
+  const heightVal = parseHeightCm(phys.heightCm || phys.height);
+  const weightVal = parseWeightKg(phys.weightKg || phys.weight);
+
   payload.physicalAttributes = {
-    heightCm: phys.heightCm || phys.height || undefined,
-    weightKg: phys.weightKg || phys.weight || undefined,
-    chestInches: phys.chestInches || phys.chest || undefined,
-    waistInches: phys.waistInches || phys.waist || undefined,
-    bodyType: phys.bodyType || undefined,
-    skinTone: phys.skinTone || undefined,
-    eyeColor: phys.eyeColor || undefined,
-    hairColor: phys.hairColor || undefined,
+    heightCm: heightVal,
+    weightKg: weightVal,
+    bodyType: phys.bodyType?.trim() || undefined,
+    skinTone: phys.skinTone?.trim() || undefined,
+    eyeColor: phys.eyeColor?.trim() || undefined,
+    hairColor: phys.hairColor?.trim() || undefined,
   };
+
+  // Format guardian details
+  const rawGuardian = profile.guardianDetails || profile.guardianConsent;
+  if (rawGuardian && typeof rawGuardian === "object") {
+    payload.guardianDetails = {
+      guardianName: (rawGuardian.guardianName || "").trim(),
+      relationship: (rawGuardian.relationship || rawGuardian.relation || "").trim(),
+      contactNumber: (rawGuardian.contactNumber || rawGuardian.guardianPhone || rawGuardian.phone || "").trim(),
+      guardianEmail: (rawGuardian.guardianEmail || rawGuardian.email || "").trim(),
+      consentGiven: Boolean(rawGuardian.consentGiven),
+    };
+  }
 
   if (profile.remunerationExpectation || profile.remuneration) {
     payload.remunerationExpectation = profile.remunerationExpectation || profile.remuneration;
   }
 
+  // Clean undefined keys
+  Object.keys(payload).forEach((key) => {
+    if (payload[key] === undefined) {
+      delete payload[key];
+    }
+  });
 
   return payload;
 }

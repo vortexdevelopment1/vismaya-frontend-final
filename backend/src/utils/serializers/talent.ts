@@ -133,9 +133,12 @@ export const toFullProfile = (
             status: p.status || (p.isProfileApproved ? "approved" : (p.isVerified ? "active" : (user?.status || "pending"))),
             isProfileApproved: Boolean(p.isProfileApproved),
             statusReason: p.statusReason || p.rejectionReason || null,
+            mobile: user?.mobile,
+            phone: user?.mobile,
             contactDetails: {
                 email: user?.email,
                 mobile: user?.mobile,
+                phone: user?.mobile,
                 name: user?.name
             },
             verificationBadges: badges,

@@ -13,13 +13,23 @@ import {
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { formatDate } from "@/lib/shared/dateUtils";
+import { useAuth } from "@/context/AuthContext";
+import { useTalent } from "@/lib/talent/TalentContext";
+import { isRealMode } from "@/lib/api/config";
 
 export default function OpportunityCard({ opportunity, project, onApply }) {
+  const { user } = useAuth();
+  const { profile } = useTalent();
   const { applications } = useWorkflow();
 
-  const currentTalentId = "tal-904";
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
   const isApplied = applications.some(
-    (app) => app.opportunityId === opportunity.id && app.talentId === currentTalentId
+    (app) => (app.opportunityId === opportunity.id || app.opportunityId === opportunity._id) && (
+      app.talentId === currentTalentId ||
+      app.talentId?._id === currentTalentId ||
+      app.talentId?.id === currentTalentId ||
+      app.userId === currentTalentId
+    )
   );
 
   const now = new Date().getTime();

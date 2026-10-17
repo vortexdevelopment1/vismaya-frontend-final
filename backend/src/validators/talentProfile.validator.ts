@@ -12,11 +12,13 @@ export const validateTalentProfileInput = (data: any, isCreation = false): { isV
 
     // Bio validation (T3: 200 - 1000 chars)
     if (data.bio !== undefined && data.bio !== null) {
-        const trimmedBio = String(data.bio).trim();
+        let trimmedBio = String(data.bio).trim();
+        if (trimmedBio.length > 1000) {
+            trimmedBio = trimmedBio.slice(0, 1000);
+            data.bio = trimmedBio;
+        }
         if (trimmedBio.length > 0 && trimmedBio.length < 200) {
             errors.push("Bio must be at least 200 characters in length.");
-        } else if (trimmedBio.length > 1000) {
-            errors.push("Bio cannot exceed 1000 characters in length.");
         }
     }
 
@@ -57,11 +59,17 @@ export const validateTalentProfileInput = (data: any, isCreation = false): { isV
     // Physical attributes ranges
     if (data.physicalAttributes) {
         const { heightCm, weightKg } = data.physicalAttributes;
-        if (heightCm !== undefined && heightCm !== null && (heightCm < 50 || heightCm > 260)) {
-            errors.push("Height must be between 50 cm and 260 cm.");
+        if (heightCm !== undefined && heightCm !== null && heightCm !== "") {
+            const h = Number(heightCm);
+            if (isNaN(h) || h < 50 || h > 260) {
+                errors.push("Height must be a number between 50 cm and 260 cm.");
+            }
         }
-        if (weightKg !== undefined && weightKg !== null && (weightKg < 20 || weightKg > 300)) {
-            errors.push("Weight must be between 20 kg and 300 kg.");
+        if (weightKg !== undefined && weightKg !== null && weightKg !== "") {
+            const w = Number(weightKg);
+            if (isNaN(w) || w < 20 || w > 300) {
+                errors.push("Weight must be a number between 20 kg and 300 kg.");
+            }
         }
     }
 

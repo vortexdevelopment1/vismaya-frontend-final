@@ -101,6 +101,7 @@ app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use("/api", apiLimiter);
 
 // 6. API Routes
+app.use("/health", healthRoutes);
 app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
 

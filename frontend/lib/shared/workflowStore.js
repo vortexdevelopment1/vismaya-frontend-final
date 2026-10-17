@@ -1005,6 +1005,17 @@ export const initialNotifications = [
   },
 ];
 
+export const emptyWorkflowState = {
+  organizations: [],
+  projects: [],
+  opportunities: [],
+  applications: [],
+  auditions: [],
+  cancellationRequests: [],
+  notifications: [],
+  broadcasts: [],
+};
+
 export const defaultWorkflowState = {
   organizations: initialOrganizations,
   projects: initialProjects,
@@ -2180,7 +2191,9 @@ function workflowReducer(state, action) {
 const WorkflowContext = createContext(null);
 
 export function WorkflowProvider({ children }) {
-  const [state, dispatch] = useReducer(workflowReducer, defaultWorkflowState);
+  const isRealAny = isRealMode("opportunities") || isRealMode("projects") || isRealMode("talent") || isRealMode("recruiter") || isRealMode("admin");
+  const initialReducerState = isRealAny ? emptyWorkflowState : defaultWorkflowState;
+  const [state, dispatch] = useReducer(workflowReducer, initialReducerState);
   const [isHydrated, setIsHydrated] = useState(false);
 
   // SSR-safe hydration from localStorage on mount (and live API sync when real mode is active)
@@ -2198,19 +2211,19 @@ export function WorkflowProvider({ children }) {
               : Promise.resolve({ data: [] }),
           ]);
 
-          const liveOpps = oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data) && oppsRes.value.data.length > 0
+          const liveOpps = oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data)
             ? oppsRes.value.data
-            : defaultWorkflowState.opportunities;
+            : [];
 
-          const liveProjs = projsRes.status === "fulfilled" && Array.isArray(projsRes.value?.data) && projsRes.value.data.length > 0
+          const liveProjs = projsRes.status === "fulfilled" && Array.isArray(projsRes.value?.data)
             ? projsRes.value.data
-            : defaultWorkflowState.projects;
+            : [];
 
           if (mounted) {
             dispatch({
               type: "HYDRATE_STATE",
               payload: {
-                ...defaultWorkflowState,
+                ...emptyWorkflowState,
                 opportunities: liveOpps,
                 projects: liveProjs,
               },
@@ -2226,6 +2239,11 @@ export function WorkflowProvider({ children }) {
       }
 
       // 2. Mock mode / fallback local storage hydration
+      if (isRealMode("admin") || isRealMode("opportunities") || isRealMode("talent") || isRealMode("recruiter")) {
+        if (mounted) setIsHydrated(true);
+        return;
+      }
+
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -2659,7 +2677,7 @@ export function WorkflowProvider({ children }) {
       auditions: state.auditions,
       cancellationRequests: state.cancellationRequests,
       notifications: state.notifications,
-      broadcasts: state.broadcasts || initialBroadcasts,
+      broadcasts: state.broadcasts || (isRealMode("admin") ? [] : initialBroadcasts),
       isHydrated,
 
       // Actions

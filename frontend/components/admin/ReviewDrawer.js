@@ -434,11 +434,11 @@ export default function ReviewDrawer({
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "13px", backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <Phone size={14} style={{ color: "#8A6B2E" }} />
-                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.phone}</span>
+                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.phone || data.mobile || data.contactDetails?.phone || data.contactDetails?.mobile || data.personal?.phone || data.userId?.mobile || data.userId?.phone || "N/A"}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <Mail size={14} style={{ color: "#8A6B2E" }} />
-                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.email}</span>
+                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.email || data.contactDetails?.email || data.personal?.email || data.userId?.email || "N/A"}</span>
                   </div>
                 </div>
               </div>
@@ -473,15 +473,15 @@ export default function ReviewDrawer({
                 <div style={{ backgroundColor: "#FFFFFF", padding: "14px", borderRadius: "14px", border: "1px solid #E8E2D4", display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Executive Name:</span>
-                    <strong style={{ color: "#2B2D2A" }}>{data.contactPerson}</strong>
+                    <strong style={{ color: "#2B2D2A" }}>{data.contactPerson || data.name || "N/A"}</strong>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Phone:</span>
-                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.phone}</span>
+                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.phone || data.mobile || data.contactDetails?.phone || data.contactDetails?.mobile || "N/A"}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Email:</span>
-                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.email}</span>
+                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.email || data.contactDetails?.email || "N/A"}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Website:</span>

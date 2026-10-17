@@ -283,6 +283,14 @@ export default function ProfileSections() {
       newErrors.email = "Valid email address required";
     }
 
+    // Bio length validation
+    const bioText = (formData.personal?.bio || "").trim();
+    if (bioText.length > 0 && bioText.length < 200) {
+      newErrors.bio = "Bio must be at least 200 characters in length";
+    } else if (bioText.length > 1000) {
+      newErrors.bio = "Bio cannot exceed 1000 characters in length";
+    }
+
     // If age under 18, validate guardian consent
     if (ageNum < 18) {
       if (!formData.guardianConsent?.guardianName?.trim()) {
@@ -637,7 +645,7 @@ export default function ProfileSections() {
             <input
               type="text"
               disabled={!isEditing}
-              value={formData.personal.fullName}
+              value={formData?.personal?.fullName ?? ""}
               onChange={(e) => handlePersonalChange("fullName", e.target.value)}
               style={inputStyle(isEditing, errors.fullName)}
             />
@@ -649,7 +657,7 @@ export default function ProfileSections() {
             <input
               type="number"
               disabled={!isEditing}
-              value={formData.personal.age}
+              value={formData?.personal?.age ?? ""}
               onChange={(e) => handlePersonalChange("age", e.target.value)}
               style={inputStyle(isEditing, errors.age)}
             />
@@ -660,14 +668,20 @@ export default function ProfileSections() {
             <label style={labelStyle}>Gender *</label>
             <select
               disabled={!isEditing}
-              value={formData.personal.gender}
+              value={(() => {
+                const g = String(formData?.personal?.gender || "").toLowerCase().replace(/[-\s]+/g, "_");
+                if (["female", "male", "non_binary", "transgender", "other", "prefer_not_to_say"].includes(g)) return g;
+                return "prefer_not_to_say";
+              })()}
               onChange={(e) => handlePersonalChange("gender", e.target.value)}
               style={inputStyle(isEditing)}
             >
-              <option value="Female">Female</option>
-              <option value="Male">Male</option>
-              <option value="Non-Binary">Non-Binary</option>
-              <option value="Other">Other</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="non_binary">Non-Binary</option>
+              <option value="transgender">Transgender</option>
+              <option value="other">Other</option>
+              <option value="prefer_not_to_say">Prefer not to say</option>
             </select>
           </div>
 
@@ -676,7 +690,7 @@ export default function ProfileSections() {
             <input
               type="text"
               disabled={!isEditing}
-              value={formData.personal.city}
+              value={formData?.personal?.city ?? ""}
               onChange={(e) => handlePersonalChange("city", e.target.value)}
               style={inputStyle(isEditing)}
             />
@@ -687,7 +701,7 @@ export default function ProfileSections() {
             <input
               type="text"
               disabled={!isEditing}
-              value={formData.personal.phone}
+              value={formData?.personal?.phone ?? ""}
               onChange={(e) => handlePersonalChange("phone", e.target.value)}
               style={inputStyle(isEditing, errors.phone)}
             />
@@ -699,7 +713,7 @@ export default function ProfileSections() {
             <input
               type="email"
               disabled={!isEditing}
-              value={formData.personal.email}
+              value={formData?.personal?.email ?? ""}
               onChange={(e) => handlePersonalChange("email", e.target.value)}
               style={inputStyle(isEditing, errors.email)}
             />
@@ -707,14 +721,21 @@ export default function ProfileSections() {
           </div>
 
           <div className="field-full" style={{ gridColumn: "1 / -1" }}>
-            <label style={labelStyle}>Professional Bio &amp; Monologue Summary</label>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
+              <label style={labelStyle}>Professional Bio &amp; Monologue Summary (200 - 1000 characters)</label>
+              <span style={{ fontSize: "0.75rem", color: (formData?.personal?.bio?.length || 0) > 1000 ? "var(--danger)" : "var(--text-muted)" }}>
+                {formData?.personal?.bio?.length || 0} / 1000
+              </span>
+            </div>
             <textarea
               rows={3}
+              maxLength={1000}
               disabled={!isEditing}
-              value={formData.personal.bio}
+              value={formData?.personal?.bio ?? ""}
               onChange={(e) => handlePersonalChange("bio", e.target.value)}
-              style={{ ...inputStyle(isEditing), resize: "vertical" }}
+              style={{ ...inputStyle(isEditing, errors.bio), resize: "vertical" }}
             />
+            {errors.bio && <span style={errorStyle}>{errors.bio}</span>}
           </div>
         </div>
       </div>
@@ -840,7 +861,7 @@ export default function ProfileSections() {
             <input
               type="text"
               disabled={!isEditing}
-              value={formData.physical.height}
+              value={formData?.physical?.height || ""}
               onChange={(e) => handlePhysicalChange("height", e.target.value)}
               style={inputStyle(isEditing)}
             />
@@ -851,7 +872,7 @@ export default function ProfileSections() {
             <input
               type="text"
               disabled={!isEditing}
-              value={formData.physical.weight}
+              value={formData?.physical?.weight || ""}
               onChange={(e) => handlePhysicalChange("weight", e.target.value)}
               style={inputStyle(isEditing)}
             />
@@ -862,7 +883,7 @@ export default function ProfileSections() {
             <input
               type="text"
               disabled={!isEditing}
-              value={formData.physical.skinTone}
+              value={formData?.physical?.skinTone || ""}
               onChange={(e) => handlePhysicalChange("skinTone", e.target.value)}
               style={inputStyle(isEditing)}
             />
@@ -873,7 +894,7 @@ export default function ProfileSections() {
             <input
               type="text"
               disabled={!isEditing}
-              value={formData.physical.eyeColor}
+              value={formData?.physical?.eyeColor || ""}
               onChange={(e) => handlePhysicalChange("eyeColor", e.target.value)}
               style={inputStyle(isEditing)}
             />
@@ -884,7 +905,7 @@ export default function ProfileSections() {
             <input
               type="text"
               disabled={!isEditing}
-              value={formData.physical.hairColor}
+              value={formData?.physical?.hairColor || ""}
               onChange={(e) => handlePhysicalChange("hairColor", e.target.value)}
               style={inputStyle(isEditing)}
             />
@@ -895,7 +916,7 @@ export default function ProfileSections() {
             <input
               type="text"
               disabled={!isEditing}
-              value={`${formData.physical.chest} - ${formData.physical.waist} - ${formData.physical.hips}`}
+              value={`${formData?.physical?.chest || ""} - ${formData?.physical?.waist || ""} - ${formData?.physical?.hips || ""}`}
               onChange={(e) => {
                 const parts = e.target.value.split("-");
                 if (parts[0]) handlePhysicalChange("chest", parts[0].trim());
@@ -926,7 +947,7 @@ export default function ProfileSections() {
         <div className="profile-tag-group" style={{ marginBottom: "24px" }}>
           <label style={labelStyle}>Performing Skills &amp; Talents</label>
           <div className="profile-chips-wrap" style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "10px" }}>
-            {formData.skills.map((skill, idx) => (
+            {(formData?.skills || []).map((skill, idx) => (
               <span
                 key={idx}
                 className="profile-tag-chip"
@@ -978,7 +999,7 @@ export default function ProfileSections() {
         <div className="profile-tag-group">
           <label style={labelStyle}>Languages &amp; Dialects</label>
           <div className="profile-chips-wrap" style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "10px" }}>
-            {formData.languages.map((lang, idx) => (
+            {(formData?.languages || []).map((lang, idx) => (
               <span
                 key={idx}
                 className="profile-tag-chip"
@@ -1051,7 +1072,7 @@ export default function ProfileSections() {
 
         {/* Experience List */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
-          {formData.experience.map((exp) => (
+          {(formData?.experience || []).map((exp) => (
             <div
               key={exp.id}
               className="profile-exp-card"
@@ -1069,7 +1090,7 @@ export default function ProfileSections() {
                 {isEditing ? (
                   <input
                     type="text"
-                    value={exp.project}
+                    value={exp.project || ""}
                     onChange={(e) => updateExperienceItem(exp.id, "project", e.target.value)}
                     placeholder="Project Name"
                     style={{ ...inputStyle(true), fontWeight: "600", fontSize: "0.95rem" }}
@@ -1097,7 +1118,7 @@ export default function ProfileSections() {
                   {isEditing ? (
                     <input
                       type="text"
-                      value={exp.role}
+                      value={exp.role || ""}
                       onChange={(e) => updateExperienceItem(exp.id, "role", e.target.value)}
                       style={inputStyle(true)}
                     />
@@ -1111,7 +1132,7 @@ export default function ProfileSections() {
                   {isEditing ? (
                     <input
                       type="text"
-                      value={exp.production}
+                      value={exp.production || ""}
                       onChange={(e) => updateExperienceItem(exp.id, "production", e.target.value)}
                       style={inputStyle(true)}
                     />
@@ -1125,7 +1146,7 @@ export default function ProfileSections() {
                   {isEditing ? (
                     <input
                       type="text"
-                      value={exp.year}
+                      value={exp.year || ""}
                       onChange={(e) => updateExperienceItem(exp.id, "year", e.target.value)}
                       style={inputStyle(true)}
                     />
@@ -1152,7 +1173,7 @@ export default function ProfileSections() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {formData.training.map((trn) => (
+            {(formData?.training || []).map((trn) => (
               <div
                 key={trn.id}
                 className="profile-trn-card"
@@ -1172,14 +1193,14 @@ export default function ProfileSections() {
                     <div className="profile-trn-inputs" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                       <input
                         type="text"
-                        value={trn.course}
+                        value={trn.course || ""}
                         onChange={(e) => updateTrainingItem(trn.id, "course", e.target.value)}
                         placeholder="Course / Workshop"
                         style={inputStyle(true)}
                       />
                       <input
                         type="text"
-                        value={trn.institute}
+                        value={trn.institute || ""}
                         onChange={(e) => updateTrainingItem(trn.id, "institute", e.target.value)}
                         placeholder="Institute / Studio"
                         style={inputStyle(true)}
@@ -1253,7 +1274,7 @@ export default function ProfileSections() {
             <input
               type="checkbox"
               disabled={!isEditing}
-              checked={formData.availability.willingToTravel}
+              checked={Boolean(formData?.availability?.willingToTravel)}
               onChange={(e) => handleAvailabilityChange("willingToTravel", e.target.checked)}
               style={{ width: "20px", height: "20px", accentColor: "var(--gold)", cursor: isEditing ? "pointer" : "default" }}
             />
@@ -1285,7 +1306,7 @@ export default function ProfileSections() {
             <input
               type="checkbox"
               disabled={!isEditing}
-              checked={formData.availability.hasPassport}
+              checked={Boolean(formData?.availability?.hasPassport)}
               onChange={(e) => handleAvailabilityChange("hasPassport", e.target.checked)}
               style={{ width: "20px", height: "20px", accentColor: "var(--gold)", cursor: isEditing ? "pointer" : "default" }}
             />
@@ -1296,7 +1317,7 @@ export default function ProfileSections() {
         <div style={{ marginTop: "18px" }}>
           <label style={labelStyle}>Preferred Shoot Hubs</label>
           <div className="profile-chips-wrap" style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "10px" }}>
-            {(formData.availability.preferredCities || []).map((city, idx) => (
+            {(formData?.availability?.preferredCities || []).map((city, idx) => (
               <span
                 key={idx}
                 className="profile-tag-chip"

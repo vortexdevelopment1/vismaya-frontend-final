@@ -19,9 +19,50 @@ import {
   initialBroadcasts,
   initialRecentAdminActivity,
   initialAnalyticsData,
+  initialCastingCalls,
+  initialApplications,
+  initialShortlists,
+  initialBookings,
+  initialPayments,
+  initialSubscriptions,
+  initialAdminNotifications,
 } from "../../admin/mockData.js";
 
 export const adminService = {
+  getInitialState() {
+    if (isRealMode("admin")) {
+      return {
+        talents: [],
+        recruiters: [],
+        mediaQueue: [],
+        requirementRequests: [],
+        castingCalls: [],
+        applications: [],
+        shortlists: [],
+        bookings: [],
+        payments: [],
+        subscriptions: [],
+        broadcasts: [],
+        notifications: [],
+        activities: [],
+      };
+    }
+    return {
+      talents: initialTalents,
+      recruiters: initialRecruiters,
+      mediaQueue: initialMediaQueue,
+      requirementRequests: initialRequirementRequests,
+      castingCalls: initialCastingCalls,
+      applications: initialApplications,
+      shortlists: initialShortlists,
+      bookings: initialBookings,
+      payments: initialPayments,
+      subscriptions: initialSubscriptions,
+      broadcasts: initialBroadcasts,
+      notifications: initialAdminNotifications,
+      activities: initialRecentAdminActivity,
+    };
+  },
   /**
    * Fetch all registered users
    * @param {Object} params { role, status, page, limit }

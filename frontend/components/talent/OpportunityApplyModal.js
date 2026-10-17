@@ -8,45 +8,83 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { paymentService } from "@/lib/api/services/paymentService";
+import { talentService } from "@/lib/api/services/talentService";
 import { PRICING_CONFIG } from "@/lib/config/pricing";
 import PaymentCard from "@/components/payment/PaymentCard";
+import { useAuth } from "@/context/AuthContext";
+import { isRealMode } from "@/lib/api/config";
 
 export default function OpportunityApplyModal({ isOpen, onClose, opportunity, project, onAppliedSuccess }) {
+  const { user } = useAuth();
   const { profile, addToast, profileCompletionScore } = useTalent();
   const { applyToOpportunity, applications } = useWorkflow();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPaid, setIsPaid] = useState(() => paymentService.isTalentPaid());
+  const [isPaid, setIsPaid] = useState(() => {
+    if (isRealMode("payments") && user?.isPaid) return true;
+    return paymentService.isTalentPaid();
+  });
 
   if (!opportunity) return null;
 
-  const currentTalentId = "tal-904";
-  const isApproved = profile.status === "Approved";
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
+  const isApproved = profile?.status?.toLowerCase() === "approved" || profile?.isProfileApproved || profile?.status === "Approved";
   const alreadyApplied = applications.some(
-    (a) => a.opportunityId === opportunity.id && a.talentId === currentTalentId
+    (a) => a.opportunityId === opportunity.id && (
+      a.talentId === currentTalentId ||
+      a.talentId?._id === currentTalentId ||
+      a.talentId?.id === currentTalentId ||
+      a.userId === currentTalentId
+    )
   );
 
-  const handleConfirmApply = () => {
+  const handleConfirmApply = async () => {
     if (!isApproved || alreadyApplied) return;
 
     setIsSubmitting(true);
+
+    if (isRealMode("applications")) {
+      try {
+        await talentService.applyToOpportunity(opportunity.id || opportunity._id, {
+          roleApplied: opportunity.title || "Applicant",
+          coverNote: "Application submitted via platform",
+        });
+        setIsSubmitting(false);
+        addToast({
+          type: "success",
+          title: "Application Submitted",
+          message: `You have successfully applied for ${opportunity.title}.`,
+        });
+        if (onAppliedSuccess) onAppliedSuccess();
+        onClose();
+        return;
+      } catch (err) {
+        setIsSubmitting(false);
+        addToast({
+          type: "danger",
+          title: "Application Failed",
+          message: err?.message || "Could not submit application.",
+        });
+        return;
+      }
+    }
 
     try {
       applyToOpportunity({
         opportunityId: opportunity.id,
         talentId: currentTalentId,
         talentProfile: {
-          name: profile.personal.fullName,
-          stageName: profile.personal.stageName || profile.personal.fullName,
-          age: parseInt(profile.personal.age) || 22,
-          gender: profile.personal.gender || "Female",
-          city: profile.personal.city || "Mumbai",
-          phone: profile.personal.phone || "+91 98765 43210",
-          email: profile.personal.email || "riya.sharma@vismaya.io",
-          avatar: profile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
-          skills: profile.skills || ["Screen Acting", "Method Acting", "Dance"],
-          languages: profile.languages || ["Hindi", "English", "Marathi"],
-          bio: profile.personal.bio || "Theater and screen trained artist.",
-          showreelUrl: profile.portfolioShowreelUrl || "https://www.w3schools.com/html/mov_bbb.mp4",
+          name: profile?.personal?.fullName || user?.name || "Talent Member",
+          stageName: profile?.personal?.stageName || profile?.personal?.fullName || user?.name || "Artist",
+          age: parseInt(profile?.personal?.age) || 22,
+          gender: profile?.personal?.gender || "Female",
+          city: profile?.personal?.city || user?.city || "Mumbai",
+          phone: profile?.personal?.phone || user?.mobile || user?.phone || "",
+          email: profile?.personal?.email || user?.email || "",
+          avatar: profile?.avatar || user?.profilePhoto || "",
+          skills: profile?.skills || [],
+          languages: profile?.languages || [],
+          bio: profile?.personal?.bio || "",
+          showreelUrl: profile?.portfolioShowreelUrl || "",
         },
         roleApplied: opportunity.roles?.[0]?.roleName || "Lead Role",
       });

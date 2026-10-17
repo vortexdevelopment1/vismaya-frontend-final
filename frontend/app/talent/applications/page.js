@@ -17,15 +17,28 @@ import PageHeader from "@/components/shared/PageHeader";
 import EmptyState from "@/components/shared/EmptyState";
 import ApplicationCard from "@/components/talent/ApplicationCard";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { useTalent } from "@/lib/talent/TalentContext";
+import { useAuth } from "@/context/AuthContext";
+import { isRealMode } from "@/lib/api/config";
 
 export default function TalentApplicationsPage() {
+  const { user } = useAuth();
+  const { profile, applications: ctxApplications = [] } = useTalent();
   const { applications, isHydrated } = useWorkflow();
   const filterScrollRef = useRef(null);
 
-  const currentTalentId = "tal-904";
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
   const myApplications = useMemo(() => {
+    if (isRealMode("applications") || isRealMode("talent")) {
+      return Array.isArray(ctxApplications) && ctxApplications.length > 0
+        ? ctxApplications
+        : applications.filter((a) => {
+            const tId = a.talentId?._id || a.talentId?.id || a.talentId || a.userId;
+            return tId && (tId === currentTalentId || tId === user?.id || tId === user?._id || tId === profile?.id || tId === profile?._id || tId === profile?.vismayaId);
+          });
+    }
     return applications.filter((a) => a.talentId === currentTalentId);
-  }, [applications]);
+  }, [applications, ctxApplications, currentTalentId, user, profile]);
 
   const [activeFilter, setActiveFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest"); // "newest" | "oldest"

@@ -9,10 +9,31 @@ import { mapTalentProfile, mapTalentProfileToBackend, mapApplication, mapAuditio
 import {
   initialProfileData,
   initialApplications,
+  initialPortfolioMedia,
+  initialCastingCalls,
+  initialNotifications,
 } from "../../talent/mockData.js";
 import { mockApplications, mockAuditions } from "./mockSeedData.js";
 
 export const talentService = {
+  getInitialState() {
+    if (isRealMode("talent")) {
+      return {
+        profile: null,
+        portfolio: [],
+        castingCalls: [],
+        applications: [],
+        notifications: [],
+      };
+    }
+    return {
+      profile: mapTalentProfile(initialProfileData),
+      portfolio: initialPortfolioMedia,
+      castingCalls: initialCastingCalls,
+      applications: initialApplications.map(mapApplication),
+      notifications: initialNotifications,
+    };
+  },
   /**
    * Fetch authenticated talent's profile
    */
@@ -151,7 +172,7 @@ export const talentService = {
       const mockApp = {
         id: "app_mock_" + Date.now(),
         opportunityId,
-        talentId: "tal-904",
+        talentId: payload?.talentId || "demo_talent",
         status: "Applied",
         submittedAt: new Date().toISOString(),
         ...payload,

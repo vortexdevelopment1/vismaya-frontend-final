@@ -9,12 +9,13 @@ import { talentNav } from "@/lib/talent/nav";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useAuth } from "@/context/AuthContext";
+import { isRealMode } from "@/lib/api/config";
 
 export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
-  const { profile } = useTalent();
+  const { user, logout } = useAuth();
+  const { profile, notifications = [] } = useTalent();
   const { applications, auditions, unreadNotificationsCount } = useWorkflow();
 
   // Close sidebar on Escape key
@@ -35,15 +36,27 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
     }
   }, [pathname]);
 
-  const currentTalentId = "tal-904";
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
 
-  const unreadNotifsCount = unreadNotificationsCount("talent", currentTalentId);
-  const shortlistedCount = applications.filter(
-    (a) => a.talentId === currentTalentId && (a.status === "Shortlisted" || a.status === "Selected")
-  ).length;
-  const pendingAuditionsCount = auditions.filter(
-    (aud) => aud.talentId === currentTalentId && aud.status === "Relayed to Talent"
-  ).length;
+  const unreadNotifsCount = isRealMode("notifications")
+    ? (Array.isArray(notifications) ? notifications.filter(n => !n.isRead).length : 0)
+    : unreadNotificationsCount("talent", currentTalentId);
+
+  const shortlistedCount = applications.filter((a) => {
+    const tId = a.talentId?._id || a.talentId?.id || a.talentId || a.userId;
+    const isMine = isRealMode("talent")
+      ? (tId && (tId === currentTalentId || tId === user?.id || tId === user?._id || tId === profile?.id || tId === profile?._id))
+      : a.talentId === currentTalentId;
+    return isMine && (a.status === "Shortlisted" || a.status === "Selected" || a.status === "shortlisted" || a.status === "selected");
+  }).length;
+
+  const pendingAuditionsCount = auditions.filter((aud) => {
+    const tId = aud.talentId?._id || aud.talentId?.id || aud.talentId || aud.userId;
+    const isMine = isRealMode("talent")
+      ? (tId && (tId === currentTalentId || tId === user?.id || tId === user?._id || tId === profile?.id || tId === profile?._id))
+      : aud.talentId === currentTalentId;
+    return isMine && (aud.status === "Relayed to Talent" || aud.status === "requested" || aud.status === "Requested");
+  }).length;
 
   const isNavActive = (href) => {
     if (pathname === href) return true;

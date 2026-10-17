@@ -627,14 +627,36 @@ export const getPendingTalentProfiles = async (req: Request, res: Response): Pro
             TalentProfile.countDocuments(filter as any)
         ]);
 
+        const mappedProfiles = profiles.map(p => {
+            const pObj = (p && (p as any).toObject) ? (p as any).toObject() : { ...p };
+            const u = pObj.userId;
+            const userMobile = (typeof u === "object" ? u?.mobile : null) || pObj.mobile || pObj.phone || "";
+            const userEmail = (typeof u === "object" ? u?.email : null) || pObj.email || "";
+            const userName = (typeof u === "object" ? u?.name : null) || pObj.name || pObj.stageName || "";
+            return {
+                ...pObj,
+                mobile: userMobile,
+                phone: userMobile,
+                email: userEmail,
+                name: userName,
+                contactDetails: {
+                    ...(pObj.contactDetails || {}),
+                    mobile: userMobile,
+                    phone: userMobile,
+                    email: userEmail,
+                    name: userName,
+                }
+            };
+        });
+
         res.status(200).json({
             success: true,
-            count: profiles.length,
+            count: mappedProfiles.length,
             total,
             page: pageNum,
             totalPages: Math.ceil(total / limitNum),
-            profiles,
-            data: profiles
+            profiles: mappedProfiles,
+            data: mappedProfiles
         });
     } catch (error: any) {
         console.error("Get pending talent profiles error:", error);
@@ -659,6 +681,7 @@ export const getTalentProfileById = async (req: Request, res: Response): Promise
                 userId: user,
                 vismayaId: `VIS-${user._id.toString().slice(-6).toUpperCase()}`,
                 stageName: user.name || "Artist",
+                name: user.name || "Artist",
                 category: "open_talent",
                 currentCity: "Mumbai",
                 currentState: "Maharashtra",
@@ -668,14 +691,38 @@ export const getTalentProfileById = async (req: Request, res: Response): Promise
                 isVerified: false,
                 profileCompletionPercentage: 35,
                 createdAt: user.createdAt,
-                updatedAt: user.updatedAt
+                updatedAt: user.updatedAt,
+                mobile: user.mobile || "",
+                phone: user.mobile || "",
+                email: user.email || ""
             };
         }
 
+        const profileObj = (profile && (profile as any).toObject) ? (profile as any).toObject() : { ...profile };
+        const u = profileObj.userId;
+        const userMobile = (typeof u === "object" ? u?.mobile : null) || profileObj.mobile || profileObj.phone || "";
+        const userEmail = (typeof u === "object" ? u?.email : null) || profileObj.email || "";
+        const userName = (typeof u === "object" ? u?.name : null) || profileObj.name || profileObj.stageName || "";
+
+        const fullProfile = {
+            ...profileObj,
+            mobile: userMobile,
+            phone: userMobile,
+            email: userEmail,
+            name: userName,
+            contactDetails: {
+                ...(profileObj.contactDetails || {}),
+                mobile: userMobile,
+                phone: userMobile,
+                email: userEmail,
+                name: userName,
+            }
+        };
+
         res.status(200).json({
             success: true,
-            profile,
-            data: profile
+            profile: fullProfile,
+            data: fullProfile
         });
     } catch (error: any) {
         console.error("Get talent profile by ID error:", error);
@@ -1157,15 +1204,36 @@ export const getTalentDirectory = async (req: Request, res: Response): Promise<a
         }
 
         const allProfiles = [...profiles, ...syntheticProfiles];
+        const mappedProfiles = allProfiles.map((p: any) => {
+            const pObj = p?.toObject ? p.toObject() : { ...p };
+            const u = pObj.userId;
+            const userMobile = (typeof u === "object" ? u?.mobile : null) || pObj.mobile || pObj.phone || "";
+            const userEmail = (typeof u === "object" ? u?.email : null) || pObj.email || "";
+            const userName = (typeof u === "object" ? u?.name : null) || pObj.name || pObj.stageName || "";
+            return {
+                ...pObj,
+                mobile: userMobile,
+                phone: userMobile,
+                email: userEmail,
+                name: userName,
+                contactDetails: {
+                    ...(pObj.contactDetails || {}),
+                    mobile: userMobile,
+                    phone: userMobile,
+                    email: userEmail,
+                    name: userName,
+                }
+            };
+        });
 
         res.status(200).json({
             success: true,
-            count: allProfiles.length,
+            count: mappedProfiles.length,
             total: total + syntheticProfiles.length,
             page: pageNum,
             totalPages: Math.ceil((total + syntheticProfiles.length) / limitNum) || 1,
-            profiles: allProfiles,
-            data: allProfiles
+            profiles: mappedProfiles,
+            data: mappedProfiles
         });
     } catch (error: any) {
         console.error("Get talent directory error:", error);

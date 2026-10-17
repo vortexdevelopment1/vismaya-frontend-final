@@ -18,20 +18,29 @@ import EmptyState from "@/components/shared/EmptyState";
 import NotificationItem from "@/components/talent/NotificationItem";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
+import { useAuth } from "@/context/AuthContext";
+import { isRealMode } from "@/lib/api/config";
 
 export default function TalentNotificationsPage() {
+  const { user } = useAuth();
+  const { profile, notifications: ctxNotifications = [], addToast } = useTalent();
   const { getNotificationsForRole, markAllNotificationsRead, unreadNotificationsCount, isHydrated } = useWorkflow();
-  const { addToast } = useTalent();
 
-  const currentTalentId = "tal-904";
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
   const [activeTab, setActiveTab] = useState("all");
 
-  const notifications = useMemo(
-    () => getNotificationsForRole("talent", currentTalentId),
-    [getNotificationsForRole]
-  );
+  const notifications = useMemo(() => {
+    if (isRealMode("notifications") || isRealMode("talent")) {
+      return Array.isArray(ctxNotifications) && ctxNotifications.length > 0
+        ? ctxNotifications
+        : getNotificationsForRole("talent", currentTalentId);
+    }
+    return getNotificationsForRole("talent", currentTalentId);
+  }, [ctxNotifications, getNotificationsForRole, currentTalentId]);
 
-  const unreadCount = unreadNotificationsCount("talent", currentTalentId);
+  const unreadCount = isRealMode("notifications")
+    ? (Array.isArray(notifications) ? notifications.filter(n => !n.isRead).length : 0)
+    : unreadNotificationsCount("talent", currentTalentId);
 
   // Categorization helpers
   const categorize = (type) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BarChart3,
   TrendingUp,
@@ -21,9 +21,8 @@ import {
 import { useAdmin } from "@/lib/admin/AdminContext";
 import PageHeader from "@/components/shared/PageHeader";
 import StatCard from "@/components/shared/StatCard";
-import {
-  initialAnalyticsData,
-} from "@/lib/admin/mockData";
+import { isRealMode } from "@/lib/api/config";
+import { adminService } from "@/lib/api/services/adminService";
 import {
   UserGrowthLineChart,
   ApplicationsBarChart,
@@ -36,6 +35,17 @@ export default function AdminAnalyticsPage() {
   const { broadcasts, sendBroadcast } = useAdmin();
 
   const [timeRange, setTimeRange] = useState("30d"); // "7d" | "30d" | "90d" | "1y"
+  const [metricsData, setMetricsData] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    adminService.getDashboardMetrics().then((res) => {
+      if (mounted && res?.data) {
+        setMetricsData(res.data);
+      }
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
 
   // Broadcast Form State
   const [broadcastForm, setBroadcastForm] = useState({
@@ -46,7 +56,35 @@ export default function AdminAnalyticsPage() {
     message: "",
   });
 
-  const currentData = initialAnalyticsData[timeRange] || initialAnalyticsData["30d"];
+  const realData = metricsData ? {
+    kpis: {
+      activeUsers: { value: String(metricsData.users?.total ?? 0), change: "+0%", isPositive: true },
+      liveCalls: { value: String(metricsData.opportunities?.published ?? 0), change: "+0%", isPositive: true },
+      applications: { value: String(metricsData.applications?.total ?? 0), change: "+0%", isPositive: true },
+      revenue: { value: `₹${(metricsData.revenue?.total ?? 0).toLocaleString("en-IN")}`, change: "+0%", isPositive: true },
+    },
+    userGrowth: Array.isArray(metricsData.userGrowth) ? metricsData.userGrowth : [],
+    applicationsMonthly: Array.isArray(metricsData.applicationsMonthly) ? metricsData.applicationsMonthly : [],
+    categories: Array.isArray(metricsData.categories) ? metricsData.categories : [],
+    funnel: Array.isArray(metricsData.funnel) ? metricsData.funnel : [],
+    topCities: Array.isArray(metricsData.topCities) ? metricsData.topCities : [],
+  } : {
+    kpis: {
+      activeUsers: { value: "0", change: "+0%", isPositive: true },
+      liveCalls: { value: "0", change: "+0%", isPositive: true },
+      applications: { value: "0", change: "+0%", isPositive: true },
+      revenue: { value: "₹0", change: "+0%", isPositive: true },
+    },
+    userGrowth: [],
+    applicationsMonthly: [],
+    categories: [],
+    funnel: [],
+    topCities: [],
+  };
+
+  const currentData = isRealMode("admin")
+    ? realData
+    : (metricsData ? (metricsData[timeRange] || metricsData["30d"]) : realData);
 
   const handleBroadcastSubmit = (e) => {
     e.preventDefault();

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAdmin } from "@/lib/admin/AdminContext";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { isRealMode } from "@/lib/api/config";
 import PageHeader from "@/components/shared/PageHeader";
 import StatCard from "@/components/shared/StatCard";
 
@@ -34,15 +35,16 @@ export default function AdminDashboardPage() {
 
   // Counts
   const pendingTalentsCount = useMemo(() => {
-    return talents.filter((t) => t.status === "Pending").length || 3;
+    const realCount = talents.filter((t) => t.status === "Pending" || t.status === "pending" || !t.isProfileApproved).length;
+    return isRealMode("admin") ? realCount : (realCount || 3);
   }, [talents]);
 
   const pendingOrganizationsCount = useMemo(() => {
-    return (
-      organizations.filter((o) => o.status === "Pending").length ||
-      recruiters.filter((r) => r.status === "Pending").length ||
-      1
+    const realCount = (
+      organizations.filter((o) => o.status === "Pending" || o.status === "pending").length ||
+      recruiters.filter((r) => r.status === "Pending" || r.status === "pending").length
     );
+    return isRealMode("admin") ? realCount : (realCount || 1);
   }, [organizations, recruiters]);
 
   const pendingOpportunitiesCount = useMemo(() => {
