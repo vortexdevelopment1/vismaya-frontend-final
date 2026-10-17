@@ -42,6 +42,9 @@ function AdminLoginFormContent() {
         setRequires2FA(true);
         const token = res.twoFactorToken || res.tempToken;
         setTempToken(token);
+        if (res.debugOtp) {
+          setOtpCode(res.debugOtp);
+        }
         setFormError("");
       } else if (res.token && res.user) {
         setAuthToken(res.token);

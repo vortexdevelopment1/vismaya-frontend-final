@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -26,19 +26,32 @@ import {
   FileCheck,
   ShieldCheck,
   Briefcase,
+  Plus,
+  Pencil,
+  Loader2,
+  Info,
 } from "lucide-react";
 import { PRICING_CONFIG } from "@/lib/config/pricing";
 import { getAuthToken } from "@/lib/api/client";
 import { isRealMode } from "@/lib/api/config";
+import { uploadMedia } from "@/lib/api/uploadMedia";
 import { authService } from "@/lib/api/services/authService";
 import { talentService } from "@/lib/api/services/talentService";
 import { recruiterService } from "@/lib/api/services/recruiterService";
+import {
+  isValidImageType,
+  loadImageSource,
+  checkImageDimensions,
+  VALIDATION_MESSAGES,
+} from "@/lib/utils/imageProcess";
+import PhotoCropModal from "@/components/talent/PhotoCropModal";
 
 function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialRoleParam = searchParams?.get("role");
   const { register, getDashboardPath } = useAuth();
+  const [mounted, setMounted] = useState(false);
 
   // 1. Role State
   const [selectedRole, setSelectedRole] = useState(
@@ -68,9 +81,124 @@ function RegisterPageContent() {
   const [phone, setPhone] = useState("+91 98765 43210");
   const [city, setCity] = useState("Mumbai");
   const [age, setAge] = useState("24");
-  const [photoUrl, setPhotoUrl] = useState(
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80"
-  );
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [photoError, setPhotoError] = useState("");
+  const [photoHint, setPhotoHint] = useState("");
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropData, setCropData] = useState(null); // { file, imageSource }
+  const fileInputRef = useRef(null);
+
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    setPhotoError("");
+    setPhotoHint("");
+
+    // 1. Basic MIME/extension check: JPG, PNG, WebP, HEIC/HEIF
+    if (!isValidImageType(file)) {
+      setPhotoError(VALIDATION_MESSAGES.INVALID_TYPE);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    // 2. Decode image source (auto EXIF orientation) and validate dimensions
+    try {
+      const imgSource = await loadImageSource(file);
+      const dimCheck = checkImageDimensions(imgSource.width, imgSource.height);
+
+      if (!dimCheck.valid) {
+        imgSource.cleanup?.();
+        setPhotoError(dimCheck.error);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+
+      // If shorter side between 300 and 599 px, set non-blocking hint
+      if (dimCheck.hint) {
+        setPhotoHint(dimCheck.hint);
+      } else {
+        setPhotoHint("");
+      }
+
+      // Open Crop / Reposition Modal (fixed 4:5 frame)
+      setCropData({ file, imageSource: imgSource });
+      setCropModalOpen(true);
+    } catch (err) {
+      console.error("Photo decode error:", err);
+      setPhotoError(VALIDATION_MESSAGES.INVALID_TYPE);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleCropComplete = async (croppedResult) => {
+    setCropModalOpen(false);
+    cropData?.imageSource?.cleanup?.();
+    setCropData(null);
+
+    const { file: processedFile, previewUrl } = croppedResult;
+
+    setPhotoPreview(previewUrl);
+    setPhotoError("");
+    setFormError("");
+
+    setIsUploadingPhoto(true);
+    setUploadProgress(15);
+
+    try {
+      const result = await uploadMedia({
+        file: processedFile,
+        category: "headshot",
+        title: `${name || "Talent"} Profile Photo`,
+        validationType: "profilePhoto",
+        isMainProfilePhoto: true,
+        isRegistration: true,
+        onProgress: (percent) => setUploadProgress(percent),
+      });
+
+      const finalUrl = result?.url || previewUrl;
+
+      setPhotoUrl(finalUrl);
+      setUploadProgress(100);
+      saveDraft({ photoUrl: finalUrl });
+    } catch (err) {
+      console.warn("Photo upload fallback to preview during registration:", err?.message);
+      // Gracefully use local preview so registration flow is never blocked
+      const finalUrl = previewUrl;
+      setPhotoUrl(finalUrl);
+      setUploadProgress(100);
+      saveDraft({ photoUrl: finalUrl });
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setCropModalOpen(false);
+    cropData?.imageSource?.cleanup?.();
+    setCropData(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemovePhoto = () => {
+    if (photoPreview && photoPreview.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(photoPreview);
+      } catch (e) {}
+    }
+    setPhotoPreview("");
+    setPhotoUrl("");
+    setPhotoError("");
+    setPhotoHint("");
+    setUploadProgress(0);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    saveDraft({ photoUrl: "" });
+  };
 
   // Step 2 & 4 (Org): Basic Org Identity & Org Profile
   const [companyType, setCompanyType] = useState("Production House");
@@ -94,16 +222,7 @@ function RegisterPageContent() {
   const [formError, setFormError] = useState("");
 
   // Store only the lightweight draft session identifier (no form data in localStorage)
-  const [draftToken, setDraftToken] = useState(() => {
-    if (typeof window !== "undefined") {
-      try {
-        return sessionStorage.getItem("vismaya_draft_token") || null;
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  });
+  const [draftToken, setDraftToken] = useState(null);
 
   // Reset draft from database (MongoDB) and restart registration from step 1
   const handleResetRegistration = async () => {
@@ -126,13 +245,23 @@ function RegisterPageContent() {
     setOtpSent(false);
     setEmail("");
     setName("");
+    setPhotoUrl("");
+    setPhotoPreview("");
+    setPhotoError("");
+    setUploadProgress(0);
     setPassword("secretpassword123");
     setConfirmPassword("secretpassword123");
   };
 
   // Restore registration draft directly from MongoDB database
   useEffect(() => {
+    setMounted(true);
     if (typeof window !== "undefined") {
+      try {
+        const storedToken = sessionStorage.getItem("vismaya_draft_token");
+        if (storedToken) setDraftToken(storedToken);
+      } catch (e) {}
+
       // Purge any legacy localStorage draft key so no form data resides in localStorage
       try {
         localStorage.removeItem("vismaya_registration_draft");
@@ -202,9 +331,9 @@ function RegisterPageContent() {
       formData: {
         name: updated.name !== undefined ? updated.name : name,
         phone: selectedRole === "organization" ? orgPhone : phone,
-        city,
-        age,
-        photoUrl,
+        city: updated.city !== undefined ? updated.city : city,
+        age: updated.age !== undefined ? updated.age : age,
+        photoUrl: updated.photoUrl !== undefined ? updated.photoUrl : photoUrl,
         companyType,
         website,
         aboutStudio,
@@ -303,7 +432,7 @@ function RegisterPageContent() {
     if (selectedRole === "talent") {
       // Photo is strictly mandatory before payment
       if (!photoUrl) {
-        setFormError("A verified profile photo or headshot is mandatory before proceeding to payment.");
+        setFormError("Please add a profile photo to continue.");
         return;
       }
       if (!phone || !city) {
@@ -466,6 +595,10 @@ function RegisterPageContent() {
 
   const stepLabels = selectedRole === "talent" ? talentStepLabels : orgStepLabels;
 
+  if (!mounted) {
+    return <div style={{ minHeight: "100vh", backgroundColor: "#FAF9F7" }} />;
+  }
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", width: "100%", backgroundColor: "var(--bg-primary)" }}>
       <PublicNav />
@@ -583,6 +716,7 @@ function RegisterPageContent() {
           {/* Stepper Main Card */}
           <div
             className="glass register-glass-card"
+            suppressHydrationWarning
             style={{
               width: "100%",
               maxWidth: "520px",
@@ -613,7 +747,7 @@ function RegisterPageContent() {
               >
                 {currentStep === 1 && "Create Your Account"}
                 {currentStep === 2 && "Verify Email Address"}
-                {currentStep === 3 && (selectedRole === "talent" ? "Identity & Headshot" : "One-Time Registration")}
+                {currentStep === 3 && (selectedRole === "talent" ? "Profile Photo & Details" : "One-Time Registration")}
                 {currentStep === 4 && (selectedRole === "talent" ? "One-Time Registration" : "Studio Profile")}
                 {currentStep === 5 && (selectedRole === "talent" ? "Craft & Specializations" : "Accreditation Documents")}
               </h1>
@@ -621,9 +755,9 @@ function RegisterPageContent() {
               <p style={{ fontSize: "13.5px", color: "var(--text-secondary, #777970)", margin: 0 }}>
                 {currentStep === 1 && "Join India's verified entertainment network."}
                 {currentStep === 2 && `Enter the 6-digit verification code sent to ${email}`}
-                {currentStep === 3 && (selectedRole === "talent" ? "Upload headshot (required before registration payment)." : "Secure one-time registration with 100 included credits.")}
+                {currentStep === 3 && (selectedRole === "talent" ? "Add a clear, recent photo of your face. It appears on your Vismaya profile and helps casting teams recognise you." : "Secure one-time registration with 100 included credits.")}
                 {currentStep === 4 && (selectedRole === "talent" ? "Complete one-time lifetime fee of ₹999." : "Tell artists and casting directors about your production house.")}
-                {currentStep === 5 && (selectedRole === "talent" ? "Finalize your professional comp-card to start applying." : "Corporate documentation for studio verification.")}
+                {currentStep === 5 && (selectedRole === "talent" ? "Finalize your professional profile to start applying." : "Corporate documentation for studio verification.")}
               </p>
             </div>
 
@@ -633,6 +767,7 @@ function RegisterPageContent() {
                 style={{
                   display: "flex",
                   alignItems: "center",
+                  justifyContent: "space-between",
                   gap: "8px",
                   padding: "10px 14px",
                   backgroundColor: "var(--danger-bg)",
@@ -641,10 +776,27 @@ function RegisterPageContent() {
                   color: "var(--danger)",
                   fontSize: "13px",
                   marginBottom: "16px",
+                  flexWrap: "wrap",
                 }}
               >
-                <AlertCircle size={16} style={{ flexShrink: 0 }} />
-                <span>{formError}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                  <span>{formError}</span>
+                </div>
+                {formError.toLowerCase().includes("already exists") && (
+                  <Link
+                    href="/login"
+                    style={{
+                      color: "#8A6B2E",
+                      fontWeight: "600",
+                      textDecoration: "underline",
+                      fontSize: "12.5px",
+                      marginLeft: "auto",
+                    }}
+                  >
+                    Sign In instead →
+                  </Link>
+                )}
               </div>
             )}
 
@@ -661,6 +813,7 @@ function RegisterPageContent() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                     <button
                       type="button"
+                      suppressHydrationWarning
                       onClick={() => handleRoleChange("talent")}
                       style={{
                         height: "44px",
@@ -680,6 +833,7 @@ function RegisterPageContent() {
                     </button>
                     <button
                       type="button"
+                      suppressHydrationWarning
                       onClick={() => handleRoleChange("organization")}
                       style={{
                         height: "44px",
@@ -712,6 +866,7 @@ function RegisterPageContent() {
                     )}
                     <input
                       type="text"
+                      suppressHydrationWarning
                       placeholder={selectedRole === "organization" ? "e.g. Zee Films Studio" : "e.g. Aanya Sharma"}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
@@ -729,6 +884,7 @@ function RegisterPageContent() {
                     <Mail size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
                     <input
                       type="email"
+                      suppressHydrationWarning
                       placeholder={selectedRole === "organization" ? "casting@studio.com" : "name@example.com"}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -768,6 +924,7 @@ function RegisterPageContent() {
 
                 <button
                   type="submit"
+                  suppressHydrationWarning
                   className="btn-primary"
                   style={{ width: "100%", justifyContent: "center", marginTop: "6px", height: "44px" }}
                 >
@@ -887,47 +1044,297 @@ function RegisterPageContent() {
             )}
 
             {/* ========================================================= */}
-            {/* STEP 3 (TALENT): BASIC IDENTITY + MANDATORY PHOTO          */}
+            {/* STEP 3 (TALENT): PROFILE PHOTO & DETAILS                  */}
             {/* ========================================================= */}
             {currentStep === 3 && selectedRole === "talent" && (
-              <form onSubmit={handleBasicIdentitySubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {/* Photo Upload: Strictly Mandatory Before Payment */}
-                <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                    Profile Photo / Headshot <span style={{ color: "#C53030" }}>* (Mandatory before payment)</span>
-                  </label>
-                  <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <div
+              <form onSubmit={handleBasicIdentitySubmit} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+                {/* Crop & Reposition Modal (fixed 4:5 portrait frame) */}
+                {cropModalOpen && cropData && (
+                  <PhotoCropModal
+                    isOpen={cropModalOpen}
+                    file={cropData.file}
+                    imageSource={cropData.imageSource}
+                    onCropComplete={handleCropComplete}
+                    onCancel={handleCropCancel}
+                  />
+                )}
+
+                {/* Hidden File Picker Input */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                  style={{ display: "none" }}
+                  aria-label="Add profile photo"
+                  onChange={handlePhotoSelect}
+                />
+
+                {/* Photo Upload Section: Centered */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+                  {/* Photo Label with Gold Required Tag */}
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "14px" }}>
+                    <span
                       style={{
-                        width: "68px",
-                        height: "68px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "var(--text-primary, #292C29)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      Profile photo
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "10.5px",
+                        fontWeight: "600",
+                        color: "#8A6B2E",
+                        backgroundColor: "#F3EFE6",
+                        border: "1px solid #E8E2D4",
+                        borderRadius: "10px",
+                        padding: "1px 7px",
+                        letterSpacing: "0.02em",
+                      }}
+                    >
+                      Required
+                    </span>
+                  </div>
+
+                  {/* 120px Circular Avatar with Overlapping Button */}
+                  <div style={{ position: "relative", width: "120px", height: "120px", margin: "0 auto 10px" }}>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => fileInputRef.current?.click()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          fileInputRef.current?.click();
+                        }
+                      }}
+                      aria-label={photoPreview || photoUrl ? "Change profile photo" : "Add profile photo"}
+                      style={{
+                        width: "120px",
+                        height: "120px",
                         borderRadius: "50%",
-                        backgroundImage: `url(${photoUrl})`,
+                        border: "3px solid #8A6B2E",
+                        backgroundColor: "#F3EFE6",
+                        backgroundImage: (photoPreview || photoUrl) ? `url(${photoPreview || photoUrl})` : "none",
                         backgroundSize: "cover",
                         backgroundPosition: "center",
-                        border: "2px solid #8A6B2E",
-                        backgroundColor: "#F3EFE6",
-                        flexShrink: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        overflow: "hidden",
+                        boxShadow: "0 2px 8px rgba(138, 107, 46, 0.15)",
+                        position: "relative",
+                        outline: "none",
                       }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <input
-                        type="text"
-                        value={photoUrl}
-                        onChange={(e) => setPhotoUrl(e.target.value)}
-                        placeholder="Image URL or default headshot"
-                        style={{ width: "100%", height: "38px", fontSize: "12.5px", marginBottom: "6px" }}
-                      />
-                      <div style={{ fontSize: "11px", color: "#5A584F" }}>
-                        JPG or PNG, minimum 600x600px. Used on your official comp-card.
+                    >
+                      {!(photoPreview || photoUrl) && (
+                        <User size={54} color="#8A6B2E" strokeWidth={1.5} style={{ opacity: 0.7 }} />
+                      )}
+
+                      {/* Per-file Upload Progress Indicator */}
+                      {isUploadingPhoto && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            backgroundColor: "rgba(43, 45, 42, 0.58)",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            borderRadius: "50%",
+                            color: "#FFFFFF",
+                            gap: "4px",
+                          }}
+                        >
+                          <Loader2 size={24} className="animate-spin" color="#FFFFFF" />
+                          <span style={{ fontSize: "11px", fontWeight: "600", color: "#FFFFFF" }}>
+                            {uploadProgress}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Round button overlapping bottom-right edge */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      aria-label={photoPreview || photoUrl ? "Change profile photo" : "Add profile photo"}
+                      style={{
+                        position: "absolute",
+                        bottom: "2px",
+                        right: "2px",
+                        width: "34px",
+                        height: "34px",
+                        borderRadius: "50%",
+                        backgroundColor: "#8A6B2E",
+                        border: "2px solid #FAF9F7",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.18)",
+                        padding: 0,
+                        transition: "background-color 0.15s ease",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#6E5420")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#8A6B2E")}
+                    >
+                      {photoPreview || photoUrl ? (
+                        <Pencil size={15} color="#FFFFFF" strokeWidth={2.2} />
+                      ) : (
+                        <Plus size={18} color="#FFFFFF" strokeWidth={2.4} />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Upload Progress Bar */}
+                  {isUploadingPhoto && (
+                    <div style={{ width: "160px", margin: "4px auto 8px" }}>
+                      <div style={{ width: "100%", height: "4px", backgroundColor: "#E8E2D4", borderRadius: "2px", overflow: "hidden" }}>
+                        <div
+                          style={{
+                            width: `${uploadProgress}%`,
+                            height: "100%",
+                            backgroundColor: "#8A6B2E",
+                            transition: "width 0.2s ease",
+                          }}
+                        />
                       </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* "Remove" text link under avatar */}
+                  {(photoPreview || photoUrl) && !isUploadingPhoto && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#8A6B2E",
+                        fontSize: "12px",
+                        fontWeight: "500",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        marginTop: "2px",
+                        marginBottom: "4px",
+                        padding: "2px 6px",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#6E5420")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#8A6B2E")}
+                    >
+                      Remove
+                    </button>
+                  )}
+
+                  {/* Helper text under avatar */}
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      color: "#5A584F",
+                      lineHeight: 1.45,
+                      margin: "6px 0 0",
+                      maxWidth: "420px",
+                    }}
+                  >
+                    JPG or PNG. Your face must be clearly visible. Group photos and AI-generated images are not accepted.
+                  </p>
+
+                  {/* Non-blocking Hint for 300-599px */}
+                  {photoHint && !photoError && (
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        marginTop: "8px",
+                        padding: "5px 12px",
+                        backgroundColor: "#F3EFE6",
+                        border: "1px solid #E8E2D4",
+                        borderRadius: "6px",
+                        color: "#8A6B2E",
+                        fontSize: "12px",
+                      }}
+                    >
+                      <Info size={14} style={{ flexShrink: 0 }} />
+                      <span>{photoHint}</span>
+                    </div>
+                  )}
+
+                  {/* Inline Photo Error Message with Try Again */}
+                  {photoError && (
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        marginTop: "10px",
+                        padding: "6px 12px",
+                        backgroundColor: "var(--danger-bg, #FFF5F5)",
+                        border: "1px solid var(--danger-border, #FED7D7)",
+                        borderRadius: "6px",
+                        color: "var(--danger, #C53030)",
+                        fontSize: "12.5px",
+                      }}
+                    >
+                      <AlertCircle size={14} style={{ flexShrink: 0 }} />
+                      <span>{photoError}</span>
+                      {photoError === "Upload failed. Please try again." && (
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#8A6B2E",
+                            fontWeight: "600",
+                            fontSize: "12.5px",
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                            marginLeft: "4px",
+                            padding: 0,
+                          }}
+                        >
+                          Try again
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                {/* Form Fields: Two-column grid on desktop, single column on mobile */}
+                <div
+                  className="talent-details-grid"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "14px",
+                    width: "100%",
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "var(--text-primary, #292C29)",
+                        marginBottom: "6px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
                       Age
                     </label>
                     <input
@@ -935,47 +1342,73 @@ function RegisterPageContent() {
                       value={age}
                       onChange={(e) => setAge(e.target.value)}
                       required
-                      style={{ width: "100%", height: "42px" }}
+                      style={{ width: "100%", height: "42px", borderRadius: "6px", border: "1px solid #E8E2D4", boxSizing: "border-box" }}
                     />
                   </div>
 
-                  <div>
-                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                      Current City
+                  <div style={{ minWidth: 0 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "var(--text-primary, #292C29)",
+                        marginBottom: "6px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      Current city
                     </label>
                     <input
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       required
-                      style={{ width: "100%", height: "42px" }}
+                      style={{ width: "100%", height: "42px", borderRadius: "6px", border: "1px solid #E8E2D4", boxSizing: "border-box" }}
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                    Mobile Phone
+                {/* Mobile Phone Full Width Below */}
+                <div style={{ width: "100%" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      color: "var(--text-primary, #292C29)",
+                      marginBottom: "6px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    Mobile phone
                   </label>
-                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                    <Phone size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
+                  <div style={{ position: "relative", display: "flex", alignItems: "center", width: "100%" }}>
+                    <Phone
+                      size={16}
+                      style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }}
+                    />
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       required
-                      style={{ paddingLeft: "42px", width: "100%", height: "42px" }}
+                      style={{ paddingLeft: "42px", width: "100%", height: "42px", borderRadius: "6px", border: "1px solid #E8E2D4", boxSizing: "border-box" }}
                     />
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+
+                {/* Action Buttons Row */}
+                <div style={{ display: "flex", gap: "12px", marginTop: "6px" }}>
                   <button
                     type="button"
                     onClick={handleBack}
                     style={{
                       height: "44px",
-                      padding: "0 18px",
+                      padding: "0 20px",
                       backgroundColor: "transparent",
                       border: "1px solid #E8E2D4",
                       borderRadius: "6px",
@@ -989,10 +1422,17 @@ function RegisterPageContent() {
                   </button>
                   <button
                     type="submit"
+                    disabled={isUploadingPhoto}
                     className="btn-primary"
-                    style={{ flex: 1, justifyContent: "center", height: "44px" }}
+                    style={{
+                      flex: 1,
+                      justifyContent: "center",
+                      height: "44px",
+                      opacity: isUploadingPhoto ? 0.7 : 1,
+                      cursor: isUploadingPhoto ? "not-allowed" : "pointer",
+                    }}
                   >
-                    <span>Continue to Payment (₹{PRICING_CONFIG.TALENT_FEE})</span>
+                    <span>Continue to payment (₹{PRICING_CONFIG.TALENT_FEE})</span>
                     <ArrowRight size={15} />
                   </button>
                 </div>
@@ -1264,6 +1704,10 @@ function RegisterPageContent() {
           }
           :global(.register-stepper) {
             margin-bottom: 14px !important;
+          }
+          :global(.talent-details-grid) {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
           }
         }
       `}</style>

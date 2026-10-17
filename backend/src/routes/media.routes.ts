@@ -1,7 +1,8 @@
 import express, { Router, Request, Response, NextFunction } from "express";
 
 import { 
-    authenticateUser
+    authenticateUser,
+    optionalAuth
  } from "../middleware/auth.middleware.js";
 
 import { 
@@ -35,7 +36,7 @@ router.param("mediaId", validateObjectIdParam);
 // 1. Direct Cloudinary Upload Endpoints
 router.post(
     "/upload",
-    authenticateUser,
+    optionalAuth,
     uploadMedia.single("file"),
     verifyUploadMagicBytes,
     uploadMediaFile

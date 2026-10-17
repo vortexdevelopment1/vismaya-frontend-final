@@ -20,13 +20,15 @@ export const uploadMediaFile = async (req: Request, res: Response): Promise<any>
             });
         }
 
-        const folder = req.body.folder || "vismaya/media";
+        const isMain = req.body.isMainProfilePhoto === true || req.body.isMainProfilePhoto === "true";
+        const folder = req.body.folder || (isMain ? "vismaya/profiles" : "vismaya/media");
         const uploadResult = await uploadFileBuffer(req.file, folder);
 
         res.status(200).json({
             success: true,
             message: "File uploaded to Cloudinary successfully",
-            data: uploadResult
+            data: uploadResult,
+            url: uploadResult.url
         });
     } catch (error: any) {
         console.error("Cloudinary upload error:", error);
@@ -145,7 +147,8 @@ export const addMediaItem = async (req: Request, res: Response): Promise<any> =>
                 contentHash = crypto.createHash("sha256").update(req.file.buffer).digest("hex");
             }
 
-            const folder = isMainProfilePhoto ? "vismaya/profiles" : "vismaya/media";
+            const isMain = isMainProfilePhoto === true || isMainProfilePhoto === "true";
+            const folder = isMain ? "vismaya/profiles" : "vismaya/media";
             const uploadRes = await uploadFileBuffer(req.file, folder);
             url = uploadRes.url;
             mimeType = mimeType || req.file.mimetype;
@@ -238,10 +241,26 @@ export const addMediaItem = async (req: Request, res: Response): Promise<any> =>
             );
 
             // Update TalentProfile profilePhoto
-            const profile = await TalentProfile.findOne({ userId });
+            let profile = await TalentProfile.findOne({ userId });
             if (profile) {
                 profile.profilePhoto = url;
                 await profile.save();
+            } else if (req.user?.role === "talent") {
+                let unique = false;
+                let vismayaId = "";
+                let attempts = 0;
+                while (!unique && attempts < 10) {
+                    attempts++;
+                    const randomDigits = crypto.randomInt(100000, 1000000);
+                    vismayaId = `VIS-${randomDigits}`;
+                    const existing = await TalentProfile.findOne({ vismayaId });
+                    if (!existing) unique = true;
+                }
+                profile = await TalentProfile.create({
+                    userId,
+                    vismayaId: vismayaId || `VIS-${Date.now()}`,
+                    profilePhoto: url
+                });
             }
         }
 

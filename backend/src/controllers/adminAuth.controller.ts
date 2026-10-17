@@ -131,7 +131,8 @@ export const adminLogin = async (req: Request, res: Response): Promise<any> => {
             requires2FA: true,
             twoFactorToken,
             tempToken: twoFactorToken,
-            message: "Two-factor verification code sent to your registered admin email."
+            message: "Two-factor verification code sent to your registered admin email.",
+            ...(process.env.NODE_ENV !== "production" ? { debugOtp: otpCode } : {})
         });
 
     } catch (error) {

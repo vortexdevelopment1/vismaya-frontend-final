@@ -31,12 +31,47 @@ export class ApiError extends Error {
 let memoryAuthToken = null;
 
 /**
+ * Check if a JWT token is expired
+ */
+export function isTokenExpired(token) {
+  if (!token || typeof token !== "string") return true;
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return true;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    const payload = JSON.parse(jsonPayload);
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Get the current JWT token from localStorage or in-memory fallback
  */
 export function getAuthToken() {
   if (typeof window !== "undefined") {
     try {
-      return localStorage.getItem(AUTH_TOKEN_KEY) || memoryAuthToken;
+      const stored = localStorage.getItem(AUTH_TOKEN_KEY);
+      if (stored) {
+        if (isTokenExpired(stored)) {
+          localStorage.removeItem(AUTH_TOKEN_KEY);
+          memoryAuthToken = null;
+          return null;
+        }
+        return stored;
+      }
+      return memoryAuthToken;
     } catch {
       return memoryAuthToken;
     }
@@ -84,9 +119,15 @@ function handle401Unauthorized() {
   // Redirect only when running in real API mode and not already on an auth page
   if (!USE_MOCK) {
     const currentPath = window.location.pathname;
-    const isAuthPage = currentPath.startsWith("/login") || currentPath.startsWith("/register");
+    const isAuthPage =
+      currentPath.startsWith("/login") ||
+      currentPath.startsWith("/register") ||
+      currentPath.startsWith("/admin/login");
+
     if (!isAuthPage) {
-      const redirectUrl = `/login?redirect=${encodeURIComponent(currentPath + window.location.search)}`;
+      const redirectUrl = currentPath.startsWith("/admin")
+        ? "/admin/login"
+        : `/login?redirect=${encodeURIComponent(currentPath + window.location.search)}`;
       window.location.href = redirectUrl;
     }
   }

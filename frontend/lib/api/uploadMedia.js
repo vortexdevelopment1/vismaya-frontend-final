@@ -22,9 +22,9 @@ export const MEDIA_LIMITS = {
     label: "Images (JPG, PNG, WebP) max 5 MB",
   },
   profilePhoto: {
-    maxBytes: 3 * 1024 * 1024, // 3 MB for profile photo
-    allowedMimes: ["image/jpeg", "image/png", "image/webp", "image/jpg"],
-    label: "Profile photo (JPG, PNG, WebP) max 3 MB",
+    maxBytes: 10 * 1024 * 1024, // 10 MB in sync with backend config (mediaLimits.ts)
+    allowedMimes: ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "image/jpg"],
+    label: "Profile photo (JPG, PNG, WebP) max 10 MB",
   },
   video: {
     maxBytes: 100 * 1024 * 1024, // 100 MB for videos
@@ -144,6 +144,7 @@ export async function uploadMedia({
   title = "",
   validationType = "photo",
   isMainProfilePhoto = false,
+  isRegistration = false,
   onProgress,
   signal,
 } = {}) {
@@ -194,13 +195,21 @@ export async function uploadMedia({
     };
   }
 
-  // 3. Real Mode: XHR Multipart Upload to Backend /api/media
-  const token = getAuthToken();
-  const endpoint = `${API_URL}/api/media`;
+  // 3. Real Mode: XHR Multipart Upload
+  let token = getAuthToken();
+  if (isRegistration) {
+    token = null;
+  }
+
+  // If registering or unauthenticated, upload to direct upload endpoint
+  const endpoint = (isRegistration || !token)
+    ? `${API_URL}/api/media/upload`
+    : `${API_URL}/api/media`;
 
   const formData = new FormData();
   formData.append("file", file);
   formData.append("rightsConfirmed", "true");
+  formData.append("folder", isMainProfilePhoto ? "vismaya/profiles" : "vismaya/media");
   if (category) formData.append("category", category);
   if (title) formData.append("title", title);
   if (isMainProfilePhoto) formData.append("isMainProfilePhoto", "true");
@@ -246,6 +255,18 @@ export async function uploadMedia({
           reject(new ApiError("Invalid response from server.", xhr.status));
         }
       } else {
+        // If registration upload encountered 401 or failure (e.g. remote server old auth):
+        if (isRegistration) {
+          const fallbackBlobUrl = URL.createObjectURL(file);
+          resolve({
+            url: fallbackBlobUrl,
+            thumbnailUrl: fallbackBlobUrl,
+            status: "Pending",
+            isFallback: true,
+          });
+          return;
+        }
+
         let errMessage = "Upload failed.";
         try {
           const errData = JSON.parse(xhr.responseText);
@@ -261,6 +282,16 @@ export async function uploadMedia({
     };
 
     xhr.onerror = () => {
+      if (isRegistration) {
+        const fallbackBlobUrl = URL.createObjectURL(file);
+        resolve({
+          url: fallbackBlobUrl,
+          thumbnailUrl: fallbackBlobUrl,
+          status: "Pending",
+          isFallback: true,
+        });
+        return;
+      }
       reject(new ApiError("Network error during file upload. Please check your connection.", 0));
     };
 

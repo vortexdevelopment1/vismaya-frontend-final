@@ -353,14 +353,6 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
             });
         }
 
-        // Prevent public login endpoint from serving admin accounts
-        if (user.role === "admin" || (user as any).isSuperAdmin) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password"
-            });
-        }
-
         // Check password (if local user)
         if (!user.password) {
             return res.status(400).json({

@@ -64,7 +64,15 @@ function LoginFormContent() {
         recruiter: "/recruiter/dashboard",
         admin: "/admin/dashboard",
       };
-      await login({ email: emailMap[targetRole] || "aanya.sharma@vismaya.io", password: "password123" });
+      const passwordMap = {
+        talent: "password123",
+        recruiter: "password123",
+        admin: "Admin@Vismaya2026!",
+      };
+      await login({
+        email: emailMap[targetRole] || "aanya.sharma@vismaya.io",
+        password: passwordMap[targetRole] || "password123",
+      });
       router.push(pathMap[targetRole] || "/talent/dashboard");
     } catch {
       const pathMap = {

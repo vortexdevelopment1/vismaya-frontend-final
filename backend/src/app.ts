@@ -52,15 +52,34 @@ app.use(helmet({
 app.disable("x-powered-by");
 
 // 2. CORS Configuration (Configurable & Restricted)
-const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(",").map(o => o.trim())
-    : ["http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "http://127.0.0.1:3000", "http://127.0.0.1:5173"];
+const defaultLocalOrigins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:8080",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173"
+];
+
+const parseOrigins = (val: string = "") => {
+    if (!val) return [];
+    return val
+        .split(/[,|]/)
+        .map(o => o.trim().replace(/\/+$/, ""))
+        .filter(Boolean);
+};
+
+const allowedOrigins = Array.from(new Set([
+    ...defaultLocalOrigins,
+    ...parseOrigins(process.env.CORS_ORIGIN),
+    ...parseOrigins(process.env.CLIENT_URL)
+]));
 
 app.use(cors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
         // Allow requests with no origin (like mobile apps, curl, server-to-server)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+        const normalizedOrigin = origin.replace(/\/+$/, "");
+        if (allowedOrigins.includes(normalizedOrigin) || allowedOrigins.includes("*")) {
             return callback(null, true);
         }
         return callback(new Error("CORS policy violation: Origin not allowed"), false);

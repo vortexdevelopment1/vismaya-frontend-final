@@ -64,7 +64,7 @@ export default function ProfileSections() {
       setSelectedPhotoFile(file);
       setPhotoPreview(URL.createObjectURL(file));
     } catch (err) {
-      setPhotoError(err.message || "Invalid image file. Max 3MB (JPG, PNG, WebP).");
+      setPhotoError(err.message || "Photo must be a JPG or PNG.");
     }
   };
 
@@ -532,7 +532,7 @@ export default function ProfileSections() {
               </h3>
               <p className="profile-photo-desc" style={{ fontSize: "0.85rem", color: "#5A584F", margin: 0, lineHeight: 1.4, maxWidth: "420px" }}>
                 Displayed across casting director searches, roster comp cards, top bar, and talent sidebar.
-                Upload JPG, PNG, or WebP up to 3 MB.
+                Upload JPG, PNG, or WebP. Your face must be clearly visible.
               </p>
 
               {photoError && (

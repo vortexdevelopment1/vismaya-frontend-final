@@ -332,7 +332,7 @@ export default function TalentSettingsPage() {
                     <input
                       ref={settingsPhotoInputRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp,image/jpg"
+                      accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/jpg"
                       style={{ display: "none" }}
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
@@ -366,7 +366,7 @@ export default function TalentSettingsPage() {
                       {!profile.avatar && (profile.personal?.fullName ? profile.personal.fullName.slice(0, 2).toUpperCase() : "TR")}
                     </div>
                     <div className="settings-avatar-info">
-                      <span className="settings-avatar-title">Profile display headshot</span>
+                      <span className="settings-avatar-title">Profile display photo</span>
                       <span className="settings-avatar-subtitle">
                         Used across casting shortlist summaries
                       </span>

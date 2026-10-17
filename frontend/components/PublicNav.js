@@ -10,8 +10,13 @@ import "./PublicNav.css";
 export default function PublicNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const navRef = useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Safe auth consumption
   let user = null;
@@ -87,17 +92,18 @@ export default function PublicNav() {
     return pathname === routeHref;
   };
 
-  const dashboardUrl = user ? (getDashboardPath() || "/talent/dashboard") : "/talent/dashboard";
+  const isLoggedIn = mounted && Boolean(user);
+  const dashboardUrl = isLoggedIn ? (getDashboardPath() || "/talent/dashboard") : "/talent/dashboard";
 
   // Navigation Links definition
+  // When logged out: Home, About, Pricing, Contact, Login
+  // When logged in: Home, About, Pricing, Contact (Right CTA button handles Dashboard, avoiding duplicate 'Dashboard' links)
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
     { label: "Pricing", href: "/pricing" },
     { label: "Contact", href: "/contact" },
-    user
-      ? { label: "Dashboard", href: dashboardUrl }
-      : { label: "Login", href: "/login" },
+    ...(!isLoggedIn ? [{ label: "Login", href: "/login" }] : []),
   ];
 
   return (
@@ -136,7 +142,7 @@ export default function PublicNav() {
 
         {/* 3. Right: Action Buttons (Desktop) */}
         <div className="public-nav-actions">
-          {user ? (
+          {isLoggedIn ? (
             <Link
               href={dashboardUrl}
               className="public-nav-cta"
@@ -157,6 +163,7 @@ export default function PublicNav() {
           {/* Mobile Hamburger Toggle (44x44px touch target) */}
           <button
             type="button"
+            suppressHydrationWarning
             className={`public-nav-hamburger ${mobileMenuOpen ? "is-open" : ""}`}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
@@ -188,7 +195,7 @@ export default function PublicNav() {
 
             <div className="public-nav-mobile-divider" />
 
-            {user ? (
+            {isLoggedIn ? (
               <Link
                 href={dashboardUrl}
                 className="public-nav-mobile-cta"
