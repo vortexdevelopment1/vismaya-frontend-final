@@ -11,6 +11,7 @@ import {
   mapVerification,
   mapBroadcast,
   mapTalentProfile,
+  mapOrganization,
 } from "../mappers/index.js";
 import {
   initialTalents,
@@ -264,13 +265,13 @@ export const adminService = {
    */
   async getOrganizationDirectory(params = {}) {
     if (!isRealMode("admin")) {
-      return { success: true, data: initialRecruiters.map(mapUser) };
+      return { success: true, data: initialRecruiters.map(mapOrganization) };
     }
     const res = await apiClient.get("/api/admin/organizations", { params });
     const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.organizations) ? res.organizations : [];
     return {
       success: true,
-      data: docs.map(mapUser),
+      data: docs.map(mapOrganization),
     };
   },
 

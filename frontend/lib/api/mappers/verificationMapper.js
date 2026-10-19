@@ -22,6 +22,18 @@ export function fromApi(verif) {
     identityData: verif.identityData || {},
     professionalData: verif.professionalData || {},
     businessData: verif.businessData || {},
+    documentType: verif.identityData?.idType
+      ? `Government ID (${verif.identityData.idType.toUpperCase()})`
+      : verif.businessData?.businessRegType
+      ? `Business Registration (${verif.businessData.businessRegType.toUpperCase()})`
+      : verif.documentType || "Verification Document",
+    documentUrl: verif.identityData?.documentFrontUrl || verif.businessData?.documentUrl || verif.documentUrl || "",
+    selfieUrl: verif.identityData?.selfiePhotoUrl || verif.selfieUrl || "",
+    portfolioEvidence: verif.businessData?.businessRegNumber
+      ? `Corporate Registration / CIN: ${verif.businessData.businessRegNumber}${verif.businessData.legalEntityName ? ` • Entity: ${verif.businessData.legalEntityName}` : ""}`
+      : Array.isArray(verif.professionalData?.creditsLinks) && verif.professionalData.creditsLinks.length > 0
+      ? verif.professionalData.creditsLinks.join(", ")
+      : verif.portfolioEvidence || "",
     status: toFrontendStatus("verification", verif.status || "pending"),
     rawStatus: verif.status || "pending",
     rejectionReason: verif.rejectionReason || "",

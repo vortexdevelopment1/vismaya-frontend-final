@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Loader2,
   AlertCircle,
+  Building2,
 } from "lucide-react";
 import PageHeader from "@/components/shared/PageHeader";
 import Tabs from "@/components/shared/Tabs";
@@ -85,15 +86,20 @@ export default function VerificationQueuesPage() {
 
   const identityCount = verifications.filter((v) => v.verificationType === "identity").length;
   const professionalCount = verifications.filter((v) => v.verificationType === "professional").length;
+  const businessCount = verifications.filter((v) => v.verificationType === "organization_business" || v.verificationType === "business").length;
 
   const tabs = [
     { key: "all", label: "All Queues", count: verifications.length },
     { key: "identity", label: "Identity (Doc + Selfie)", count: identityCount },
     { key: "professional", label: "Professional (Credits + Evidence)", count: professionalCount },
+    { key: "organization_business", label: "Business (CIN / GST)", count: businessCount },
   ];
 
   const filteredVerifications = verifications.filter((v) => {
     if (activeTab === "all") return true;
+    if (activeTab === "organization_business") {
+      return v.verificationType === "organization_business" || v.verificationType === "business";
+    }
     return v.verificationType === activeTab;
   });
 
@@ -175,6 +181,12 @@ export default function VerificationQueuesPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {filteredVerifications.map((ver) => {
             const isIdentity = ver.verificationType === "identity";
+            const isBusiness = ver.verificationType === "organization_business" || ver.verificationType === "business";
+            const queueLabel = isIdentity
+              ? "Identity Verification"
+              : isBusiness
+              ? "Corporate / Business Verification"
+              : "Professional Credits Verification";
 
             return (
               <div
@@ -198,21 +210,21 @@ export default function VerificationQueuesPage() {
                         width: "44px",
                         height: "44px",
                         borderRadius: "50%",
-                        background: isIdentity ? "#EBF5ED" : "#FBF8F1",
+                        background: isIdentity ? "#EBF5ED" : isBusiness ? "#F4EFEA" : "#FBF8F1",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: isIdentity ? "#2B5E3B" : "#8A6B2E",
+                        color: isIdentity ? "#2B5E3B" : isBusiness ? "#6E5420" : "#8A6B2E",
                       }}
                     >
-                      {isIdentity ? <ShieldCheck size={22} /> : <Award size={22} />}
+                      {isIdentity ? <ShieldCheck size={22} /> : isBusiness ? <Building2 size={22} /> : <Award size={22} />}
                     </div>
                     <div>
                       <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#2B2D2A" }}>
-                        {ver.userName || "Talent Member"}
+                        {ver.userName || (isBusiness ? "Organization" : "Talent Member")}
                       </h3>
                       <span style={{ fontSize: "12.5px", color: "#5A584F" }}>
-                        Queue: <strong style={{ color: isIdentity ? "#2B5E3B" : "#8A6B2E" }}>{isIdentity ? "Identity Verification" : "Professional Credits Verification"}</strong> · Submitted {new Date(ver.submittedAt || Date.now()).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
+                        Queue: <strong style={{ color: isIdentity ? "#2B5E3B" : "#8A6B2E" }}>{queueLabel}</strong> · Submitted {new Date(ver.submittedAt || Date.now()).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
                       </span>
                     </div>
                   </div>

@@ -7,6 +7,8 @@ import Otp from "../models/otp.model.js";
 import RegistrationDraft from "../models/registrationDraft.model.js";
 import Organization from "../models/organization.model.js";
 import TalentProfile from "../models/talentProfile.model.js";
+import Verification from "../models/verification.model.js";
+import CreditLedger from "../models/creditLedger.model.js";
 import { sendEmail } from "../services/email.service.js";
 import { sendSms } from "../services/sms.service.js";
 import { notifyUser } from "../services/notification.service.js";
@@ -81,7 +83,11 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
         }
 
         if (mobile) {
-            const existingMobile = await User.findOne({ mobile });
+            const raw10 = String(mobile).replace(/[^0-9]/g, "").slice(-10);
+            const with91 = `+91${raw10}`;
+            const existingMobile = await User.findOne({
+                $or: [{ mobile }, { mobile: raw10 }, { mobile: with91 }]
+            });
             if (existingMobile) {
                 return res.status(409).json({
                     success: false,
@@ -128,7 +134,7 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
                     status: "pending"
                 });
             } else if (role === "organization") {
-                await Organization.create({
+                const org = await Organization.create({
                     userId: user._id,
                     organizationName: validation.sanitized.studioName || name,
                     organizationType: validation.sanitized.companyType || "Production House",
@@ -137,8 +143,41 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
                         country: "India"
                     },
                     contactNumber: mobile,
-                    verificationState: "pending"
+                    verificationState: "pending",
+                    status: "pending",
+                    cinNumber: validation.sanitized.cinNumber,
+                    registrationNumber: validation.sanitized.registrationNumber || validation.sanitized.cinNumber,
+                    gstNumber: validation.sanitized.gstNumber,
+                    website: validation.sanitized.website,
+                    description: validation.sanitized.description
                 });
+
+                try {
+                    await CreditLedger.create({
+                        organizationId: org._id,
+                        includedCredits: 100,
+                        balance: 100
+                    });
+                } catch (creditErr) {
+                    console.warn("[RegisterUser] Credit ledger init notice:", creditErr);
+                }
+
+                try {
+                    await Verification.create({
+                        userId: user._id,
+                        verificationType: "organization_business",
+                        status: "pending",
+                        businessData: {
+                            businessRegType: validation.sanitized.cinNumber ? "cin" : (validation.sanitized.gstNumber ? "gstin" : "other"),
+                            businessRegNumber: validation.sanitized.cinNumber || validation.sanitized.gstNumber || "PENDING",
+                            legalEntityName: validation.sanitized.studioName || name,
+                            documentUrl: ""
+                        },
+                        submittedAt: new Date()
+                    });
+                } catch (verErr) {
+                    console.warn("[RegisterUser] Verification record init notice:", verErr);
+                }
             }
         } catch (initErr) {
             console.warn("[RegisterUser] Profile initialization notice:", initErr);
@@ -1835,4 +1874,55 @@ export const changeMobile = async (req: Request, res: Response): Promise<any> =>
         success: false,
         message: "Mobile number change is not permitted. Please contact support."
     });
+};
+
+/**
+ * Check if email or mobile number is already in use
+ * POST /api/auth/check-availability
+ */
+export const checkAvailability = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { email, mobile } = req.body || {};
+        if (email) {
+            const normalizedEmail = sanitizeEmail(email);
+            const existingEmail = await User.findOne({ email: normalizedEmail });
+            if (existingEmail) {
+                return res.status(200).json({
+                    success: true,
+                    available: false,
+                    field: "email",
+                    message: "User with this email already exists"
+                });
+            }
+        }
+        if (mobile) {
+            const clean = String(mobile).replace(/[^0-9+]/g, "").trim();
+            const raw10 = clean.replace(/[^0-9]/g, "").slice(-10);
+            const with91 = `+91${raw10}`;
+            const existingMobile = await User.findOne({
+                $or: [
+                    { mobile: clean },
+                    { mobile: raw10 },
+                    { mobile: with91 }
+                ]
+            });
+            if (existingMobile) {
+                return res.status(200).json({
+                    success: true,
+                    available: false,
+                    field: "mobile",
+                    message: "User with this mobile number already exists"
+                });
+            }
+        }
+        return res.status(200).json({
+            success: true,
+            available: true
+        });
+    } catch (error) {
+        return res.status(200).json({
+            success: true,
+            available: true
+        });
+    }
 };

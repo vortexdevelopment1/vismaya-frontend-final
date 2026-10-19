@@ -41,8 +41,8 @@ export default function AdminDashboardPage() {
 
   const pendingOrganizationsCount = useMemo(() => {
     const realCount = (
-      organizations.filter((o) => o.status === "Pending" || o.status === "pending").length ||
-      recruiters.filter((r) => r.status === "Pending" || r.status === "pending").length
+      recruiters.filter((r) => r.status === "Pending" || r.status === "pending").length ||
+      organizations.filter((o) => o.status === "Pending" || o.status === "pending").length
     );
     return isRealMode("admin") ? realCount : (realCount || 1);
   }, [organizations, recruiters]);
@@ -159,7 +159,7 @@ export default function AdminDashboardPage() {
         />
         <StatCard
           title="Active Organizations"
-          value={organizations.length > 0 ? organizations.length.toString() : "14"}
+          value={(recruiters.length || organizations.length || 0).toString()}
           change="+2 approved"
           isPositive={true}
           description="Accredited studios & production houses"
@@ -408,6 +408,16 @@ export default function AdminDashboardPage() {
 
           <div style={{ display: "flex", flexDirection: "column" }}>
             {[
+              ...(recruiters.length > 0
+                ? [
+                    {
+                      id: `act-org-${recruiters[0].id || recruiters[0]._id}`,
+                      text: `Organization '${recruiters[0].company || recruiters[0].companyName || recruiters[0].name || "Organization"}' registered - review pending`,
+                      time: recruiters[0].joinedDate || "Recent",
+                      link: "/admin/recruiter-management",
+                    },
+                  ]
+                : []),
               {
                 id: "act-1",
                 text: "Opportunity 'Project Tiger' awaiting review",
@@ -432,7 +442,7 @@ export default function AdminDashboardPage() {
                 time: "2h ago",
                 link: "/admin/media-moderation",
               },
-            ].map((act, aIdx) => (
+            ].slice(0, 4).map((act, aIdx) => (
               <Link
                 key={act.id}
                 href={act.link}

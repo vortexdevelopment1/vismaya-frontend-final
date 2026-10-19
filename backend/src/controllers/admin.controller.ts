@@ -764,7 +764,20 @@ export const approveUser = async (req: Request, res: Response): Promise<any> => 
             {
                 $set: {
                     status: "active",
+                    verificationState: "verified",
+                    "verificationStatus.businessVerified": true,
                     isVerified: true
+                }
+            }
+        );
+
+        await Verification.updateMany(
+            { userId: user._id, status: "pending" },
+            {
+                $set: {
+                    status: "verified",
+                    reviewedAt: new Date(),
+                    reviewedBy: req.user?.userId
                 }
             }
         );
@@ -833,7 +846,19 @@ export const rejectUser = async (req: Request, res: Response): Promise<any> => {
 
         await Organization.updateMany(
             { userId: user._id },
-            { $set: { status: "rejected", isVerified: false } }
+            { $set: { status: "rejected", verificationState: "rejected", isVerified: false } }
+        );
+
+        await Verification.updateMany(
+            { userId: user._id, status: "pending" },
+            {
+                $set: {
+                    status: "rejected",
+                    reviewedAt: new Date(),
+                    reviewedBy: req.user?.userId,
+                    rejectionReason: reason || "Rejected by admin"
+                }
+            }
         );
 
         await logAdminAction({
@@ -1261,6 +1286,17 @@ export const getOrganizationDirectory = async (req: Request, res: Response): Pro
             Organization.countDocuments(filter)
         ]);
 
+        const orgIds = organizations.map(o => o._id);
+        const ledgers = await CreditLedger.find({ organizationId: { $in: orgIds } });
+        const ledgerMap = new Map(ledgers.map(l => [l.organizationId.toString(), l.balance]));
+
+        const enrichedOrgs = organizations.map((o: any) => {
+            const orgObj = o.toObject ? o.toObject() : { ...o };
+            orgObj.credits = ledgerMap.get(orgObj._id.toString()) ?? 100;
+            orgObj.status = orgObj.status || (orgObj.userId as any)?.status || orgObj.verificationState || "pending";
+            return orgObj;
+        });
+
         const orgUserIds = organizations.map(o => o.userId?._id?.toString()).filter(Boolean);
         const unprofiledUsers = await User.find({
             role: "organization",
@@ -1275,11 +1311,12 @@ export const getOrganizationDirectory = async (req: Request, res: Response): Pro
             contactEmail: u.email,
             contactNumber: u.mobile,
             organizationType: "Production House",
-            status: u.status,
+            status: u.status || "pending",
+            credits: 100,
             createdAt: u.createdAt
         }));
 
-        const allOrgs = [...organizations, ...syntheticOrgs];
+        const allOrgs = [...enrichedOrgs, ...syntheticOrgs];
 
         res.status(200).json({
             success: true,
@@ -2119,6 +2156,19 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
                 }
             );
 
+            if (verification.verificationType === "organization_business") {
+                await Organization.findOneAndUpdate(
+                    { userId: verification.userId },
+                    {
+                        verificationState: "verified",
+                        status: "active",
+                        "verificationStatus.businessVerified": true,
+                        isVerified: true
+                    }
+                );
+                await User.findByIdAndUpdate(verification.userId, { status: "active", isVerified: true });
+            }
+
             await notifyUser({
                 recipientId: verification.userId,
                 type: "verification_update",
@@ -2141,6 +2191,17 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
             (verification as any).verifiedBy = req.user?.userId;
             (verification as any).reviewNotes = notes || "";
             verification.rejectionReason = rejectionReason || "Documents insufficient";
+
+            if (verification.verificationType === "organization_business") {
+                await Organization.findOneAndUpdate(
+                    { userId: verification.userId },
+                    {
+                        verificationState: "rejected",
+                        status: "rejected",
+                        isVerified: false
+                    }
+                );
+            }
 
             await notifyUser({
                 recipientId: verification.userId,

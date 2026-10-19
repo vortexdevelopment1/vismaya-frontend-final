@@ -51,6 +51,11 @@ export const validateRegisterInput = (data: any): { isValid: boolean; errors: st
             bio: data?.bio ? String(data.bio).trim() : undefined,
             companyType: data?.companyType ? String(data.companyType).trim() : undefined,
             studioName: data?.studioName ? String(data.studioName).trim() : undefined,
+            cinNumber: data?.cinNumber ? String(data.cinNumber).trim() : undefined,
+            registrationNumber: (data?.registrationNumber || data?.cinNumber) ? String(data.registrationNumber || data.cinNumber).trim() : undefined,
+            gstNumber: data?.gstNumber ? String(data.gstNumber).trim() : undefined,
+            website: data?.website ? String(data.website).trim() : undefined,
+            description: (data?.description || data?.aboutStudio || data?.about) ? String(data.description || data.aboutStudio || data.about).trim() : undefined,
             isPaid: Boolean(data?.isPaid),
         }
     };

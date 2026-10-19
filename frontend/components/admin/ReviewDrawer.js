@@ -599,11 +599,34 @@ export default function ReviewDrawer({
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "13px" }}>
                   <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
                     <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Corporate Registration (CIN)</span>
-                    <strong style={{ color: "#2B2D2A" }}>{data.registrationNumber || "N/A"}</strong>
+                    <strong style={{ color: "#2B2D2A" }}>{data.registrationNumber || data.cinNumber || "Not provided"}</strong>
                   </div>
                   <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
                     <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>GSTIN</span>
-                    <strong style={{ color: "#2B2D2A" }}>{data.gstNumber || "N/A"}</strong>
+                    <strong style={{ color: "#2B2D2A" }}>{data.gstNumber || "Not provided"}</strong>
+                  </div>
+                  <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
+                    <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>City</span>
+                    <strong style={{ color: "#2B2D2A" }}>{data.city || data.location?.city || data.location || "Not provided"}</strong>
+                  </div>
+                  <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
+                    <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Status</span>
+                    <strong style={{ color: "#2B2D2A" }}>{data.status || "Not provided"}</strong>
+                  </div>
+                  <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
+                    <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Credits</span>
+                    <strong style={{ color: "#8A6B2E" }}>{data.credits !== undefined && data.credits !== null ? String(data.credits) : (data.walletCredits !== undefined && data.walletCredits !== null ? String(data.walletCredits) : "Not provided")}</strong>
+                  </div>
+                  <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
+                    <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Website</span>
+                    {data.website ? (
+                      <a href={data.website.startsWith("http") ? data.website : `https://${data.website}`} target="_blank" rel="noopener noreferrer" style={{ color: "#8A6B2E", display: "flex", alignItems: "center", gap: "4px", fontWeight: "700" }}>
+                        <span>{data.website}</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    ) : (
+                      <span style={{ color: "#5A584F", fontStyle: "italic" }}>Not provided</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -616,22 +639,26 @@ export default function ReviewDrawer({
                 <div style={{ backgroundColor: "#FFFFFF", padding: "14px", borderRadius: "14px", border: "1px solid #E8E2D4", display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Executive Name:</span>
-                    <strong style={{ color: "#2B2D2A" }}>{data.contactPerson || data.name || "N/A"}</strong>
+                    <strong style={{ color: "#2B2D2A" }}>{data.contactPerson || data.name || "Not provided"}</strong>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Phone:</span>
-                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.phone || data.mobile || data.contactDetails?.phone || data.contactDetails?.mobile || "N/A"}</span>
+                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.phone || data.mobile || data.contactNumber || data.contactDetails?.phone || data.contactDetails?.mobile || "Not provided"}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Email:</span>
-                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.email || data.contactDetails?.email || "N/A"}</span>
+                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.email || data.contactEmail || data.contactDetails?.email || "Not provided"}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Website:</span>
-                    <a href={data.website} target="_blank" rel="noopener noreferrer" style={{ color: "#8A6B2E", display: "flex", alignItems: "center", gap: "4px", fontWeight: "700" }}>
-                      <span>{data.website}</span>
-                      <ExternalLink size={12} />
-                    </a>
+                    {data.website ? (
+                      <a href={data.website.startsWith("http") ? data.website : `https://${data.website}`} target="_blank" rel="noopener noreferrer" style={{ color: "#8A6B2E", display: "flex", alignItems: "center", gap: "4px", fontWeight: "700" }}>
+                        <span>{data.website}</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    ) : (
+                      <span style={{ color: "#5A584F", fontStyle: "italic" }}>Not provided</span>
+                    )}
                   </div>
                 </div>
               </div>

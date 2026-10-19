@@ -42,6 +42,22 @@ export const authService = {
   },
 
   /**
+   * Check whether an email or mobile number is already in use
+   * @param {Object} payload { email, mobile }
+   */
+  async checkAvailability({ email, mobile }) {
+    if (!isRealMode("auth")) {
+      return { available: true };
+    }
+    try {
+      const res = await apiClient.post("/api/auth/check-availability", { email, mobile });
+      return res?.data || res;
+    } catch {
+      return { available: true };
+    }
+  },
+
+  /**
    * Verify email OTP for account activation
    * @param {Object} payload { email, otp }
    */

@@ -34,7 +34,8 @@ import {
     deleteRegistrationDraft,
     forgotPassword,
     verifyOtp,
-    resetPassword
+    resetPassword,
+    checkAvailability
  } from "../controllers/auth.controller.js";
 
 const router = express.Router();
@@ -46,6 +47,7 @@ router.post("/admin/forgot-password", adminForgotPasswordLimiter, adminForgotPas
 router.post("/admin/reset-password", adminResetPasswordLimiter, adminResetPassword);
 
 // Registration & Verification
+router.post("/check-availability", draftLimiter, checkAvailability);
 router.post("/register", authLimiter, registerUser);
 router.post("/verify-registration", otpLimiter, verifyRegistration);
 router.post("/resend-registration-otp", otpLimiter, resendRegistrationOtp);

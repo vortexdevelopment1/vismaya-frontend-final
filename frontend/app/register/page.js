@@ -46,6 +46,30 @@ import {
 } from "@/lib/utils/imageProcess";
 import PhotoCropModal from "@/components/talent/PhotoCropModal";
 
+function normalizeIndianMobile(raw) {
+  if (!raw) return "";
+  const clean = String(raw).replace(/[^0-9+]/g, "").trim();
+  const digits = clean.replace(/[^0-9]/g, "");
+  if (/^[6-9]\d{9}$/.test(digits)) {
+    return `+91${digits}`;
+  }
+  if (/^\+91[6-9]\d{9}$/.test(clean)) {
+    return clean;
+  }
+  return clean;
+}
+
+function validateIndianMobile(raw) {
+  if (!raw || typeof raw !== "string" || !raw.trim()) {
+    return "Mobile number is required.";
+  }
+  const clean = String(raw).replace(/[^0-9+]/g, "").trim();
+  if (!/^(\+91)?[6-9]\d{9}$/.test(clean)) {
+    return "Mobile number must be a valid 10-digit Indian number (e.g. +91XXXXXXXXXX or 9876543210)";
+  }
+  return null;
+}
+
 function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -71,6 +95,11 @@ function RegisterPageContent() {
   const [email, setEmail] = useState("aanya.sharma@vismaya.io");
   const [password, setPassword] = useState("secretpassword123");
   const [confirmPassword, setConfirmPassword] = useState("secretpassword123");
+  const [mobileError, setMobileError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [isCheckingAccount, setIsCheckingAccount] = useState(false);
 
   // Step 2: OTP (or inside step 1 for Org)
   const [otp, setOtp] = useState("");
@@ -202,7 +231,7 @@ function RegisterPageContent() {
 
   // Step 2 & 4 (Org): Basic Org Identity & Org Profile
   const [companyType, setCompanyType] = useState("Production House");
-  const [orgPhone, setOrgPhone] = useState("+91 22 6677 8899");
+  const [orgPhone, setOrgPhone] = useState("+91 98765 43210");
   const [website, setWebsite] = useState("https://zeefilms.com");
   const [aboutStudio, setAboutStudio] = useState(
     "Premier Bollywood and regional feature film and commercial production house."
@@ -288,9 +317,10 @@ function RegisterPageContent() {
             if (d.role) setSelectedRole(d.role);
             if (d.email) setEmail(d.email);
             if (f.name) setName(f.name);
-            if (f.phone) {
-              if (d.role === "organization") setOrgPhone(f.phone);
-              else setPhone(f.phone);
+            if (f.phone || f.mobile) {
+              const restoredMobile = f.mobile || f.phone;
+              if (d.role === "organization") setOrgPhone(restoredMobile);
+              else setPhone(restoredMobile);
             }
             if (f.city) setCity(f.city);
             if (f.photoUrl) setPhotoUrl(f.photoUrl);
@@ -324,13 +354,17 @@ function RegisterPageContent() {
     const targetEmail = updated.email || email;
     if (!targetEmail || !targetEmail.includes("@")) return;
 
+    const currentContact = selectedRole === "organization" ? orgPhone : phone;
+    const normalizedContact = normalizeIndianMobile(currentContact);
+
     const payload = {
       email: targetEmail.toLowerCase().trim(),
       role: updated.role || selectedRole,
       currentStep: updated.step || currentStep,
       formData: {
         name: updated.name !== undefined ? updated.name : name,
-        phone: selectedRole === "organization" ? orgPhone : phone,
+        phone: normalizedContact,
+        mobile: normalizedContact,
         city: updated.city !== undefined ? updated.city : city,
         age: updated.age !== undefined ? updated.age : age,
         photoUrl: updated.photoUrl !== undefined ? updated.photoUrl : photoUrl,
@@ -381,35 +415,98 @@ function RegisterPageContent() {
     setCurrentStep(1);
     setIsPaid(false);
     setFormError("");
+    setMobileError("");
+    setEmailError("");
+    setNameError("");
+    setPasswordError("");
     if (role === "organization") {
       setName("Zee Films Studio");
       setEmail("casting@zeefilms.com");
+      setOrgPhone("+91 98765 43210");
     } else {
       setName("Aanya Sharma");
       setEmail("aanya.sharma@vismaya.io");
+      setPhone("+91 98765 43210");
     }
   };
 
   // Step 1: Submit Account
-  const handleAccountSubmit = (e) => {
+  const handleAccountSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
-      setFormError("Please fill in all required fields.");
+    setFormError("");
+    setMobileError("");
+    setEmailError("");
+    setNameError("");
+    setPasswordError("");
+
+    if (!name.trim()) {
+      setNameError("Please enter your name.");
+      setFormError("Please enter your name.");
+      return;
+    }
+    if (!email.trim() || !email.includes("@")) {
+      setEmailError("Please enter a valid work email address.");
+      setFormError("Please enter a valid work email address.");
+      return;
+    }
+
+    const currentMobile = selectedRole === "organization" ? orgPhone : phone;
+    const mobErr = validateIndianMobile(currentMobile);
+    if (mobErr) {
+      setMobileError(mobErr);
+      setFormError(mobErr);
+      return;
+    }
+
+    if (!password || password.length < 8) {
+      setPasswordError("Password must be at least 8 characters long.");
+      setFormError("Password must be at least 8 characters long.");
       return;
     }
     if (password !== confirmPassword) {
+      setPasswordError("Passwords do not match.");
       setFormError("Passwords do not match.");
       return;
     }
 
-    setFormError("");
+    const normalizedMobile = normalizeIndianMobile(currentMobile);
+    if (selectedRole === "organization") {
+      setOrgPhone(normalizedMobile);
+    } else {
+      setPhone(normalizedMobile);
+    }
+
+    // Availability verification on step 1 (check if email or mobile already exists)
+    if (isRealMode("auth")) {
+      setIsCheckingAccount(true);
+      try {
+        const checkRes = await authService.checkAvailability({
+          email: email.trim(),
+          mobile: normalizedMobile,
+        });
+        if (checkRes && checkRes.available === false) {
+          if (checkRes.field === "mobile") {
+            setMobileError(checkRes.message || "User with this mobile number already exists");
+            setFormError(checkRes.message || "User with this mobile number already exists");
+          } else if (checkRes.field === "email") {
+            setEmailError(checkRes.message || "User with this email already exists");
+            setFormError(checkRes.message || "User with this email already exists");
+          } else {
+            setFormError(checkRes.message);
+          }
+          return;
+        }
+      } catch (checkErr) {
+        console.warn("Availability check warning:", checkErr?.message);
+      } finally {
+        setIsCheckingAccount(false);
+      }
+    }
+
     setOtpSent(true);
     setResendTimer(60);
-
-    // If Talent: advance to Step 2 (OTP)
-    // If Org: show OTP verification inline in step 1 or advance to OTP
     setCurrentStep(2);
-    saveDraft({ step: 2 });
+    saveDraft({ step: 2, phone: normalizedMobile, mobile: normalizedMobile });
   };
 
   // Step 2: Verify OTP
@@ -484,17 +581,23 @@ function RegisterPageContent() {
     e.preventDefault();
     setIsSubmitting(true);
     setFormError("");
+    setMobileError("");
+    setEmailError("");
+    setNameError("");
+    setPasswordError("");
+
     try {
-      const contactVal = selectedRole === "organization" ? orgPhone : phone;
+      const rawContact = selectedRole === "organization" ? orgPhone : phone;
+      const cleanContact = normalizeIndianMobile(rawContact);
       const payload = {
         role: selectedRole === "organization" ? "organization" : "talent",
-        email,
+        email: email.trim(),
         password,
         name: name.trim(),
         studioName: selectedRole === "organization" ? name.trim() : undefined,
-        city,
-        phone: contactVal,
-        mobile: contactVal,
+        city: city || "Mumbai",
+        phone: cleanContact,
+        mobile: cleanContact,
         profilePhoto: photoUrl,
         isPaid: true,
         stageName: name.trim(),
@@ -502,6 +605,11 @@ function RegisterPageContent() {
         skills: skills ? skills.split(",").map((s) => s.trim()).filter(Boolean) : [],
         bio: bio ? bio.trim() : "",
         companyType: selectedRole === "organization" ? companyType : undefined,
+        cinNumber: selectedRole === "organization" ? cinNumber : undefined,
+        registrationNumber: selectedRole === "organization" ? cinNumber : undefined,
+        gstNumber: selectedRole === "organization" ? gstNumber : undefined,
+        website: selectedRole === "organization" ? website : undefined,
+        description: selectedRole === "organization" ? aboutStudio : undefined,
       };
 
       const res = await register(payload);
@@ -513,7 +621,7 @@ function RegisterPageContent() {
               primaryProfession: primaryCraft,
               skills: skills ? skills.split(",").map((s) => s.trim()).filter(Boolean) : [],
               bio: bio.trim(),
-              currentCity: city,
+              currentCity: city || "Mumbai",
               profilePhoto: photoUrl,
               experienceRange: "1-3 years",
             });
@@ -525,8 +633,8 @@ function RegisterPageContent() {
             await recruiterService.saveOrganizationProfile({
               companyName: name.trim(),
               companyType,
-              phone: orgPhone,
-              city,
+              phone: cleanContact,
+              city: city || "Mumbai",
               website,
               about: aboutStudio,
               genres: genres ? genres.split(",").map((g) => g.trim()).filter(Boolean) : [],
@@ -549,12 +657,56 @@ function RegisterPageContent() {
             } catch (e) {}
           }
         }
-        router.push(getDashboardPath());
+        router.push(getDashboardPath(selectedRole));
       } else {
-        setFormError(res.error || "Registration error occurred. Please try again.");
+        const errMsg = res.error || "Registration error occurred. Please try again.";
+        const lower = errMsg.toLowerCase();
+
+        // If backend returns a field error, jump back to the step that owns that field!
+        if (lower.includes("mobile") || lower.includes("phone")) {
+          setMobileError(errMsg);
+          setFormError(errMsg);
+          setCurrentStep(1);
+        } else if (lower.includes("email")) {
+          setEmailError(errMsg);
+          setFormError(errMsg);
+          setCurrentStep(1);
+        } else if (lower.includes("password")) {
+          setPasswordError(errMsg);
+          setFormError(errMsg);
+          setCurrentStep(1);
+        } else if (lower.includes("name") || lower.includes("studio")) {
+          setNameError(errMsg);
+          setFormError(errMsg);
+          setCurrentStep(1);
+        } else if (lower.includes("photo")) {
+          setPhotoError(errMsg);
+          setFormError(errMsg);
+          setCurrentStep(selectedRole === "talent" ? 3 : 1);
+        } else if (lower.includes("city")) {
+          setFormError(errMsg);
+          setCurrentStep(selectedRole === "talent" ? 3 : 1);
+        } else if (lower.includes("company") || lower.includes("genre") || lower.includes("about")) {
+          setFormError(errMsg);
+          setCurrentStep(4);
+        } else {
+          setFormError(errMsg);
+        }
       }
     } catch (err) {
-      setFormError(err.message || "An unexpected error occurred.");
+      const errMsg = err.message || "An unexpected error occurred.";
+      const lower = errMsg.toLowerCase();
+      if (lower.includes("mobile") || lower.includes("phone")) {
+        setMobileError(errMsg);
+        setFormError(errMsg);
+        setCurrentStep(1);
+      } else if (lower.includes("email")) {
+        setEmailError(errMsg);
+        setFormError(errMsg);
+        setCurrentStep(1);
+      } else {
+        setFormError(errMsg);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -871,15 +1023,30 @@ function RegisterPageContent() {
                       <User size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
                     )}
                     <input
+                      id="input-reg-name"
                       type="text"
                       suppressHydrationWarning
                       placeholder={selectedRole === "organization" ? "e.g. Zee Films Studio" : "e.g. Aanya Sharma"}
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        if (nameError) setNameError("");
+                      }}
                       required
-                      style={{ paddingLeft: "42px", width: "100%", height: "42px" }}
+                      style={{
+                        paddingLeft: "42px",
+                        width: "100%",
+                        height: "42px",
+                        borderColor: nameError ? "var(--danger, #C53030)" : undefined,
+                      }}
                     />
                   </div>
+                  {nameError && (
+                    <div id="error-reg-name" style={{ color: "var(--danger, #C53030)", fontSize: "12px", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <AlertCircle size={13} style={{ flexShrink: 0 }} />
+                      <span>{nameError}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -889,15 +1056,68 @@ function RegisterPageContent() {
                   <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
                     <Mail size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
                     <input
+                      id="input-reg-email"
                       type="email"
                       suppressHydrationWarning
                       placeholder={selectedRole === "organization" ? "casting@studio.com" : "name@example.com"}
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (emailError) setEmailError("");
+                      }}
                       required
-                      style={{ paddingLeft: "42px", width: "100%", height: "42px" }}
+                      style={{
+                        paddingLeft: "42px",
+                        width: "100%",
+                        height: "42px",
+                        borderColor: emailError ? "var(--danger, #C53030)" : undefined,
+                      }}
                     />
                   </div>
+                  {emailError && (
+                    <div id="error-reg-email" style={{ color: "var(--danger, #C53030)", fontSize: "12px", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <AlertCircle size={13} style={{ flexShrink: 0 }} />
+                      <span>{emailError}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    Mobile Number
+                  </label>
+                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                    <Phone size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
+                    <input
+                      id="input-reg-mobile"
+                      type="tel"
+                      suppressHydrationWarning
+                      placeholder="+91 98765 43210"
+                      value={selectedRole === "organization" ? orgPhone : phone}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (selectedRole === "organization") {
+                          setOrgPhone(val);
+                        } else {
+                          setPhone(val);
+                        }
+                        if (mobileError) setMobileError("");
+                      }}
+                      required
+                      style={{
+                        paddingLeft: "42px",
+                        width: "100%",
+                        height: "42px",
+                        borderColor: mobileError ? "var(--danger, #C53030)" : undefined,
+                      }}
+                    />
+                  </div>
+                  {mobileError && (
+                    <div id="error-reg-mobile" style={{ color: "var(--danger, #C53030)", fontSize: "12px", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <AlertCircle size={13} style={{ flexShrink: 0 }} />
+                      <span>{mobileError}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -906,7 +1126,10 @@ function RegisterPageContent() {
                   </label>
                   <PasswordInput
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (passwordError) setPasswordError("");
+                    }}
                     placeholder="Minimum 8 characters"
                     required
                     autoComplete="new-password"
@@ -920,12 +1143,21 @@ function RegisterPageContent() {
                   </label>
                   <PasswordInput
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (passwordError) setPasswordError("");
+                    }}
                     placeholder="Re-enter your password"
                     required
                     autoComplete="new-password"
                     leftIcon={<Lock size={16} />}
                   />
+                  {passwordError && (
+                    <div id="error-reg-password" style={{ color: "var(--danger, #C53030)", fontSize: "12px", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <AlertCircle size={13} style={{ flexShrink: 0 }} />
+                      <span>{passwordError}</span>
+                    </div>
+                  )}
                 </div>
 
                 <button
@@ -998,7 +1230,7 @@ function RegisterPageContent() {
                     }}
                   />
                   <div style={{ fontSize: "12px", color: "#5A584F", marginTop: "6px", textAlign: "center" }}>
-                    In mock mode: type any 6 digits (e.g. 123456)
+                    Enter the 6-digit verification code sent to your email.
                   </div>
                 </div>
 
@@ -1674,7 +1906,7 @@ function RegisterPageContent() {
                 >
                   <FileCheck size={18} style={{ color: "#8A6B2E", flexShrink: 0 }} />
                   <span>
-                    Your credentials and 100 included credits are activated immediately in mock mode.
+                    Your organization will be verified after your documents are reviewed.
                   </span>
                 </div>
 
