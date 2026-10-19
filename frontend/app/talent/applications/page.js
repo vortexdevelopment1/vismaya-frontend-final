@@ -60,12 +60,13 @@ export default function TalentApplicationsPage() {
   // Counts by status
   const counts = {
     all: myApplications.length,
-    Applied: myApplications.filter((a) => a.status === "Applied").length,
-    "Under Review": myApplications.filter((a) => a.status === "Under Review").length,
-    Shortlisted: myApplications.filter((a) => a.status === "Shortlisted").length,
-    Selected: myApplications.filter((a) => a.status === "Selected").length,
-    "Not Selected": myApplications.filter((a) => a.status === "Not Selected").length,
-    Withdrawn: myApplications.filter((a) => a.status === "Withdrawn").length,
+    Applied: myApplications.filter((a) => a.status === "Applied" || a.status === "applied").length,
+    "Under Review": myApplications.filter((a) => a.status === "Under Review" || a.status === "under_review").length,
+    Shortlisted: myApplications.filter((a) => a.status === "Shortlisted" || a.status === "shortlisted").length,
+    Selected: myApplications.filter((a) => a.status === "Selected" || a.status === "selected").length,
+    "Not Selected": myApplications.filter((a) => a.status === "Not Selected" || a.status === "not_selected").length,
+    Withdrawn: myApplications.filter((a) => a.status === "Withdrawn" || a.status === "withdrawn").length,
+    "Opportunity Cancelled": myApplications.filter((a) => a.status === "Opportunity Cancelled" || a.status === "opportunity_cancelled").length,
   };
 
   const filterChips = [
@@ -76,13 +77,19 @@ export default function TalentApplicationsPage() {
     { key: "Selected", label: "Selected", count: counts.Selected },
     { key: "Not Selected", label: "Not Selected", count: counts["Not Selected"] },
     { key: "Withdrawn", label: "Withdrawn", count: counts.Withdrawn },
+    { key: "Opportunity Cancelled", label: "Cancelled Calls", count: counts["Opportunity Cancelled"] },
   ];
 
   const filteredApplications = useMemo(() => {
     let list = myApplications;
 
     if (activeFilter !== "all") {
-      list = list.filter((a) => a.status === activeFilter);
+      list = list.filter((a) => {
+        if (activeFilter === "Opportunity Cancelled") {
+          return a.status === "Opportunity Cancelled" || a.status === "opportunity_cancelled";
+        }
+        return a.status === activeFilter;
+      });
     }
 
     return [...list].sort((a, b) => {

@@ -52,10 +52,13 @@ export default function AdminApplicationsOverviewPage() {
       Selected: 0,
       "Not Selected": 0,
       Withdrawn: 0,
+      "Opportunity Cancelled": 0,
     };
     applications.forEach((a) => {
       if (counts[a.status] !== undefined) {
         counts[a.status]++;
+      } else if (a.status === "opportunity_cancelled") {
+        counts["Opportunity Cancelled"]++;
       }
     });
     return counts;
@@ -65,8 +68,14 @@ export default function AdminApplicationsOverviewPage() {
   const filteredApplications = useMemo(() => {
     return applications.filter((app) => {
       // Status
-      if (statusFilter !== "ALL" && app.status !== statusFilter) {
-        return false;
+      if (statusFilter !== "ALL") {
+        if (statusFilter === "Opportunity Cancelled") {
+          if (app.status !== "Opportunity Cancelled" && app.status !== "opportunity_cancelled") {
+            return false;
+          }
+        } else if (app.status !== statusFilter) {
+          return false;
+        }
       }
 
       // Opportunity
@@ -156,6 +165,7 @@ export default function AdminApplicationsOverviewPage() {
           { key: "Selected", label: "Selected", count: statusCounts.Selected },
           { key: "Not Selected", label: "Not Selected", count: statusCounts["Not Selected"] },
           { key: "Withdrawn", label: "Withdrawn", count: statusCounts.Withdrawn },
+          { key: "Opportunity Cancelled", label: "Opportunity Cancelled", count: statusCounts["Opportunity Cancelled"] },
         ].map((tab) => {
           const isActive = statusFilter === tab.key;
           return (

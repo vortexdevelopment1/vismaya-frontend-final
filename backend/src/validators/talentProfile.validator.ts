@@ -46,12 +46,20 @@ export const validateTalentProfileInput = (data: any, isCreation = false): { isV
     if (data.dob) {
         const age = calculateAge(data.dob);
         if (age !== null && age < 18) {
-            const g = data.guardianDetails;
-            if (!g || !g.guardianName || !g.relationship || !g.contactNumber || !g.consentGiven) {
-                errors.push("Talent under 18 years of age requires mandatory guardian name, relationship, contact number, and explicit consent.");
-            }
-            if (process.env.GUARDIAN_DOC_REQUIRED === "true" && (!g || !g.supportingDocumentUrl)) {
-                errors.push("Guardian supporting document proof is required for minors.");
+            if (data.physicalAttributes !== undefined || data.guardianDetails !== undefined) {
+                const g = data.guardianDetails;
+                if (!g || !g.guardianName || !g.relationship || !g.contactNumber || !g.consentGiven) {
+                    errors.push("Talent under 18 years of age requires mandatory guardian name, relationship, contact number, and explicit consent.");
+                }
+                if (g?.contactNumber && !/^[0-9+\s-]{10,15}$/.test(String(g.contactNumber).trim())) {
+                    errors.push("Invalid guardian mobile number format.");
+                }
+                if (!g?.guardianEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(g.guardianEmail).trim())) {
+                    errors.push("Valid guardian email address is required.");
+                }
+                if (process.env.GUARDIAN_DOC_REQUIRED === "true" && (!g || !g.supportingDocumentUrl)) {
+                    errors.push("Guardian supporting document proof is required for minors.");
+                }
             }
         }
     }

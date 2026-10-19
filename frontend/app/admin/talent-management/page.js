@@ -20,6 +20,7 @@ import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import ReviewDrawer from "@/components/admin/ReviewDrawer";
 import ReasonModal from "@/components/admin/ReasonModal";
+import { adminService } from "@/lib/api/services/adminService";
 
 export default function TalentManagementPage() {
   const {
@@ -54,9 +55,25 @@ export default function TalentManagementPage() {
     return t.status === activeTab;
   });
 
-  const handleOpenReview = (talent) => {
+  const handleOpenReview = async (talent) => {
     setSelectedTalent(talent);
     setIsDrawerOpen(true);
+    const targetId = talent._id || talent.id || talent.userId;
+    if (targetId) {
+      try {
+        const res = await adminService.getTalentById(targetId);
+        if (res?.success && res.data) {
+          setSelectedTalent((prev) => ({
+            ...prev,
+            ...res.data,
+            id: prev?.id || res.data.id,
+            status: prev?.status || res.data.status,
+          }));
+        }
+      } catch (err) {
+        console.warn("Failed to fetch detailed talent profile:", err);
+      }
+    }
   };
 
   const handleCloseReview = () => {
@@ -66,7 +83,7 @@ export default function TalentManagementPage() {
 
   // Re-sync selected talent from context if updated while drawer is open
   const currentSelectedTalent = selectedTalent
-    ? talents.find((t) => t.id === selectedTalent.id) || selectedTalent
+    ? { ...(talents.find((t) => t.id === selectedTalent.id || t._id === selectedTalent._id) || {}), ...selectedTalent }
     : null;
 
   const columns = [

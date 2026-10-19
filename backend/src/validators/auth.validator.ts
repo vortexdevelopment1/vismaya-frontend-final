@@ -74,10 +74,12 @@ export const validateLoginInput = (data: any): { isValid: boolean; errors: strin
 };
 
 export const validateChangePasswordInput = (data: any): { isValid: boolean; errors: string[] } => {
-    const { currentPassword, newPassword } = data || {};
+    const { currentPassword, otp, newPassword } = data || {};
     const errors: string[] = [];
 
-    if (!currentPassword) errors.push("Current password is required");
+    if (!currentPassword && !otp) {
+        errors.push("Current password or OTP verification code is required");
+    }
     if (!newPassword || typeof newPassword !== "string" || newPassword.length < 8) {
         errors.push("New password must be at least 8 characters long");
     } else if (newPassword.length > 128) {

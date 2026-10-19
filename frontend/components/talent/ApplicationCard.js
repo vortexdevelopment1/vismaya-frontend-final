@@ -33,10 +33,11 @@ export default function ApplicationCard({ application }) {
   const opportunity = getOpportunity(application.opportunityId);
   const project = opportunity ? getProject(opportunity.projectId) : null;
 
-  const isShortlisted = application.status === "Shortlisted";
-  const isSelected = application.status === "Selected";
-  const isNotSelected = application.status === "Not Selected";
-  const isWithdrawn = application.status === "Withdrawn";
+  const isShortlisted = application.status === "Shortlisted" || application.status === "shortlisted";
+  const isSelected = application.status === "Selected" || application.status === "selected";
+  const isNotSelected = application.status === "Not Selected" || application.status === "not_selected";
+  const isWithdrawn = application.status === "Withdrawn" || application.status === "withdrawn";
+  const isOpportunityCancelled = application.status === "Opportunity Cancelled" || application.status === "opportunity_cancelled";
 
   const getStageNumber = () => {
     switch (application.status) {
@@ -410,6 +411,44 @@ export default function ApplicationCard({ application }) {
               </div>
             </div>
           </div>
+        ) : isOpportunityCancelled ? (
+          <div
+            className="app-status-box app-status-cancelled"
+            style={{
+              backgroundColor: "rgba(180, 35, 24, 0.08)",
+              border: "1px solid rgba(180, 35, 24, 0.25)",
+              borderRadius: "4px",
+              padding: "14px 18px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "12px",
+            }}
+          >
+            <div className="app-status-left" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <XCircle size={18} className="app-status-icon" style={{ color: "#B42318" }} />
+              <span className="app-status-text" style={{ fontSize: "13px", color: "#B42318", fontWeight: "600" }}>
+                Opportunity Cancelled by Organization.
+              </span>
+            </div>
+            <Link
+              href="/talent/opportunities"
+              className="app-status-link"
+              style={{
+                fontSize: "12px",
+                color: "var(--gold, #9B7A3F)",
+                fontWeight: "700",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                textDecoration: "none",
+              }}
+            >
+              <span>Explore opportunities</span>
+              <ArrowRight size={13} />
+            </Link>
+          </div>
         ) : isWithdrawn ? (
           <div
             className="app-status-box app-status-withdrawn"
@@ -526,7 +565,7 @@ export default function ApplicationCard({ application }) {
             <span>View Timeline</span>
           </button>
 
-          {!isWithdrawn && (
+          {!isWithdrawn && !isOpportunityCancelled && !isSelected && !isNotSelected && (
             <button
               onClick={() => setShowWithdrawConfirm(true)}
               style={{

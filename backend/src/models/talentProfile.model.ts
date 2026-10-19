@@ -23,7 +23,9 @@ export interface ICredit {
     referenceLink?: string;
     workEvidenceUrl?: string;
     isVerifiedCredit: boolean;
+    verificationStatus?: "pending" | "verified" | "rejected";
 }
+
 
 export interface ITraining {
     _id?: Types.ObjectId;
@@ -205,7 +207,12 @@ const creditSchema = new Schema<ICredit>(
         characterName: { type: String, trim: true },
         referenceLink: { type: String, trim: true },
         workEvidenceUrl: { type: String, trim: true },
-        isVerifiedCredit: { type: Boolean, default: false }
+        isVerifiedCredit: { type: Boolean, default: false },
+        verificationStatus: {
+            type: String,
+            enum: ["pending", "verified", "rejected"],
+            default: "pending"
+        }
     },
     { _id: true }
 );

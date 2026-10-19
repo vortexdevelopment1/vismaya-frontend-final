@@ -58,8 +58,8 @@ export function AdminProvider({ children }) {
     async function loadAdminData() {
       try {
         const [talentsRes, orgsRes, mediaRes, notifRes, oppsRes, cancRes, audRes, payRes, metricsRes, verRes, logsRes] = await Promise.allSettled([
-          adminService.getAllUsers({ role: "talent" }),
-          adminService.getAllUsers({ role: "organization" }),
+          adminService.getTalentDirectory(),
+          adminService.getOrganizationDirectory(),
           adminService.getPendingMedia(),
           notificationService.getMyNotifications(),
           adminService.getPendingOpportunities(),

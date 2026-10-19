@@ -10,6 +10,7 @@ import {
   mapOpportunity,
   mapVerification,
   mapBroadcast,
+  mapTalentProfile,
 } from "../mappers/index.js";
 import {
   initialTalents,
@@ -231,13 +232,30 @@ export const adminService = {
    */
   async getTalentDirectory(params = {}) {
     if (!isRealMode("admin")) {
-      return { success: true, data: initialTalents.map(mapUser) };
+      return { success: true, data: initialTalents.map(mapTalentProfile) };
     }
     const res = await apiClient.get("/api/admin/talents", { params });
-    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.talents) ? res.talents : [];
+    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.talents) ? res.talents : Array.isArray(res?.profiles) ? res.profiles : [];
     return {
       success: true,
-      data: docs.map(mapUser),
+      data: docs.map(mapTalentProfile),
+    };
+  },
+
+  /**
+   * Fetch talent detail by ID (Admin view)
+   * @param {string} talentId
+   */
+  async getTalentById(talentId) {
+    if (!isRealMode("admin")) {
+      const found = initialTalents.find((t) => t.id === talentId || t._id === talentId || t.vismayaId === talentId);
+      return { success: true, data: found ? mapTalentProfile(found) : null };
+    }
+    const res = await apiClient.get(`/api/admin/talents/${talentId}`);
+    const doc = res?.profile || res?.data || res;
+    return {
+      success: true,
+      data: doc ? mapTalentProfile(doc) : null,
     };
   },
 

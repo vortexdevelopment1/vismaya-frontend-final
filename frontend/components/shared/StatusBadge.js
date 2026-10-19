@@ -90,6 +90,8 @@ export default function StatusBadge({
     rejected: { ...redConfig, label: "Rejected" },
     declined: { ...redConfig, label: "Declined" },
     cancelled: { ...redConfig, label: "Cancelled" },
+    "opportunity-cancelled": { ...redConfig, label: "Opportunity Cancelled" },
+    "opportunity_cancelled": { ...redConfig, label: "Opportunity Cancelled" },
     suspended: { ...redConfig, label: "Suspended" },
     "not-selected": { ...redConfig, label: "Not Selected" },
     urgent: { ...redConfig, label: "Urgent" },

@@ -642,7 +642,7 @@ export const changePassword = async (req: Request, res: Response): Promise<any> 
             });
         }
 
-        const { currentPassword, newPassword } = req.body;
+        const { currentPassword, otp, newPassword } = req.body;
         const user = await User.findById(userId);
 
         if (!user) {
@@ -652,19 +652,45 @@ export const changePassword = async (req: Request, res: Response): Promise<any> 
             });
         }
 
-        if (!user.password) {
-            return res.status(400).json({
-                success: false,
-                message: "This account was created with Google login and does not have a password set."
+        if (otp) {
+            const otpRecord: any = await Otp.findOne({
+                email: user.email,
+                purpose: "password_change" as any,
+                isUsed: false,
+                expiresAt: { $gt: new Date() }
             });
-        }
 
-        const isMatch = await bcrypt.compare(currentPassword, user.password);
-        if (!isMatch) {
-            return res.status(400).json({
-                success: false,
-                message: "Incorrect current password"
-            });
+            if (!otpRecord) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid or expired password verification code"
+                });
+            }
+
+            const isValid = await bcrypt.compare(String(otp).trim(), otpRecord.otpHash);
+            if (!isValid) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid password verification code"
+                });
+            }
+
+            await Otp.findByIdAndUpdate(otpRecord._id, { isUsed: true });
+        } else {
+            if (!user.password) {
+                return res.status(400).json({
+                    success: false,
+                    message: "This account was created with Google login and does not have a password set. Please use OTP verification to set a password."
+                });
+            }
+
+            const isMatch = await bcrypt.compare(currentPassword, user.password);
+            if (!isMatch) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Incorrect current password"
+                });
+            }
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -1545,10 +1571,86 @@ export const verify2FALogin = async (req: Request, res: Response): Promise<any> 
     }
 };
 
+export const requestChangePasswordOtp = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const userId = req.user?.userId;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User account not found" });
+        }
+
+        const otpCode = crypto.randomInt(100000, 1000000).toString();
+        const otpHash = await bcrypt.hash(otpCode, 10);
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+        await Otp.deleteMany({ email: user.email as string, purpose: "password_change" as any });
+        await Otp.create({
+            email: user.email,
+            otpHash,
+            purpose: "password_change" as any,
+            attempts: 0,
+            isUsed: false,
+            expiresAt
+        });
+
+        await sendEmail({
+            to: user.email,
+            subject: "Your Vismaya Password Change Verification Code",
+            text: `Hello ${user.name},\n\nYour 6-digit verification code to change your account password is: ${otpCode}\n\nValid for 10 minutes.\n\nBest regards,\nVismaya Security Team`
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Password change verification code sent to your registered email"
+        });
+    } catch (error) {
+        console.error("Request change password OTP error:", error);
+        return res.status(500).json({ success: false, message: "Failed to send password verification code" });
+    }
+};
+
 /**
- * Account Lifecycle & Self-Deletion (A8)
- * DELETE /api/auth/account
+ * Account Lifecycle & Self-Deletion (A8 / Spec §38)
+ * Request deletion OTP -> Confirm with OTP
  */
+export const requestAccountDeletionOtp = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const userId = req.user?.userId;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const otpCode = crypto.randomInt(100000, 1000000).toString();
+        const otpHash = await bcrypt.hash(otpCode, 10);
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+        await Otp.deleteMany({ email: user.email as string, purpose: "account_deletion" as any });
+        await Otp.create({
+            email: user.email,
+            otpHash,
+            purpose: "account_deletion" as any,
+            attempts: 0,
+            isUsed: false,
+            expiresAt
+        });
+
+        await sendEmail({
+            to: user.email,
+            subject: "Your Vismaya Account Deletion Code",
+            text: `Hello ${user.name},\n\nYour 6-digit confirmation code to permanently delete your Vismaya artist account is: ${otpCode}\n\nValid for 10 minutes. If you did not request this, please contact support immediately.\n\nBest regards,\nVismaya Security Team`
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Account deletion confirmation code sent to your registered email"
+        });
+    } catch (error) {
+        console.error("Request account deletion OTP error:", error);
+        return res.status(500).json({ success: false, message: "Failed to send deletion verification code" });
+    }
+};
+
 export const requestAccountDeletion = async (req: Request, res: Response): Promise<any> => {
     try {
         const userId = req.user?.userId;
@@ -1556,6 +1658,38 @@ export const requestAccountDeletion = async (req: Request, res: Response): Promi
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
+
+        const otp = req.body?.otp || req.headers["x-otp"] || req.query?.otp;
+        if (!otp) {
+            return res.status(400).json({
+                success: false,
+                message: "Verification OTP code is required to confirm account deletion"
+            });
+        }
+
+        const otpRecord: any = await Otp.findOne({
+            email: user.email as string,
+            purpose: "account_deletion" as any,
+            isUsed: false,
+            expiresAt: { $gt: new Date() }
+        });
+
+        if (!otpRecord) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or expired deletion verification code"
+            });
+        }
+
+        const isValid = await bcrypt.compare(String(otp).trim(), otpRecord.otpHash);
+        if (!isValid) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid deletion verification code"
+            });
+        }
+
+        await Otp.findByIdAndUpdate(otpRecord._id, { isUsed: true });
 
         user.status = "deletion_requested";
         user.deletionRequestedAt = new Date();

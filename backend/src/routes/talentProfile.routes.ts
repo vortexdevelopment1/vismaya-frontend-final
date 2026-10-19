@@ -18,10 +18,59 @@ import {
     unlockTalentProfile,
     getCompletionStatus,
     getMyAnalytics,
-    getShareCard
+    getShareCard,
+    getTalentSettings,
+    updateTalentSettings,
+    updateNotificationSettings,
+    addTalentCredit,
+    updateTalentCredit,
+    deleteTalentCredit
  } from "../controllers/talentProfile.controller.js";
 
 const router = express.Router();
+
+// Talent Settings routes (Spec §34 & §38)
+router.get(
+    "/settings",
+    authenticateUser,
+    authorizeRoles("talent"),
+    getTalentSettings
+);
+
+router.put(
+    "/settings",
+    authenticateUser,
+    authorizeRoles("talent"),
+    updateTalentSettings
+);
+
+router.post(
+    "/settings",
+    authenticateUser,
+    authorizeRoles("talent"),
+    updateTalentSettings
+);
+
+router.get(
+    "/settings/notifications",
+    authenticateUser,
+    authorizeRoles("talent"),
+    getTalentSettings
+);
+
+router.put(
+    "/settings/notifications",
+    authenticateUser,
+    authorizeRoles("talent"),
+    updateNotificationSettings
+);
+
+router.post(
+    "/settings/notifications",
+    authenticateUser,
+    authorizeRoles("talent"),
+    updateNotificationSettings
+);
 
 // Talent profile management
 router.post(
@@ -77,6 +126,28 @@ router.get(
     "/featured",
     optionalAuth,
     getFeaturedTalent
+);
+
+// Talent Work Credits Management
+router.post(
+    "/credits",
+    authenticateUser,
+    authorizeRoles("talent"),
+    addTalentCredit
+);
+
+router.put(
+    "/credits/:creditId",
+    authenticateUser,
+    authorizeRoles("talent"),
+    updateTalentCredit
+);
+
+router.delete(
+    "/credits/:creditId",
+    authenticateUser,
+    authorizeRoles("talent"),
+    deleteTalentCredit
 );
 
 // Share Card endpoint

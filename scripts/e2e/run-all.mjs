@@ -48,7 +48,7 @@ try {
   const orgLogin = await request("auth organization login", "/api/auth/login", json({ email: `e2e+org+${runId}@example.test`, password }), 200);
   const talentLogin = await request("auth talent login", "/api/auth/login", json({ email: `e2e+talent+${runId}@example.test`, password }), 200);
   const orgToken = orgLogin.token; const talentToken = talentLogin.token;
-  await request("media unauthenticated", "/api/media/upload", { method: "POST" }, 401);
+  await request("media unauthenticated", "/api/media", { method: "POST" }, 401);
   const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9JXl8AAAAASUVORK5CYII=", "base64");
   const uploadForm = new FormData(); uploadForm.set("file", new Blob([png], { type: "image/png" }), `e2e-${runId}.png`); uploadForm.set("folder", "e2e-test");
   try {

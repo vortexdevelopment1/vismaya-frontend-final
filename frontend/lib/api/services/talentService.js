@@ -73,8 +73,57 @@ export const talentService = {
     return {
       success: true,
       data: doc ? mapTalentProfile(doc) : null,
+      stepsCompletion: res?.stepsCompletion || null,
+      profileCompletionPercentage: res?.profileCompletionPercentage !== undefined ? res.profileCompletionPercentage : null,
       message: res?.message,
     };
+  },
+
+  /**
+   * Add a work credit
+   * @param {Object} creditData { projectTitle, roleOrDesignation, projectType, year, referenceLink }
+   */
+  async addCredit(creditData) {
+    if (!isRealMode("talent")) {
+      const mockCredit = {
+        id: "c_" + Date.now(),
+        _id: "c_" + Date.now(),
+        ...creditData,
+        isVerifiedCredit: false,
+        verificationStatus: "pending"
+      };
+      return { success: true, data: mockCredit, message: "Credit submitted for verification (Mock)" };
+    }
+
+    const res = await apiClient.post("/api/talent/profile/credits", creditData);
+    return res;
+  },
+
+  /**
+   * Update a work credit
+   * @param {string} creditId
+   * @param {Object} creditData
+   */
+  async updateCredit(creditId, creditData) {
+    if (!isRealMode("talent")) {
+      return { success: true, data: { id: creditId, ...creditData, verificationStatus: "pending" } };
+    }
+
+    const res = await apiClient.put(`/api/talent/profile/credits/${creditId}`, creditData);
+    return res;
+  },
+
+  /**
+   * Delete a work credit
+   * @param {string} creditId
+   */
+  async deleteCredit(creditId) {
+    if (!isRealMode("talent")) {
+      return { success: true, message: "Credit removed (Mock)" };
+    }
+
+    const res = await apiClient.delete(`/api/talent/profile/credits/${creditId}`);
+    return res;
   },
 
   /**
@@ -295,6 +344,68 @@ export const talentService = {
       data: doc ? mapAudition(doc) : null,
       message: res?.message,
     };
+  },
+
+  /**
+   * Fetch authenticated talent account settings (Spec §34 & §38)
+   */
+  async getSettings() {
+    if (!isRealMode("talent")) {
+      return {
+        success: true,
+        data: {
+          fullName: "Riya Sharma",
+          name: "Riya Sharma",
+          email: "artist@vismaya.io",
+          mobile: "+91 98765 43210",
+          phone: "+91 98765 43210",
+          city: "Mumbai, Maharashtra",
+          isEmailVerified: true,
+          twoFactorEnabled: false,
+          emailNotificationsEnabled: true,
+        },
+      };
+    }
+    const res = await apiClient.get("/api/talent/settings");
+    return {
+      success: true,
+      data: res?.settings || res?.data || res,
+    };
+  },
+
+  /**
+   * Persist talent account settings changes (whitelisted fields: fullName/name, city)
+   * @param {Object} payload { fullName, city, profilePhoto }
+   */
+  async updateSettings(payload) {
+    if (!isRealMode("talent")) {
+      return {
+        success: true,
+        data: payload,
+        message: "Settings saved successfully (Mock)",
+      };
+    }
+    const res = await apiClient.put("/api/talent/settings", payload);
+    return {
+      success: true,
+      data: res?.user || res?.data || res,
+      profile: res?.profile ? mapTalentProfile(res.profile) : null,
+      message: res?.message,
+    };
+  },
+
+  /**
+   * Update notification channel preferences (Spec §38: Email toggle only)
+   * @param {Object} payload { emailNotificationsEnabled }
+   */
+  async updateNotificationSettings(payload) {
+    if (!isRealMode("talent")) {
+      return {
+        success: true,
+        message: "Notification preferences updated (Mock)",
+      };
+    }
+    return apiClient.put("/api/talent/settings/notifications", payload);
   },
 };
 

@@ -10,6 +10,7 @@ import PaymentTransaction from "../models/paymentTransaction.model.js";
 import AdminAuditLog from "../models/adminAuditLog.model.js";
 import Verification from "../models/verification.model.js";
 import Application from "../models/application.model.js";
+import Notification from "../models/notification.model.js";
 import MediaItem from "../models/mediaItem.model.js";
 import Coupon from "../models/coupon.model.js";
 import CreditLedger from "../models/creditLedger.model.js";
@@ -1593,26 +1594,131 @@ export const reviewOpportunityCancellation = async (req: Request, res: Response)
             return res.status(404).json({ success: false, message: "Opportunity not found" });
         }
 
+        const alreadyProcessed = (action === "approve" && opportunity.status === "cancelled") ||
+            (action === "reject" && opportunity.status !== "cancellation_requested");
+        let affectedCount = 0;
+
         if (action === "approve") {
             opportunity.status = "cancelled";
+
+            if (!alreadyProcessed) {
+                // Find all active applications (applied, under_review, shortlisted, selected)
+                const activeApplications = await Application.find({
+                    opportunityId: opportunity._id,
+                    status: { $in: ["applied", "under_review", "shortlisted", "selected"] }
+                });
+                affectedCount = activeApplications.length;
+
+                if (affectedCount > 0) {
+                    await Application.updateMany(
+                        {
+                            opportunityId: opportunity._id,
+                            status: { $in: ["applied", "under_review", "shortlisted", "selected"] }
+                        },
+                        {
+                            $set: { status: "opportunity_cancelled" }
+                        }
+                    );
+                }
+
+                // Notify each affected talent exactly once
+                for (const app of activeApplications) {
+                    const existingNotif = await Notification.findOne({
+                        recipient: app.talentId,
+                        referenceId: opportunity._id,
+                        type: "opportunity_cancelled"
+                    });
+                    if (!existingNotif) {
+                        await notifyUser({
+                            recipientId: app.talentId,
+                            type: "opportunity_cancelled",
+                            title: "Opportunity Cancelled",
+                            message: `The opportunity "${opportunity.title}" has been cancelled by the organization.`,
+                            referenceId: opportunity._id,
+                            referenceType: "Opportunity",
+                            sendEmailAlert: true
+                        });
+                    }
+                }
+
+                // Resolve org
+                let org = (opportunity as any).organizationId ? await Organization.findById((opportunity as any).organizationId) : null;
+                if (!org && opportunity.projectId) {
+                    const project = await Project.findById(opportunity.projectId);
+                    if (project?.organizationId) {
+                        org = await Organization.findById(project.organizationId);
+                    }
+                }
+
+                // Notify organization user exactly once
+                if (org && org.userId) {
+                    const existingOrgNotif = await Notification.findOne({
+                        recipient: org.userId,
+                        referenceId: opportunity._id,
+                        type: "opportunity_cancelled"
+                    });
+                    if (!existingOrgNotif) {
+                        await notifyUser({
+                            recipientId: org.userId,
+                            type: "opportunity_cancelled",
+                            title: "Opportunity Cancellation Approved",
+                            message: `Your cancellation request for opportunity "${opportunity.title}" has been approved.`,
+                            referenceId: opportunity._id,
+                            referenceType: "Opportunity",
+                            sendEmailAlert: true
+                        });
+                    }
+                }
+            }
         } else {
-            const isExpired = (opportunity as any).applicationDeadline && new Date((opportunity as any).applicationDeadline) < new Date();
-            opportunity.status = (isExpired ? "closed" : (opportunity.statusBeforeCancellationRequest || "published")) as any;
+            if (!alreadyProcessed) {
+                const isExpired = (opportunity as any).applicationDeadline && new Date((opportunity as any).applicationDeadline) < new Date();
+                opportunity.status = (isExpired ? "closed" : (opportunity.statusBeforeCancellationRequest || "published")) as any;
+
+                // Resolve org
+                let org = (opportunity as any).organizationId ? await Organization.findById((opportunity as any).organizationId) : null;
+                if (!org && opportunity.projectId) {
+                    const project = await Project.findById(opportunity.projectId);
+                    if (project?.organizationId) {
+                        org = await Organization.findById(project.organizationId);
+                    }
+                }
+
+                // Notify organization of rejection
+                if (org && org.userId) {
+                    await notifyUser({
+                        recipientId: org.userId,
+                        type: "opportunity_cancellation_reviewed",
+                        title: "Opportunity Cancellation Request Rejected",
+                        message: `Your cancellation request for opportunity "${opportunity.title}" was not approved by administration. The opportunity remains active.`,
+                        referenceId: opportunity._id,
+                        referenceType: "Opportunity",
+                        sendEmailAlert: true
+                    });
+                }
+            }
         }
 
-        opportunity.cancellationReviewedAt = new Date();
-        opportunity.cancellationReviewedBy = req.user?.userId as any;
-        await opportunity.save();
+        if (!alreadyProcessed) {
+            opportunity.cancellationReviewedAt = new Date();
+            opportunity.cancellationReviewedBy = req.user?.userId as any;
+            await opportunity.save();
 
-        await logAdminAction({
-            adminId: (req.user?.userId as any),
-            action: `CANCELLATION_${action.toUpperCase()}`,
-            targetType: "Opportunity",
-            targetId: opportunity._id,
-            details: `Cancellation request ${action}d`
+            await logAdminAction({
+                adminId: (req.user?.userId as any),
+                action: `CANCELLATION_${action.toUpperCase()}`,
+                targetType: "Opportunity",
+                targetId: opportunity._id,
+                details: `Cancellation request ${action}d. Applications affected: ${affectedCount}`
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Cancellation request ${action}d successfully`,
+            opportunity,
+            applicationsAffected: affectedCount
         });
-
-        res.status(200).json({ success: true, message: `Cancellation request ${action}d successfully`, opportunity });
     } catch (error: any) {
         console.error("Review cancellation error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while reviewing cancellation" });
@@ -2449,8 +2555,15 @@ export const getAdminCreditLedger = async (req: Request, res: Response): Promise
             CreditTransaction.countDocuments(filter)
         ]);
 
+        // Helper to extract clean hex ObjectId string regardless of whether populated
+        const getOrgIdStr = (org: any): string | null => {
+            if (!org) return null;
+            if (typeof org === "object" && org._id) return String(org._id);
+            return String(org);
+        };
+
         // Build per-org balance summary from CreditLedger for orgs visible in this page
-        const orgIds = [...new Set(rows.map(r => String(r.organizationId)))];
+        const orgIds = [...new Set(rows.map(r => getOrgIdStr(r.organizationId)).filter(Boolean))];
         const ledgers = orgIds.length > 0
             ? await CreditLedger.find({ organizationId: { $in: orgIds } })
                 .select("organizationId includedCredits purchasedCredits consumedCredits balance")
@@ -2458,7 +2571,8 @@ export const getAdminCreditLedger = async (req: Request, res: Response): Promise
 
         const ledgerMap: Record<string, any> = {};
         for (const l of ledgers) {
-            ledgerMap[String(l.organizationId)] = {
+            const idKey = getOrgIdStr(l.organizationId) || String(l.organizationId);
+            ledgerMap[idKey] = {
                 includedCredits: l.includedCredits,
                 purchasedCredits: l.purchasedCredits,
                 consumedCredits: l.consumedCredits,
@@ -2467,7 +2581,7 @@ export const getAdminCreditLedger = async (req: Request, res: Response): Promise
         }
 
         const ledgerRows = rows.map(r => {
-            const orgIdStr = String(r.organizationId);
+            const orgIdStr = getOrgIdStr(r.organizationId) || "";
             return {
                 _id: r._id,
                 organization: r.organizationId,   // populated: { _id, organizationName }

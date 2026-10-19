@@ -283,6 +283,8 @@ export default function ShortlistAuditionsPage() {
   // Map application to stage key: 'rev' | 'short' | 'req' | 'tal' | 'sel' | 'no' | 'under_review' | 'applied'
   const getAppStage = (app) => {
     const st = (app.status || "").toLowerCase().replace(/[\s-]/g, "_");
+    if (st === "opportunity_cancelled") return "opportunity_cancelled";
+    if (st === "withdrawn") return "withdrawn";
     if (st === "selected") return "sel";
     if (st === "not_selected" || st === "rejected") return "no";
     const aud = auditions.find((a) => a.applicationId === (app.id || app._id));
@@ -570,6 +572,22 @@ export default function ShortlistAuditionsPage() {
 
   // Status pill renderer
   const renderStatusPill = (stage, app) => {
+    if (stage === "opportunity_cancelled") {
+      return (
+        <span className="v-stage-status-pill cancelled" style={{ background: "rgba(180, 35, 24, 0.08)", color: "#B42318", border: "1px solid rgba(180, 35, 24, 0.25)", padding: "4px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+          <span className="v-pill-dot" style={{ background: "#B42318", width: "6px", height: "6px", borderRadius: "50%" }} />
+          <span>Opportunity Cancelled</span>
+        </span>
+      );
+    }
+    if (stage === "withdrawn") {
+      return (
+        <span className="v-stage-status-pill withdrawn" style={{ background: "#F3EFE6", color: "#5A584F", border: "1px solid #E8E2D4", padding: "4px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+          <span className="v-pill-dot" style={{ background: "#777970", width: "6px", height: "6px", borderRadius: "50%" }} />
+          <span>Withdrawn</span>
+        </span>
+      );
+    }
     if (stage === "rev") {
       return (
         <span className="v-stage-status-pill rev">
@@ -1020,7 +1038,11 @@ export default function ShortlistAuditionsPage() {
                       </button>
 
                       {/* Primary contextual status ladder action */}
-                      {isApplied ? (
+                      {stage === "opportunity_cancelled" || stage === "withdrawn" ? (
+                        <span style={{ fontSize: "12px", color: "#777970", fontStyle: "italic", padding: "8px 12px" }}>
+                          No actions available
+                        </span>
+                      ) : isApplied ? (
                         <div style={{ display: "flex", gap: "6px" }}>
                           <button
                             type="button"

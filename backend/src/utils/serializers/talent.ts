@@ -128,18 +128,26 @@ export const toFullProfile = (
 
     // Full Raw for Owner / Admin
     if (isOwner || isAdmin) {
+        const canonicalEmail = user?.email || p.email;
+        const canonicalMobile = user?.mobile || user?.phone || p.mobile || p.phone;
+        const isEmailVerified = Boolean(user?.isEmailVerified ?? p.isEmailVerified ?? false);
+
         return {
             ...p,
             status: p.status || (p.isProfileApproved ? "approved" : (p.isVerified ? "active" : (user?.status || "pending"))),
             isProfileApproved: Boolean(p.isProfileApproved),
             statusReason: p.statusReason || p.rejectionReason || null,
-            mobile: user?.mobile,
-            phone: user?.mobile,
+            email: canonicalEmail,
+            mobile: canonicalMobile,
+            phone: canonicalMobile,
+            isEmailVerified,
+            twoFactorEnabled: Boolean(user?.twoFactorEnabled ?? false),
+            emailNotificationsEnabled: user?.emailNotificationsEnabled !== undefined ? Boolean(user.emailNotificationsEnabled) : true,
             contactDetails: {
-                email: user?.email,
-                mobile: user?.mobile,
-                phone: user?.mobile,
-                name: user?.name
+                email: canonicalEmail,
+                mobile: canonicalMobile,
+                phone: canonicalMobile,
+                name: user?.name || p.name || `${p.firstName || ""} ${p.lastName || ""}`.trim()
             },
             verificationBadges: badges,
             isUnlocked: true,

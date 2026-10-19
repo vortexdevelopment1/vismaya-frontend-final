@@ -4,7 +4,7 @@ export interface IOtp extends Document {
     email?: string;
     mobile?: string;
     otpHash: string;
-    purpose: "password_reset" | "email_verification" | "mobile_verification" | "registration" | "2fa_login" | "2fa_setup" | "email_change";
+    purpose: "password_reset" | "email_verification" | "mobile_verification" | "registration" | "2fa_login" | "2fa_setup" | "email_change" | "password_change" | "account_deletion";
     metadata?: Record<string, unknown>;
     attempts: number;
     isUsed: boolean;
@@ -42,7 +42,9 @@ const otpSchema = new Schema<IOtp>(
                 "registration",
                 "2fa_login",
                 "2fa_setup",
-                "email_change"
+                "email_change",
+                "password_change",
+                "account_deletion"
             ],
             default: "password_reset"
         },

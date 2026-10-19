@@ -8,6 +8,8 @@ import CreditViewHistory from "../models/creditViewHistory.model.js";
 import ProjectShortlist from "../models/projectShortlist.model.js";
 import MediaItem from "../models/mediaItem.model.js";
 import Verification from "../models/verification.model.js";
+import User from "../models/user.model.js";
+import Notification from "../models/notification.model.js";
 import { notifyUser } from "../services/notification.service.js";
 
 export const applyForOpportunity = async (req: Request, res: Response): Promise<any> => {
@@ -26,7 +28,15 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             });
         }
 
-        // 2. Validate paid membership gate (A7)
+        // 2. Cancelled opportunities check (Part A D6b)
+        if (opportunity.status === "cancelled") {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot apply to a cancelled opportunity"
+            });
+        }
+
+        // 3. Validate paid membership gate (A7)
         const profile = await TalentProfile.findOne({ userId: talentId });
         if (!profile || (!profile.isPaid && !req.user?.isPaid)) {
             return res.status(403).json({
@@ -35,7 +45,7 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             });
         }
 
-        // 3. O6: Require explicit consentGiven === true
+        // 4. O6: Require explicit consentGiven === true
         if (consentGiven !== true) {
             return res.status(400).json({
                 success: false,
@@ -43,7 +53,7 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             });
         }
 
-        // 4. Only published opportunities can receive applications
+        // 5. Only published opportunities can receive applications
         if (opportunity.status !== "published") {
             return res.status(400).json({
                 success: false,
@@ -238,14 +248,6 @@ export const withdrawApplication = async (req: Request, res: Response): Promise<
         const { confirm } = req.body;
         const withdrawalReason = req.body.withdrawalReason || req.body.reason;
 
-        // O6: Require reason AND confirm: true
-        if (!withdrawalReason || !withdrawalReason.trim() || confirm !== true) {
-            return res.status(400).json({
-                success: false,
-                message: "Withdrawal reason and explicit confirmation (confirm: true) are required."
-            });
-        }
-
         const application = await Application.findById(String(applicationId));
         if (!application) {
             return res.status(404).json({
@@ -258,6 +260,23 @@ export const withdrawApplication = async (req: Request, res: Response): Promise<
             return res.status(403).json({
                 success: false,
                 message: "You can only withdraw your own application"
+            });
+        }
+
+        const opportunity = await Opportunity.findById(application.opportunityId);
+
+        if (opportunity?.status === "cancelled" || application.status === "opportunity_cancelled") {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot withdraw an application for a cancelled opportunity"
+            });
+        }
+
+        // O6: Require reason AND confirm: true
+        if (!withdrawalReason || !withdrawalReason.trim() || confirm !== true) {
+            return res.status(400).json({
+                success: false,
+                message: "Withdrawal reason and explicit confirmation (confirm: true) are required."
             });
         }
 
@@ -280,6 +299,35 @@ export const withdrawApplication = async (req: Request, res: Response): Promise<
         application.withdrawnAt = new Date();
 
         await application.save();
+
+        // Notify organization user (Part C)
+        try {
+            const project = await Project.findById(opportunity?.projectId);
+            const orgId = (opportunity as any)?.organizationId || project?.organizationId;
+            const org = await Organization.findById(orgId);
+            const talentUser = await User.findById(talentId);
+
+            if (org && org.userId) {
+                const existingNotif = await Notification.findOne({
+                    recipient: org.userId,
+                    referenceId: application._id,
+                    type: "application_withdrawn"
+                });
+                if (!existingNotif) {
+                    await notifyUser({
+                        recipientId: org.userId,
+                        type: "application_withdrawn",
+                        title: "Application Withdrawn",
+                        message: `${talentUser?.name || "An applicant"} has withdrawn their application for "${opportunity?.title || "Opportunity"}". Reason: ${application.withdrawalReason}`,
+                        referenceId: application._id,
+                        referenceType: "Application",
+                        sendEmailAlert: true
+                    });
+                }
+            }
+        } catch (notifErr: any) {
+            console.error("Failed to notify org about application withdrawal:", notifErr.message);
+        }
 
         res.status(200).json({
             success: true,

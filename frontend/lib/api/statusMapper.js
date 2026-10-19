@@ -49,6 +49,7 @@ export const APPLICATION_STATUS_MAP = {
   selected: "Selected",
   not_selected: "Not Selected",
   withdrawn: "Withdrawn",
+  opportunity_cancelled: "Opportunity Cancelled",
 };
 
 export const APPLICATION_BACKEND_STATUS_MAP = {
@@ -61,6 +62,8 @@ export const APPLICATION_BACKEND_STATUS_MAP = {
   not_selected: "not_selected",
   rejected: "not_selected",
   withdrawn: "withdrawn",
+  opportunity_cancelled: "opportunity_cancelled",
+  "opportunity cancelled": "opportunity_cancelled",
 };
 
 // 3. Audition Statuses (includes Target relay contracts)

@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import PageHeader from "@/components/shared/PageHeader";
-import ProfileSections from "@/components/talent/ProfileSections";
+import ProfileBuilder from "@/components/talent/ProfileBuilder";
 import { useTalent } from "@/lib/talent/TalentContext";
 
 export default function TalentProfilePage() {
@@ -12,7 +12,7 @@ export default function TalentProfilePage() {
     <div className="talent-profile-root" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <PageHeader
         title="My Artist Profile"
-        subtitle="Manage your personal information, physical measurements, performance skills, experience, and guardian verification."
+        subtitle="Manage your professional craft, portfolio media, verified work experience, and confidential personal details."
         badge={profile.status}
         breadcrumbs={[
           { label: "Talent Dashboard", href: "/talent/dashboard" },
@@ -20,7 +20,9 @@ export default function TalentProfilePage() {
         ]}
       />
 
-      <ProfileSections />
+      <Suspense fallback={<div style={{ padding: "40px", textAlign: "center", color: "#5A584F" }}>Loading profile builder...</div>}>
+        <ProfileBuilder />
+      </Suspense>
 
       <style jsx>{`
         @media (max-width: 640px) {

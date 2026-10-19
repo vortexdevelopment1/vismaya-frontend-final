@@ -120,14 +120,24 @@ export function TalentProvider({ children }) {
 
   // 1. Profile State
   const [profile, setProfile] = useState(() => {
-    if (isRealMode("talent")) {
-      return emptyProfileData;
-    }
     if (typeof window !== "undefined") {
       try {
         const saved = localStorage.getItem("vismaya_talent_profile");
-        if (saved) return JSON.parse(saved);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (isRealMode("talent")) {
+            // Reject stale mock data in real mode
+            if (parsed && parsed.id !== "tal_904" && parsed.personal?.fullName !== "Riya Sharma") {
+              return parsed;
+            }
+          } else {
+            return parsed;
+          }
+        }
       } catch {}
+    }
+    if (isRealMode("talent")) {
+      return emptyProfileData;
     }
     return talentService.getInitialState().profile || emptyProfileData;
   });
@@ -186,6 +196,7 @@ export function TalentProvider({ children }) {
   }, [auth?.user]);
 
   // Fetch real data on mount when in real API mode
+  const currentUserId = auth?.user?.id || auth?.user?._id;
   useEffect(() => {
     if (!isRealMode("talent") && !isRealMode("media")) return;
 
@@ -205,7 +216,26 @@ export function TalentProvider({ children }) {
 
         if (mounted) {
           if (profRes.status === "fulfilled" && profRes.value?.data) {
-            setProfile(profRes.value.data);
+            const raw = profRes.value.data;
+            const merged = {
+              ...raw,
+              email: raw.email || auth?.user?.email || "",
+              mobile: raw.mobile || auth?.user?.mobile || auth?.user?.phone || "",
+              phone: raw.phone || auth?.user?.mobile || auth?.user?.phone || "",
+              isEmailVerified: raw.isEmailVerified !== undefined ? raw.isEmailVerified : (auth?.user?.isEmailVerified ?? false),
+              personal: {
+                ...raw.personal,
+                email: raw.personal?.email || raw.email || auth?.user?.email || "",
+                phone: raw.personal?.phone || raw.phone || auth?.user?.mobile || auth?.user?.phone || "",
+                isEmailVerified: raw.personal?.isEmailVerified !== undefined ? raw.personal.isEmailVerified : (raw.isEmailVerified ?? auth?.user?.isEmailVerified ?? false),
+              }
+            };
+            setProfile(merged);
+            if (typeof window !== "undefined") {
+              try {
+                localStorage.setItem("vismaya_talent_profile", JSON.stringify(merged));
+              } catch {}
+            }
           }
           if (mediaRes.status === "fulfilled" && Array.isArray(mediaRes.value?.data)) {
             setPortfolio(mediaRes.value.data);
@@ -229,7 +259,7 @@ export function TalentProvider({ children }) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [currentUserId]);
 
   // Toast Helpers
   const addToast = ({ type = "success", title, message, duration = 4000 }) => {
@@ -249,12 +279,44 @@ export function TalentProvider({ children }) {
 
   // Profile Update Action
   const updateProfile = async (updatedFields) => {
+    let result = null;
     if (isRealMode("talent")) {
       try {
         const mergedPayload = { ...profile, ...updatedFields };
         const res = await talentService.saveProfile(mergedPayload);
+        result = res;
         if (res?.data) {
-          setProfile((prev) => ({ ...prev, ...res.data }));
+          const fresh = res.data;
+          setProfile((prev) => {
+            const canonicalEmail = fresh.email || prev.email || auth?.user?.email || "";
+            const canonicalMobile = fresh.mobile || fresh.phone || prev.mobile || prev.phone || auth?.user?.mobile || auth?.user?.phone || "";
+            const verified = fresh.isEmailVerified !== undefined ? fresh.isEmailVerified : (prev.isEmailVerified ?? auth?.user?.isEmailVerified ?? false);
+
+            return {
+              ...prev,
+              ...fresh,
+              email: canonicalEmail,
+              mobile: canonicalMobile,
+              phone: canonicalMobile,
+              isEmailVerified: verified,
+              profileCompletionPercentage: res.profileCompletionPercentage !== null && res.profileCompletionPercentage !== undefined
+                ? res.profileCompletionPercentage
+                : (fresh.profileCompletionPercentage !== undefined ? fresh.profileCompletionPercentage : prev.profileCompletionPercentage),
+              stepsCompletion: res.stepsCompletion || fresh.stepsCompletion || prev.stepsCompletion,
+              personal: {
+                ...prev.personal,
+                ...fresh.personal,
+                email: fresh.personal?.email || canonicalEmail,
+                phone: fresh.personal?.phone || canonicalMobile,
+                isEmailVerified: fresh.personal?.isEmailVerified !== undefined ? fresh.personal.isEmailVerified : verified,
+              },
+            };
+          });
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("vismaya_talent_profile", JSON.stringify(res.data));
+            } catch {}
+          }
         } else {
           setProfile((prev) => ({ ...prev, ...updatedFields }));
         }
@@ -285,9 +347,11 @@ export function TalentProvider({ children }) {
 
     addToast({
       type: "info",
-      title: "Profile Changes Submitted",
-      message: "Your profile updates are saved and submitted for Admin approval.",
+      title: "Profile Changes Saved",
+      message: "Your profile updates have been saved to the platform.",
     });
+
+    return result;
   };
 
   // Dedicated Profile Photo Upload / Change Action
@@ -512,6 +576,151 @@ export function TalentProvider({ children }) {
     });
   };
 
+  // Refresh Profile from Backend
+  const refreshProfile = useCallback(async () => {
+    if (!isRealMode("talent")) return;
+    try {
+      const res = await talentService.getMyProfile();
+      if (res?.data) {
+        const fresh = res.data;
+        setProfile((prev) => ({
+          ...prev,
+          ...fresh,
+          email: fresh.email || prev.email || auth?.user?.email || "",
+          mobile: fresh.mobile || fresh.phone || prev.mobile || prev.phone || auth?.user?.mobile || auth?.user?.phone || "",
+          phone: fresh.mobile || fresh.phone || prev.mobile || prev.phone || auth?.user?.mobile || auth?.user?.phone || "",
+          isEmailVerified: fresh.isEmailVerified !== undefined ? fresh.isEmailVerified : (prev.isEmailVerified ?? auth?.user?.isEmailVerified ?? false),
+          profileCompletionPercentage: res.profileCompletionPercentage !== undefined ? res.profileCompletionPercentage : (fresh.profileCompletionPercentage !== undefined ? fresh.profileCompletionPercentage : prev.profileCompletionPercentage),
+          stepsCompletion: res.stepsCompletion || fresh.stepsCompletion || prev.stepsCompletion,
+        }));
+      }
+    } catch (err) {
+      console.warn("Failed to refresh profile:", err);
+    }
+  }, [auth?.user]);
+
+  // Talent Work Credit Actions
+  const addCredit = async (creditData) => {
+    try {
+      const res = await talentService.addCredit(creditData);
+      if (res?.credits) {
+        setProfile((prev) => ({
+          ...prev,
+          credits: res.credits.map((c) => ({
+            id: c._id ? String(c._id) : (c.id || ""),
+            _id: c._id ? String(c._id) : (c.id || ""),
+            projectTitle: c.projectTitle || "",
+            roleOrDesignation: c.roleOrDesignation || "",
+            projectType: c.projectType || "Film / Project",
+            year: c.year || null,
+            referenceLink: c.referenceLink || "",
+            isVerifiedCredit: Boolean(c.isVerifiedCredit),
+            verificationStatus: c.verificationStatus || "pending",
+          })),
+          profileCompletionPercentage: res.profileCompletionPercentage !== undefined ? res.profileCompletionPercentage : prev.profileCompletionPercentage,
+          stepsCompletion: res.stepsCompletion || prev.stepsCompletion
+        }));
+      } else if (res?.data) {
+        setProfile((prev) => ({
+          ...prev,
+          credits: [res.data, ...(prev.credits || [])]
+        }));
+      }
+      addToast({
+        type: "success",
+        title: "Credit Submitted",
+        message: "Work credit submitted for admin verification.",
+      });
+      return res;
+    } catch (err) {
+      addToast({
+        type: "danger",
+        title: "Add Credit Failed",
+        message: err?.message || "Could not add credit.",
+      });
+      throw err;
+    }
+  };
+
+  const updateCredit = async (creditId, creditData) => {
+    try {
+      const res = await talentService.updateCredit(creditId, creditData);
+      if (res?.credits) {
+        setProfile((prev) => ({
+          ...prev,
+          credits: res.credits.map((c) => ({
+            id: c._id ? String(c._id) : (c.id || ""),
+            _id: c._id ? String(c._id) : (c.id || ""),
+            projectTitle: c.projectTitle || "",
+            roleOrDesignation: c.roleOrDesignation || "",
+            projectType: c.projectType || "Film / Project",
+            year: c.year || null,
+            referenceLink: c.referenceLink || "",
+            isVerifiedCredit: Boolean(c.isVerifiedCredit),
+            verificationStatus: c.verificationStatus || "pending",
+          })),
+          profileCompletionPercentage: res.profileCompletionPercentage !== undefined ? res.profileCompletionPercentage : prev.profileCompletionPercentage,
+          stepsCompletion: res.stepsCompletion || prev.stepsCompletion
+        }));
+      }
+      addToast({
+        type: "success",
+        title: "Credit Updated",
+        message: "Work credit updated and queued for review.",
+      });
+      return res;
+    } catch (err) {
+      addToast({
+        type: "danger",
+        title: "Update Credit Failed",
+        message: err?.message || "Could not update credit.",
+      });
+      throw err;
+    }
+  };
+
+  const deleteCredit = async (creditId) => {
+    try {
+      const res = await talentService.deleteCredit(creditId);
+      if (res?.credits) {
+        setProfile((prev) => ({
+          ...prev,
+          credits: res.credits.map((c) => ({
+            id: c._id ? String(c._id) : (c.id || ""),
+            _id: c._id ? String(c._id) : (c.id || ""),
+            projectTitle: c.projectTitle || "",
+            roleOrDesignation: c.roleOrDesignation || "",
+            projectType: c.projectType || "Film / Project",
+            year: c.year || null,
+            referenceLink: c.referenceLink || "",
+            isVerifiedCredit: Boolean(c.isVerifiedCredit),
+            verificationStatus: c.verificationStatus || "pending",
+          })),
+          profileCompletionPercentage: res.profileCompletionPercentage !== undefined ? res.profileCompletionPercentage : prev.profileCompletionPercentage,
+          stepsCompletion: res.stepsCompletion || prev.stepsCompletion
+        }));
+      } else {
+        setProfile((prev) => ({
+          ...prev,
+          credits: (prev.credits || []).filter((c) => (c.id !== creditId && c._id !== creditId))
+        }));
+      }
+      addToast({
+        type: "info",
+        title: "Credit Removed",
+        message: "Work credit removed from your profile.",
+      });
+      return res;
+    } catch (err) {
+      addToast({
+        type: "danger",
+        title: "Delete Failed",
+        message: err?.message || "Could not delete credit.",
+      });
+      throw err;
+    }
+  };
+
   // Casting Call Application Action
   const applyToCall = async ({ callId, roleName, submittedClipName, applicantNote }) => {
     if (isRealMode("applications")) {
@@ -674,6 +883,19 @@ export function TalentProvider({ children }) {
 
   // Profile Completion Percentage Calculation
   const calculateProfileCompletion = () => {
+    // If backend provided authoritative profileCompletionPercentage, honor it
+    if (profile?.profileCompletionPercentage !== undefined && profile.profileCompletionPercentage !== null) {
+      const score = Math.min(100, Math.max(0, Number(profile.profileCompletionPercentage)));
+      const sc = profile.stepsCompletion || {};
+      const checklist = [
+        { label: "Step 1: Professional Details", done: Boolean(sc.step1), section: "personal" },
+        { label: "Step 2: Portfolio & Profile Photo", done: Boolean(sc.step2), section: "portfolio" },
+        { label: "Step 3: Work Experience Credits", done: Boolean(sc.step3), section: "experience" },
+        { label: "Step 4: Personal & Physical Measurements", done: Boolean(sc.step4), section: "physical" },
+      ];
+      return { score, checklist };
+    }
+
     let score = 0;
     const checklist = [];
 
@@ -809,9 +1031,13 @@ export function TalentProvider({ children }) {
     <TalentContext.Provider
       value={{
         profile,
+        refreshProfile,
         updateProfile,
         updateProfilePhoto,
         removeProfilePhoto,
+        addCredit,
+        updateCredit,
+        deleteCredit,
         profileCompletionScore,
         profileChecklist,
         portfolio,

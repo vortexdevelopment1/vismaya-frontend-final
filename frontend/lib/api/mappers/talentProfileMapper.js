@@ -20,6 +20,15 @@ export function fromApi(profile) {
   const userEmail = userIdObj?.email || profile.contactDetails?.email || profile.personal?.email || profile.email || "";
   const userMobile = userIdObj?.mobile || userIdObj?.phone || profile.contactDetails?.mobile || profile.contactDetails?.phone || profile.personal?.phone || profile.personal?.mobile || profile.mobile || profile.phone || "";
   const userName = userIdObj?.name || profile.contactDetails?.name || profile.personal?.fullName || profile.name || "";
+  const isEmailVerified = profile.isEmailVerified !== undefined
+    ? Boolean(profile.isEmailVerified)
+    : (userIdObj?.isEmailVerified !== undefined ? Boolean(userIdObj.isEmailVerified) : false);
+  const twoFactorEnabled = profile.twoFactorEnabled !== undefined
+    ? Boolean(profile.twoFactorEnabled)
+    : (userIdObj?.twoFactorEnabled !== undefined ? Boolean(userIdObj.twoFactorEnabled) : false);
+  const emailNotificationsEnabled = profile.emailNotificationsEnabled !== undefined
+    ? Boolean(profile.emailNotificationsEnabled)
+    : (userIdObj?.emailNotificationsEnabled !== undefined ? Boolean(userIdObj.emailNotificationsEnabled) : true);
 
   const computedName = profile.stageName?.trim() || 
     profile.personal?.stageName?.trim() ||
@@ -64,14 +73,27 @@ export function fromApi(profile) {
     headline: profile.headline || "",
     bio: profile.bio || profile.personal?.bio || "",
     personal: {
-      fullName: computedName,
+      fullName: userName || computedName,
       stageName: profile.stageName || profile.personal?.stageName || "",
+      age: (() => {
+        const rawDobVal = profile.dob || profile.personal?.dob;
+        if (rawDobVal) {
+          const d = new Date(rawDobVal);
+          if (!isNaN(d.getTime())) {
+            return Math.abs(new Date(Date.now() - d.getTime()).getUTCFullYear() - 1970);
+          }
+        }
+        return profile.personal?.age ? Number(profile.personal.age) : "";
+      })(),
       dob: profile.dob || profile.personal?.dob || "",
       gender: profile.gender || profile.personal?.gender || "",
       city: profile.currentCity || profile.personal?.city || "",
       state: profile.currentState || profile.personal?.state || "",
       email: userEmail,
       phone: userMobile,
+      isEmailVerified,
+      twoFactorEnabled,
+      emailNotificationsEnabled,
       bio: profile.bio || profile.personal?.bio || "",
       primaryRole: primaryProfession,
     },
@@ -83,8 +105,9 @@ export function fromApi(profile) {
     careerStage: profile.careerStage || "aspiring",
     category: profile.category || "open_talent",
     primaryProfession,
-    profession: primaryProfession,
-    secondaryProfessions: Array.isArray(profile.secondaryProfessions) ? profile.secondaryProfessions : [],
+    secondaryProfessions: Array.isArray(profile.secondaryProfessions)
+      ? profile.secondaryProfessions
+      : (profile.secondaryProfession ? [profile.secondaryProfession] : (Array.isArray(profile.secondaryDepartments) ? profile.secondaryDepartments : [])),
     primaryDepartment: profile.primaryDepartment || "",
     primaryDesignation: profile.primaryDesignation || "",
     specializations: Array.isArray(profile.specializations) ? profile.specializations : [],
@@ -113,6 +136,7 @@ export function fromApi(profile) {
     })) : []),
     credits: Array.isArray(profile.credits) ? profile.credits.map((c) => ({
       id: c._id ? String(c._id) : (c.id || ""),
+      _id: c._id ? String(c._id) : (c.id || ""),
       projectTitle: c.projectTitle || c.project || "",
       projectType: c.projectType || "",
       roleOrDesignation: c.roleOrDesignation || c.role || "",
@@ -121,15 +145,18 @@ export function fromApi(profile) {
       characterName: c.characterName || "",
       referenceLink: c.referenceLink || "",
       isVerifiedCredit: Boolean(c.isVerifiedCredit),
+      verificationStatus: c.verificationStatus || (c.isVerifiedCredit ? "verified" : "pending"),
     })) : (Array.isArray(profile.experience) ? profile.experience.map((e) => ({
       id: e.id || "",
+      _id: e.id || "",
       projectTitle: e.project || "",
       projectType: "Film / Project",
       roleOrDesignation: e.role || "",
       year: e.year ? parseInt(e.year, 10) : null,
       directorOrProduction: e.production || "",
       characterName: e.role || "",
-      isVerifiedCredit: false
+      isVerifiedCredit: false,
+      verificationStatus: "pending"
     })) : []),
     training: Array.isArray(profile.training) ? profile.training.map((t) => ({
       id: t._id ? String(t._id) : (t.id || ""),
@@ -178,10 +205,14 @@ export function fromApi(profile) {
     },
     profileCompletionPercentage: profile.profileCompletionPercentage || 0,
     completionPercentage: profile.profileCompletionPercentage || 0,
+    stepsCompletion: profile.stepsCompletion || null,
     isSearchable: Boolean(profile.isSearchable),
     isFeatured: Boolean(profile.isFeatured),
     isTrending: Boolean(profile.isTrending),
     isUnder18: Boolean(profile.isUnder18),
+    isEmailVerified,
+    twoFactorEnabled,
+    emailNotificationsEnabled,
     email: userEmail,
     mobile: userMobile,
     phone: userMobile,
@@ -194,16 +225,28 @@ export function fromApi(profile) {
       linkedin: profile.socialLinks?.linkedin || "",
     },
     availability: {
+      status: profile.availability?.status || "available_now",
       availableDays: Array.isArray(profile.availability?.availableDays) ? profile.availability.availableDays : ["Weekdays", "Weekends", "Full Time Shoot"],
       willingToTravel: profile.willingToTravel !== undefined ? Boolean(profile.willingToTravel) : (profile.availability?.willingToTravel !== undefined ? Boolean(profile.availability.willingToTravel) : true),
       hasPassport: profile.passportAvailable !== undefined ? Boolean(profile.passportAvailable) : (profile.availability?.hasPassport !== undefined ? Boolean(profile.availability.hasPassport) : false),
       preferredCities: Array.isArray(profile.workingCities) ? profile.workingCities : (Array.isArray(profile.availability?.preferredCities) ? profile.availability.preferredCities : []),
       noticePeriod: profile.availability?.noticePeriod || "Immediate",
     },
+    guardianDetails: {
+      guardianName: profile.guardianDetails?.guardianName || profile.guardianConsent?.guardianName || "",
+      relationship: profile.guardianDetails?.relationship || profile.guardianConsent?.relationship || profile.guardianConsent?.relation || "",
+      contactNumber: profile.guardianDetails?.contactNumber || profile.guardianDetails?.phone || profile.guardianConsent?.guardianPhone || profile.guardianConsent?.phone || "",
+      guardianEmail: profile.guardianDetails?.guardianEmail || profile.guardianConsent?.guardianEmail || profile.guardianConsent?.email || "",
+      consentGiven: Boolean(profile.guardianDetails?.consentGiven || profile.guardianConsent?.consentGiven),
+    },
     guardianConsent: {
-      guardianName: profile.guardianDetails?.name || profile.guardianConsent?.guardianName || "",
-      guardianPhone: profile.guardianDetails?.phone || profile.guardianConsent?.guardianPhone || "",
-      relationship: profile.guardianDetails?.relationship || profile.guardianConsent?.relationship || "",
+      guardianName: profile.guardianDetails?.guardianName || profile.guardianConsent?.guardianName || "",
+      guardianPhone: profile.guardianDetails?.contactNumber || profile.guardianDetails?.phone || profile.guardianConsent?.guardianPhone || profile.guardianConsent?.phone || "",
+      guardianEmail: profile.guardianDetails?.guardianEmail || profile.guardianConsent?.guardianEmail || profile.guardianConsent?.email || "",
+      relationship: profile.guardianDetails?.relationship || profile.guardianConsent?.relationship || profile.guardianConsent?.relation || "",
+      relation: profile.guardianDetails?.relationship || profile.guardianConsent?.relationship || profile.guardianConsent?.relation || "",
+      phone: profile.guardianDetails?.contactNumber || profile.guardianDetails?.phone || profile.guardianConsent?.guardianPhone || profile.guardianConsent?.phone || "",
+      consentGiven: Boolean(profile.guardianDetails?.consentGiven || profile.guardianConsent?.consentGiven),
       consentLetterUploaded: Boolean(profile.guardianDetails?.consentLetter || profile.guardianConsent?.consentLetterUploaded),
     },
     contactDetails: {
@@ -271,6 +314,7 @@ export function toApi(profile) {
     firstName: profile.firstName?.trim() || pers.firstName?.trim(),
     middleName: profile.middleName?.trim() || pers.middleName?.trim(),
     lastName: profile.lastName?.trim() || pers.lastName?.trim(),
+    headline: profile.headline?.trim() || pers.headline?.trim() || undefined,
     bio: (() => {
       const raw = profile.bio?.trim() || pers.bio?.trim();
       if (!raw) return undefined;
@@ -280,6 +324,7 @@ export function toApi(profile) {
     gender: normalizeGender(profile.gender || pers.gender),
     nationality: profile.nationality || pers.nationality || "Indian",
     careerStage: profile.careerStage || pers.careerStage || "aspiring",
+    experienceRange: profile.experienceRange || pers.experienceRange || undefined,
     category: profile.category || pers.category || "open_talent",
     primaryProfession: profile.primaryProfession || pers.primaryRole || profile.profession || "Actor",
     secondaryProfessions: Array.isArray(profile.secondaryProfessions) ? profile.secondaryProfessions : (Array.isArray(pers.secondaryRoles) ? pers.secondaryRoles : []),
@@ -293,8 +338,16 @@ export function toApi(profile) {
     workingCities: Array.isArray(profile.workingCities) ? profile.workingCities : (Array.isArray(pers.workingCities) ? pers.workingCities : []),
     willingToTravel: profile.willingToTravel !== undefined ? Boolean(profile.willingToTravel) : (pers.willingToTravel !== undefined ? Boolean(pers.willingToTravel) : true),
     willingToRelocate: Boolean(profile.willingToRelocate !== undefined ? profile.willingToRelocate : pers.willingToRelocate),
+    openToWorkAnywhere: profile.openToWorkAnywhere !== undefined ? Boolean(profile.openToWorkAnywhere) : (pers.openToWorkAnywhere !== undefined ? Boolean(pers.openToWorkAnywhere) : undefined),
+    remoteMode: profile.remoteMode || pers.remoteMode || undefined,
     passportAvailable: Boolean(profile.passportAvailable !== undefined ? profile.passportAvailable : pers.passportAvailable),
   };
+
+  if (profile.availability && typeof profile.availability === "object") {
+    payload.availability = {
+      status: profile.availability.status || "available_now",
+    };
+  }
 
   const rawDob = profile.dob || pers.dob;
   if (rawDob) {
@@ -348,6 +401,7 @@ export function toApi(profile) {
           characterName: (c.characterName || c.role || "").trim() || undefined,
           referenceLink: (c.referenceLink || "").trim() || undefined,
           isVerifiedCredit: Boolean(c.isVerifiedCredit),
+          verificationStatus: c.verificationStatus || (c.isVerifiedCredit ? "verified" : "pending"),
         };
         if (c._id && /^[0-9a-fA-F]{24}$/.test(String(c._id))) {
           item._id = String(c._id);

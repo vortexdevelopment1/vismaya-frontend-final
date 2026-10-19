@@ -320,7 +320,8 @@ export default function ProfileSections() {
     setIsEditing(false);
   };
 
-  const isMinor = Number(formData.personal.age) < 18;
+  const ageNum = Number(formData?.personal?.age);
+  const isMinor = (!isNaN(ageNum) && ageNum > 0 && ageNum < 18) || Boolean(formData?.isUnder18 && (!ageNum || ageNum < 18));
 
   return (
     <div className={`talent-profile-sections-root ${isEditing ? "is-editing" : ""}`} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>

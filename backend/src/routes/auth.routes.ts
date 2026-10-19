@@ -17,7 +17,9 @@ import {
     disable2FA,
     verify2FALogin,
     changePassword,
+    requestChangePasswordOtp,
     requestAccountDeletion,
+    requestAccountDeletionOtp,
     requestEmailChange,
     verifyEmailChange,
     changeMobile,
@@ -56,7 +58,9 @@ router.post("/2fa/disable", authenticateUser, disable2FA);
 router.post("/2fa/challenge", otpLimiter, verify2FALogin);
 router.post("/verify-2fa", otpLimiter, verify2FALogin);
 
-// Account Lifecycle
+// Account Lifecycle (Spec §38)
+router.post("/delete-account/request-otp", authenticateUser, otpLimiter, requestAccountDeletionOtp);
+router.post("/delete-account/confirm", authenticateUser, otpLimiter, requestAccountDeletion);
 router.delete("/account", authenticateUser, requestAccountDeletion);
 
 // Email & Mobile Updates
@@ -76,7 +80,8 @@ router.post("/forgot-password", otpLimiter, forgotPassword);
 router.post("/verify-otp", otpLimiter, verifyOtp);
 router.post("/reset-password", otpLimiter, resetPassword);
 
-// Authenticated Password Change
+// Authenticated Password Change (Spec §38: Current password OR OTP)
+router.post("/change-password/request-otp", authenticateUser, otpLimiter, requestChangePasswordOtp);
 router.post("/change-password", authenticateUser, changePassword);
 
 // Active Server-Side Session Management & Logout
