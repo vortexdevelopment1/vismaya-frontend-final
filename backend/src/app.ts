@@ -8,6 +8,7 @@ import healthRoutes from "./routes/health.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import testRoutes from "./routes/test.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import adminAuthRoutes from "./routes/adminAuth.routes.js";
 import organizationRoutes from "./routes/organization.routes.js";
 import projectRoutes from "./routes/project.routes.js";
 import opportunityRoutes from "./routes/opportunity.routes.js";
@@ -110,6 +111,7 @@ if (process.env.NODE_ENV !== "production") {
     app.use("/api/test", testRoutes);
 }
 
+app.use("/api/admin/auth", adminAuthRoutes);
 app.use("/api/admin", adminLimiter, adminRoutes);
 app.use("/api/organization", organizationRoutes);
 app.use("/api/company", organizationRoutes);

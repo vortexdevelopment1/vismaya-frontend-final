@@ -270,6 +270,7 @@ export const createOrUpdateProfile = async (req: Request, res: Response): Promis
         });
         if (fullProfile) {
             fullProfile.stepsCompletion = completionDetails.stepsCompletion;
+            fullProfile.missingSections = completionDetails.missingSections;
             fullProfile.profileCompletionPercentage = completion;
         }
 
@@ -280,6 +281,7 @@ export const createOrUpdateProfile = async (req: Request, res: Response): Promis
                 : "Talent profile saved successfully",
             profile: fullProfile || profile,
             stepsCompletion: completionDetails.stepsCompletion,
+            missingSections: completionDetails.missingSections,
             profileCompletionPercentage: completion,
             pendingChanges: profile.pendingChanges
         });
@@ -369,12 +371,14 @@ export const getMyProfile = async (req: Request, res: Response): Promise<any> =>
         const completionDetails = calculateProfileCompletionDetails(profile);
         profile.profileCompletionPercentage = completionDetails.percentage;
         fullProfile.stepsCompletion = completionDetails.stepsCompletion;
+        fullProfile.missingSections = completionDetails.missingSections;
         fullProfile.profileCompletionPercentage = completionDetails.percentage;
 
         res.status(200).json({
             success: true,
             profile: fullProfile,
             stepsCompletion: completionDetails.stepsCompletion,
+            missingSections: completionDetails.missingSections,
             profileCompletionPercentage: completionDetails.percentage,
             verificationBadges: badgesMap[effectiveUserId.toString()] || { identityVerified: Boolean(profile.isVerified), professionalVerified: false }
         });

@@ -261,14 +261,14 @@ export default function TalentTopbar({ onOpenMobile }) {
           title="My Profile"
           style={{ textDecoration: "none" }}
         >
-          {profile?.avatar ? (
+          {profile?.profilePhoto || profile?.avatar ? (
             <div
               className="talent-topbar-avatar"
               style={{
                 width: "40px",
                 height: "40px",
                 borderRadius: "50%",
-                backgroundImage: `url(${profile.avatar})`,
+                backgroundImage: `url(${profile.profilePhoto || profile.avatar})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 border: "1px solid #E8E2D4",
@@ -293,7 +293,7 @@ export default function TalentTopbar({ onOpenMobile }) {
                 fontFamily: "var(--font-body), 'Inter', sans-serif",
               }}
             >
-              {getInitials(profile?.personal?.fullName)}
+              {getInitials(profile?.stageName || profile?.personal?.fullName || profile?.name)}
             </div>
           )}
         </Link>

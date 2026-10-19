@@ -2,6 +2,7 @@
 
 import React, { useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 import PasswordInput from "@/components/PasswordInput";
@@ -236,6 +237,20 @@ function AdminLoginFormContent() {
                 color: "var(--text-primary, #292C29)",
               }}
             />
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "6px" }}>
+              <Link
+                href="/admin/forgot-password"
+                id="link-admin-forgot-password"
+                style={{
+                  fontSize: "12.5px",
+                  color: "#8A6B2E",
+                  textDecoration: "none",
+                  fontWeight: "500",
+                }}
+              >
+                Forgot password?
+              </Link>
+            </div>
           </div>
 
           <button

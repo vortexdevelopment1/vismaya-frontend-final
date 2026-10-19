@@ -70,11 +70,12 @@ export function fromApi(profile) {
     firstName: profile.firstName || "",
     middleName: profile.middleName || "",
     lastName: profile.lastName || "",
-    headline: profile.headline || "",
+    headline: profile.headline || profile.personal?.headline || "",
     bio: profile.bio || profile.personal?.bio || "",
     personal: {
       fullName: userName || computedName,
       stageName: profile.stageName || profile.personal?.stageName || "",
+      headline: profile.headline || profile.personal?.headline || "",
       age: (() => {
         const rawDobVal = profile.dob || profile.personal?.dob;
         if (rawDobVal) {
@@ -87,8 +88,8 @@ export function fromApi(profile) {
       })(),
       dob: profile.dob || profile.personal?.dob || "",
       gender: profile.gender || profile.personal?.gender || "",
-      city: profile.currentCity || profile.personal?.city || "",
-      state: profile.currentState || profile.personal?.state || "",
+      city: profile.currentCity || profile.personal?.city || profile.city || "",
+      state: profile.currentState || profile.personal?.state || profile.state || "",
       email: userEmail,
       phone: userMobile,
       isEmailVerified,
@@ -206,6 +207,7 @@ export function fromApi(profile) {
     profileCompletionPercentage: profile.profileCompletionPercentage || 0,
     completionPercentage: profile.profileCompletionPercentage || 0,
     stepsCompletion: profile.stepsCompletion || null,
+    missingSections: Array.isArray(profile.missingSections) ? profile.missingSections : [],
     isSearchable: Boolean(profile.isSearchable),
     isFeatured: Boolean(profile.isFeatured),
     isTrending: Boolean(profile.isTrending),
@@ -259,10 +261,15 @@ export function fromApi(profile) {
 }
 
 export function toApi(profile) {
-  if (!profile) return {};
-
-  const pers = profile.personalDetails || profile.personal || {};
-  const phys = profile.physicalDetails || profile.physical || profile.physicalAttributes || {};
+  const pers = {
+    ...(profile.personalDetails || {}),
+    ...(profile.personal || {}),
+  };
+  const phys = {
+    ...(profile.physicalDetails || {}),
+    ...(profile.physical || {}),
+    ...(profile.physicalAttributes || {}),
+  };
 
   const normalizeGender = (g) => {
     if (!g) return undefined;

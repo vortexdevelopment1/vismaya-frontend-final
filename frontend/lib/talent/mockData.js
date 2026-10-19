@@ -8,11 +8,18 @@ export const initialProfileData = {
   status: "Approved", // Draft, Submitted, Approved, Rejected
   statusNote: "Your profile has been verified and approved by Vismaya Admin. You can now apply to live casting calls.",
   avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+  category: "open_talent",
+  headline: "Versatile Actor & Classical Dancer | Hindi & Marathi Theatre",
+  secondaryProfessions: ["Voice Over Artist", "Fashion Model"],
+  specializations: ["Method Acting", "Classical Kathak"],
+  currentCity: "Mumbai",
+  currentState: "Maharashtra",
   
   // 1. Personal Details
   personal: {
     fullName: "Riya Sharma",
     stageName: "Riya Sharma",
+    headline: "Versatile Actor & Classical Dancer | Hindi & Marathi Theatre",
     age: 22,
     dob: "2004-04-12",
     gender: "Female",

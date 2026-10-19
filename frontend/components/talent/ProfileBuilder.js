@@ -93,7 +93,7 @@ function calculateClientAge(dobStr) {
   return Math.abs(ageDt.getUTCFullYear() - 1970);
 }
 
-export default function ProfileBuilder() {
+export default function ProfileBuilder({ onFinish }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const stepParam = searchParams.get("step");
@@ -549,8 +549,17 @@ export default function ProfileBuilder() {
       }
 
       await updateProfile(payload);
+      addToast({
+        type: "success",
+        title: "Profile Saved",
+        message: "Your profile has been saved successfully!",
+      });
       if (advance) {
-        navigateToStep("complete");
+        if (onFinish) {
+          onFinish();
+        } else {
+          router.push("/talent/profile");
+        }
       }
     } catch (err) {
       // Error handled by TalentContext toast
@@ -559,12 +568,36 @@ export default function ProfileBuilder() {
     }
   };
 
-  // Step names config for Stepper
+  // Step names config for Stepper with short "what is missing" hints
   const stepsList = [
-    { num: 1, name: "Professional Details", key: "step1", done: stepsCompletion.step1 },
-    { num: 2, name: "Portfolio & Media", key: "step2", done: stepsCompletion.step2 },
-    { num: 3, name: "Work Experience", key: "step3", done: stepsCompletion.step3 },
-    { num: 4, name: "Personal Info", key: "step4", done: stepsCompletion.step4 },
+    {
+      num: 1,
+      name: "Professional Details",
+      key: "step1",
+      done: stepsCompletion.step1,
+      missingHint: "Needs craft, bio & city"
+    },
+    {
+      num: 2,
+      name: "Portfolio & Media",
+      key: "step2",
+      done: stepsCompletion.step2,
+      missingHint: (!profile.profilePhoto && !profile.avatar) ? "Needs photo & 1 media item" : "Needs 1 portfolio item"
+    },
+    {
+      num: 3,
+      name: "Work Experience",
+      key: "step3",
+      done: stepsCompletion.step3,
+      missingHint: "Needs at least 1 credit"
+    },
+    {
+      num: 4,
+      name: "Personal Info",
+      key: "step4",
+      done: stepsCompletion.step4,
+      missingHint: isMinor ? "Needs height & guardian consent" : "Needs height measurement"
+    },
   ];
 
   // Common styles adhering strictly to cream/gold-brown/charcoal tokens
@@ -656,6 +689,21 @@ export default function ProfileBuilder() {
               Profile strength {profileStrength}%
             </span>
 
+            {Boolean(profile.stepsCompletion?.step1 || profile.primaryProfession || profile.profession) && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (onFinish) onFinish();
+                  else router.push("/talent/profile");
+                }}
+                className="btn-secondary"
+                style={{ padding: "8px 16px", fontSize: "13px", height: "36px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+              >
+                <Eye size={14} />
+                <span>View Profile</span>
+              </button>
+            )}
+
             {currentStep !== "complete" && (
               <button
                 type="button"
@@ -692,6 +740,7 @@ export default function ProfileBuilder() {
                 key={st.num}
                 type="button"
                 onClick={() => navigateToStep(st.num)}
+                title={isDone ? `${st.name}: Complete` : `${st.name}: ${st.missingHint}`}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -739,6 +788,19 @@ export default function ProfileBuilder() {
                     }}
                   >
                     {st.name}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      color: isDone ? "#027A48" : "#8A6B2E",
+                      fontWeight: 500,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      marginTop: "1px",
+                    }}
+                  >
+                    {isDone ? "Completed" : st.missingHint}
                   </span>
                 </div>
               </button>

@@ -821,6 +821,12 @@ export async function runFlowD() {
     const talentViewAfterCancelRes = await apiRequest("D6b Talent Applications After Cancel", "/api/applications/my", authGet(talentTokens[0]));
     const talentAppAfterCancel = (talentViewAfterCancelRes.body?.applications || talentViewAfterCancelRes.body?.data || []).find((a) => String(a._id || a.id) === String(cancelAppId));
 
+    // 6. Verify cancellation audit log in adminauditlogs
+    const cancelAuditLog = await db.collection("adminauditlogs").findOne({
+      targetId: new mongoose.Types.ObjectId(cancelOppId),
+      action: { $regex: /cancel/i },
+    });
+
     const evidenceD6b = await logEvidence("D6b_opportunity_cancellation.json", {
       cancelReqRes,
       oppAfterCancelReq,
@@ -829,34 +835,35 @@ export async function runFlowD() {
       talentCancelNotif,
       appAfterOppCancel,
       talentAppAfterCancel,
+      cancelAuditLog,
     });
 
     const oppCancelled = oppAfterAdminApprove?.status === "cancelled";
     const applicantNotified = Boolean(talentCancelNotif);
-    const appShowsCancelled = appAfterOppCancel?.status === "cancelled" || talentAppAfterCancel?.opportunityStatus === "cancelled";
+    const appShowsCancelled = appAfterOppCancel?.status === "opportunity_cancelled" || talentAppAfterCancel?.status === "opportunity_cancelled" || appAfterOppCancel?.status === "cancelled";
+    const auditLogWritten = Boolean(cancelAuditLog);
 
-    if (oppCancelled && applicantNotified && appShowsCancelled) {
+    if (oppCancelled && applicantNotified && appShowsCancelled && auditLogWritten) {
       registerTestResult({
         id: "D6b",
         flow: "Opportunity Cancellation",
         step: "Opportunity Cancellation Flow (Org Request -> Admin Approval -> Applicant Notification)",
         request: "POST /api/opportunities/:id/cancel-request & PATCH /api/admin/opportunities/:id/review-cancellation",
-        expected: "Opportunity status becomes 'cancelled', all applicants receive notification, application shows cancelled state",
-        actual: `Opportunity successfully cancelled; applicants notified and applications reflect cancelled state`,
+        expected: "Opportunity status becomes 'cancelled', active applications transition to 'opportunity_cancelled', applicants notified, and audit log written",
+        actual: `Opportunity successfully cancelled; applications transitioned to 'opportunity_cancelled' (DB: '${appAfterOppCancel?.status}'), applicants notified, and audit log recorded`,
         classification: "PASS",
         status: "PASS",
         severity: "Info",
         evidenceLink: evidenceD6b,
       });
     } else {
-      // Backend updates opportunity to 'cancelled', but backend does not trigger applicant notification or application state update
       registerTestResult({
         id: "D6b",
         flow: "Opportunity Cancellation",
         step: "Opportunity Cancellation Flow (Org Request -> Admin Approval -> Applicant Notification)",
         request: "POST /api/opportunities/:id/cancel-request & PATCH /api/admin/opportunities/:id/review-cancellation",
-        expected: "Opportunity status becomes 'cancelled', all active applicants receive notification, applications reflect cancelled state",
-        actual: `Opportunity status updated to 'cancelled' (HTTP 200). HOWEVER: Backend reviewOpportunityCancellation fails to notify applicants (${applicantNotified ? "Notified" : "0 notifications sent to applicants"}) and does not transition active applications to 'cancelled' (app status in DB remained '${appAfterOppCancel?.status}')`,
+        expected: "Opportunity status becomes 'cancelled', all active applicants receive notification, applications transition to 'opportunity_cancelled', audit log written",
+        actual: `Cancellation check issues: oppCancelled=${oppCancelled}, applicantNotified=${applicantNotified}, appShowsCancelled=${appShowsCancelled} (DB status: '${appAfterOppCancel?.status}'), auditLogWritten=${auditLogWritten}`,
         classification: "PRODUCT BUG",
         status: "FAIL",
         severity: "High",

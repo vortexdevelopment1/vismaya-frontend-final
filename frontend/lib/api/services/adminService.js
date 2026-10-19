@@ -998,6 +998,27 @@ export const adminService = {
   },
 
   /**
+   * Request 6-digit email OTP for Admin Password Recovery
+   */
+  async adminForgotPassword({ email }) {
+    const res = await apiClient.post("/api/admin/auth/forgot-password", { email });
+    return res?.data || res;
+  },
+
+  /**
+   * Reset Admin Password with OTP and new password
+   */
+  async adminResetPassword({ email, otp, newPassword, confirmPassword }) {
+    const res = await apiClient.post("/api/admin/auth/reset-password", {
+      email,
+      otp,
+      newPassword,
+      confirmPassword,
+    });
+    return res?.data || res;
+  },
+
+  /**
    * Verified Server-Side Admin Session Check
    */
   async verifyAdminSession() {

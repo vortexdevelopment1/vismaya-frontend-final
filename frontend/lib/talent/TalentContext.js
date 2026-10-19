@@ -53,6 +53,7 @@ export const emptyProfileData = {
     phone: "",
     email: "",
     bio: "",
+    headline: "",
     primaryRole: "",
     instagram: "",
     imdb: "",
