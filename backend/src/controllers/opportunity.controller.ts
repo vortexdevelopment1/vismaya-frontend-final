@@ -452,9 +452,10 @@ export const getPublishedOpportunities = async (req: Request, res: Response): Pr
         }
 
         // Get applicant count for each opportunity
-        const oppIds = opportunities.map(o => o._id);
+        const oppObjectIds = opportunities.map(o => new mongoose.Types.ObjectId(o._id));
+        const oppIdStrings = opportunities.map(o => o._id.toString());
         const appCounts = await Application.aggregate([
-            { $match: { opportunityId: { $in: oppIds } } },
+            { $match: { opportunityId: { $in: [...oppObjectIds, ...oppIdStrings] } } },
             { $group: { _id: "$opportunityId", count: { $sum: 1 } } }
         ]);
 

@@ -32,6 +32,7 @@ import { isRealMode } from "@/lib/api/config";
 import Modal from "@/components/shared/Modal";
 import VideoPlayer from "@/components/shared/VideoPlayer";
 import { AUDITION_CONFIG } from "@/lib/config/audition";
+import { toFrontendStatus } from "@/lib/api/statusMapper";
 
 function formatPostedDate(dateStr) {
   if (!dateStr) return "recently";
@@ -843,24 +844,32 @@ export default function ShortlistAuditionsPage() {
             <div className="v-opportunity-grid">
               {orgOpportunities.map((opp) => {
                 const stats = getOpportunityStats(opp);
-                const isClosed =
-                  opp.status === "Completed" ||
-                  opp.status === "Cancelled" ||
-                  opp.status === "Closed";
+                const rawOppStatus = String(opp.rawStatus || opp.status || "").toLowerCase().trim();
+                const normalizedOppStatus = rawOppStatus.replace(/[\s-]+/g, "_");
+                const isPublished = normalizedOppStatus === "published" || normalizedOppStatus === "active";
+                const isPending = normalizedOppStatus === "pending" || normalizedOppStatus === "pending_review" || normalizedOppStatus === "under_vismaya_review" || normalizedOppStatus === "corrections_requested";
+                const isRejected = normalizedOppStatus === "rejected";
+                const isClosed = normalizedOppStatus === "closed" || normalizedOppStatus === "completed";
+                const isCancelled = normalizedOppStatus === "cancelled" || normalizedOppStatus === "canceled" || normalizedOppStatus === "cancellation_requested";
+                const displayStatusLabel = toFrontendStatus("opportunity", rawOppStatus || "pending").toUpperCase();
+
                 const typeBadge = (opp.opportunityType || "CASTING CALL").toUpperCase();
                 const city = opp.location || opp.eligibility?.location || "Mumbai";
                 const postedDate = formatPostedDate(opp.publishedAt || opp.createdAt);
                 const hasApplicants = stats.total > 0 || (stats.applied + stats.under_review + stats.shortlist + stats.selected) > 0;
+                const canHaveApplicants = isPublished || ((isClosed || isCancelled) && hasApplicants);
+                const canViewApplicants = canHaveApplicants && hasApplicants;
 
                 return (
                   <div
                     key={`opp-card-${opp.id}`}
-                    className="v-opp-card"
-                    onClick={() => handleSelectOpportunity(opp.id)}
+                    className={`v-opp-card ${!canViewApplicants ? "v-opp-card-disabled" : ""}`}
+                    onClick={() => canViewApplicants && handleSelectOpportunity(opp.id)}
                     role="button"
-                    tabIndex={0}
+                    tabIndex={canViewApplicants ? 0 : -1}
+                    style={{ cursor: canViewApplicants ? "pointer" : "default" }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
+                      if ((e.key === "Enter" || e.key === " ") && canViewApplicants) {
                         handleSelectOpportunity(opp.id);
                       }
                     }}
@@ -875,10 +884,22 @@ export default function ShortlistAuditionsPage() {
                           </span>
                         )}
                       </div>
-                      {isClosed ? (
-                        <span className="v-opp-status-pill closed">CLOSED</span>
+                      {isPublished ? (
+                        <span className="v-opp-status-pill open" style={{ border: "1px solid #C9A55C", color: "#8A6B2E", background: "transparent" }}>
+                          {displayStatusLabel || "PUBLISHED"}
+                        </span>
+                      ) : isPending ? (
+                        <span className="v-opp-status-pill pending" style={{ border: "1px solid #FEDF89", color: "#B54708", background: "#FEF7E6" }}>
+                          {displayStatusLabel || "PENDING REVIEW"}
+                        </span>
+                      ) : isRejected ? (
+                        <span className="v-opp-status-pill rejected" style={{ border: "1px solid rgba(180, 35, 24, 0.25)", color: "#B42318", background: "rgba(180, 35, 24, 0.08)" }}>
+                          {displayStatusLabel || "REJECTED"}
+                        </span>
                       ) : (
-                        <span className="v-opp-status-pill open">OPEN</span>
+                        <span className="v-opp-status-pill closed" style={{ border: "1px solid #E8E2D4", color: "#5A584F", background: "#F3EFE6" }}>
+                          {displayStatusLabel || "CLOSED"}
+                        </span>
                       )}
                     </div>
 
@@ -916,7 +937,7 @@ export default function ShortlistAuditionsPage() {
 
                     {/* 5. Bottom Full-width Button */}
                     <div className="v-opp-card-bottom">
-                      {hasApplicants ? (
+                      {canViewApplicants ? (
                         <button
                           type="button"
                           className="v-opp-card-btn filled"

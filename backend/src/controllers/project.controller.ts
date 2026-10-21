@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import Project from "../models/project.model.js";
 import Organization from "../models/organization.model.js";
 import Opportunity from "../models/opportunity.model.js";
@@ -87,14 +88,16 @@ export const getMyProjects = async (req: Request, res: Response): Promise<any> =
         const projects = await Project.find(filter).sort({ createdAt: -1 }).lean();
 
         // Attach counts for opportunities and shortlists for each project
-        const projectIds = projects.map(p => p._id);
+        const projectObjectIds = projects.map(p => new mongoose.Types.ObjectId(p._id));
+        const projectIdStrings = projects.map(p => p._id.toString());
+        const allProjectIds = [...projectObjectIds, ...projectIdStrings];
         const [opportunityCounts, shortlistCounts] = await Promise.all([
             Opportunity.aggregate([
-                { $match: { projectId: { $in: projectIds } } },
+                { $match: { projectId: { $in: allProjectIds } } },
                 { $group: { _id: "$projectId", count: { $sum: 1 } } }
             ]),
             ProjectShortlist.aggregate([
-                { $match: { projectId: { $in: projectIds } } },
+                { $match: { projectId: { $in: allProjectIds } } },
                 { $group: { _id: "$projectId", count: { $sum: 1 } } }
             ])
         ]);
