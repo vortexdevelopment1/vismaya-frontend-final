@@ -111,7 +111,7 @@ export default function MediaCard({ media, onDelete }) {
                 <Play size={20} fill="#FAF9F7" style={{ marginLeft: "3px" }} />
               </button>
             </>
-          ) : (
+          ) : optimizedImgUrl ? (
             // Photo thumbnail with Cloudinary optimization
             <img
               src={optimizedImgUrl}
@@ -124,6 +124,10 @@ export default function MediaCard({ media, onDelete }) {
               }}
               loading="lazy"
             />
+          ) : (
+            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#F3EFE6", color: "#8A6B2E" }}>
+              <Icon size={32} />
+            </div>
           )}
 
           {/* Subtle Top Gradient for Badge Readability */}

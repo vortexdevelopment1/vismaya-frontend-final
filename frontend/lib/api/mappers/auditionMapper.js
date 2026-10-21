@@ -37,13 +37,16 @@ export function fromApi(audition) {
   const talentAvatar = talentObj?.profilePhoto || talentObj?.avatar || audition.talentAvatar || "";
 
   // Normalize self tape submission
-  const selfTape = audition.selfTapeSubmission ? {
-    videoUrl: audition.selfTapeSubmission.videoUrl || "",
-    thumbnailUrl: audition.selfTapeSubmission.thumbnailUrl || "",
-    durationSeconds: audition.selfTapeSubmission.durationSeconds || null,
-    fileSizeBytes: audition.selfTapeSubmission.fileSizeBytes || null,
-    notes: audition.selfTapeSubmission.notes || "",
-    submittedAt: safeIsoDate(audition.selfTapeSubmission.submittedAt, null),
+  const rawSub = audition.selfTapeSubmission;
+  const selfTape = rawSub ? {
+    videoUrl: rawSub.videoUrl || (rawSub.videoUrls?.[0] || ""),
+    videoUrls: rawSub.videoUrls || (rawSub.videoUrl ? [rawSub.videoUrl] : []),
+    videos: rawSub.videos || [],
+    thumbnailUrl: rawSub.thumbnailUrl || "",
+    durationSeconds: rawSub.durationSeconds || null,
+    fileSizeBytes: rawSub.fileSizeBytes || null,
+    notes: rawSub.notes || "",
+    submittedAt: safeIsoDate(rawSub.submittedAt, null),
   } : null;
 
   const schedIso = safeIsoDate(audition.scheduledAt, null);
@@ -59,6 +62,7 @@ export function fromApi(audition) {
     projectName,
     organizationId,
     orgId: organizationId,
+    organizationName: orgObj?.organizationName || orgObj?.name || audition.organizationName || "Production House",
     talentId,
     talentName,
     talentEmail,
@@ -81,6 +85,7 @@ export function fromApi(audition) {
       reviewedBy: audition.vismayaApproval.reviewedBy || null,
       adminNote: audition.vismayaApproval.adminNote || "",
     } : null,
+    vismayaRejectionReason: audition.vismayaRejectionReason || "",
     selfTapeSubmission: selfTape,
     submission: selfTape,
     feedback: audition.organizationFeedback || "",

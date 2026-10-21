@@ -2490,16 +2490,30 @@ export function WorkflowProvider({ children }) {
     dispatch({ type: "OPEN_APPLICATION", payload: { applicationId } });
   };
 
-  const requestAudition = async ({ applicationId, type, note }) => {
+  const requestAudition = async ({ applicationId, type, note, preferredDate, scheduledAt, meetingLink, location, instructions }) => {
     if (isRealMode("recruiter")) {
       try {
-        await recruiterService.requestAudition(applicationId, { type: type === "Audition" ? "self_tape" : type, instructions: note });
+        const normType = (type === "Audition" || type === "self_tape")
+          ? "self_tape"
+          : (type === "Virtual Interview" || type === "video_interview" || type === "online")
+            ? "video_interview"
+            : "in_person_audition";
+
+        await recruiterService.requestAudition(applicationId, {
+          type: normType,
+          instructions: instructions || note,
+          sceneBrief: note,
+          preferredDate,
+          scheduledAt: scheduledAt || (preferredDate ? new Date(preferredDate) : undefined),
+          meetingLink: meetingLink || (normType === "video_interview" ? "https://meet.google.com/vsm-audition-session" : undefined),
+          location: location || (normType === "in_person_audition" ? "Vismaya Studio, Mumbai" : undefined),
+        });
       } catch (err) {
         console.warn("Real requestAudition failed:", err);
         throw err;
       }
     }
-    dispatch({ type: "REQUEST_AUDITION", payload: { applicationId, type, note } });
+    dispatch({ type: "REQUEST_AUDITION", payload: { applicationId, type, note, preferredDate, meetingLink, location } });
   };
 
   const adminRelayAudition = async (auditionId, note) => {

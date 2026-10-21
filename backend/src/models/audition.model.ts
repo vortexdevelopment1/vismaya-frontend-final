@@ -1,7 +1,18 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
+export interface ISelfTapeVideo {
+    videoUrl: string;
+    thumbnailUrl?: string;
+    durationSeconds?: number;
+    fileSizeBytes?: number;
+    fileName?: string;
+    takeNumber?: number;
+}
+
 export interface ISelfTapeSubmission {
     videoUrl?: string;
+    videoUrls?: string[];
+    videos?: ISelfTapeVideo[];
     thumbnailUrl?: string;
     durationSeconds?: number;
     fileSizeBytes?: number;
@@ -24,7 +35,7 @@ export interface IAudition extends Document {
     location?: string;
     scheduledAt?: Date;
     deadline?: Date;
-    status: "requested" | "scheduled" | "submitted" | "reviewed" | "completed" | "cancelled";
+    status: "requested" | "scheduled" | "submitted" | "forwarded_to_org" | "resubmission_requested" | "reviewed" | "completed" | "cancelled" | "rejected";
     selfTapeSubmission?: ISelfTapeSubmission;
     organizationFeedback?: string;
     organizationRating?: number;
@@ -124,9 +135,12 @@ const auditionSchema = new Schema<IAudition>(
                 "requested",
                 "scheduled",
                 "submitted",
+                "forwarded_to_org",
+                "resubmission_requested",
                 "reviewed",
                 "completed",
-                "cancelled"
+                "cancelled",
+                "rejected"
             ],
             default: "requested"
         },
@@ -136,6 +150,18 @@ const auditionSchema = new Schema<IAudition>(
                 type: String,
                 trim: true
             },
+            videoUrls: [{
+                type: String,
+                trim: true
+            }],
+            videos: [{
+                videoUrl: { type: String, trim: true },
+                thumbnailUrl: { type: String, trim: true },
+                durationSeconds: { type: Number },
+                fileSizeBytes: { type: Number },
+                fileName: { type: String, trim: true },
+                takeNumber: { type: Number }
+            }],
             thumbnailUrl: {
                 type: String,
                 trim: true

@@ -138,16 +138,28 @@ export function getCloudinaryVideoThumbnail(videoUrl, width = 640) {
  * @param {AbortSignal} [params.signal] - Optional abort signal
  * @returns {Promise<{ url: string, publicId?: string, mediaItem?: Object }>}
  */
-export async function uploadMedia({
-  file,
-  category = "other",
-  title = "",
-  validationType = "photo",
-  isMainProfilePhoto = false,
-  isRegistration = false,
-  onProgress,
-  signal,
-} = {}) {
+export async function uploadMedia(fileOrConfig = {}, options = {}) {
+  let file, category, title, validationType, isMainProfilePhoto, isRegistration, onProgress, signal;
+
+  if (fileOrConfig instanceof Blob || (typeof File !== "undefined" && fileOrConfig instanceof File) || typeof fileOrConfig === "string") {
+    file = fileOrConfig;
+    category = options.category || "other";
+    title = options.title || "";
+    validationType = options.validationType || "photo";
+    isMainProfilePhoto = Boolean(options.isMainProfilePhoto);
+    isRegistration = Boolean(options.isRegistration);
+    onProgress = options.onProgress;
+    signal = options.signal;
+  } else {
+    file = fileOrConfig?.file;
+    category = fileOrConfig?.category || "other";
+    title = fileOrConfig?.title || "";
+    validationType = fileOrConfig?.validationType || "photo";
+    isMainProfilePhoto = Boolean(fileOrConfig?.isMainProfilePhoto);
+    isRegistration = Boolean(fileOrConfig?.isRegistration);
+    onProgress = fileOrConfig?.onProgress;
+    signal = fileOrConfig?.signal;
+  }
   // If string URL is passed, return immediately
   if (typeof file === "string") {
     return {

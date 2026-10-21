@@ -4,6 +4,8 @@
  * Maps between backend TalentProfile nested schema and frontend UI components.
  */
 
+import { toFrontendStatus } from "../statusMapper.js";
+
 function safeIsoDate(val, fallback = null) {
   if (!val) return fallback;
   const d = new Date(val);
@@ -60,6 +62,59 @@ export function fromApi(profile) {
 
   const showreelUrl = profile.portfolio?.showreelUrl || profile.showreel || (videosList.length > 0 ? videosList[0] : "");
 
+  const rawDobVal = profile.dob || profile.personalDetails?.dob || profile.personal?.dob;
+  const computedAge = (() => {
+    if (rawDobVal) {
+      const d = new Date(rawDobVal);
+      if (!isNaN(d.getTime())) {
+        const ageDiffMs = Date.now() - d.getTime();
+        const ageDate = new Date(ageDiffMs);
+        const calcAge = Math.abs(ageDate.getUTCFullYear() - 1970);
+        if (!isNaN(calcAge) && calcAge > 0 && calcAge < 120) return calcAge;
+      }
+    }
+    const fallbackAge = profile.age || profile.personal?.age || profile.personalDetails?.age;
+    return fallbackAge ? Number(fallbackAge) : "";
+  })();
+
+  const rawCreatedAt = profile.createdAt || (typeof profile.userId === "object" ? profile.userId?.createdAt : null) || null;
+  const safeCreatedAt = safeIsoDate(rawCreatedAt, null);
+  const formattedJoinedDate = safeCreatedAt
+    ? new Date(safeCreatedAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+    : (profile.joinedDate || "");
+
+  // Status mapping
+  const rawStatus = String(profile.status || userIdObj?.status || "").toLowerCase().trim();
+  const isApproved = Boolean(
+    profile.isProfileApproved ||
+    profile.isVerified ||
+    rawStatus === "approved" ||
+    (rawStatus === "active" && profile.isProfileApproved !== false && profile.vismayaId)
+  );
+
+  const isUnprofiled = !profile.vismayaId &&
+    (profile.photos === undefined || profile.photos.length === 0) &&
+    !profile.skills?.length &&
+    !profile.credits?.length &&
+    profile.profileCompletionPercentage === undefined;
+
+  let mappedStatus = "Pending";
+  if (rawStatus === "rejected") {
+    mappedStatus = "Rejected";
+  } else if (rawStatus === "suspended") {
+    mappedStatus = "Suspended";
+  } else if (rawStatus === "approved" || (rawStatus === "active" && isApproved && !isUnprofiled)) {
+    mappedStatus = "Approved";
+  } else if (isUnprofiled || rawStatus === "draft" || rawStatus === "incomplete") {
+    mappedStatus = "Incomplete / Draft";
+  } else if (rawStatus === "pending") {
+    mappedStatus = "Pending";
+  } else if (rawStatus === "active") {
+    mappedStatus = isApproved ? "Approved" : "Incomplete / Draft";
+  } else {
+    mappedStatus = toFrontendStatus("user", rawStatus) || "Pending";
+  }
+
   return {
     id: profile.vismayaId || id,
     _id: id,
@@ -72,21 +127,19 @@ export function fromApi(profile) {
     lastName: profile.lastName || "",
     headline: profile.headline || profile.personal?.headline || "",
     bio: profile.bio || profile.personal?.bio || "",
+    status: mappedStatus,
+    rawStatus: profile.status || rawStatus || "pending",
+    isProfileApproved: isApproved,
+    isPaid: Boolean(profile.isPaid || userIdObj?.isPaid),
+    age: computedAge,
+    createdAt: safeCreatedAt,
+    joinedDate: formattedJoinedDate,
     personal: {
       fullName: userName || computedName,
       stageName: profile.stageName || profile.personal?.stageName || "",
       headline: profile.headline || profile.personal?.headline || "",
-      age: (() => {
-        const rawDobVal = profile.dob || profile.personal?.dob;
-        if (rawDobVal) {
-          const d = new Date(rawDobVal);
-          if (!isNaN(d.getTime())) {
-            return Math.abs(new Date(Date.now() - d.getTime()).getUTCFullYear() - 1970);
-          }
-        }
-        return profile.personal?.age ? Number(profile.personal.age) : "";
-      })(),
-      dob: profile.dob || profile.personal?.dob || "",
+      age: computedAge,
+      dob: safeIsoDate(rawDobVal, "") ? safeIsoDate(rawDobVal, "").split("T")[0] : (rawDobVal || ""),
       gender: profile.gender || profile.personal?.gender || "",
       city: profile.currentCity || profile.personal?.city || profile.city || "",
       state: profile.currentState || profile.personal?.state || profile.state || "",

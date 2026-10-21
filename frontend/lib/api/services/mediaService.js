@@ -15,7 +15,14 @@ export const mediaService = {
   /** Upload a file through the authenticated backend/Cloudinary boundary. */
   async uploadFile(file, { folder = "vismaya/media" } = {}) {
     if (!isRealMode("media") && !isRealMode("uploads")) {
-      throw new Error("Real media uploads are not enabled.");
+      const mockBlobUrl = typeof URL !== "undefined" && URL.createObjectURL ? URL.createObjectURL(file) : "https://mock.url/sample.mp4";
+      return {
+        url: mockBlobUrl,
+        thumbnailUrl: mockBlobUrl,
+        bytes: file?.size || 1024,
+        duration: 60,
+        fileName: file?.name || "upload.mp4"
+      };
     }
     const formData = new FormData();
     formData.append("file", file);
@@ -281,7 +288,7 @@ export const mediaService = {
    * @param {File|Blob} file
    * @param {Object} options { type, title, isHeadshot }
    */
-  async uploadFile(file, options = {}) {
+  async uploadAndRegisterMedia(file, options = {}) {
     const uploadRes = await uploadMedia(file, options);
     if (!uploadRes.success) return uploadRes;
 

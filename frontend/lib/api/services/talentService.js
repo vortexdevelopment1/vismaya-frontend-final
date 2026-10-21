@@ -316,21 +316,28 @@ export const talentService = {
    * @param {Object} payload { videoUrl, notes, durationSeconds }
    */
   async submitSelfTape(auditionId, payload) {
-    if (!isRealMode("auditions")) {
+    if (!isRealMode("auditions") && !isRealMode("talent")) {
       return {
         success: true,
         data: mapAudition({
           id: auditionId,
-          status: "Self-tape Received",
-          selfTapeUrl: payload.videoUrl || payload.selfTapeUrl,
-          selfTapeNotes: payload.notes,
-          submittedAt: new Date().toISOString(),
+          status: "Submitted",
+          rawStatus: "submitted",
+          selfTapeSubmission: {
+            videoUrl: payload.videoUrl || payload.selfTapeUrl,
+            videoUrls: payload.videoUrls || (payload.videoUrl ? [payload.videoUrl] : []),
+            videos: payload.videos || [],
+            notes: payload.notes,
+            submittedAt: new Date().toISOString(),
+          },
         }),
       };
     }
 
     const body = {
       videoUrl: payload.videoUrl || payload.selfTapeUrl,
+      videoUrls: payload.videoUrls,
+      videos: payload.videos,
       thumbnailUrl: payload.thumbnailUrl,
       durationSeconds: payload.durationSeconds,
       fileSizeBytes: payload.fileSizeBytes,
@@ -421,17 +428,6 @@ export const talentService = {
       success: true,
       data: docs.map(mapAudition),
     };
-  },
-
-  /**
-   * Submit self-tape for an audition
-   */
-  async submitSelfTape(auditionId, payload) {
-    if (!isRealMode("talent")) {
-      return { success: true, message: "Self-tape submitted (Mock)" };
-    }
-    const res = await apiClient.post(`/api/auditions/${auditionId}/self-tape`, payload);
-    return res?.data || res;
   },
 };
 

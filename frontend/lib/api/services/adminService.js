@@ -14,6 +14,7 @@ import {
   mapOrganization,
   mapProject,
   mapApplication,
+  mapAudition,
 } from "../mappers/index.js";
 import {
   initialTalents,
@@ -594,23 +595,54 @@ export const adminService = {
     if (!isRealMode("admin")) {
       return { success: true, data: [] };
     }
-    const res = await apiClient.get("/api/admin/auditions/pending", { params });
+    const res = await apiClient.get("/api/admin/auditions", { params });
+    const docs = Array.isArray(res?.auditions) ? res.auditions : Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
     return {
       success: true,
-      data: res?.data || res?.auditions || res || [],
+      data: docs.map(mapAudition),
     };
   },
 
   /**
    * Review audition request (Approve / Reject)
    * @param {string} auditionId
-   * @param {Object} payload { action, rejectionReason }
+   * @param {Object} payload { action, rejectionReason, scriptUrl }
    */
   async reviewAudition(auditionId, payload) {
     if (!isRealMode("admin")) {
       return { success: true, message: "Audition reviewed (Mock)" };
     }
     return apiClient.patch(`/api/admin/auditions/${auditionId}/review`, payload);
+  },
+
+  async approveAudition(auditionId, payload = {}) {
+    return this.reviewAudition(auditionId, { action: "approve", ...payload });
+  },
+
+  async rejectAudition(auditionId, payload = {}) {
+    const data = typeof payload === "string" ? { action: "reject", rejectionReason: payload } : { action: "reject", ...payload };
+    return this.reviewAudition(auditionId, data);
+  },
+
+  /**
+   * Relay audition request to talent (POST /api/admin/auditions/:id/relay)
+   */
+  async relayAudition(auditionId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Audition relayed (Mock)" };
+    }
+    return apiClient.post(`/api/admin/auditions/${auditionId}/relay`, payload);
+  },
+
+  /**
+   * Reject audition request (POST /api/admin/auditions/:id/reject-request)
+   */
+  async rejectAuditionRequest(auditionId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Audition request rejected (Mock)" };
+    }
+    const data = typeof payload === "string" ? { reason: payload } : payload;
+    return apiClient.post(`/api/admin/auditions/${auditionId}/reject-request`, data);
   },
 
   /**

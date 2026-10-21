@@ -25,6 +25,8 @@ import {
     reviewReport,
     getPendingAuditions,
     reviewAudition,
+    relayAuditionRequest,
+    rejectAuditionRequest,
     getReapplicationRequests,
     reviewReapplication,
     getPendingVerifications,
@@ -86,6 +88,7 @@ router.param("couponId", validateObjectIdParam);
 router.param("profileId", validateObjectIdParam);
 router.param("reportId", validateObjectIdParam);
 router.param("auditionId", validateObjectIdParam);
+router.param("id", validateObjectIdParam);
 router.param("broadcastId", validateObjectIdParam);
 
 // Universal Mounting-Level Security Barrier:
@@ -189,7 +192,12 @@ router.patch("/reports/:reportId/review", authenticateUser, authorizeRoles("admi
 // Auditions Queue & Review
 router.get("/auditions", authenticateUser, authorizeRoles("admin"), getPendingAuditions);
 router.get("/auditions/pending", authenticateUser, authorizeRoles("admin"), getPendingAuditions);
+router.post("/auditions/:id/relay", authenticateUser, authorizeRoles("admin"), relayAuditionRequest);
+router.post("/auditions/:auditionId/relay", authenticateUser, authorizeRoles("admin"), relayAuditionRequest);
+router.post("/auditions/:id/reject-request", authenticateUser, authorizeRoles("admin"), rejectAuditionRequest);
+router.post("/auditions/:auditionId/reject-request", authenticateUser, authorizeRoles("admin"), rejectAuditionRequest);
 router.patch("/auditions/:auditionId/review", authenticateUser, authorizeRoles("admin"), reviewAudition);
+router.post("/auditions/:auditionId/review", authenticateUser, authorizeRoles("admin"), reviewAudition);
 router.patch("/auditions/:auditionId/approve", authenticateUser, authorizeRoles("admin"), (req: Request, res: Response, next: NextFunction) => {
     req.body.action = "approve";
     return (reviewAudition as any)(req, res, next);

@@ -26,9 +26,13 @@ const notificationSchema = new Schema<INotification>(
             enum: [
                 "application_submitted",
                 "application_status_changed",
+                "shortlisted",
                 "selected",
                 "not_selected",
                 "audition_invitation",
+                "audition_scheduled",
+                "audition_rescheduled",
+                "audition_cancelled",
                 "audition_submitted",
                 "audition_approved",
                 "audition_rejected",

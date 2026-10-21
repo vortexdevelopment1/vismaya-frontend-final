@@ -139,9 +139,9 @@ export function AdminProvider({ children }) {
       }
     }
 
-    const target = talents.find((t) => t.id === id);
+    const target = talents.find((t) => t.id === id || t._id === id || t.userId === id);
     setTalents((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "Approved", statusReason: null } : t))
+      prev.map((t) => (t.id === id || t._id === id || t.userId === id ? { ...t, status: "Approved", isProfileApproved: true, statusReason: null } : t))
     );
 
     setActivities((prev) => [
@@ -176,9 +176,9 @@ export function AdminProvider({ children }) {
       }
     }
 
-    const target = talents.find((t) => t.id === id);
+    const target = talents.find((t) => t.id === id || t._id === id || t.userId === id);
     setTalents((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "Rejected", statusReason: reason } : t))
+      prev.map((t) => (t.id === id || t._id === id || t.userId === id ? { ...t, status: "Rejected", statusReason: reason } : t))
     );
 
     setActivities((prev) => [

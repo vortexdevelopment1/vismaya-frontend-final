@@ -30,6 +30,7 @@ import { mediaService } from "@/lib/api/services/mediaService";
 import { useAuth } from "@/context/AuthContext";
 import { isRealMode } from "@/lib/api/config";
 import { talentService } from "@/lib/api/services/talentService";
+import { AUDITION_CONFIG } from "@/lib/config/audition";
 
 export default function TalentAuditionsPage() {
   const { user } = useAuth();
@@ -64,56 +65,102 @@ export default function TalentAuditionsPage() {
 
   // Form states per audition card
   const [activeUploadId, setActiveUploadId] = useState(null);
-  const [selectedFiles, setSelectedFiles] = useState({}); // { [audId]: { file, previewUrl, fileName, fileSize } }
+  const [selectedFiles, setSelectedFiles] = useState({}); // { [audId]: [ { file, previewUrl, fileName, fileSize, bytes, duration, durationKnown } ] }
   const [auditionNotes, setAuditionNotes] = useState({});
   const [isSubmittingMap, setIsSubmittingMap] = useState({});
   const [fileErrorMap, setFileErrorMap] = useState({});
+  const [uploadProgressMap, setUploadProgressMap] = useState({});
+  const [activePreviewTakeMap, setActivePreviewTakeMap] = useState({});
 
-  const handleFileSelect = (audId, e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const readVideoDuration = (file) =>
+    new Promise((resolve) => {
+      try {
+        const url = URL.createObjectURL(file);
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.onloadedmetadata = () => {
+          URL.revokeObjectURL(url);
+          resolve(video.duration);
+        };
+        video.onerror = () => {
+          URL.revokeObjectURL(url);
+          resolve(null);
+        };
+        video.src = url;
+      } catch {
+        resolve(null);
+      }
+    });
 
-    // Validate file type (video only)
-    const isVideo = file.type.startsWith("video/") || /\.(mp4|mov|webm|mkv|avi)$/i.test(file.name);
-    if (!isVideo) {
+  const handleFileSelect = async (audId, e) => {
+    const rawFiles = Array.from(e.target.files || []);
+    if (rawFiles.length === 0) return;
+
+    if (rawFiles.length > AUDITION_CONFIG.SELF_TAPE_MAX_VIDEOS_PER_AUDITION) {
       setFileErrorMap((prev) => ({
         ...prev,
-        [audId]: "Invalid file type. Please select a valid video file (MP4, MOV, WEBM).",
+        [audId]: `You can upload up to ${AUDITION_CONFIG.SELF_TAPE_MAX_VIDEOS_PER_AUDITION} video`,
       }));
-      addToast({
-        type: "danger",
-        title: "Invalid File Type",
-        message: "Please choose a video file (MP4, MOV, WEBM).",
-      });
       return;
     }
 
-    setFileErrorMap((prev) => ({ ...prev, [audId]: null }));
+    const file = rawFiles[0];
+    const maxBytes = AUDITION_CONFIG.SELF_TAPE_MAX_FILE_MB * 1024 * 1024;
+    const maxDurationSec = AUDITION_CONFIG.SELF_TAPE_MAX_DURATION_MIN * 60;
 
-    // Create a local object URL for preview and shared state playback
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    const isAllowedExt = ["mp4", "mov", "webm"].includes(ext);
+    const isAllowedMime = (AUDITION_CONFIG.SELF_TAPE_ALLOWED_TYPES || []).includes(file.type);
+
+    if (!isAllowedExt && !isAllowedMime) {
+      setFileErrorMap((prev) => ({
+        ...prev,
+        [audId]: "Only MP4, MOV or WebM files are allowed",
+      }));
+      return;
+    }
+
+    if (file.size > maxBytes) {
+      setFileErrorMap((prev) => ({
+        ...prev,
+        [audId]: `File is too large. Maximum is ${AUDITION_CONFIG.SELF_TAPE_MAX_FILE_MB} MB`,
+      }));
+      return;
+    }
+
+    const duration = await readVideoDuration(file);
+    if (duration && duration > maxDurationSec) {
+      setFileErrorMap((prev) => ({
+        ...prev,
+        [audId]: `Video duration exceeds maximum of ${AUDITION_CONFIG.SELF_TAPE_MAX_DURATION_MIN} minutes`,
+      }));
+      return;
+    }
+
     const previewUrl = URL.createObjectURL(file);
     const sizeInMb = (file.size / (1024 * 1024)).toFixed(1);
+    const processed = [{
+      file,
+      previewUrl,
+      fileName: file.name,
+      fileSize: `${sizeInMb} MB`,
+      bytes: file.size,
+      duration: duration ? Math.round(duration) : undefined,
+      durationKnown: duration !== null,
+    }];
 
-    setSelectedFiles((prev) => ({
-      ...prev,
-      [audId]: {
-        file,
-        previewUrl,
-        fileName: file.name,
-        fileSize: `${sizeInMb} MB`,
-      },
-    }));
-
+    setFileErrorMap((prev) => ({ ...prev, [audId]: null }));
+    setSelectedFiles((prev) => ({ ...prev, [audId]: processed }));
     addToast({
       type: "info",
       title: "Video Loaded",
-      message: `Selected "${file.name}" (${sizeInMb} MB). Review preview and submit.`,
+      message: `${file.name} selected. Ready to submit.`,
     });
   };
 
   const handleSubmitTape = async (audId) => {
-    const fileData = selectedFiles[audId];
-    if (!fileData || !fileData.previewUrl) {
+    const fileList = selectedFiles[audId];
+    if (!fileList || fileList.length === 0) {
       addToast({
         type: "warning",
         title: "Video File Required",
@@ -123,43 +170,64 @@ export default function TalentAuditionsPage() {
     }
 
     setIsSubmittingMap((prev) => ({ ...prev, [audId]: true }));
+    setUploadProgressMap((prev) => ({ ...prev, [audId]: 15 }));
 
     const note = auditionNotes[audId] || "Self-tape recorded and submitted as per script sides.";
 
     try {
-        const uploaded = await mediaService.uploadFile(fileData.file, { folder: "vismaya/self-tapes" });
-        if (isRealMode("talent")) {
-          await talentService.submitSelfTape(audId, {
-            videoUrl: uploaded.url,
-            notes: note,
-            thumbnailUrl: uploaded.thumbnailUrl,
-            durationSeconds: uploaded.duration,
-            fileSizeBytes: uploaded.bytes,
-          });
+      const item = fileList[0];
+      setUploadProgressMap((prev) => ({ ...prev, [audId]: 40 }));
+      const uploaded = await mediaService.uploadFile(item.file, { folder: "vismaya/self-tapes" });
+      setUploadProgressMap((prev) => ({ ...prev, [audId]: 85 }));
+
+      const payload = {
+        videoUrl: uploaded.url,
+        videoUrls: [uploaded.url],
+        videos: [{
+          videoUrl: uploaded.url,
+          thumbnailUrl: uploaded.thumbnailUrl,
+          durationSeconds: uploaded.duration || item.duration,
+          fileSizeBytes: uploaded.bytes || item.bytes,
+          fileName: item.fileName,
+        }],
+        thumbnailUrl: uploaded.thumbnailUrl,
+        durationSeconds: uploaded.duration || item.duration,
+        fileSizeBytes: uploaded.bytes || item.bytes,
+        notes: note,
+      };
+
+      if (isRealMode("talent") || isRealMode("auditions")) {
+        const res = await talentService.submitSelfTape(audId, payload);
+        if (res?.success) {
           await loadAuditions();
         } else {
-          await submitSelfTape(audId, uploaded.url, note, {
-            thumbnailUrl: uploaded.thumbnailUrl,
-            durationSeconds: uploaded.duration,
-            fileSizeBytes: uploaded.bytes,
-          });
+          throw new Error(res?.message || "Failed to submit self-tape");
         }
-        addToast({
-          type: "success",
-          title: "Self-Tape Submitted!",
-          message: "Your self-tape was uploaded and sent through Vismaya for verification.",
-        });
-        setActiveUploadId(null);
-      } catch (err) {
-        console.error(err);
-        addToast({
-          type: "danger",
-          title: "Upload Failed",
-          message: "Could not submit your self-tape. Please try again.",
-        });
-      } finally {
-        setIsSubmittingMap((prev) => ({ ...prev, [audId]: false }));
+      } else {
+        await submitSelfTape(audId, payload.videoUrl, note, payload);
       }
+
+      setUploadProgressMap((prev) => ({ ...prev, [audId]: 100 }));
+      addToast({
+        type: "success",
+        title: "Self-Tape Submitted!",
+        message: "Your self-tape was uploaded and is now under Vismaya review.",
+      });
+      setActiveUploadId(null);
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "Could not submit your self-tape. Please try again.";
+      setFileErrorMap((prev) => ({ ...prev, [audId]: msg }));
+      addToast({
+        type: "danger",
+        title: "Upload Failed",
+        message: msg,
+      });
+    } finally {
+      setIsSubmittingMap((prev) => ({ ...prev, [audId]: false }));
+      setTimeout(() => {
+        setUploadProgressMap((prev) => ({ ...prev, [audId]: 0 }));
+      }, 1000);
+    }
   };
 
   return (
@@ -249,11 +317,23 @@ export default function TalentAuditionsPage() {
             const opp = getOpportunity(aud.opportunityId);
             const project = opp ? getProject(opp.projectId) : null;
 
-            const isPendingUpload = aud.status === "Relayed to Talent";
-            const isReceived = aud.status === "Self-tape Received";
-            const isForwarded = aud.status === "Forwarded to Organization";
+            const rawStatus = (aud.rawStatus || aud.status || "").toLowerCase().replace(/\s+/g, "_");
+            const isPastDeadline = aud.deadline && new Date() > new Date(aud.deadline);
+            const isSubmitted = rawStatus === "submitted" || rawStatus === "self_tape_received" || aud.status === "Submitted" || aud.status === "Self-tape Received" || Boolean(aud.selfTapeSubmission?.submittedAt);
+            const isForwarded = rawStatus === "forwarded_to_org" || aud.status === "Forwarded to Organization" || aud.status === "Forwarded to Org";
+            const isRejected = rawStatus === "rejected" || aud.status === "Rejected" || aud.vismayaApproval === "rejected";
+            const isRequested = (rawStatus === "requested" || aud.status === "Audition Requested" || aud.status === "Requested" || aud.status === "Relayed to Talent") && !isSubmitted && !isRejected;
+            const isSelfTape = (aud.type || "").toLowerCase().includes("tape") || aud.type === "self_tape" || aud.type === "Audition";
 
-            const isUploadOpen = activeUploadId === aud.id || isPendingUpload;
+            // One submission only: after the talent submits, there is no replace and no second upload.
+            const canUpload = isSelfTape && isRequested && !isSubmitted && !isPastDeadline && !isForwarded && !isRejected;
+            const isUploadOpen = canUpload;
+
+            // Extract primary video
+            const submittedVideo = aud.selfTapeSubmission?.videos?.[0]
+              || (aud.selfTapeSubmission?.videoUrl ? { videoUrl: aud.selfTapeSubmission.videoUrl, fileName: "Self-Tape-Audition.mp4" } : null)
+              || (aud.selfTapeUrl ? { videoUrl: aud.selfTapeUrl, fileName: "Self-Tape-Audition.mp4" } : null);
+            const currentSubmittedSrc = submittedVideo?.videoUrl || "";
 
             return (
               <div
@@ -261,7 +341,7 @@ export default function TalentAuditionsPage() {
                 className="card-surface aud-card-root"
                 style={{
                   backgroundColor: "#FFFFFF",
-                  border: isPendingUpload ? "1.5px solid #8A6B2E" : "1px solid #E8E2D4",
+                  border: isRequested ? "1.5px solid #8A6B2E" : "1px solid #E8E2D4",
                   borderRadius: "18px",
                   padding: "clamp(18px, 3vw, 26px) clamp(18px, 3.5vw, 28px)",
                   display: "flex",
@@ -272,8 +352,8 @@ export default function TalentAuditionsPage() {
                   overflow: "hidden",
                 }}
               >
-                {/* Pending Upload Top Highlight */}
-                {isPendingUpload && (
+                {/* Header Strip */}
+                {isRequested && (
                   <div
                     className="aud-card-highlight-strip"
                     style={{
@@ -307,7 +387,7 @@ export default function TalentAuditionsPage() {
                           textTransform: "uppercase",
                         }}
                       >
-                        {aud.type || "Audition"}
+                        {isSelfTape ? "Video Self-Tape" : (aud.type || "Audition")}
                       </span>
                       <span className="aud-card-ref" style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
                         Ref: #{aud.id}
@@ -318,25 +398,68 @@ export default function TalentAuditionsPage() {
                       className="aud-card-title"
                       style={{ fontFamily: "Georgia, serif", fontSize: "clamp(1.1rem, 2.5vw, 1.25rem)", fontWeight: "700", color: "var(--text-primary)", margin: "4px 0 0 0", overflowWrap: "anywhere" }}
                     >
-                      {opp?.title || "Opportunity Audition"}
+                      {opp?.title || aud.opportunityTitle || "Opportunity Audition"}
                     </h3>
 
-                    {project && (
-                      <span className="aud-card-project" style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                        Project: <strong style={{ color: "var(--text-primary)" }}>{project.title}</strong>
-                      </span>
-                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                      <span>Role: <strong style={{ color: "var(--text-primary)" }}>{aud.role || opp?.role || "Lead Role"}</strong></span>
+                      {(aud.projectName || project?.title) && (
+                        <span>&bull; Project: <strong style={{ color: "var(--text-primary)" }}>{aud.projectName || project?.title}</strong></span>
+                      )}
+                      {aud.organizationName && (
+                        <span>&bull; Org: <strong style={{ color: "var(--gold)" }}>{aud.organizationName}</strong></span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="aud-card-header-right" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px" }}>
-                    <StatusBadge status={aud.status} size="md" />
+                  <div className="aud-card-header-right" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+                    {isSubmitted ? (
+                      <span style={{ fontSize: "0.785rem", fontWeight: 700, padding: "4px 10px", borderRadius: "6px", background: "rgba(138, 107, 46, 0.12)", color: "#6E5420", border: "1px solid rgba(138, 107, 46, 0.25)" }}>
+                        Submitted - under Vismaya review
+                      </span>
+                    ) : isRejected ? (
+                      <span style={{ fontSize: "0.785rem", fontWeight: 700, padding: "4px 10px", borderRadius: "6px", background: "rgba(180, 35, 24, 0.08)", color: "#B42318", border: "1px solid rgba(180, 35, 24, 0.25)" }}>
+                        Rejected
+                      </span>
+                    ) : isPastDeadline ? (
+                      <span style={{ fontSize: "0.785rem", fontWeight: 700, padding: "4px 10px", borderRadius: "6px", background: "rgba(180, 35, 24, 0.08)", color: "#B42318", border: "1px solid rgba(180, 35, 24, 0.25)" }}>
+                        Submission closed
+                      </span>
+                    ) : (
+                      <StatusBadge status={aud.status} size="md" />
+                    )}
+
                     <span className="aud-card-requested-date" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                      Requested {new Date(aud.requestedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
+                      {isSelfTape
+                        ? `Self-tape requested, submit by ${aud.deadline ? new Date(aud.deadline).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "TBD"}`
+                        : aud.scheduledAt
+                        ? `Scheduled: ${new Date(aud.scheduledAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`
+                        : `Requested ${new Date(aud.requestedAt || aud.createdAt || Date.now()).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}`}
                     </span>
                   </div>
                 </div>
 
-                {/* Audition Note / Script Sides Instructions */}
+                {/* Live Audition Details if any legacy live audition */}
+                {!isSelfTape && (aud.meetingLink || aud.location) && (
+                  <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", fontSize: "0.85rem", color: "var(--text-secondary)", background: "var(--bg-alt)", padding: "10px 16px", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                    {aud.meetingLink && (
+                      <div>
+                        <strong>Meeting Link: </strong>
+                        <a href={aud.meetingLink} target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)", textDecoration: "underline" }}>
+                          {aud.meetingLink}
+                        </a>
+                      </div>
+                    )}
+                    {aud.location && (
+                      <div>
+                        <strong>Venue / Location: </strong>
+                        <span>{aud.location}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Instructions & Script Sides */}
                 <div
                   className="aud-instructions-box"
                   style={{
@@ -356,14 +479,60 @@ export default function TalentAuditionsPage() {
                     </span>
                   </div>
                   <p className="aud-instructions-text" style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-secondary)", lineHeight: 1.55, overflowWrap: "anywhere" }}>
-                    {aud.note || "Please record your audition self-tape and upload via the form below."}
+                    {aud.instructions || aud.note || aud.sceneBrief || "Please record your audition self-tape and upload via the form below."}
                   </p>
+                  {aud.scriptUrl && (
+                    <div style={{ marginTop: "4px" }}>
+                      <a href={aud.scriptUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)", textDecoration: "underline", fontSize: "0.825rem", fontWeight: 600 }}>
+                        Download / View Script Sides &rarr;
+                      </a>
+                    </div>
+                  )}
                 </div>
 
-                {/* Status-specific Information Boxes */}
-                {isReceived && (
+                {/* Rejection Banner if rejected by Vismaya */}
+                {isRejected && (
                   <div
-                    className="aud-status-box aud-status-received"
+                    style={{
+                      backgroundColor: "rgba(180, 35, 24, 0.06)",
+                      border: "1px solid rgba(180, 35, 24, 0.25)",
+                      borderRadius: "6px",
+                      padding: "14px 18px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "4px",
+                    }}
+                  >
+                    <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#B42318" }}>
+                      Vismaya Moderation Notice (Self-Tape Rejected):
+                    </span>
+                    <span style={{ fontSize: "0.825rem", color: "#5A584F", lineHeight: 1.5 }}>
+                      {aud.vismayaRejectionReason || "Your self-tape submission does not meet guidelines. Resubmissions are not permitted."}
+                    </span>
+                  </div>
+                )}
+
+                {/* Submitted video player section (One submission only, no replacement) */}
+                {isSubmitted && currentSubmittedSrc && (
+                  <div className="aud-recording-section" style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <Video size={16} className="aud-recording-icon" style={{ color: "var(--gold)" }} />
+                      <span className="aud-recording-label" style={{ fontSize: "0.85rem", fontWeight: "700", color: "var(--text-primary)" }}>
+                        Submitted Self-Tape Recording:
+                      </span>
+                    </div>
+                    <VideoPlayer
+                      src={currentSubmittedSrc}
+                      height="clamp(180px, 35vw, 260px)"
+                      fileName={submittedVideo?.fileName || "Self-Tape-Audition.mp4"}
+                      className="aud-video-player"
+                    />
+                  </div>
+                )}
+
+                {/* Forwarded to Org notice */}
+                {isForwarded && (
+                  <div
                     style={{
                       backgroundColor: "#EFF2EC",
                       border: "1px solid #D1DCC8",
@@ -374,63 +543,20 @@ export default function TalentAuditionsPage() {
                       gap: "12px",
                     }}
                   >
-                    <CheckCircle2 size={20} className="aud-status-icon" style={{ color: "var(--gold)", flexShrink: 0 }} />
-                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <span className="aud-status-title" style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>
-                        Self-tape Received by Vismaya Desk
-                      </span>
-                      <span className="aud-status-desc" style={{ fontSize: "0.8rem", color: "var(--text-secondary)", overflowWrap: "anywhere" }}>
-                        Your tape is currently being quality-checked by the Vismaya moderation team before being forwarded to the casting director.
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {isForwarded && (
-                  <div
-                    className="aud-status-box aud-status-forwarded"
-                    style={{
-                      backgroundColor: "var(--bg-alt)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "6px",
-                      padding: "14px 18px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                    }}
-                  >
-                    <Sparkles size={20} className="aud-status-icon" style={{ color: "var(--gold)", flexShrink: 0 }} />
-                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <span className="aud-status-title" style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--gold)" }}>
-                        Forwarded to Organization
-                      </span>
-                      <span className="aud-status-desc" style={{ fontSize: "0.8rem", color: "var(--text-secondary)", overflowWrap: "anywhere" }}>
-                        Your verified tape has been forwarded to the organization&apos;s casting desk for review and callback consideration.
+                    <CheckCircle2 size={20} style={{ color: "#2B5E3B", flexShrink: 0 }} />
+                    <div>
+                      <strong style={{ fontSize: "0.875rem", color: "#2B2D2A", display: "block" }}>
+                        Approved &amp; Relayed to Organization
+                      </strong>
+                      <span style={{ fontSize: "0.8rem", color: "#5A584F" }}>
+                        Vismaya moderation has verified your tape and relayed it to the casting directors for review.
                       </span>
                     </div>
                   </div>
                 )}
 
-                {/* Submitted Video Player Section (When already submitted or forwarded) */}
-                {(isReceived || isForwarded) && aud.selfTapeUrl && (
-                  <div className="aud-recording-section" style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <Video size={16} className="aud-recording-icon" style={{ color: "var(--gold)" }} />
-                      <span className="aud-recording-label" style={{ fontSize: "0.85rem", fontWeight: "700", color: "var(--text-primary)" }}>
-                        Submitted Self-Tape Recording:
-                      </span>
-                    </div>
-                    <VideoPlayer
-                      src={aud.selfTapeUrl}
-                      height="clamp(180px, 35vw, 260px)"
-                      fileName={selectedFiles[aud.id]?.fileName || "Self-Tape-Audition.mp4"}
-                      className="aud-video-player"
-                    />
-                  </div>
-                )}
-
-                {/* Self-Tape Upload Area */}
-                {(isPendingUpload || isReceived) && (
+                {/* Upload Control Area */}
+                {canUpload && isUploadOpen && (
                   <div
                     className="aud-upload-area"
                     style={{
@@ -448,12 +574,12 @@ export default function TalentAuditionsPage() {
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <Video size={18} className="aud-upload-icon" style={{ color: "var(--gold)" }} />
                         <h4 className="aud-upload-heading" style={{ fontSize: "0.95rem", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
-                          {isReceived ? "Re-upload / Update Self-Tape" : "Submit Audition Self-Tape"}
+                          Submit Audition Self-Tape
                         </h4>
                       </div>
 
                       <span className="aud-upload-hint" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                        MP4, MOV, WEBM (Video only)
+                        MP4, MOV, WEBM (Max {AUDITION_CONFIG.SELF_TAPE_MAX_FILE_MB} MB, 1 video)
                       </span>
                     </div>
 
@@ -493,10 +619,14 @@ export default function TalentAuditionsPage() {
                         </div>
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <span className="aud-picker-file-name" style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)", display: "block", overflowWrap: "anywhere" }}>
-                            {selectedFiles[aud.id]?.fileName || (aud.selfTapeUrl ? "Current: Verified-Self-Tape.mp4" : "Choose audition video file")}
+                            {selectedFiles[aud.id]?.length
+                              ? selectedFiles[aud.id][0].fileName
+                              : "Choose audition video file"}
                           </span>
                           <span className="aud-picker-file-meta" style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                            {selectedFiles[aud.id]?.fileSize ? `File size: ${selectedFiles[aud.id].fileSize} • Video validated` : "High-definition landscape recording recommended"}
+                            {selectedFiles[aud.id]?.length
+                              ? `${selectedFiles[aud.id][0].fileSize} • Ready to upload`
+                              : `Max ${AUDITION_CONFIG.SELF_TAPE_MAX_FILE_MB} MB • Max ${AUDITION_CONFIG.SELF_TAPE_MAX_DURATION_MIN} min duration`}
                           </span>
                         </div>
                       </div>
@@ -517,16 +647,15 @@ export default function TalentAuditionsPage() {
                           alignItems: "center",
                           justifyContent: "center",
                           gap: "6px",
-                          transition: "all var(--transition)",
                         }}
                       >
                         <input
                           type="file"
-                          accept="video/*"
+                          accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
                           style={{ display: "none" }}
                           onChange={(e) => handleFileSelect(aud.id, e)}
                         />
-                        <span>{selectedFiles[aud.id] ? "Change Video" : "Browse Video"}</span>
+                        <span>{selectedFiles[aud.id]?.length ? "Change Video" : "Browse Video"}</span>
                       </label>
                     </div>
 
@@ -538,15 +667,35 @@ export default function TalentAuditionsPage() {
                       </div>
                     )}
 
-                    {/* Local Preview before submitting */}
-                    {selectedFiles[aud.id]?.previewUrl && (
+                    {/* Upload progress bar */}
+                    {uploadProgressMap[aud.id] > 0 && (
+                      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                          <span>Uploading self-tape...</span>
+                          <span>{uploadProgressMap[aud.id]}%</span>
+                        </div>
+                        <div style={{ width: "100%", height: "6px", background: "#E8E2D4", borderRadius: "3px", overflow: "hidden" }}>
+                          <div
+                            style={{
+                              width: `${uploadProgressMap[aud.id]}%`,
+                              height: "100%",
+                              background: "var(--gold)",
+                              transition: "width 0.3s ease",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Local Preview of selected files */}
+                    {selectedFiles[aud.id]?.length > 0 && (
                       <div className="aud-local-preview-section" style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
                         <span className="aud-local-preview-label" style={{ fontSize: "0.8rem", fontWeight: "700", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                           Selected Video Preview:
                         </span>
                         <VideoPlayer
-                          src={selectedFiles[aud.id].previewUrl}
-                          fileName={selectedFiles[aud.id].fileName}
+                          src={selectedFiles[aud.id][0].previewUrl}
+                          fileName={selectedFiles[aud.id][0].fileName}
                           height="clamp(180px, 35vw, 240px)"
                           className="aud-local-video-player"
                         />
@@ -561,7 +710,7 @@ export default function TalentAuditionsPage() {
                       <textarea
                         className="aud-textarea"
                         rows={2}
-                        placeholder="Mention take number, lighting setup, or dialect context..."
+                        placeholder="Mention take details, dialect nuance, or lighting setup..."
                         value={auditionNotes[aud.id] || ""}
                         onChange={(e) =>
                           setAuditionNotes((prev) => ({ ...prev, [aud.id]: e.target.value }))
@@ -583,12 +732,12 @@ export default function TalentAuditionsPage() {
                     {/* Submit Button & Vismaya routing note */}
                     <div className="aud-submit-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", paddingTop: "6px" }}>
                       <span className="aud-submit-badge" style={{ fontSize: "0.785rem", color: "var(--text-muted)", fontStyle: "italic" }}>
-                        &bull; Your self-tape is sent through Vismaya
+                        &bull; Your self-tape is sent through Vismaya for verification before relay
                       </span>
 
                       <button
                         onClick={() => handleSubmitTape(aud.id)}
-                        disabled={isSubmittingMap[aud.id]}
+                        disabled={isSubmittingMap[aud.id] || !selectedFiles[aud.id]?.length}
                         className="btn-primary aud-submit-btn"
                         style={{
                           padding: "8px 20px",
@@ -598,13 +747,15 @@ export default function TalentAuditionsPage() {
                           display: "inline-flex",
                           alignItems: "center",
                           gap: "8px",
+                          cursor: (isSubmittingMap[aud.id] || !selectedFiles[aud.id]?.length) ? "not-allowed" : "pointer",
+                          opacity: (isSubmittingMap[aud.id] || !selectedFiles[aud.id]?.length) ? 0.6 : 1,
                         }}
                       >
                         {isSubmittingMap[aud.id] ? (
                           <span>Uploading Video...</span>
                         ) : (
                           <>
-                            <span>{isReceived ? "Update Self-Tape" : "Submit Self-Tape"}</span>
+                            <span>Submit Self-Tape</span>
                             <Send size={15} />
                           </>
                         )}

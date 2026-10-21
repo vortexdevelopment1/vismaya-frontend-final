@@ -13,21 +13,39 @@ import { PRICING_CONFIG } from "@/lib/config/pricing";
 import PaymentCard from "@/components/payment/PaymentCard";
 import { useAuth } from "@/context/AuthContext";
 import { isRealMode } from "@/lib/api/config";
+import { toFrontendStatus } from "@/lib/api/statusMapper";
 
 export default function OpportunityApplyModal({ isOpen, onClose, opportunity, project, onAppliedSuccess }) {
   const { user } = useAuth();
   const { profile, addToast, profileCompletionScore } = useTalent();
   const { applyToOpportunity, applications } = useWorkflow();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPaid, setIsPaid] = useState(() => {
-    if (isRealMode("payments") && user?.isPaid) return true;
-    return paymentService.isTalentPaid();
-  });
+
+  const talentIsPaid = Boolean(
+    user?.isPaid ||
+    profile?.isPaid ||
+    (!isRealMode("payments") && paymentService.isTalentPaid())
+  );
+  const [isPaid, setIsPaid] = useState(talentIsPaid);
+
+  React.useEffect(() => {
+    setIsPaid(talentIsPaid);
+  }, [talentIsPaid]);
 
   if (!opportunity) return null;
 
   const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
-  const isApproved = profile?.status?.toLowerCase() === "approved" || profile?.isProfileApproved || profile?.status === "Approved";
+  const rawStatus = (profile?.rawStatus || profile?.status || "").toLowerCase().trim();
+  const isApproved = Boolean(
+    profile?.isProfileApproved ||
+    rawStatus === "approved" ||
+    rawStatus === "active" ||
+    profile?.status === "Approved" ||
+    profile?.status === "Active"
+  );
+  const displayStatus = profile?.status
+    ? (profile.status.toLowerCase() === "approved" || profile.status.toLowerCase() === "active" ? "Approved" : toFrontendStatus("user", profile.status))
+    : (toFrontendStatus("user", rawStatus) || "Pending Review");
   const alreadyApplied = applications.some(
     (a) => a.opportunityId === opportunity.id && (
       a.talentId === currentTalentId ||
@@ -45,7 +63,7 @@ export default function OpportunityApplyModal({ isOpen, onClose, opportunity, pr
     if (isRealMode("applications")) {
       try {
         await talentService.applyToOpportunity(opportunity.id || opportunity._id, {
-          roleApplied: opportunity.title || "Applicant",
+          roleApplied: opportunity.role || opportunity.title || "Applicant",
           coverNote: "Application submitted via platform",
         });
         setIsSubmitting(false);
@@ -139,7 +157,8 @@ export default function OpportunityApplyModal({ isOpen, onClose, opportunity, pr
   }
 
   // 2. Profile Completion < 60% Gate
-  if ((profileCompletionScore || 0) < PRICING_CONFIG.MIN_PROFILE_COMPLETION) {
+  const effectiveCompletionScore = profileCompletionScore ?? profile?.profileCompletionPercentage ?? 0;
+  if (effectiveCompletionScore < PRICING_CONFIG.MIN_PROFILE_COMPLETION) {
     return (
       <Modal
         isOpen={isOpen}
@@ -253,7 +272,7 @@ export default function OpportunityApplyModal({ isOpen, onClose, opportunity, pr
                 Profile Approval Required
               </span>
               <span style={{ fontSize: "0.825rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
-                Your artist profile status is currently <strong>{profile.status}</strong>. Only talent with an <strong>Approved</strong> profile can apply to verified opportunities.
+                Your artist profile status is currently <strong>{displayStatus}</strong>. Only talent with an <strong>Approved</strong> profile can apply to verified opportunities.
               </span>
             </div>
           </div>

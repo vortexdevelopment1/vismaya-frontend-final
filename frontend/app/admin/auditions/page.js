@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Video,
@@ -22,6 +22,39 @@ import VideoPlayer from "@/components/shared/VideoPlayer";
 import { isRealMode } from "@/lib/api/config";
 import { adminService } from "@/lib/api/services/adminService";
 
+function normalizeAuditionStatus(aud) {
+  const s = String(aud?.rawStatus || aud?.status || "").toLowerCase().replace(/[\s-_]+/g, "");
+  const v = typeof aud?.vismayaApproval === "string" ? aud.vismayaApproval.toLowerCase() : (aud?.vismayaApproval?.status || "").toLowerCase();
+  return { s, v };
+}
+
+function isNeedsRelay(aud) {
+  const { s, v } = normalizeAuditionStatus(aud);
+  const isTapeSubmitted = Boolean(aud.selfTapeSubmission?.submittedAt || aud.selfTapeSubmission?.videoUrl || s.includes("selftape") || s === "submitted");
+  if (isTapeSubmitted) return false;
+  if (v === "rejected" || s === "rejected" || s === "cancelled") return false;
+  return v === "pending" || (!v && (s === "requested" || s === "auditionrequested" || s === "needsrelay"));
+}
+
+function isRelayedToTalent(aud) {
+  const { s, v } = normalizeAuditionStatus(aud);
+  const isTapeSubmitted = Boolean(aud.selfTapeSubmission?.submittedAt || aud.selfTapeSubmission?.videoUrl || s.includes("selftape") || s === "submitted");
+  if (isTapeSubmitted) return false;
+  if (v === "rejected" || s === "rejected" || s === "cancelled") return false;
+  return (v === "approved" && (s === "requested" || s === "auditionrequested" || s === "relayedtotalent" || s === "scheduled")) || s === "relayedtotalent";
+}
+
+function isSelfTapeReceived(aud) {
+  const { s, v } = normalizeAuditionStatus(aud);
+  if (v === "rejected" || s === "rejected") return false;
+  return s === "submitted" || s === "selftapereceived" || s === "selftapesubmitted" || Boolean(aud.selfTapeSubmission?.submittedAt && s !== "forwardedtoorg" && s !== "reviewed");
+}
+
+function isForwardedToOrg(aud) {
+  const { s } = normalizeAuditionStatus(aud);
+  return s === "forwardedtoorg" || s === "forwardedtoorganization" || s === "reviewed";
+}
+
 export default function AdminAuditionsManagementPage() {
   const workflow = useWorkflow();
   const [realAuditions, setRealAuditions] = useState([]);
@@ -33,7 +66,7 @@ export default function AdminAuditionsManagementPage() {
     if (!isRealMode("admin")) return;
     try {
       const [audsRes, oppsRes, orgsRes] = await Promise.allSettled([
-        adminService.getPendingAuditions(),
+        adminService.getPendingAuditions({ all: true }),
         adminService.getAllOpportunities(),
         adminService.getOrganizationDirectory(),
       ]);
@@ -76,38 +109,46 @@ export default function AdminAuditionsManagementPage() {
   const [relayModalAud, setRelayModalAud] = useState(null);
   const [relayNote, setRelayNote] = useState("");
 
+  const [rejectRequestModalAud, setRejectRequestModalAud] = useState(null);
+  const [rejectRequestReason, setRejectRequestReason] = useState("");
+
   const [previewVideoModalAud, setPreviewVideoModalAud] = useState(null);
 
   const [forwardModalAud, setForwardModalAud] = useState(null);
   const [forwardNote, setForwardNote] = useState("");
+  const [rejectModalAud, setRejectModalAud] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [adminTakeIdx, setAdminTakeIdx] = useState(0);
 
   // Status counts
   const statusCounts = useMemo(() => {
     return {
       ALL: auditions.length,
-      Requested: auditions.filter((a) => a.status === "Requested").length,
-      "Relayed to Talent": auditions.filter((a) => a.status === "Relayed to Talent").length,
-      "Self-tape Received": auditions.filter((a) => a.status === "Self-tape Received").length,
-      "Forwarded to Organization": auditions.filter((a) => a.status === "Forwarded to Organization").length,
+      NeedsRelay: auditions.filter(isNeedsRelay).length,
+      RelayedToTalent: auditions.filter(isRelayedToTalent).length,
+      SelfTapeReceived: auditions.filter(isSelfTapeReceived).length,
+      ForwardedToOrg: auditions.filter(isForwardedToOrg).length,
     };
   }, [auditions]);
 
   // Tab definitions
   const tabs = [
     { key: "ALL", label: "All Auditions", count: statusCounts.ALL },
-    { key: "Requested", label: "Needs Relay", count: statusCounts.Requested },
-    { key: "Relayed to Talent", label: "Relayed to Talent", count: statusCounts["Relayed to Talent"] },
-    { key: "Self-tape Received", label: "Self-Tapes Received", count: statusCounts["Self-tape Received"] },
-    { key: "Forwarded to Organization", label: "Forwarded & Verified", count: statusCounts["Forwarded to Organization"] },
+    { key: "NeedsRelay", label: "Needs Relay", count: statusCounts.NeedsRelay },
+    { key: "RelayedToTalent", label: "Relayed to Talent", count: statusCounts.RelayedToTalent },
+    { key: "SelfTapeReceived", label: "Self-Tapes Received", count: statusCounts.SelfTapeReceived },
+    { key: "ForwardedToOrg", label: "Forwarded & Verified", count: statusCounts.ForwardedToOrg },
   ];
 
   // Filtered auditions
   const filteredAuditions = useMemo(() => {
     return auditions.filter((aud) => {
-      // Status filter
-      if (statusFilter !== "ALL" && aud.status !== statusFilter) {
-        return false;
-      }
+      // Status filter with status mapper & case tolerance
+      if (statusFilter === "NeedsRelay" && !isNeedsRelay(aud)) return false;
+      if (statusFilter === "RelayedToTalent" && !isRelayedToTalent(aud)) return false;
+      if (statusFilter === "SelfTapeReceived" && !isSelfTapeReceived(aud)) return false;
+      if (statusFilter === "ForwardedToOrg" && !isForwardedToOrg(aud)) return false;
 
       // Organization filter
       if (orgFilter !== "ALL" && aud.orgId !== orgFilter) {
@@ -154,14 +195,52 @@ export default function AdminAuditionsManagementPage() {
   };
 
   // Handlers
-  const handleRelay = (e) => {
+  const handleRelay = async (e) => {
     e.preventDefault();
     if (!relayModalAud) return;
-    adminRelayAudition(
-      relayModalAud.id,
-      relayNote || relayModalAud.note || "Audition instructions verified and relayed by Vismaya Desk."
-    );
-    setRelayModalAud(null);
+    setIsActionLoading(true);
+    try {
+      if (isRealMode("admin")) {
+        await adminService.relayAudition(relayModalAud.id, {
+          adminNote: relayNote || "Audition instructions verified and relayed by Vismaya Desk.",
+        });
+        await loadData();
+      } else {
+        adminRelayAudition(
+          relayModalAud.id,
+          relayNote || relayModalAud.note || "Audition instructions verified and relayed by Vismaya Desk."
+        );
+      }
+      setRelayModalAud(null);
+    } catch (err) {
+      console.error("Relay failed:", err);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleRejectRequest = async (e) => {
+    e.preventDefault();
+    if (!rejectRequestModalAud) return;
+    if (!rejectRequestReason.trim()) {
+      alert("Rejection reason is required.");
+      return;
+    }
+    setIsActionLoading(true);
+    try {
+      if (isRealMode("admin")) {
+        await adminService.rejectAuditionRequest(rejectRequestModalAud.id, {
+          reason: rejectRequestReason.trim(),
+        });
+        await loadData();
+      }
+      setRejectRequestModalAud(null);
+      setRejectRequestReason("");
+    } catch (err) {
+      console.error("Reject audition request failed:", err);
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const handleSimulateTalentUpload = (audId) => {
@@ -172,14 +251,52 @@ export default function AdminAuditionsManagementPage() {
     );
   };
 
-  const handleForward = (e) => {
+  const handleForward = async (e) => {
     e.preventDefault();
     if (!forwardModalAud) return;
-    adminForwardSelfTape(
-      forwardModalAud.id,
-      forwardNote || "Self-tape audition verified by Vismaya moderation desk and unlocked for review."
-    );
-    setForwardModalAud(null);
+    setIsActionLoading(true);
+    try {
+      if (isRealMode("admin")) {
+        await adminService.approveAudition(forwardModalAud.id, {
+          adminNote: forwardNote || "Self-tape audition verified by Vismaya moderation desk and unlocked for review.",
+        });
+        await loadData();
+      } else {
+        adminForwardSelfTape(
+          forwardModalAud.id,
+          forwardNote || "Self-tape audition verified by Vismaya moderation desk and unlocked for review."
+        );
+      }
+      setForwardModalAud(null);
+    } catch (err) {
+      console.error("Forward failed:", err);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleReject = async (e) => {
+    e.preventDefault();
+    if (!rejectModalAud) return;
+    if (!rejectionReason.trim()) {
+      alert("Rejection reason is required.");
+      return;
+    }
+    setIsActionLoading(true);
+    try {
+      if (isRealMode("admin")) {
+        await adminService.rejectAudition(rejectModalAud.id, {
+          rejectionReason: rejectionReason.trim(),
+        });
+        await loadData();
+      }
+      setRejectModalAud(null);
+      setRejectionReason("");
+    } catch (err) {
+      console.error("Reject failed:", err);
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   if (!isHydrated) {
@@ -365,18 +482,39 @@ export default function AdminAuditionsManagementPage() {
                         <td style={{ padding: "16px 20px", textAlign: "right" }}>
                           <div className="aud-actions-cluster">
                             {/* State 1: Needs Relay */}
-                            {aud.status === "Requested" && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setRelayModalAud(aud);
-                                  setRelayNote(aud.note || "");
-                                }}
-                                className="aud-btn-primary"
-                              >
-                                <Send size={13} />
-                                <span>Relay to Talent</span>
-                              </button>
+                            {isNeedsRelay(aud) && (
+                              <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRelayModalAud(aud);
+                                    setRelayNote(aud.note || "");
+                                  }}
+                                  className="aud-btn-primary"
+                                >
+                                  <Send size={13} />
+                                  <span>Approve &amp; Relay</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRejectRequestModalAud(aud);
+                                    setRejectRequestReason("");
+                                  }}
+                                  style={{
+                                    padding: "6px 12px",
+                                    borderRadius: "6px",
+                                    border: "1px solid rgba(180, 35, 24, 0.3)",
+                                    background: "rgba(180, 35, 24, 0.08)",
+                                    color: "#B42318",
+                                    fontSize: "12px",
+                                    fontWeight: 600,
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  <span>Reject request</span>
+                                </button>
+                              </div>
                             )}
 
                             {/* State 2: Relayed - Simulate talent upload */}
@@ -392,8 +530,8 @@ export default function AdminAuditionsManagementPage() {
                               </button>
                             )}
 
-                            {/* State 3: Self-tape Received - Preview & Forward */}
-                            {aud.status === "Self-tape Received" && (
+                            {/* State 3: Self-tape Received / Submitted - Preview & Forward */}
+                            {(aud.status === "Self-tape Received" || aud.status === "Submitted" || aud.rawStatus === "submitted") && (
                               <>
                                 <button
                                   type="button"
@@ -412,13 +550,32 @@ export default function AdminAuditionsManagementPage() {
                                   className="aud-btn-primary"
                                 >
                                   <CheckCircle2 size={13} />
-                                  <span>Forward</span>
+                                  <span>Approve</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRejectModalAud(aud);
+                                    setRejectionReason("");
+                                  }}
+                                  style={{
+                                    padding: "6px 12px",
+                                    borderRadius: "6px",
+                                    border: "1px solid rgba(180, 35, 24, 0.3)",
+                                    background: "rgba(180, 35, 24, 0.08)",
+                                    color: "#B42318",
+                                    fontSize: "12px",
+                                    fontWeight: 600,
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  <span>Reject</span>
                                 </button>
                               </>
                             )}
 
                             {/* State 4: Forwarded to Organization */}
-                            {aud.status === "Forwarded to Organization" && (
+                            {(aud.status === "Forwarded to Organization" || aud.status === "Forwarded to Org" || aud.rawStatus === "forwarded_to_org") && (
                               <button
                                 type="button"
                                 onClick={() => setPreviewVideoModalAud(aud)}
@@ -479,19 +636,41 @@ export default function AdminAuditionsManagementPage() {
                   )}
 
                   <div className="aud-mobile-card-footer">
-                    {aud.status === "Requested" && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setRelayModalAud(aud);
-                          setRelayNote(aud.note || "");
-                        }}
-                        className="aud-btn-primary"
-                        style={{ width: "100%", justifyContent: "center" }}
-                      >
-                        <Send size={13} />
-                        <span>Relay to Talent</span>
-                      </button>
+                    {isNeedsRelay(aud) && (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", width: "100%" }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRelayModalAud(aud);
+                            setRelayNote(aud.note || "");
+                          }}
+                          className="aud-btn-primary"
+                          style={{ justifyContent: "center" }}
+                        >
+                          <Send size={13} />
+                          <span>Approve &amp; Relay</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRejectRequestModalAud(aud);
+                            setRejectRequestReason("");
+                          }}
+                          style={{
+                            padding: "6px 12px",
+                            borderRadius: "6px",
+                            border: "1px solid rgba(180, 35, 24, 0.3)",
+                            background: "rgba(180, 35, 24, 0.08)",
+                            color: "#B42318",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <span>Reject request</span>
+                        </button>
+                      </div>
                     )}
 
                     {aud.status === "Relayed to Talent" && (
@@ -599,56 +778,123 @@ export default function AdminAuditionsManagementPage() {
       )}
 
       {/* Modal 2: Preview Video Modal */}
-      {previewVideoModalAud && (
-        <Modal
-          isOpen={!!previewVideoModalAud}
-          onClose={() => setPreviewVideoModalAud(null)}
-          title={`Self-Tape Review: ${previewVideoModalAud.talentName}`}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <VideoPlayer
-              src={previewVideoModalAud.selfTapeUrl}
-              fileName={`${previewVideoModalAud.talentName}-SelfTape.mp4`}
-              height="280px"
-            />
+      {previewVideoModalAud && (() => {
+        const videoList = previewVideoModalAud.selfTapeSubmission?.videos?.length
+          ? previewVideoModalAud.selfTapeSubmission.videos
+          : (previewVideoModalAud.selfTapeSubmission?.videoUrls?.length
+            ? previewVideoModalAud.selfTapeSubmission.videoUrls.map((u, i) => ({ videoUrl: u, fileName: `Take ${i + 1}` }))
+            : (previewVideoModalAud.selfTapeSubmission?.videoUrl || previewVideoModalAud.selfTapeUrl)
+            ? [{ videoUrl: previewVideoModalAud.selfTapeSubmission?.videoUrl || previewVideoModalAud.selfTapeUrl, fileName: "Take 1" }]
+            : []);
+        const activeVideo = videoList[adminTakeIdx] || videoList[0];
+        const activeSrc = activeVideo?.videoUrl || "";
 
-            <div className="aud-video-note-box">
-              <strong style={{ color: "#6E5420", fontSize: "13px", display: "block", marginBottom: "4px" }}>
-                Talent Submission Note:
-              </strong>
-              <p style={{ color: "#5A584F", fontSize: "13px", margin: 0, lineHeight: 1.5 }}>
-                {previewVideoModalAud.note || "Recorded in studio natural light according to dialogue scene guidelines."}
-              </p>
-            </div>
+        return (
+          <Modal
+            isOpen={!!previewVideoModalAud}
+            onClose={() => {
+              setPreviewVideoModalAud(null);
+              setAdminTakeIdx(0);
+            }}
+            title={`Self-Tape Review: ${previewVideoModalAud.talentName}`}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {videoList.length > 1 && (
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#2B2D2A" }}>Takes:</span>
+                  {videoList.map((v, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setAdminTakeIdx(idx)}
+                      style={{
+                        padding: "4px 10px",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        borderRadius: "6px",
+                        border: adminTakeIdx === idx ? "1.5px solid #8A6B2E" : "1px solid #E8E2D4",
+                        background: adminTakeIdx === idx ? "#FAF9F7" : "#FFFFFF",
+                        color: adminTakeIdx === idx ? "#8A6B2E" : "#5A584F",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {v.fileName || `Take ${idx + 1}`}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button
-                type="button"
-                onClick={() => setPreviewVideoModalAud(null)}
-                className="aud-modal-cancel-btn"
-              >
-                Close Player
-              </button>
-              {previewVideoModalAud.status === "Self-tape Received" && (
+              <VideoPlayer
+                src={activeSrc}
+                fileName={`${previewVideoModalAud.talentName}-SelfTape.mp4`}
+                height="280px"
+              />
+
+              <div className="aud-video-note-box">
+                <strong style={{ color: "#6E5420", fontSize: "13px", display: "block", marginBottom: "4px" }}>
+                  Talent Submission Note:
+                </strong>
+                <p style={{ color: "#5A584F", fontSize: "13px", margin: 0, lineHeight: 1.5 }}>
+                  {previewVideoModalAud.selfTapeSubmission?.notes || previewVideoModalAud.note || "Recorded in studio natural light according to dialogue scene guidelines."}
+                </p>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
                 <button
                   type="button"
                   onClick={() => {
-                    const target = previewVideoModalAud;
                     setPreviewVideoModalAud(null);
-                    setForwardModalAud(target);
-                    setForwardNote("");
+                    setAdminTakeIdx(0);
                   }}
-                  className="aud-btn-primary"
-                  style={{ padding: "0 20px", height: "42px" }}
+                  className="aud-modal-cancel-btn"
                 >
-                  <CheckCircle2 size={14} />
-                  <span>Forward to Studio</span>
+                  Close Player
                 </button>
-              )}
+                {(previewVideoModalAud.status === "Self-tape Received" || previewVideoModalAud.status === "Submitted" || previewVideoModalAud.rawStatus === "submitted") && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = previewVideoModalAud;
+                        setPreviewVideoModalAud(null);
+                        setRejectModalAud(target);
+                        setRejectionReason("");
+                      }}
+                      style={{
+                        background: "#B42318",
+                        color: "#FFFFFF",
+                        border: "none",
+                        borderRadius: "6px",
+                        padding: "0 16px",
+                        height: "42px",
+                        fontWeight: 600,
+                        fontSize: "13px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Reject (Reason Required)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = previewVideoModalAud;
+                        setPreviewVideoModalAud(null);
+                        setForwardModalAud(target);
+                        setForwardNote("");
+                      }}
+                      className="aud-btn-primary"
+                      style={{ padding: "0 20px", height: "42px" }}
+                    >
+                      <CheckCircle2 size={14} />
+                      <span>Approve &amp; Forward</span>
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        </Modal>
-      )}
+          </Modal>
+        );
+      })()}
 
       {/* Modal 3: Forward to Organization Modal */}
       {forwardModalAud && (
@@ -680,6 +926,7 @@ export default function AdminAuditionsManagementPage() {
                 type="button"
                 onClick={() => setForwardModalAud(null)}
                 className="aud-modal-cancel-btn"
+                disabled={isActionLoading}
               >
                 Cancel
               </button>
@@ -687,8 +934,123 @@ export default function AdminAuditionsManagementPage() {
                 type="submit"
                 className="aud-btn-primary"
                 style={{ padding: "0 20px", height: "42px" }}
+                disabled={isActionLoading}
               >
-                Forward &amp; Unlock for Studio
+                {isActionLoading ? "Forwarding..." : "Forward & Unlock for Studio"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal 1.5: Reject Audition Request Modal */}
+      {rejectRequestModalAud && (
+        <Modal
+          isOpen={!!rejectRequestModalAud}
+          onClose={() => setRejectRequestModalAud(null)}
+          title="Reject Audition Request (Reason Required)"
+        >
+          <form onSubmit={handleRejectRequest} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.6, fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              Specify the reason for rejecting this audition request. The organization will be notified with the reason, and this audition will not be relayed to talent.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                Rejection Reason (Required) *
+              </label>
+              <textarea
+                rows={4}
+                required
+                value={rejectRequestReason}
+                onChange={(e) => setRejectRequestReason(e.target.value)}
+                placeholder="e.g., Script sides are missing dialogue, date conflict, does not meet moderation guidelines..."
+                className="aud-modal-textarea"
+              />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+              <button
+                type="button"
+                onClick={() => setRejectRequestModalAud(null)}
+                className="aud-modal-cancel-btn"
+                disabled={isActionLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                style={{
+                  background: "#B42318",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "0 20px",
+                  height: "42px",
+                  fontWeight: 600,
+                  fontSize: "13px",
+                  cursor: isActionLoading ? "not-allowed" : "pointer",
+                }}
+                disabled={isActionLoading}
+              >
+                {isActionLoading ? "Rejecting..." : "Reject Request"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal 4: Reject Self-Tape Modal */}
+      {rejectModalAud && (
+        <Modal
+          isOpen={!!rejectModalAud}
+          onClose={() => setRejectModalAud(null)}
+          title="Reject Self-Tape"
+        >
+          <form onSubmit={handleReject} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.6, fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              Specify the reason for rejecting the self-tape submitted by <strong style={{ color: "#2B2D2A" }}>{rejectModalAud.talentName}</strong>. The talent will be notified and resubmissions are not permitted.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                Rejection Reason (Required) *
+              </label>
+              <textarea
+                rows={4}
+                required
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="e.g., Audio is distorted, script dialogue was skipped, inappropriate content..."
+                className="aud-modal-textarea"
+              />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+              <button
+                type="button"
+                onClick={() => setRejectModalAud(null)}
+                className="aud-modal-cancel-btn"
+                disabled={isActionLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                style={{
+                  background: "#B42318",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "0 20px",
+                  height: "42px",
+                  fontWeight: 600,
+                  fontSize: "13px",
+                  cursor: isActionLoading ? "not-allowed" : "pointer",
+                }}
+                disabled={isActionLoading}
+              >
+                {isActionLoading ? "Rejecting..." : "Reject Tape"}
               </button>
             </div>
           </form>

@@ -36,9 +36,13 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
 import { isRealMode } from "@/lib/api/config";
 import { adminService } from "@/lib/api/services/adminService";
+import { useAdmin } from "@/lib/admin/AdminContext";
+import { isOpportunityPending, isOpportunityFinalized } from "@/lib/api/statusMapper";
 
 export default function OpportunityReviewPage() {
   const workflow = useWorkflow();
+  const adminCtx = useAdmin();
+  const addToast = adminCtx?.addToast || (({ title, message }) => console.log(title, message));
   const [realOpportunities, setRealOpportunities] = useState([]);
   const [realProjects, setRealProjects] = useState([]);
   const [realOrganizations, setRealOrganizations] = useState([]);
@@ -149,9 +153,12 @@ export default function OpportunityReviewPage() {
   const tabCounts = useMemo(() => {
     return {
       All: opportunities.length,
-      Submitted: opportunities.filter((o) => o.status === "Submitted").length,
-      "Changes Requested": opportunities.filter((o) => o.status === "Changes Requested").length,
-      Rejected: opportunities.filter((o) => o.status === "Rejected").length,
+      Submitted: opportunities.filter((o) => isOpportunityPending(o.status)).length,
+      "Changes Requested": opportunities.filter((o) => {
+        const s = String(o.status || "").toLowerCase().replace(/[-_]/g, " ");
+        return s === "changes requested" || s === "corrections requested";
+      }).length,
+      Rejected: opportunities.filter((o) => String(o.status || "").toLowerCase() === "rejected").length,
     };
   }, [opportunities]);
 
@@ -167,8 +174,17 @@ export default function OpportunityReviewPage() {
   const filteredOpportunities = useMemo(() => {
     return opportunities.filter((opp) => {
       // Status Tab filter
-      if (filterTab !== "All" && opp.status !== filterTab) {
-        return false;
+      if (filterTab !== "All") {
+        if (filterTab === "Submitted") {
+          if (!isOpportunityPending(opp.status)) return false;
+        } else if (filterTab === "Changes Requested") {
+          const s = String(opp.status || "").toLowerCase().replace(/[-_]/g, " ");
+          if (s !== "changes requested" && s !== "corrections requested") return false;
+        } else if (filterTab === "Rejected") {
+          if (String(opp.status || "").toLowerCase() !== "rejected") return false;
+        } else if (opp.status !== filterTab) {
+          return false;
+        }
       }
 
       // Search Query filter
@@ -258,12 +274,27 @@ export default function OpportunityReviewPage() {
     if (isRealMode("admin")) {
       try {
         await adminService.approveOpportunity(oppId, { note });
+        addToast({
+          type: "success",
+          title: "Opportunity Approved",
+          message: `"${approveModalOpp.title}" has been approved and published successfully.`,
+        });
         await loadData();
       } catch (err) {
         console.error("Failed to approve opportunity:", err);
+        addToast({
+          type: "danger",
+          title: "Approval Failed",
+          message: err?.response?.data?.message || err?.message || "Failed to approve opportunity.",
+        });
       }
     } else {
       adminApproveAndPublish(oppId, note);
+      addToast({
+        type: "success",
+        title: "Opportunity Approved",
+        message: `"${approveModalOpp.title}" has been approved and published.`,
+      });
     }
     setApproveModalOpp(null);
     setApproveNote("");
@@ -276,13 +307,28 @@ export default function OpportunityReviewPage() {
     const corrections = changesNote.trim();
     if (isRealMode("admin")) {
       try {
-        await adminService.requestOpportunityCorrections(oppId, { corrections });
+        await adminService.requestOpportunityCorrections(oppId, { corrections, correctionNotes: corrections });
+        addToast({
+          type: "warning",
+          title: "Changes Requested",
+          message: `Change request sent to organization for "${changesModalOpp.title}".`,
+        });
         await loadData();
       } catch (err) {
         console.error("Failed to request changes on opportunity:", err);
+        addToast({
+          type: "danger",
+          title: "Request Failed",
+          message: err?.response?.data?.message || err?.message || "Failed to request changes.",
+        });
       }
     } else {
       adminRequestChanges(oppId, corrections);
+      addToast({
+        type: "warning",
+        title: "Changes Requested",
+        message: `Change request sent to organization for "${changesModalOpp.title}".`,
+      });
     }
     setChangesModalOpp(null);
     setChangesNote("");
@@ -290,18 +336,41 @@ export default function OpportunityReviewPage() {
 
   const handleReject = async (e) => {
     e.preventDefault();
-    if (!rejectModalOpp || !rejectReason.trim()) return;
-    const oppId = rejectModalOpp.id;
+    if (!rejectModalOpp) return;
     const reason = rejectReason.trim();
+    if (reason.length < 10) {
+      addToast({
+        type: "danger",
+        title: "Validation Error",
+        message: "Rejection reason must be at least 10 characters long.",
+      });
+      return;
+    }
+    const oppId = rejectModalOpp.id;
     if (isRealMode("admin")) {
       try {
-        await adminService.rejectOpportunity(oppId, { reason });
+        await adminService.rejectOpportunity(oppId, { reason, rejectionReason: reason });
+        addToast({
+          type: "success",
+          title: "Opportunity Rejected",
+          message: `"${rejectModalOpp.title}" has been rejected.`,
+        });
         await loadData();
       } catch (err) {
         console.error("Failed to reject opportunity:", err);
+        addToast({
+          type: "danger",
+          title: "Rejection Failed",
+          message: err?.response?.data?.message || err?.message || "Failed to reject opportunity.",
+        });
       }
     } else {
       adminReject(oppId, reason);
+      addToast({
+        type: "success",
+        title: "Opportunity Rejected",
+        message: `"${rejectModalOpp.title}" has been rejected.`,
+      });
     }
     setRejectModalOpp(null);
     setRejectReason("");
@@ -584,8 +653,8 @@ export default function OpportunityReviewPage() {
                   </div>
                 </div>
 
-                {/* Header Action Buttons (Only shown for Submitted status) */}
-                {selectedOpportunity.status === "Submitted" && (
+                {/* Header Action Buttons (Only shown when pending review and not finalized) */}
+                {isOpportunityPending(selectedOpportunity?.status) && !isOpportunityFinalized(selectedOpportunity?.status) && (
                   <div className="opp-header-actions">
                     <button
                       type="button"
@@ -865,8 +934,8 @@ export default function OpportunityReviewPage() {
                 </div>
               </div>
 
-              {/* Mobile Fixed Action Bar (when status is Submitted) */}
-              {selectedOpportunity.status === "Submitted" && (
+              {/* Mobile Fixed Action Bar (when pending review and not finalized) */}
+              {isOpportunityPending(selectedOpportunity?.status) && !isOpportunityFinalized(selectedOpportunity?.status) && (
                 <div className="mobile-fixed-action-bar">
                   <button
                     type="button"
@@ -1037,18 +1106,19 @@ export default function OpportunityReviewPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ fontSize: "0.825rem", fontWeight: "600", color: "#eceaf5" }}>
-                  Reason for Rejection *
+                  Reason for Rejection * (min 10 characters)
                 </label>
-                <span style={{ fontSize: "0.725rem", color: "#7c869e" }}>
-                  {rejectReason.length} characters
+                <span style={{ fontSize: "0.725rem", color: rejectReason.trim().length >= 10 ? "#4ade80" : "#f87171" }}>
+                  {rejectReason.trim().length}/10 characters
                 </span>
               </div>
               <textarea
                 rows={3}
                 required
+                minLength={10}
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="E.g. Brief violates platform compliance policies..."
+                placeholder="E.g. Brief violates platform compliance policies or missing mandatory parameters..."
                 className="opp-modal-textarea"
               />
             </div>
@@ -1064,7 +1134,7 @@ export default function OpportunityReviewPage() {
               </button>
               <button
                 type="submit"
-                disabled={!rejectReason.trim()}
+                disabled={rejectReason.trim().length < 10}
                 style={{
                   backgroundColor: "#ff6b6b",
                   color: "#ffffff",
@@ -1073,8 +1143,8 @@ export default function OpportunityReviewPage() {
                   padding: "8px 18px",
                   fontSize: "0.825rem",
                   fontWeight: "700",
-                  cursor: rejectReason.trim() ? "pointer" : "not-allowed",
-                  opacity: rejectReason.trim() ? 1 : 0.6,
+                  cursor: rejectReason.trim().length >= 10 ? "pointer" : "not-allowed",
+                  opacity: rejectReason.trim().length >= 10 ? 1 : 0.6,
                   transition: "all 0.15s ease",
                 }}
               >

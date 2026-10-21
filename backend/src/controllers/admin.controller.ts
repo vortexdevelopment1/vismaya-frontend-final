@@ -1530,6 +1530,27 @@ export const approveOpportunity = async (req: Request, res: Response): Promise<a
             details: `Approved opportunity: ${opportunity.title}`
         });
 
+        // Notify the organization (in-app notification + email respecting user email toggle)
+        try {
+            const project = await Project.findById(opportunity.projectId);
+            const organization = project ? await Organization.findById(project.organizationId) : null;
+            const recipientId = organization?.userId;
+            if (recipientId) {
+                await notifyUser({
+                    recipientId,
+                    type: "opportunity_approved",
+                    title: "Opportunity Approved",
+                    message: `Your casting opportunity "${opportunity.title}" has been approved and published on Vismaya.`,
+                    referenceId: opportunity._id,
+                    referenceType: "Opportunity",
+                    sendEmailAlert: true,
+                    emailSubject: `Opportunity Approved: ${opportunity.title}`
+                });
+            }
+        } catch (notifErr: any) {
+            console.warn("[ApproveOpportunity] Notification warning:", notifErr.message);
+        }
+
         res.status(200).json({ success: true, message: "Opportunity approved and published successfully", opportunity });
     } catch (error: any) {
         console.error("Approve opportunity error:", error);
@@ -1540,7 +1561,15 @@ export const approveOpportunity = async (req: Request, res: Response): Promise<a
 export const rejectOpportunity = async (req: Request, res: Response): Promise<any> => {
     try {
         const oppId = req.params.opportunityId || req.params.id || req.body?.opportunityId || req.body?.id;
-        const { rejectionReason } = req.body || {};
+        const { rejectionReason, reason } = req.body || {};
+        const finalReason = (rejectionReason || reason || "").trim();
+
+        if (!finalReason || finalReason.length < 10) {
+            return res.status(400).json({
+                success: false,
+                message: "Rejection reason is required and must be at least 10 characters"
+            });
+        }
 
         const opportunity = await Opportunity.findById(oppId);
         if (!opportunity) {
@@ -1548,7 +1577,7 @@ export const rejectOpportunity = async (req: Request, res: Response): Promise<an
         }
 
         opportunity.status = "rejected";
-        opportunity.rejectionReason = rejectionReason || "Does not meet Vismaya standards";
+        opportunity.rejectionReason = finalReason;
         await opportunity.save();
 
         await logAdminAction({
@@ -1559,7 +1588,28 @@ export const rejectOpportunity = async (req: Request, res: Response): Promise<an
             details: `Rejected opportunity. Reason: ${opportunity.rejectionReason}`
         });
 
-        res.status(200).json({ success: true, message: "Opportunity rejected", opportunity });
+        // Notify the organization (in-app notification + email respecting user email toggle)
+        try {
+            const project = await Project.findById(opportunity.projectId);
+            const organization = project ? await Organization.findById(project.organizationId) : null;
+            const recipientId = organization?.userId;
+            if (recipientId) {
+                await notifyUser({
+                    recipientId,
+                    type: "opportunity_rejected",
+                    title: "Opportunity Rejected",
+                    message: `Your casting opportunity "${opportunity.title}" was rejected. Reason: ${finalReason}`,
+                    referenceId: opportunity._id,
+                    referenceType: "Opportunity",
+                    sendEmailAlert: true,
+                    emailSubject: `Opportunity Rejected: ${opportunity.title}`
+                });
+            }
+        } catch (notifErr: any) {
+            console.warn("[RejectOpportunity] Notification warning:", notifErr.message);
+        }
+
+        res.status(200).json({ success: true, message: "Opportunity rejected successfully", opportunity });
     } catch (error: any) {
         console.error("Reject opportunity error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while rejecting opportunity" });
@@ -1593,6 +1643,27 @@ export const requestOpportunityCorrections = async (req: Request, res: Response)
             targetId: opportunity._id,
             details: `Corrections requested: ${correctionNotes}`
         });
+
+        // Notify the organization (in-app notification + email respecting user email toggle)
+        try {
+            const project = await Project.findById(opportunity.projectId);
+            const organization = project ? await Organization.findById(project.organizationId) : null;
+            const recipientId = organization?.userId;
+            if (recipientId) {
+                await notifyUser({
+                    recipientId,
+                    type: "opportunity_corrections_requested",
+                    title: "Opportunity Corrections Requested",
+                    message: `Corrections requested for your casting opportunity "${opportunity.title}": ${correctionNotes}`,
+                    referenceId: opportunity._id,
+                    referenceType: "Opportunity",
+                    sendEmailAlert: true,
+                    emailSubject: `Corrections Requested: ${opportunity.title}`
+                });
+            }
+        } catch (notifErr: any) {
+            console.warn("[RequestCorrections] Notification warning:", notifErr.message);
+        }
 
         res.status(200).json({ success: true, message: "Corrections requested from organization", opportunity });
     } catch (error: any) {
@@ -1894,19 +1965,24 @@ export const getPendingAuditions = async (req: Request, res: Response): Promise<
             // No approval filter, return all
         } else if (status && status !== "ALL") {
             const s = String(status).toLowerCase().replace(/\s+/g, "_");
-            if (s === "requested") {
+            if (s === "requested" || s === "needs_relay" || s.includes("relay_request")) {
                 filter.status = "requested";
-            } else if (s.includes("relay")) {
-                filter.status = "relayed_to_talent";
+                filter.vismayaApproval = "pending";
+            } else if (s === "relayed_to_talent" || s === "relayed") {
+                filter.status = "requested";
+                filter.vismayaApproval = "approved";
             } else if (s.includes("self_tape") || s.includes("submitted")) {
                 filter.status = { $in: ["submitted", "self_tape_received", "self_tape_submitted"] };
             } else if (s.includes("forward")) {
                 filter.status = "forwarded_to_org";
+            } else if (s.includes("reject")) {
+                filter.status = "rejected";
             } else {
                 filter.status = s;
             }
         } else {
-            filter.vismayaApproval = "pending";
+            // Default pending queue: auditions where vismayaApproval is pending OR status is submitted
+            filter.$or = [{ vismayaApproval: "pending" }, { status: "submitted" }];
         }
 
         const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
@@ -1949,6 +2025,8 @@ export const reviewAudition = async (req: Request, res: Response): Promise<any> 
             return res.status(404).json({ success: false, message: "Audition not found" });
         }
 
+        const isSelfTapeReview = audition.status === "submitted" || !!audition.selfTapeSubmission?.submittedAt;
+
         if (action === "approve") {
             audition.vismayaApproval = "approved";
             audition.vismayaReviewedBy = req.user?.userId as any;
@@ -1956,72 +2034,282 @@ export const reviewAudition = async (req: Request, res: Response): Promise<any> 
             if (scriptUrl) {
                 audition.scriptUrl = scriptUrl;
             }
-            await audition.save();
 
-            await logAdminAction({
-                adminId: (req.user?.userId as any),
-                action: "AUDITION_APPROVE",
-                targetType: "Audition",
-                targetId: audition._id,
-                details: `Audition approved for application ${audition.applicationId}`
-            });
+            if (isSelfTapeReview) {
+                audition.status = "forwarded_to_org";
+                await audition.save();
 
-            // Notify talent via email + in-app per U1
-            const opp = await Opportunity.findById(audition.opportunityId);
-            await notifyUser({
-                recipientId: audition.talentId,
-                type: "audition_invitation",
-                title: `Audition Invitation: ${audition.type.replace(/_/g, " ")}`,
-                message: `You have received an audition request for "${opp?.title || 'Opportunity'}".`,
-                referenceId: audition._id,
-                referenceType: "Audition",
-                sendEmailAlert: true,
-                emailSubject: `Audition Invitation: ${opp?.title || 'Opportunity'}`
-            });
+                await logAdminAction({
+                    adminId: (req.user?.userId as any),
+                    action: "AUDITION_SELF_TAPE_APPROVE",
+                    targetType: "Audition",
+                    targetId: audition._id,
+                    details: `Self-tape approved and forwarded to organization for audition ${audition._id}`,
+                    req
+                });
 
-            res.status(200).json({
-                success: true,
-                message: "Audition approved and invitation sent to talent",
-                audition
-            });
-        } else {
-            audition.vismayaApproval = "rejected";
-            audition.vismayaReviewedBy = req.user?.userId as any;
-            audition.vismayaReviewedAt = new Date();
-            audition.vismayaRejectionReason = rejectionReason || "Does not meet guidelines";
-            audition.status = "cancelled";
-            await audition.save();
+                const opp = await Opportunity.findById(audition.opportunityId);
+                const roleStr = audition.role || opp?.role || "Role";
+                const titleStr = opp?.title || "Opportunity";
 
-            await logAdminAction({
-                adminId: (req.user?.userId as any),
-                action: "AUDITION_REJECT",
-                targetType: "Audition",
-                targetId: audition._id,
-                details: `Audition rejected. Reason: ${audition.vismayaRejectionReason}`
-            });
-
-            // Notify organization
-            const org = await Organization.findById(audition.organizationId);
-            if (org) {
+                // Notify Talent
                 await notifyUser({
-                    recipientId: org.userId,
-                    type: "audition_rejected",
-                    title: "Audition Request Rejected",
-                    message: `Your audition request was rejected by Vismaya moderation. Reason: ${audition.vismayaRejectionReason}`,
+                    recipientId: audition.talentId,
+                    type: "audition_selftape_approved",
+                    title: "Self-Tape Approved",
+                    message: `Your self-tape for ${roleStr} in "${titleStr}" has been approved by Vismaya and relayed to the casting team.`,
                     referenceId: audition._id,
-                    referenceType: "Audition"
+                    referenceType: "Audition",
+                    sendEmailAlert: true
+                });
+
+                // Notify Organization
+                const org = await Organization.findById(audition.organizationId);
+                if (org) {
+                    await notifyUser({
+                        recipientId: org.userId,
+                        type: "audition_selftape_relayed",
+                        title: "Self-Tape Ready for Review",
+                        message: `A self-tape submission for ${roleStr} in "${titleStr}" has been approved and is ready for your review.`,
+                        referenceId: audition._id,
+                        referenceType: "Audition",
+                        sendEmailAlert: true
+                    });
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Self-tape approved and forwarded to organization",
+                    audition
+                });
+            } else {
+                await audition.save();
+
+                await logAdminAction({
+                    adminId: (req.user?.userId as any),
+                    action: "AUDITION_APPROVE",
+                    targetType: "Audition",
+                    targetId: audition._id,
+                    details: `Audition approved for application ${audition.applicationId}`,
+                    req
+                });
+
+                // Notify talent via email + in-app per U1
+                const opp = await Opportunity.findById(audition.opportunityId);
+                await notifyUser({
+                    recipientId: audition.talentId,
+                    type: "audition_invitation",
+                    title: `Audition Invitation: ${audition.type.replace(/_/g, " ")}`,
+                    message: `You have received an audition request for "${opp?.title || 'Opportunity'}".`,
+                    referenceId: audition._id,
+                    referenceType: "Audition",
+                    sendEmailAlert: true,
+                    emailSubject: `Audition Invitation: ${opp?.title || 'Opportunity'}`
+                });
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Audition approved and invitation sent to talent",
+                    audition
                 });
             }
+        } else {
+            if (isSelfTapeReview) {
+                if (!rejectionReason || !rejectionReason.trim()) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "A rejection reason is required for self-tape review"
+                    });
+                }
 
-            res.status(200).json({
-                success: true,
-                message: "Audition request rejected",
-                audition
-            });
+                audition.status = "rejected";
+                audition.vismayaApproval = "rejected";
+                audition.vismayaReviewedBy = req.user?.userId as any;
+                audition.vismayaReviewedAt = new Date();
+                audition.vismayaRejectionReason = rejectionReason.trim();
+                await audition.save();
+
+                await logAdminAction({
+                    adminId: (req.user?.userId as any),
+                    action: "AUDITION_SELF_TAPE_REJECT",
+                    targetType: "Audition",
+                    targetId: audition._id,
+                    details: `Self-tape rejected. Reason: ${audition.vismayaRejectionReason}`,
+                    req
+                });
+
+                const opp = await Opportunity.findById(audition.opportunityId);
+                const roleStr = audition.role || opp?.role || "Role";
+                const titleStr = opp?.title || "Opportunity";
+
+                // Notify Talent (no resubmission permitted)
+                await notifyUser({
+                    recipientId: audition.talentId,
+                    type: "audition_selftape_rejected",
+                    title: "Self-Tape Rejected",
+                    message: `Your self-tape submission for ${roleStr} in "${titleStr}" was rejected by Vismaya moderation. Reason: ${audition.vismayaRejectionReason}. Resubmissions are not permitted.`,
+                    referenceId: audition._id,
+                    referenceType: "Audition",
+                    sendEmailAlert: true
+                });
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Self-tape rejected. Talent notified and resubmission is not permitted.",
+                    audition
+                });
+            } else {
+                audition.vismayaApproval = "rejected";
+                audition.vismayaReviewedBy = req.user?.userId as any;
+                audition.vismayaReviewedAt = new Date();
+                audition.vismayaRejectionReason = rejectionReason || "Does not meet guidelines";
+                audition.status = "cancelled";
+                await audition.save();
+
+                await logAdminAction({
+                    adminId: (req.user?.userId as any),
+                    action: "AUDITION_REJECT",
+                    targetType: "Audition",
+                    targetId: audition._id,
+                    details: `Audition rejected. Reason: ${audition.vismayaRejectionReason}`,
+                    req
+                });
+
+                // Notify organization
+                const org = await Organization.findById(audition.organizationId);
+                if (org) {
+                    await notifyUser({
+                        recipientId: org.userId,
+                        type: "audition_rejected",
+                        title: "Audition Request Rejected",
+                        message: `Your audition request was rejected by Vismaya moderation. Reason: ${audition.vismayaRejectionReason}`,
+                        referenceId: audition._id,
+                        referenceType: "Audition"
+                    });
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Audition request rejected",
+                    audition
+                });
+            }
         }
     } catch (error: any) {
         console.error("Review audition error:", error);
         res.status(500).json({ success: false, message: "Failed to review audition" });
+    }
+};
+
+export const relayAuditionRequest = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const auditionId = req.params.auditionId || req.params.id;
+        const audition = await Audition.findById(auditionId);
+        if (!audition) {
+            return res.status(404).json({ success: false, message: "Audition not found" });
+        }
+
+        audition.vismayaApproval = "approved";
+        audition.vismayaReviewedBy = req.user?.userId as any;
+        audition.vismayaReviewedAt = new Date();
+        await audition.save();
+
+        await logAdminAction({
+            adminId: req.user?.userId as any,
+            action: "AUDITION_REQUEST_RELAY",
+            targetType: "Audition",
+            targetId: audition._id,
+            details: `Audition request approved and relayed to talent for audition ${audition._id}`,
+            req
+        });
+
+        const opp = await Opportunity.findById(audition.opportunityId);
+        const dateStr = audition.deadline
+            ? new Date(audition.deadline).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })
+            : "TBD";
+
+        const notifTitle = audition.type === "self_tape" ? "Self-Tape Requested" : "Audition Scheduled";
+        const notifMessage = audition.type === "self_tape"
+            ? `Self-tape requested for ${audition.role || opp?.role || 'Role'} in "${opp?.title || 'Opportunity'}". Submit by ${dateStr}.${audition.scriptUrl ? ` Script Sides: ${audition.scriptUrl}.` : ""}${audition.instructions ? ` Instructions: ${audition.instructions}` : ""}`
+            : `Audition scheduled for ${audition.role || opp?.role || 'Role'} in "${opp?.title || 'Opportunity'}".`;
+
+        await notifyUser({
+            recipientId: audition.talentId,
+            type: "audition_invitation",
+            title: notifTitle,
+            message: notifMessage,
+            referenceId: audition._id,
+            referenceType: "Audition",
+            sendEmailAlert: true,
+            emailSubject: notifTitle
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Audition request relayed to talent successfully",
+            audition
+        });
+    } catch (error: any) {
+        console.error("Relay audition request error:", error);
+        res.status(500).json({ success: false, message: "Failed to relay audition request" });
+    }
+};
+
+export const rejectAuditionRequest = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const auditionId = req.params.auditionId || req.params.id;
+        const { reason, rejectionReason } = req.body;
+        const finalReason = (reason || rejectionReason || "").trim();
+
+        if (!finalReason) {
+            return res.status(400).json({
+                success: false,
+                message: "Rejection reason is required"
+            });
+        }
+
+        const audition = await Audition.findById(auditionId);
+        if (!audition) {
+            return res.status(404).json({ success: false, message: "Audition not found" });
+        }
+
+        audition.vismayaApproval = "rejected";
+        audition.status = "rejected";
+        audition.vismayaReviewedBy = req.user?.userId as any;
+        audition.vismayaReviewedAt = new Date();
+        audition.vismayaRejectionReason = finalReason;
+        await audition.save();
+
+        await logAdminAction({
+            adminId: req.user?.userId as any,
+            action: "AUDITION_REQUEST_REJECT",
+            targetType: "Audition",
+            targetId: audition._id,
+            details: `Audition request rejected. Reason: ${finalReason}`,
+            req
+        });
+
+        const org = await Organization.findById(audition.organizationId);
+        if (org) {
+            await notifyUser({
+                recipientId: org.userId,
+                type: "audition_rejected",
+                title: "Audition Request Rejected",
+                message: `Your audition request was rejected by Vismaya moderation. Reason: ${finalReason}`,
+                referenceId: audition._id,
+                referenceType: "Audition",
+                sendEmailAlert: true
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Audition request rejected",
+            audition
+        });
+    } catch (error: any) {
+        console.error("Reject audition request error:", error);
+        res.status(500).json({ success: false, message: "Failed to reject audition request" });
     }
 };
 

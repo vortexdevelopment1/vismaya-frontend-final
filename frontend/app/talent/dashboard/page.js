@@ -656,8 +656,9 @@ export default function TalentDashboardPage() {
               recentApplications.map((app) => {
                 const opp = getOpportunity(app.opportunityId);
                 return (
-                  <div
-                    key={app.id}
+                  <Link
+                    key={app.id || app._id}
+                    href={`/talent/applications?id=${app.id || app._id}`}
                     className="recent-app-item"
                     style={{
                       backgroundColor: "#F3EFE6",
@@ -668,6 +669,9 @@ export default function TalentDashboardPage() {
                       alignItems: "center",
                       justifyContent: "space-between",
                       gap: "12px",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      transition: "border-color 0.16s ease, transform 0.16s ease",
                     }}
                   >
                     <div className="recent-app-info" style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0, flex: 1 }}>
@@ -683,17 +687,17 @@ export default function TalentDashboardPage() {
                           fontFamily: "var(--font-body), 'Inter', sans-serif",
                         }}
                       >
-                        {opp?.title || app.roleApplied}
+                        {opp?.title || app.opportunityTitle || "Opportunity"}
                       </span>
                       <span className="recent-app-meta" style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
-                        Role: <strong style={{ color: "#6E5420" }}>{app.roleApplied}</strong> &bull; {new Date(app.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
+                        Role: <strong style={{ color: "#6E5420" }}>{app.roleApplied || app.roleName || app.role || opp?.role || "Lead Role"}</strong> &bull; {new Date(app.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
                       </span>
                     </div>
 
                     <div className="recent-app-badge" style={{ flexShrink: 0 }}>
                       <StatusBadge status={app.status} size="sm" />
                     </div>
-                  </div>
+                  </Link>
                 );
               })
             )}

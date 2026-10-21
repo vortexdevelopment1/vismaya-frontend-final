@@ -648,8 +648,9 @@ export const getOrganizationOpportunities = async (req: Request, res: Response):
             .sort({ createdAt: -1 });
 
         const oppIds = opportunities.map(o => o._id.toString());
+        const oppObjectIds = opportunities.map(o => new mongoose.Types.ObjectId(o._id));
         const appCounts = await Application.aggregate([
-            { $match: { opportunityId: { $in: oppIds } } },
+            { $match: { opportunityId: { $in: [...oppObjectIds, ...oppIds] } } },
             { $group: { _id: { oppId: "$opportunityId", status: "$status" }, count: { $sum: 1 } } }
         ]);
 
@@ -658,15 +659,16 @@ export const getOrganizationOpportunities = async (req: Request, res: Response):
             statsMap[id] = { applied: 0, under_review: 0, shortlisted: 0, selected: 0, not_selected: 0, total: 0 };
         }
         for (const row of appCounts) {
-            const oppId = row._id.oppId;
-            const status = row._id.status;
+            const oppId = String(row._id.oppId);
+            const rawStatus = String(row._id.status || "").toLowerCase().trim();
+            const normalizedStatus = rawStatus.replace(/[\s-]+/g, "_");
             if (statsMap[oppId]) {
                 statsMap[oppId].total += row.count;
-                if (status === "applied") statsMap[oppId].applied += row.count;
-                else if (status === "under_review") statsMap[oppId].under_review += row.count;
-                else if (status === "shortlisted") statsMap[oppId].shortlisted += row.count;
-                else if (status === "selected") statsMap[oppId].selected += row.count;
-                else if (status === "not_selected") statsMap[oppId].not_selected += row.count;
+                if (normalizedStatus === "applied") statsMap[oppId].applied += row.count;
+                else if (normalizedStatus === "under_review") statsMap[oppId].under_review += row.count;
+                else if (normalizedStatus === "shortlisted") statsMap[oppId].shortlisted += row.count;
+                else if (normalizedStatus === "selected") statsMap[oppId].selected += row.count;
+                else if (normalizedStatus === "not_selected" || normalizedStatus === "rejected") statsMap[oppId].not_selected += row.count;
             }
         }
 

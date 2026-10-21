@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
   Clock,
@@ -15,29 +16,203 @@ import {
   Trophy,
   History,
   Building2,
+  Calendar,
+  MapPin,
+  Link2,
 } from "lucide-react";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
+import { apiClient } from "@/lib/api/client";
+import { isRealMode } from "@/lib/api/config";
+import { mapAudition } from "@/lib/api/mappers/index";
 
 export default function ApplicationCard({ application }) {
-  const { withdrawApplication, getOpportunity, getProject } = useWorkflow();
+  const workflow = useWorkflow();
+  const { withdrawApplication, getOpportunity, getProject } = workflow;
   const { addToast } = useTalent();
 
-  const [showDetails, setShowDetails] = useState(false);
+  const searchParams = useSearchParams();
+  const targetId = searchParams?.get("id");
+  const [showDetails, setShowDetails] = useState(() => targetId === (application.id || application._id));
   const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
   const [withdrawReason, setWithdrawReason] = useState("");
   const [isSubmittingWithdraw, setIsSubmittingWithdraw] = useState(false);
 
+  const [audition, setAudition] = useState(null);
+  const [loadingAudition, setLoadingAudition] = useState(false);
+
   const opportunity = getOpportunity(application.opportunityId);
   const project = opportunity ? getProject(opportunity.projectId) : null;
 
-  const isShortlisted = application.status === "Shortlisted" || application.status === "shortlisted";
-  const isSelected = application.status === "Selected" || application.status === "selected";
-  const isNotSelected = application.status === "Not Selected" || application.status === "not_selected";
-  const isWithdrawn = application.status === "Withdrawn" || application.status === "withdrawn";
-  const isOpportunityCancelled = application.status === "Opportunity Cancelled" || application.status === "opportunity_cancelled";
+  const isShortlisted = application.status === "Shortlisted" || application.status === "shortlisted" || application.rawStatus === "shortlisted";
+  const isSelected = application.status === "Selected" || application.status === "selected" || application.rawStatus === "selected";
+  const isNotSelected = application.status === "Not Selected" || application.status === "not_selected" || application.rawStatus === "not_selected";
+  const isWithdrawn = application.status === "Withdrawn" || application.status === "withdrawn" || application.rawStatus === "withdrawn";
+  const isOpportunityCancelled = application.status === "Opportunity Cancelled" || application.status === "opportunity_cancelled" || application.rawStatus === "opportunity_cancelled";
+  const isShortlistedOrBeyond = isShortlisted || isSelected || isNotSelected || application.status === "Audition Scheduled" || application.status === "Audition Submitted" || application.status === "Audition Reviewed";
+
+  useEffect(() => {
+    if (targetId && (targetId === application.id || targetId === application._id)) {
+      setShowDetails(true);
+    }
+  }, [targetId, application.id, application._id]);
+
+  useEffect(() => {
+    let active = true;
+    const fetchAudition = async () => {
+      if (!isShortlistedOrBeyond) return;
+      try {
+        setLoadingAudition(true);
+        if (isRealMode("auditions") || isRealMode("talent")) {
+          const res = await apiClient.get(`/api/auditions/application/${application.id || application._id}`);
+          const docs = Array.isArray(res?.auditions) ? res.auditions : Array.isArray(res?.data) ? res.data : [];
+          if (active && docs.length > 0) {
+            setAudition(mapAudition(docs[0]));
+          }
+        } else {
+          const aud = (workflow?.auditions || []).find((a) => a.applicationId === (application.id || application._id));
+          if (active && aud) {
+            setAudition(aud);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load audition for application:", err);
+      } finally {
+        if (active) setLoadingAudition(false);
+      }
+    };
+    fetchAudition();
+    return () => { active = false; };
+  }, [application.id, application._id, isShortlistedOrBeyond, workflow?.auditions]);
+
+  const renderAuditionBlock = () => {
+    if (!isShortlistedOrBeyond) return null;
+
+    if (!audition) {
+      return (
+        <div
+          className="app-audition-block"
+          style={{
+            backgroundColor: "#F3EFE6",
+            border: "1px solid #E8E2D4",
+            borderRadius: "10px",
+            padding: "14px 18px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+          }}
+        >
+          <Sparkles size={18} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            <span style={{ fontSize: "12px", fontWeight: "700", color: "#6E5420", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Audition Round
+            </span>
+            <span style={{ fontSize: "13px", color: "#5A584F" }}>
+              Audition details will be shared by the organization soon
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    const methodLabel = audition.type === "video_interview"
+      ? "Live Virtual Audition (Google Meet / Zoom)"
+      : audition.type === "in_person_audition"
+        ? "In-Person Audition / Screen Test"
+        : "Video Self-Tape Submission";
+
+    const dateStr = audition.scheduledAt
+      ? new Date(audition.scheduledAt).toLocaleString("en-IN", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : (audition.deadline ? `Deadline: ${new Date(audition.deadline).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}` : "Scheduled date TBD");
+
+    const orgName = audition.organizationName || project?.title || project?.productionCompany || "Casting Team";
+
+    return (
+      <div
+        className="app-audition-block"
+        style={{
+          backgroundColor: "#FAF9F7",
+          border: "1px solid #8A6B2E",
+          borderRadius: "12px",
+          padding: "16px 18px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          boxShadow: "0 2px 6px rgba(138, 107, 46, 0.08)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Video size={18} style={{ color: "#8A6B2E" }} />
+            <span style={{ fontSize: "13.5px", fontWeight: "700", color: "#2B2D2A", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+              Audition: {methodLabel}
+            </span>
+          </div>
+          <span style={{ fontSize: "12px", color: "#6E5420", fontWeight: "600", background: "rgba(138, 107, 46, 0.1)", padding: "3px 8px", borderRadius: "6px" }}>
+            {orgName}
+          </span>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px", fontSize: "13px", color: "#5A584F" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Calendar size={15} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+            <span><strong>Date &amp; Time:</strong> {dateStr}</span>
+          </div>
+
+          {audition.meetingLink && (
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <Link2 size={15} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+              <span>
+                <strong>Meeting Link:</strong>{" "}
+                <a href={audition.meetingLink} target="_blank" rel="noopener noreferrer" style={{ color: "#8A6B2E", textDecoration: "underline", wordBreak: "break-all" }}>
+                  {audition.meetingLink}
+                </a>
+              </span>
+            </div>
+          )}
+
+          {audition.location && (
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <MapPin size={15} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+              <span><strong>Venue:</strong> {audition.location}</span>
+            </div>
+          )}
+        </div>
+
+        {audition.instructions && (
+          <div style={{ fontSize: "12.5px", color: "#4A483F", background: "#FFFFFF", padding: "10px 12px", borderRadius: "8px", border: "1px solid #E8E2D4", marginTop: "2px" }}>
+            <strong style={{ color: "#2B2D2A", display: "block", marginBottom: "2px" }}>Instructions from Organization:</strong>
+            {audition.instructions}
+          </div>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "4px" }}>
+          <Link
+            href="/talent/auditions"
+            style={{
+              fontSize: "12px",
+              fontWeight: "600",
+              color: "#8A6B2E",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            Go to Auditions Tab <ArrowRight size={13} />
+          </Link>
+        </div>
+      </div>
+    );
+  };
 
   const getStageNumber = () => {
     switch (application.status) {
@@ -157,12 +332,12 @@ export default function ApplicationCard({ application }) {
                 overflowWrap: "anywhere",
               }}
             >
-              {opportunity?.title || application.roleApplied}
+              {opportunity?.title || application.opportunityTitle || application.roleApplied}
             </h3>
 
             <div className="app-card-role-project" style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", fontSize: "13px", color: "var(--text-secondary, #5A5C53)" }}>
               <span className="app-card-role">
-                Role: <strong style={{ color: "var(--text-primary, #292C29)" }}>{application.roleApplied}</strong>
+                Role: <strong style={{ color: "var(--text-primary, #292C29)" }}>{application.roleApplied || application.roleName || application.role || "Lead Role"}</strong>
               </span>
               {project && (
                 <span className="app-card-project">
@@ -206,26 +381,8 @@ export default function ApplicationCard({ application }) {
           </div>
         )}
 
-        {/* Shortlisted Highlight */}
-        {isShortlisted && (
-          <div
-            className="app-status-box app-status-shortlisted"
-            style={{
-              backgroundColor: "var(--bg-alt, #F0EEE7)",
-              border: "1px solid var(--border-color, #E4E1D9)",
-              borderRadius: "4px",
-              padding: "14px 18px",
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-            }}
-          >
-            <Sparkles size={20} className="app-status-icon" style={{ color: "var(--gold, #9B7A3F)", flexShrink: 0 }} />
-            <span className="app-status-text" style={{ fontSize: "13px", color: "var(--text-primary, #292C29)", fontWeight: "500", lineHeight: 1.4, overflowWrap: "anywhere" }}>
-              Your profile has been shortlisted! Look out for audition and self-tape instructions in your Auditions tab.
-            </span>
-          </div>
-        )}
+        {/* Audition Block on Card */}
+        {renderAuditionBlock()}
 
         {/* 4-Stage Visual Progress Tracker */}
         {!isNotSelected && !isWithdrawn ? (
@@ -590,8 +747,8 @@ export default function ApplicationCard({ application }) {
       <Modal
         isOpen={showDetails}
         onClose={() => setShowDetails(false)}
-        title={opportunity?.title || application.roleApplied}
-        subtitle={`Role: ${application.roleApplied} • Ref #${application.id}`}
+        title={opportunity?.title || application.opportunityTitle || application.roleApplied}
+        subtitle={`Role: ${application.roleApplied || application.roleName || application.role || "Lead Role"} • Ref #${application.id || application._id}`}
         maxWidth="600px"
         footer={
           <button onClick={() => setShowDetails(false)} className="btn-secondary btn-dash app-modal-btn">
@@ -638,6 +795,9 @@ export default function ApplicationCard({ application }) {
               </span>
             </div>
           </div>
+
+          {/* Audition Details Block inside Details Modal */}
+          {renderAuditionBlock()}
 
           {/* Status History Timeline */}
           <div>

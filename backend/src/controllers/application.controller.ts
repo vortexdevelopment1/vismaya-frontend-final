@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import Application from "../models/application.model.js";
 import Opportunity from "../models/opportunity.model.js";
 import Project from "../models/project.model.js";
@@ -42,6 +43,15 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             return res.status(403).json({
                 success: false,
                 message: "Paid talent membership is required to apply for opportunities"
+            });
+        }
+
+        // 3b. Validate profile approval gate (only talent with approved profile can apply)
+        const isApproved = Boolean(profile.isProfileApproved || profile.status === "approved" || profile.status === "active");
+        if (!isApproved) {
+            return res.status(403).json({
+                success: false,
+                message: "Profile approval required. Only talent with an approved profile can apply for opportunities."
             });
         }
 
@@ -431,9 +441,18 @@ export const getOpportunityApplications = async (req: Request, res: Response): P
             });
         }
 
-        const filter: any = { opportunityId: String(opportunityId) };
+        const oppObjectId = mongoose.Types.ObjectId.isValid(String(opportunityId))
+            ? new mongoose.Types.ObjectId(String(opportunityId))
+            : opportunityId;
+        const filter: any = {
+            $or: [
+                { opportunityId: oppObjectId },
+                { opportunityId: String(opportunityId) }
+            ]
+        };
         if (status) {
-            filter.status = status;
+            const normalizedStatus = String(status).toLowerCase().trim().replace(/[\s-]+/g, "_");
+            filter.status = { $regex: new RegExp(`^${normalizedStatus}$`, "i") };
         }
 
         const applications = await Application.find(filter)
@@ -669,12 +688,22 @@ export const markApplicationUnderReview = async (req: Request, res: Response): P
         application.status = "under_review";
         await application.save();
 
-        await notifyUser({
-            recipientId: application.talentId,
-            type: "application_status_changed",
-            title: "Application Under Review",
-            message: `Your application for '${opportunity?.title}' is now under review.`
+        const existingUnderReview = await Notification.findOne({
+            recipient: application.talentId,
+            referenceId: application._id,
+            type: "application_status_changed"
         });
+        if (!existingUnderReview) {
+            await notifyUser({
+                recipientId: application.talentId,
+                type: "application_status_changed",
+                title: "Application Under Review",
+                message: `Your application for '${opportunity?.title}' is now under review.`,
+                referenceId: application._id,
+                referenceType: "Application",
+                sendEmailAlert: true
+            });
+        }
 
         res.status(200).json({
             success: true,
@@ -742,12 +771,23 @@ export const shortlistApplication = async (req: Request, res: Response): Promise
             );
         }
 
-        await notifyUser({
-            recipientId: application.talentId,
-            type: "application_status_changed",
-            title: "Application Shortlisted",
-            message: `Congratulations! Your application for '${opportunity?.title}' has been shortlisted.`
+        // Deduplicated notification for talent on shortlist
+        const existingShortlistNotif = await Notification.findOne({
+            recipient: application.talentId,
+            referenceId: application._id,
+            type: "shortlisted"
         });
+        if (!existingShortlistNotif) {
+            await notifyUser({
+                recipientId: application.talentId,
+                type: "shortlisted",
+                title: "Application Shortlisted",
+                message: `You have been shortlisted for ${opportunity?.role || 'the role'} in ${opportunity?.title}`,
+                referenceId: application._id,
+                referenceType: "Application",
+                sendEmailAlert: true
+            });
+        }
 
         res.status(200).json({
             success: true,
@@ -812,12 +852,22 @@ export const selectApplication = async (req: Request, res: Response): Promise<an
             { $set: { status: "selected" } }
         );
 
-        await notifyUser({
-            recipientId: application.talentId,
-            type: "selected",
-            title: "Application Selected",
-            message: `Congratulations! You have been selected for '${opportunity?.title}'.`
+        const existingSelectNotif = await Notification.findOne({
+            recipient: application.talentId,
+            referenceId: application._id,
+            type: "selected"
         });
+        if (!existingSelectNotif) {
+            await notifyUser({
+                recipientId: application.talentId,
+                type: "selected",
+                title: "Application Selected",
+                message: `Congratulations! You have been selected for '${opportunity?.role || 'the role'}' in '${opportunity?.title}'.`,
+                referenceId: application._id,
+                referenceType: "Application",
+                sendEmailAlert: true
+            });
+        }
 
         res.status(200).json({
             success: true,
@@ -834,7 +884,7 @@ export const rejectApplication = async (req: Request, res: Response): Promise<an
     try {
         const userId = req.user?.userId;
         const { applicationId } = req.params;
-        const { reason } = req.body;
+        const reason = req.body?.reason;
 
         const application = await Application.findById(String(applicationId));
         if (!application) {
@@ -877,12 +927,22 @@ export const rejectApplication = async (req: Request, res: Response): Promise<an
         application.notSelectedReason = reason || "Not selected";
         await application.save();
 
-        await notifyUser({
-            recipientId: application.talentId,
-            type: "not_selected",
-            title: "Application Update",
-            message: `Your application for '${opportunity?.title}' was not selected.`
+        const existingRejectNotif = await Notification.findOne({
+            recipient: application.talentId,
+            referenceId: application._id,
+            type: "not_selected"
         });
+        if (!existingRejectNotif) {
+            await notifyUser({
+                recipientId: application.talentId,
+                type: "not_selected",
+                title: "Application Update",
+                message: `Your application for '${opportunity?.role || 'the role'}' in '${opportunity?.title}' was not selected.`,
+                referenceId: application._id,
+                referenceType: "Application",
+                sendEmailAlert: true
+            });
+        }
 
         res.status(200).json({
             success: true,

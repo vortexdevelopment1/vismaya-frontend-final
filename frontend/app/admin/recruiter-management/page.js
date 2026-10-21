@@ -22,6 +22,15 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import ReviewDrawer from "@/components/admin/ReviewDrawer";
 import ReasonModal from "@/components/admin/ReasonModal";
 
+const getInitials = (name) => {
+  if (!name) return "O";
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return parts[0] ? parts[0].slice(0, 2).toUpperCase() : "O";
+};
+
 export default function RecruiterManagementPage() {
   const {
     recruiters,
@@ -80,18 +89,39 @@ export default function RecruiterManagementPage() {
         const subInfo = `ID: ${row.id} • ${row.gstNumber || row.registrationNumber || "GST Pending"}`;
         return (
           <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, maxWidth: "260px" }}>
-            <img
-              src={row.avatar || "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=300&auto=format&fit=crop&q=80"}
-              alt={compName}
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                objectFit: "cover",
-                border: "1px solid #E8E2D4",
-                flexShrink: 0,
-              }}
-            />
+            {row.avatar ? (
+              <img
+                src={row.avatar}
+                alt={compName}
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "1px solid #E8E2D4",
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  backgroundColor: "#F3EFE6",
+                  color: "#8A6B2E",
+                  border: "1px solid #E8E2D4",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  flexShrink: 0,
+                }}
+              >
+                {getInitials(compName)}
+              </div>
+            )}
             <div style={{ minWidth: 0, flex: 1 }}>
               <div
                 style={{
@@ -281,18 +311,39 @@ export default function RecruiterManagementPage() {
         {/* Card Header: Logo, Name, ID & Status */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-            <img
-              src={row.avatar || "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=300&auto=format&fit=crop&q=80"}
-              alt={compName}
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                objectFit: "cover",
-                border: "1px solid #E8E2D4",
-                flexShrink: 0,
-              }}
-            />
+            {row.avatar ? (
+              <img
+                src={row.avatar}
+                alt={compName}
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "1px solid #E8E2D4",
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  backgroundColor: "#F3EFE6",
+                  color: "#8A6B2E",
+                  border: "1px solid #E8E2D4",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  flexShrink: 0,
+                }}
+              >
+                {getInitials(compName)}
+              </div>
+            )}
             <div style={{ minWidth: 0 }}>
               <div
                 style={{

@@ -12,6 +12,8 @@ import {
     createAudition,
     submitSelfTape,
     reviewAuditionSubmission,
+    rescheduleAudition,
+    cancelAudition,
     getAuditionsForApplication,
     getMyAuditions,
     getOrganizationAuditions
@@ -25,10 +27,31 @@ router.param("applicationId", validateObjectIdParam);
 router.param("auditionId", validateObjectIdParam);
 
 router.post(
+    "/",
+    authenticateUser,
+    authorizeRoles("organization"),
+    createAudition
+);
+
+router.post(
     "/application/:applicationId",
     authenticateUser,
     authorizeRoles("organization"),
     createAudition
+);
+
+router.patch(
+    "/:auditionId/reschedule",
+    authenticateUser,
+    authorizeRoles("organization"),
+    rescheduleAudition
+);
+
+router.patch(
+    "/:auditionId/cancel",
+    authenticateUser,
+    authorizeRoles("organization"),
+    cancelAudition
 );
 
 router.post(
@@ -53,6 +76,13 @@ router.get(
 
 router.get(
     "/my",
+    authenticateUser,
+    authorizeRoles("talent"),
+    getMyAuditions
+);
+
+router.get(
+    "/my-auditions",
     authenticateUser,
     authorizeRoles("talent"),
     getMyAuditions

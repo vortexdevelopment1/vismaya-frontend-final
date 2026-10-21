@@ -80,6 +80,8 @@ export default function StatusBadge({
     "relayed-to-talent": { ...neutralConfig, label: "Relayed to Talent" },
     applied: { ...neutralConfig, label: "Applied" },
     draft: { ...neutralConfig, label: "Draft" },
+    incomplete: { ...neutralConfig, label: "Incomplete" },
+    "incomplete-/-draft": { ...neutralConfig, label: "Incomplete / Draft" },
     closed: { ...neutralConfig, label: "Closed" },
     unpaid: { ...neutralConfig, label: "Unpaid / Credit" },
     withdrawn: { ...neutralConfig, label: "Withdrawn" },

@@ -4,13 +4,16 @@ import Application from "../models/application.model.js";
 import Opportunity from "../models/opportunity.model.js";
 import Project from "../models/project.model.js";
 import Organization from "../models/organization.model.js";
+import Notification from "../models/notification.model.js";
+import User from "../models/user.model.js";
 import { notifyUser } from "../services/notification.service.js";
 import { isSafeUrl } from "../utils/sanitize.util.js";
+import { AUDITION_CONFIG } from "../config/audition.config.js";
 
 export const createAudition = async (req: Request, res: Response): Promise<any> => {
     try {
         const userId = req.user?.userId;
-        const { applicationId } = req.params;
+        const applicationId = req.params.applicationId || req.body?.applicationId;
 
         const {
             type,
@@ -20,31 +23,37 @@ export const createAudition = async (req: Request, res: Response): Promise<any> 
             scriptUrl,
             meetingLink,
             location,
+            venue,
             scheduledAt,
-            deadline
+            preferredDate,
+            deadline,
+            note
         } = req.body;
 
-        if (!type || !["self_tape", "in_person_audition", "video_interview"].includes(type)) {
-            return res.status(400).json({
-                success: false,
-                message: "Valid audition type is required: 'self_tape', 'in_person_audition', or 'video_interview'"
-            });
+        // Enforce live audition feature flag
+        if (!AUDITION_CONFIG.ENABLE_LIVE_AUDITION) {
+            if (type && type !== "self_tape" && type !== "Audition" && type !== "self tape" && type !== "Self-tape" && type !== "self-tape") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Live auditions are currently disabled. Only self-tape auditions are supported."
+                });
+            }
         }
 
-        // Validate type-specific requirements
-        if (type === "video_interview" && !scheduledAt) {
-            return res.status(400).json({
-                success: false,
-                message: "Scheduled date and time is required for video interviews"
-            });
+        // Normalize format/type
+        let normType: "self_tape" | "in_person_audition" | "video_interview" = "self_tape";
+        if (type === "video_interview" || type === "Virtual Interview" || type === "online") {
+            normType = "video_interview";
+        } else if (type === "in_person_audition" || type === "Screen Test" || type === "in-person" || type === "in_person") {
+            normType = "in_person_audition";
+        } else {
+            normType = "self_tape";
         }
 
-        if (type === "in_person_audition" && (!scheduledAt || !location)) {
-            return res.status(400).json({
-                success: false,
-                message: "Scheduled time and location are required for in-person auditions"
-            });
-        }
+        const finalScheduledAt = scheduledAt ? new Date(scheduledAt) : (preferredDate ? new Date(preferredDate) : (normType !== "self_tape" ? new Date(Date.now() + 2 * 86400000) : undefined));
+        const finalLocation = location || venue || (normType === "in_person_audition" ? "Vismaya Studio, Mumbai" : undefined);
+        const finalMeetingLink = meetingLink || (normType === "video_interview" ? "https://meet.google.com/vsm-audition-session" : undefined);
+        const finalInstructions = instructions || note || sceneBrief || "Please follow casting directions.";
 
         // Find application
         const application = await Application.findById(String(applicationId));
@@ -55,20 +64,26 @@ export const createAudition = async (req: Request, res: Response): Promise<any> 
             });
         }
 
-        // U2: Only for shortlisted applications
+        // U2: Only for shortlisted applications (or auto-shortlist if applied/under_review)
         if (application.status !== "shortlisted") {
-            return res.status(400).json({
-                success: false,
-                message: `Audition or interview can only be scheduled for shortlisted applications. Current status is ${application.status}`
-            });
+            if (["applied", "under_review"].includes(application.status)) {
+                application.status = "shortlisted";
+                await application.save();
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: `Audition or interview can only be scheduled for shortlisted applications. Current status is ${application.status}`
+                });
+            }
         }
 
         // U2: One audition per application
-        const existingAudition = await Audition.findOne({ applicationId: String(applicationId) });
+        let existingAudition = await Audition.findOne({ applicationId: String(applicationId) });
         if (existingAudition) {
             return res.status(409).json({
                 success: false,
-                message: "An audition request already exists for this application"
+                message: "An audition request already exists for this application",
+                audition: existingAudition
             });
         }
 
@@ -105,8 +120,20 @@ export const createAudition = async (req: Request, res: Response): Promise<any> 
             });
         }
 
-        // U2: Deadline equals opportunity deadline
-        const finalDeadline = opportunity.deadline || (deadline ? new Date(deadline) : undefined);
+        // U2: Deadline requirement (strictly mandatory for self-tape audition)
+        if (normType === "self_tape" && !deadline) {
+            return res.status(400).json({
+                success: false,
+                message: "A submit by deadline date and time is required for self-tape auditions."
+            });
+        }
+        const finalDeadline = deadline ? new Date(deadline) : (opportunity.deadline ? new Date(opportunity.deadline) : undefined);
+        if (normType === "self_tape" && (!finalDeadline || isNaN(finalDeadline.getTime()))) {
+            return res.status(400).json({
+                success: false,
+                message: "A valid submit by deadline date and time is required for self-tape auditions."
+            });
+        }
 
         const audition = await Audition.create({
             applicationId: String(applicationId),
@@ -114,23 +141,36 @@ export const createAudition = async (req: Request, res: Response): Promise<any> 
             projectId: project._id,
             organizationId: organization._id,
             talentId: application.talentId,
-            type,
+            type: normType,
             role: role || opportunity.role,
-            sceneBrief,
-            instructions,
+            sceneBrief: sceneBrief || finalInstructions,
+            instructions: finalInstructions,
             scriptUrl,
-            meetingLink,
-            location,
-            scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+            meetingLink: finalMeetingLink,
+            location: finalLocation,
+            scheduledAt: finalScheduledAt,
             deadline: finalDeadline,
-            status: type === "self_tape" ? "requested" : "scheduled",
+            status: "requested",
             vismayaApproval: "pending"
         });
 
-        // U1: Talent is NOT notified here; talent is notified ONLY after admin approves.
+        // Notify Admins for relay moderation (talent is NOT notified until admin relays)
+        const adminUsers = await User.find({ role: "admin" }).select("_id");
+        for (const admin of adminUsers) {
+            await notifyUser({
+                recipientId: admin._id,
+                type: "audition_request_submitted",
+                title: "Audition Request Submitted",
+                message: `An audition request for "${audition.role || opportunity.role || 'Role'}" in "${opportunity.title}" requires moderation before relay to talent.`,
+                referenceId: audition._id,
+                referenceType: "Audition",
+                sendEmailAlert: true
+            });
+        }
+
         res.status(201).json({
             success: true,
-            message: `${type.replace(/_/g, " ")} request submitted for Vismaya moderation`,
+            message: `${normType.replace(/_/g, " ")} requested successfully and submitted for Vismaya moderation`,
             audition
         });
 
@@ -143,18 +183,19 @@ export const createAudition = async (req: Request, res: Response): Promise<any> 
     }
 };
 
+function isAllowedVideoType(url: string, mimeType?: string): boolean {
+    if (mimeType && (AUDITION_CONFIG.SELF_TAPE_ALLOWED_TYPES as readonly string[]).includes(mimeType)) {
+        return true;
+    }
+    const cleanUrl = url.split("?")[0].toLowerCase();
+    return cleanUrl.endsWith(".mp4") || cleanUrl.endsWith(".mov") || cleanUrl.endsWith(".webm");
+}
+
 export const submitSelfTape = async (req: Request, res: Response): Promise<any> => {
     try {
         const talentId = req.user?.userId;
         const { auditionId } = req.params;
-        const { videoUrl, thumbnailUrl, durationSeconds, fileSizeBytes, notes } = req.body;
-
-        if (!videoUrl || !isSafeUrl(videoUrl)) {
-            return res.status(400).json({
-                success: false,
-                message: "A valid and safe video URL is required for self-tape submission"
-            });
-        }
+        const { videoUrl, videoUrls, videos, thumbnailUrl, durationSeconds, fileSizeBytes, notes } = req.body;
 
         const audition = await Audition.findById(String(auditionId));
         if (!audition) {
@@ -180,11 +221,26 @@ export const submitSelfTape = async (req: Request, res: Response): Promise<any> 
             });
         }
 
-        // Validate admin approval
-        if (audition.vismayaApproval !== "approved") {
+        // Validate status: one submission only. After talent submits, no replace and no second upload.
+        if (audition.selfTapeSubmission?.submittedAt || audition.status === "submitted" || audition.status === "forwarded_to_org") {
             return res.status(400).json({
                 success: false,
-                message: "Audition request has not been approved by Vismaya moderation"
+                message: "Self-tape has already been submitted for this audition. Second uploads or replacements are not permitted."
+            });
+        }
+
+        // A talent must NOT see, or be able to upload to, an audition whose request is pending or rejected
+        if (audition.vismayaApproval !== "approved" || audition.status === "rejected") {
+            return res.status(403).json({
+                success: false,
+                message: "Cannot submit self-tape: audition request is awaiting Vismaya approval or has been rejected"
+            });
+        }
+
+        if (audition.status !== "requested") {
+            return res.status(400).json({
+                success: false,
+                message: "Self-tape can only be submitted for requested auditions"
             });
         }
 
@@ -196,54 +252,105 @@ export const submitSelfTape = async (req: Request, res: Response): Promise<any> 
             });
         }
 
-        // U2: Atomic single submission update
-        const updatedAudition = await Audition.findOneAndUpdate(
-            {
-                _id: String(auditionId),
-                talentId,
-                type: "self_tape",
-                "selfTapeSubmission.submittedAt": { $exists: false }
-            },
-            {
-                $set: {
-                    selfTapeSubmission: {
-                        videoUrl,
-                        thumbnailUrl,
-                        durationSeconds,
-                        fileSizeBytes,
-                        notes,
-                        submittedAt: new Date()
-                    },
-                    status: "submitted"
-                }
-            },
-            { new: true }
-        );
+        // Normalize video list
+        let videoList: any[] = [];
+        if (Array.isArray(videos) && videos.length > 0) {
+            videoList = videos.map((v: any) => ({
+                videoUrl: typeof v === "string" ? v : (v.videoUrl || v.url),
+                durationSeconds: v.durationSeconds || durationSeconds,
+                fileSizeBytes: v.fileSizeBytes || fileSizeBytes,
+                thumbnailUrl: v.thumbnailUrl || thumbnailUrl,
+                fileName: v.fileName,
+                mimeType: v.mimeType
+            }));
+        } else if (Array.isArray(videoUrls) && videoUrls.length > 0) {
+            videoList = videoUrls.map((u: string) => ({ videoUrl: u, durationSeconds, fileSizeBytes, thumbnailUrl }));
+        } else if (videoUrl) {
+            videoList = [{ videoUrl, durationSeconds, fileSizeBytes, thumbnailUrl }];
+        }
 
-        if (!updatedAudition) {
+        if (videoList.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: "Self-tape has already been submitted. Multiple submissions are prohibited."
+                message: "A valid and safe video URL is required for self-tape submission"
             });
         }
 
-        // U3: Notify organization when self-tape is submitted
-        const org = await Organization.findById(updatedAudition.organizationId);
-        if (org) {
+        if (videoList.length > AUDITION_CONFIG.SELF_TAPE_MAX_VIDEOS_PER_AUDITION) {
+            return res.status(400).json({
+                success: false,
+                message: `You can upload up to ${AUDITION_CONFIG.SELF_TAPE_MAX_VIDEOS_PER_AUDITION} video`
+            });
+        }
+
+        const maxBytes = AUDITION_CONFIG.SELF_TAPE_MAX_FILE_MB * 1024 * 1024;
+        const maxDurationSec = AUDITION_CONFIG.SELF_TAPE_MAX_DURATION_MIN * 60;
+
+        for (const item of videoList) {
+            if (!item.videoUrl || !isSafeUrl(item.videoUrl)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "A valid and safe video URL is required for self-tape submission"
+                });
+            }
+            if (!isAllowedVideoType(item.videoUrl, item.mimeType)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Only MP4, MOV or WebM files are allowed"
+                });
+            }
+            const itemSize = item.fileSizeBytes || fileSizeBytes;
+            if (itemSize && itemSize > maxBytes) {
+                return res.status(400).json({
+                    success: false,
+                    message: `File is too large. Maximum is ${AUDITION_CONFIG.SELF_TAPE_MAX_FILE_MB} MB`
+                });
+            }
+            const itemDuration = item.durationSeconds || durationSeconds;
+            if (itemDuration && itemDuration > maxDurationSec) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Video duration exceeds maximum of ${AUDITION_CONFIG.SELF_TAPE_MAX_DURATION_MIN} minutes`
+                });
+            }
+        }
+
+        const primaryVideo = videoList[0];
+        const allUrls = videoList.map((v: any) => v.videoUrl);
+
+        audition.selfTapeSubmission = {
+            videoUrl: primaryVideo.videoUrl,
+            videoUrls: allUrls,
+            videos: videoList,
+            thumbnailUrl: primaryVideo.thumbnailUrl || thumbnailUrl,
+            durationSeconds: primaryVideo.durationSeconds || durationSeconds,
+            fileSizeBytes: primaryVideo.fileSizeBytes || fileSizeBytes,
+            notes: notes || audition.selfTapeSubmission?.notes,
+            submittedAt: new Date()
+        };
+        audition.status = "submitted";
+        audition.vismayaApproval = "pending";
+
+        await audition.save();
+
+        // Notify Admins for review before relaying to organization
+        const adminUsers = await User.find({ role: "admin" }).select("_id");
+        for (const admin of adminUsers) {
             await notifyUser({
-                recipientId: org.userId,
-                type: "audition_submitted",
+                recipientId: admin._id,
+                type: "audition_selftape_submitted",
                 title: "Self-Tape Submitted",
-                message: `Talent has submitted a self-tape for "${updatedAudition.role || 'Audition'}".`,
-                referenceId: updatedAudition._id,
-                referenceType: "Audition"
+                message: `Talent has submitted a self-tape for "${audition.role || 'Audition'}". Review required before relay to casting team.`,
+                referenceId: audition._id,
+                referenceType: "Audition",
+                sendEmailAlert: true
             });
         }
 
         res.status(200).json({
             success: true,
             message: "Self-tape submitted successfully",
-            audition: updatedAudition
+            audition
         });
 
     } catch (error) {
@@ -357,12 +464,34 @@ export const getAuditionsForApplication = async (req: Request, res: Response): P
             }
         }
 
-        const filter: any = { applicationId: String(applicationId) };
+        const queryFilter: any = { applicationId: String(applicationId) };
         if (req.user?.role === "talent") {
-            filter.vismayaApproval = "approved";
+            queryFilter.talentId = req.user.userId;
+            queryFilter.$or = [
+                { vismayaApproval: "approved" },
+                { status: { $in: ["submitted", "forwarded_to_org"] } }
+            ];
+            queryFilter.status = { $ne: "rejected" };
         }
 
-        const auditions = await Audition.find(filter).sort({ createdAt: -1 });
+        const rawAuditions = await Audition.find(queryFilter)
+            .populate("opportunityId", "title role location deadline")
+            .populate("projectId", "projectName")
+            .populate("organizationId", "organizationName")
+            .sort({ createdAt: -1 });
+
+        const isOrg = req.user?.role === "organization";
+        const auditions = rawAuditions.map(aud => {
+            const doc = aud.toObject ? aud.toObject() : { ...aud };
+            if (isOrg && doc.type === "self_tape" && doc.status !== "forwarded_to_org" && doc.status !== "reviewed") {
+                if (doc.selfTapeSubmission) {
+                    delete doc.selfTapeSubmission.videoUrl;
+                    delete doc.selfTapeSubmission.videoUrls;
+                    delete doc.selfTapeSubmission.videos;
+                }
+            }
+            return doc;
+        });
 
         res.status(200).json({
             success: true,
@@ -379,11 +508,125 @@ export const getAuditionsForApplication = async (req: Request, res: Response): P
     }
 };
 
+export const rescheduleAudition = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const userId = req.user?.userId;
+        const { auditionId } = req.params;
+        const { scheduledAt, preferredDate, location, venue, meetingLink, instructions, note } = req.body;
+
+        const audition = await Audition.findById(String(auditionId));
+        if (!audition) {
+            return res.status(404).json({ success: false, message: "Audition not found" });
+        }
+
+        const organization = await Organization.findOne({ userId });
+        if (!organization || audition.organizationId.toString() !== organization._id.toString()) {
+            return res.status(403).json({ success: false, message: "You can only reschedule auditions for your own organization" });
+        }
+
+        const newDate = scheduledAt ? new Date(scheduledAt) : (preferredDate ? new Date(preferredDate) : audition.scheduledAt);
+        if (newDate) audition.scheduledAt = newDate;
+        if (location || venue) audition.location = location || venue;
+        if (meetingLink) audition.meetingLink = meetingLink;
+        if (instructions || note) audition.instructions = instructions || note;
+
+        await audition.save();
+
+        const opportunity = await Opportunity.findById(audition.opportunityId);
+        const methodLabel = audition.type === "video_interview"
+            ? "Live Virtual Audition (Google Meet / Zoom)"
+            : audition.type === "in_person_audition"
+                ? "In-Person Audition / Screen Test"
+                : "Video Self-Tape Submission";
+
+        const dateStr = audition.scheduledAt
+            ? new Date(audition.scheduledAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })
+            : "TBD";
+
+        const venueOrLinkStr = audition.type === "video_interview"
+            ? (audition.meetingLink ? `Meeting Link: ${audition.meetingLink}` : "")
+            : audition.type === "in_person_audition"
+                ? (audition.location ? `Venue: ${audition.location}` : "")
+                : "";
+
+        const notifMessage = `Your audition for ${audition.role || opportunity?.role || 'Role'} in "${opportunity?.title || 'Opportunity'}" has been rescheduled. Method: ${methodLabel}. New Date & Time: ${dateStr}.${venueOrLinkStr ? ` ${venueOrLinkStr}.` : ""}${audition.instructions ? ` Instructions: ${audition.instructions}` : ""}`;
+
+        await notifyUser({
+            recipientId: audition.talentId,
+            type: "audition_rescheduled",
+            title: "Audition Rescheduled",
+            message: notifMessage,
+            referenceId: audition.applicationId,
+            referenceType: "Application",
+            sendEmailAlert: true
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Audition rescheduled successfully",
+            audition
+        });
+    } catch (error) {
+        console.error("Reschedule audition error:", error);
+        res.status(500).json({ success: false, message: "Failed to reschedule audition" });
+    }
+};
+
+export const cancelAudition = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const userId = req.user?.userId;
+        const { auditionId } = req.params;
+        const { reason } = req.body;
+
+        const audition = await Audition.findById(String(auditionId));
+        if (!audition) {
+            return res.status(404).json({ success: false, message: "Audition not found" });
+        }
+
+        const organization = await Organization.findOne({ userId });
+        if (!organization || audition.organizationId.toString() !== organization._id.toString()) {
+            return res.status(403).json({ success: false, message: "You can only cancel auditions for your own organization" });
+        }
+
+        audition.status = "cancelled";
+        await audition.save();
+
+        const opportunity = await Opportunity.findById(audition.opportunityId);
+        const notifMessage = `Your audition for ${audition.role || opportunity?.role || 'Role'} in "${opportunity?.title || 'Opportunity'}" has been cancelled by the organization.${reason ? ` Reason: ${reason}` : ""}`;
+
+        await notifyUser({
+            recipientId: audition.talentId,
+            type: "audition_cancelled",
+            title: "Audition Cancelled",
+            message: notifMessage,
+            referenceId: audition.applicationId,
+            referenceType: "Application",
+            sendEmailAlert: true
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Audition cancelled successfully",
+            audition
+        });
+    } catch (error) {
+        console.error("Cancel audition error:", error);
+        res.status(500).json({ success: false, message: "Failed to cancel audition" });
+    }
+};
+
 export const getMyAuditions = async (req: Request, res: Response): Promise<any> => {
     try {
         const talentId = req.user?.userId;
 
-        const auditions = await Audition.find({ talentId, vismayaApproval: "approved" })
+        const auditions = await Audition.find({
+            talentId,
+            $or: [
+                { vismayaApproval: "approved" },
+                { status: { $in: ["submitted", "forwarded_to_org"] } }
+            ],
+            status: { $ne: "rejected" }
+        })
             .populate("opportunityId", "title role location deadline")
             .populate("projectId", "projectName")
             .populate("organizationId", "organizationName")
@@ -416,11 +659,24 @@ export const getOrganizationAuditions = async (req: Request, res: Response): Pro
             });
         }
 
-        const auditions = await Audition.find({ organizationId: organization._id })
+        const rawAuditions = await Audition.find({ organizationId: organization._id })
             .populate("talentId", "name email")
             .populate("opportunityId", "title role")
             .populate("projectId", "projectName")
             .sort({ createdAt: -1 });
+
+        const auditions = rawAuditions.map(aud => {
+            const doc = aud.toObject ? aud.toObject() : { ...aud };
+            const isApprovedByAdmin = doc.vismayaApproval === "approved" && (doc.status === "forwarded_to_org" || doc.status === "reviewed");
+            if (doc.type === "self_tape" && !isApprovedByAdmin) {
+                if (doc.selfTapeSubmission) {
+                    delete doc.selfTapeSubmission.videoUrl;
+                    delete doc.selfTapeSubmission.videoUrls;
+                    delete doc.selfTapeSubmission.videos;
+                }
+            }
+            return doc;
+        });
 
         res.status(200).json({
             success: true,
