@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Megaphone,
@@ -24,15 +24,57 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
+import { isRealMode } from "@/lib/api/config";
+import { adminService } from "@/lib/api/services/adminService";
 
 export default function AdminOpportunitiesPage() {
-  const {
-    opportunities = [],
-    projects = [],
-    organizations = [],
-    applications = [],
-    isHydrated,
-  } = useWorkflow();
+  const workflow = useWorkflow();
+  const [realOpportunities, setRealOpportunities] = useState([]);
+  const [realProjects, setRealProjects] = useState([]);
+  const [realOrganizations, setRealOrganizations] = useState([]);
+  const [realApplications, setRealApplications] = useState([]);
+  const [loading, setLoading] = useState(() => isRealMode("admin"));
+
+  useEffect(() => {
+    if (!isRealMode("admin")) return;
+    let mounted = true;
+    async function loadData() {
+      try {
+        const [oppsRes, projsRes, orgsRes, appsRes] = await Promise.allSettled([
+          adminService.getAllOpportunities(),
+          adminService.getAllProjects(),
+          adminService.getOrganizationDirectory(),
+          adminService.getAllApplications(),
+        ]);
+        if (mounted) {
+          if (oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data)) {
+            setRealOpportunities(oppsRes.value.data);
+          }
+          if (projsRes.status === "fulfilled" && Array.isArray(projsRes.value?.data)) {
+            setRealProjects(projsRes.value.data);
+          }
+          if (orgsRes.status === "fulfilled" && Array.isArray(orgsRes.value?.data)) {
+            setRealOrganizations(orgsRes.value.data);
+          }
+          if (appsRes.status === "fulfilled" && Array.isArray(appsRes.value?.data)) {
+            setRealApplications(appsRes.value.data);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load real admin opportunities:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    loadData();
+    return () => { mounted = false; };
+  }, []);
+
+  const opportunities = isRealMode("admin") ? realOpportunities : (workflow.opportunities || []);
+  const projects = isRealMode("admin") ? realProjects : (workflow.projects || []);
+  const organizations = isRealMode("admin") ? realOrganizations : (workflow.organizations || []);
+  const applications = isRealMode("admin") ? realApplications : (workflow.applications || []);
+  const isHydrated = isRealMode("admin") ? !loading : workflow.isHydrated;
 
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [orgFilter, setOrgFilter] = useState("ALL");
@@ -598,7 +640,7 @@ export default function AdminOpportunitiesPage() {
               <div>
                 <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Organization</span>
                 <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
-                  {getOrgForOpp(viewModalOpp.orgId)?.name || "Zee Films"}
+                  {getOrgForOpp(viewModalOpp.orgId)?.name || "Organization"}
                 </strong>
               </div>
               <div>

@@ -358,9 +358,8 @@ export const paymentService = {
    */
   async createPaymentOrder(type, metadata = {}) {
     const packageType = PACKAGE_TYPE_MAP[type] || type;
-    const isRegistration = type === "talent_registration" || type === "organization_registration";
 
-    if (isRealMode("payments") && getAuthToken() && !isRegistration) {
+    if (isRealMode("payments") && getAuthToken()) {
       const body = { packageType, ...metadata };
       // Pass couponCode explicitly if present
       if (metadata.couponCode) {
@@ -462,9 +461,8 @@ export const paymentService = {
     // Simulate 1.5s gateway latency
     await new Promise((res) => setTimeout(res, 1500));
 
-    // Real backend POST /api/payments/verify (requires authenticated session)
-    const isRegistration = payload.type === "talent_registration" || payload.type === "organization_registration";
-    if (isRealMode("payments") && getAuthToken() && !isRegistration) {
+    // Real backend POST /api/payments/verify or /api/payments/mock-confirm
+    if (isRealMode("payments") && getAuthToken()) {
       if (shouldFail) {
         return {
           success: false,
@@ -632,15 +630,8 @@ export const paymentService = {
         const res = await apiClient.get("/api/credits/balance");
         return res?.data || res;
       } catch (err) {
-        console.warn("Failed to fetch credits balance from backend, using safe fallback:", err?.message);
-        const defaultLedger = {
-          balance: PRICING_CONFIG.INCLUDED_CREDITS,
-          includedCredits: PRICING_CONFIG.INCLUDED_CREDITS,
-          purchasedCredits: 0,
-          consumedCredits: 0,
-          lowBalanceWarning: false,
-        };
-        return defaultLedger;
+        console.warn("Failed to fetch credits balance from backend:", err?.message);
+        throw err;
       }
     }
 
@@ -833,6 +824,17 @@ export const paymentService = {
    * Get list of previously viewed talent for organization
    */
   async getViewedTalents() {
+    if (isRealMode("credits") || isRealMode("payments")) {
+      try {
+        const res = await apiClient.get("/api/credits/viewed");
+        const list = Array.isArray(res?.data) ? res.data : Array.isArray(res?.history) ? res.history : Array.isArray(res) ? res : [];
+        return list;
+      } catch (err) {
+        console.warn("Failed to fetch viewed talents from backend:", err?.message);
+        return [];
+      }
+    }
+
     return safeGetStorage(STORAGE_KEYS.VIEWED_TALENTS, [
       {
         talentId: "tal-904",
@@ -917,8 +919,7 @@ export const paymentService = {
         });
       } catch (err) {
         console.error("Failed to fetch real admin transactions:", err);
-        const fallback = safeGetStorage(STORAGE_KEYS.TRANSACTIONS, SEED_TRANSACTIONS);
-        return Array.isArray(fallback) ? fallback : [];
+        return [];
       }
     }
 
@@ -944,7 +945,7 @@ export const paymentService = {
           if (!orgId) continue;
 
           if (!orgMap.has(orgId)) {
-            const orgName = (typeof org === "object" ? org?.organizationName : "") || `Organization (${orgId.slice(-6)})`;
+            const orgName = (typeof org === "object" ? (org?.name || org?.studioName || org?.organizationName) : "") || `Organization (${orgId.slice(-6)})`;
             const ob = entry.orgBalance || {};
             orgMap.set(orgId, {
               orgId,

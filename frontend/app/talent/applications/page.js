@@ -30,15 +30,10 @@ export default function TalentApplicationsPage() {
   const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
   const myApplications = useMemo(() => {
     if (isRealMode("applications") || isRealMode("talent")) {
-      return Array.isArray(ctxApplications) && ctxApplications.length > 0
-        ? ctxApplications
-        : applications.filter((a) => {
-            const tId = a.talentId?._id || a.talentId?.id || a.talentId || a.userId;
-            return tId && (tId === currentTalentId || tId === user?.id || tId === user?._id || tId === profile?.id || tId === profile?._id || tId === profile?.vismayaId);
-          });
+      return Array.isArray(ctxApplications) ? ctxApplications : [];
     }
     return applications.filter((a) => a.talentId === currentTalentId);
-  }, [applications, ctxApplications, currentTalentId, user, profile]);
+  }, [applications, ctxApplications, currentTalentId]);
 
   const [activeFilter, setActiveFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest"); // "newest" | "oldest"

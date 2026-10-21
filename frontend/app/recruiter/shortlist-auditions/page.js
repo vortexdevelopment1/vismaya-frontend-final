@@ -97,14 +97,15 @@ export default function ShortlistAuditionsPage() {
     return () => { isMounted = false; };
   }, []);
 
-  const effectiveOpportunities = realOpportunities.length > 0 ? realOpportunities : opportunities;
-  const effectiveProjects = realProjects.length > 0 ? realProjects : projects;
+  const isReal = isRealMode("recruiter") || isRealMode("opportunities") || isRealMode("applications");
+  const effectiveOpportunities = isReal ? realOpportunities : (realOpportunities.length > 0 ? realOpportunities : opportunities);
+  const effectiveProjects = isReal ? realProjects : (realProjects.length > 0 ? realProjects : projects);
 
   // Filter org opportunities
   const orgOpportunities = useMemo(() => {
-    if (realOpportunities.length > 0) return realOpportunities;
+    if (isReal) return realOpportunities;
     return opportunities.filter((o) => o.orgId === orgId || !o.orgId);
-  }, [opportunities, realOpportunities, orgId]);
+  }, [opportunities, realOpportunities, orgId, isReal]);
 
   // Read opportunity from URL query parameter (?opportunity=id or ?opp=id)
   const oppParam = searchParams?.get("opportunity") || searchParams?.get("opp") || null;
@@ -241,7 +242,7 @@ export default function ShortlistAuditionsPage() {
       };
     }
     const oppId = opp?.id || opp?._id || opp;
-    const sourceApps = realApplications.length > 0 ? realApplications : applications;
+    const sourceApps = isReal ? realApplications : (realApplications.length > 0 ? realApplications : applications);
     const apps = sourceApps.filter((a) => {
       const aOppId = a.opportunityId?._id || a.opportunityId?.id || a.opportunityId;
       return String(aOppId) === String(oppId);
@@ -263,13 +264,13 @@ export default function ShortlistAuditionsPage() {
   // Applications belonging to selected opportunity (Level 2)
   const oppApplications = useMemo(() => {
     if (!selectedOpp) return [];
-    const sourceApps = realApplications.length > 0 ? realApplications : applications;
+    const sourceApps = isReal ? realApplications : (realApplications.length > 0 ? realApplications : applications);
     const targetId = selectedOpp.id || selectedOpp._id;
     return sourceApps.filter((app) => {
       const oppId = app.opportunityId?._id || app.opportunityId?.id || app.opportunityId;
       return String(oppId) === String(targetId) || String(oppId) === String(selectedOpp.id) || String(oppId) === String(selectedOpp._id);
     });
-  }, [applications, realApplications, selectedOpp]);
+  }, [applications, realApplications, selectedOpp, isReal]);
 
   // Auditions for selected opportunity (Level 2)
   const oppAuditions = useMemo(() => {
@@ -423,7 +424,7 @@ export default function ShortlistAuditionsPage() {
         setRealApplications((prev) =>
           prev.map((a) => ((a.id === appId || a._id === appId) ? { ...a, status: "Under Review" } : a))
         );
-        setApplicationStatus(appId, "Under Review", "Application moved to under review", "Zee Films");
+        setApplicationStatus(appId, "Under Review", "Application moved to under review", "Organization");
         if (reviewPortfolioModalApp && (reviewPortfolioModalApp.id === appId || reviewPortfolioModalApp._id === appId)) {
           setReviewPortfolioModalApp(prev => ({ ...prev, status: "Under Review" }));
         }
@@ -449,7 +450,7 @@ export default function ShortlistAuditionsPage() {
           appId,
           "Shortlisted",
           "Shortlisted for casting callback / audition.",
-          "Zee Films"
+          "Organization"
         );
         if (reviewPortfolioModalApp && (reviewPortfolioModalApp.id === appId || reviewPortfolioModalApp._id === appId)) {
           setReviewPortfolioModalApp(prev => ({ ...prev, status: "Shortlisted" }));
@@ -504,7 +505,7 @@ export default function ShortlistAuditionsPage() {
           appId,
           "Selected",
           selectedNote || "Final selection confirmed for production.",
-          "Zee Films"
+          "Organization"
         );
         setSelectedModalApp(null);
         if (reviewPortfolioModalApp && (reviewPortfolioModalApp.id === appId || reviewPortfolioModalApp._id === appId)) {
@@ -537,7 +538,7 @@ export default function ShortlistAuditionsPage() {
           appId,
           "Not Selected",
           notSelectedReason || "Candidate not selected for this role.",
-          "Zee Films"
+          "Organization"
         );
         setNotSelectedModalApp(null);
         if (reviewPortfolioModalApp && (reviewPortfolioModalApp.id === appId || reviewPortfolioModalApp._id === appId)) {

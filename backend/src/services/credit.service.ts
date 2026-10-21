@@ -56,7 +56,15 @@ export const consumeProfileViewCredit = async (organizationId: any, talentId: an
         // Ensure ledger exists
         let ledger: any = await CreditLedger.findOne({ organizationId });
         if (!ledger) {
-            ledger = await initializeOrganizationCredits(organizationId);
+            return {
+                allowed: false,
+                consumed: false,
+                error: "INSUFFICIENT_CREDITS",
+                balance: 0,
+                lowBalanceWarning: true,
+                buyMoreViews: true,
+                message: "No active credit subscription found. Please purchase an annual plan or credit pack."
+            };
         }
 
         // Step 1: Check 7-Day Exemption View History
@@ -148,7 +156,13 @@ export const adjustCreditsByAdmin = async (organizationId: any, amount: number, 
     try {
         let ledger: any = await CreditLedger.findOne({ organizationId });
         if (!ledger) {
-            ledger = await initializeOrganizationCredits(organizationId);
+            ledger = await CreditLedger.create({
+                organizationId,
+                includedCredits: 0,
+                purchasedCredits: 0,
+                consumedCredits: 0,
+                balance: 0
+            });
         }
 
         const newBalance = Math.max((ledger?.balance ?? 0) + amount, 0);
@@ -189,7 +203,22 @@ export const addPurchasedCredits = async (organizationId: any, creditsCount: num
     try {
         let ledger: any = await CreditLedger.findOne({ organizationId });
         if (!ledger) {
-            ledger = await initializeOrganizationCredits(organizationId);
+            ledger = await CreditLedger.create({
+                organizationId,
+                includedCredits: 0,
+                purchasedCredits: creditsCount,
+                consumedCredits: 0,
+                balance: creditsCount
+            });
+            await CreditTransaction.create({
+                organizationId,
+                type: "purchase",
+                amount: creditsCount,
+                balanceAfter: creditsCount,
+                paymentTransactionId,
+                description: `Purchased ${creditsCount} profile view credits`
+            });
+            return ledger;
         }
 
         const updatedLedger = await CreditLedger.findOneAndUpdate(

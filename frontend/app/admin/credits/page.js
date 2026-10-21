@@ -587,7 +587,7 @@ export default function AdminCreditsPage() {
               </label>
               <textarea
                 rows={3}
-                placeholder="E.g. Approved promotional pilot pack for Zee Films Season 2 casting..."
+                placeholder="E.g. Approved promotional pilot pack for organization Season 2 casting..."
                 value={adjustReason}
                 onChange={(e) => setAdjustReason(e.target.value)}
                 required

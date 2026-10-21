@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 /**
  * General API rate limiter (protects against high-volume API abuse / scraping)
@@ -106,7 +106,8 @@ export const adminForgotPasswordLimiter = rateLimit({
     max: process.env.NODE_ENV === "production" ? 5 : 50,
     keyGenerator: (req: any) => {
         const email = req.body?.email ? String(req.body.email).toLowerCase().trim() : "";
-        const ip = req.ip || (req.headers && req.headers["x-forwarded-for"]) || "127.0.0.1";
+        const rawIp = req.ip || (req.headers && req.headers["x-forwarded-for"]) || "127.0.0.1";
+        const ip = ipKeyGenerator(Array.isArray(rawIp) ? rawIp[0] : String(rawIp));
         return email ? `${ip}_${email}` : String(ip);
     },
     standardHeaders: true,
@@ -125,7 +126,8 @@ export const adminResetPasswordLimiter = rateLimit({
     max: process.env.NODE_ENV === "production" ? 5 : 50,
     keyGenerator: (req: any) => {
         const email = req.body?.email ? String(req.body.email).toLowerCase().trim() : "";
-        const ip = req.ip || (req.headers && req.headers["x-forwarded-for"]) || "127.0.0.1";
+        const rawIp = req.ip || (req.headers && req.headers["x-forwarded-for"]) || "127.0.0.1";
+        const ip = ipKeyGenerator(Array.isArray(rawIp) ? rawIp[0] : String(rawIp));
         return email ? `${ip}_${email}` : String(ip);
     },
     standardHeaders: true,

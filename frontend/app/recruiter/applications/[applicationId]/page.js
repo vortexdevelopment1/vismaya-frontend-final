@@ -148,7 +148,7 @@ export default function ApplicationDetailPage() {
       application.id,
       "Shortlisted",
       "Shortlisted for further audition and screening rounds.",
-      "Zee Films"
+      "Organization"
     );
   };
 
@@ -180,7 +180,7 @@ export default function ApplicationDetailPage() {
       application.id,
       "Not Selected",
       notSelectedReason || "Candidate not selected for this specific role.",
-      "Zee Films"
+      "Organization"
     );
     setIsNotSelectedModalOpen(false);
   };
@@ -192,7 +192,7 @@ export default function ApplicationDetailPage() {
       application.id,
       "Selected",
       selectedNote || "Final selection confirmed for the casting role.",
-      "Zee Films"
+      "Organization"
     );
     setIsSelectedModalOpen(false);
   };
@@ -1549,8 +1549,8 @@ export default function ApplicationDetailPage() {
         >
           <PaymentCard
             type="bundle_views"
-            userName="Zee Films Casting Desk"
-            userEmail="casting@zeefilms.com"
+            userName="Organization Casting Desk"
+            userEmail="casting@vismaya.com"
             onSuccess={() => {
               setShowBuyModal(false);
               checkProfileAccess(true);

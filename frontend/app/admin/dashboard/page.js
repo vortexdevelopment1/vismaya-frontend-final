@@ -19,11 +19,12 @@ import {
 import { useAdmin } from "@/lib/admin/AdminContext";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { isRealMode } from "@/lib/api/config";
+import { adminService } from "@/lib/api/services/adminService";
 import PageHeader from "@/components/shared/PageHeader";
 import StatCard from "@/components/shared/StatCard";
 
 export default function AdminDashboardPage() {
-  const { talents = [], recruiters = [] } = useAdmin();
+  const { talents = [], recruiters = [], activities = [] } = useAdmin();
   const {
     opportunities = [],
     applications = [],
@@ -33,41 +34,83 @@ export default function AdminDashboardPage() {
     isHydrated,
   } = useWorkflow();
 
+  const [metrics, setMetrics] = React.useState(null);
+  const isReal = isRealMode("admin");
+
+  React.useEffect(() => {
+    if (!isReal) return;
+    let mounted = true;
+    adminService.getDashboardMetrics().then((res) => {
+      if (mounted && res?.data) {
+        setMetrics(res.data);
+      }
+    }).catch((err) => {
+      console.warn("Failed to load dashboard metrics:", err);
+    });
+    return () => { mounted = false; };
+  }, [isReal]);
+
   // Counts
+  const verifiedTalentsCount = useMemo(() => {
+    if (isReal) {
+      if (metrics?.users?.verifiedTalent !== undefined) return String(metrics.users.verifiedTalent);
+      return String(talents.filter((t) => t.status === "Approved" || t.status === "approved" || t.isProfileApproved).length);
+    }
+    return "1,284";
+  }, [isReal, metrics, talents]);
+
+  const activeOrganizationsCount = useMemo(() => {
+    if (isReal) {
+      if (metrics?.users?.activeOrganization !== undefined) return String(metrics.users.activeOrganization);
+      return String(recruiters.filter((r) => r.status === "Verified" || r.status === "active").length);
+    }
+    return (recruiters.length || organizations.length || 0).toString();
+  }, [isReal, metrics, recruiters, organizations]);
+
+  const liveOpportunitiesCount = useMemo(() => {
+    if (isReal) return metrics?.opportunities?.published ?? 0;
+    return opportunities.filter((o) => o.status === "Published").length;
+  }, [isReal, metrics, opportunities]);
+
+  const totalApplicationsCount = useMemo(() => {
+    if (isReal) return metrics?.applications?.total ?? 0;
+    return applications.length;
+  }, [isReal, metrics, applications]);
+
   const pendingTalentsCount = useMemo(() => {
+    if (isReal) return metrics?.users?.pending ?? talents.filter((t) => t.status === "Pending" || t.status === "pending" || !t.isProfileApproved).length;
     const realCount = talents.filter((t) => t.status === "Pending" || t.status === "pending" || !t.isProfileApproved).length;
-    return isRealMode("admin") ? realCount : (realCount || 3);
-  }, [talents]);
+    return realCount || 3;
+  }, [isReal, metrics, talents]);
 
   const pendingOrganizationsCount = useMemo(() => {
+    if (isReal) return recruiters.filter((r) => r.status === "Pending" || r.status === "pending").length;
     const realCount = (
       recruiters.filter((r) => r.status === "Pending" || r.status === "pending").length ||
       organizations.filter((o) => o.status === "Pending" || o.status === "pending").length
     );
-    return isRealMode("admin") ? realCount : (realCount || 1);
-  }, [organizations, recruiters]);
+    return realCount || 1;
+  }, [isReal, recruiters, organizations]);
 
   const pendingOpportunitiesCount = useMemo(() => {
+    if (isReal) return metrics?.opportunities?.pendingReview ?? 0;
     return opportunities.filter((o) => o.status === "Submitted").length;
-  }, [opportunities]);
+  }, [isReal, metrics, opportunities]);
 
   const pendingCancellationsCount = useMemo(() => {
+    if (isReal) return metrics?.opportunities?.cancellationRequests ?? 0;
     return cancellationRequests.filter((c) => c.status === "Pending").length;
-  }, [cancellationRequests]);
+  }, [isReal, metrics, cancellationRequests]);
 
   const auditionRequestsToRelayCount = useMemo(() => {
+    if (isReal) return metrics?.auditions?.pendingRelay ?? 0;
     return auditions.filter((a) => a.status === "Requested").length;
-  }, [auditions]);
+  }, [isReal, metrics, auditions]);
 
   const selfTapesToForwardCount = useMemo(() => {
+    if (isReal) return metrics?.auditions?.selfTapesToForward ?? 0;
     return auditions.filter((a) => a.status === "Self-tape Received").length;
-  }, [auditions]);
-
-  const liveOpportunitiesCount = useMemo(() => {
-    return opportunities.filter((o) => o.status === "Published").length;
-  }, [opportunities]);
-
-  const totalApplicationsCount = applications.length;
+  }, [isReal, metrics, auditions]);
 
   // "Needs Attention" Queue: uniform styling per spec
   const attentionItems = [
@@ -151,16 +194,16 @@ export default function AdminDashboardPage() {
       >
         <StatCard
           title="Verified Talents"
-          value="1,284"
-          change="+18 this week"
+          value={verifiedTalentsCount}
+          change={!isReal ? "+18 this week" : undefined}
           isPositive={true}
           description="Verified screen actors, models & voice artists"
           icon={Users}
         />
         <StatCard
           title="Active Organizations"
-          value={(recruiters.length || organizations.length || 0).toString()}
-          change="+2 approved"
+          value={activeOrganizationsCount}
+          change={!isReal ? "+2 approved" : undefined}
           isPositive={true}
           description="Accredited studios & production houses"
           icon={Building2}
@@ -168,7 +211,7 @@ export default function AdminDashboardPage() {
         <StatCard
           title="Live Opportunities"
           value={liveOpportunitiesCount.toString()}
-          change="+3 published"
+          change={!isReal ? "+3 published" : undefined}
           isPositive={true}
           description="Active opportunities accepting submissions"
           icon={Megaphone}
@@ -176,7 +219,7 @@ export default function AdminDashboardPage() {
         <StatCard
           title="Total Applications"
           value={totalApplicationsCount.toString()}
-          change="+12 today"
+          change={!isReal ? "+12 today" : undefined}
           isPositive={true}
           description="Talent submissions across all opportunities"
           icon={FileText}
@@ -407,77 +450,118 @@ export default function AdminDashboardPage() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {[
-              ...(recruiters.length > 0
-                ? [
-                    {
-                      id: `act-org-${recruiters[0].id || recruiters[0]._id}`,
-                      text: `Organization '${recruiters[0].company || recruiters[0].companyName || recruiters[0].name || "Organization"}' registered - review pending`,
-                      time: recruiters[0].joinedDate || "Recent",
-                      link: "/admin/recruiter-management",
-                    },
-                  ]
-                : []),
-              {
-                id: "act-1",
-                text: "Opportunity 'Project Tiger' awaiting review",
-                time: "10m ago",
-                link: "/admin/opportunity-review",
-              },
-              {
-                id: "act-2",
-                text: "Self-tape from Riya Sharma queued for relay",
-                time: "25m ago",
-                link: "/admin/auditions",
-              },
-              {
-                id: "act-3",
-                text: "Escrow TXN-9021 verified (₹1,45,000)",
-                time: "1h ago",
-                link: "/admin/payments",
-              },
-              {
-                id: "act-4",
-                text: "3 media portfolio items in moderation queue",
-                time: "2h ago",
-                link: "/admin/media-moderation",
-              },
-            ].slice(0, 4).map((act, aIdx) => (
-              <Link
-                key={act.id}
-                href={act.link}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "12px 6px",
-                  borderBottom: aIdx === 3 ? "none" : "1px solid #E8E2D4",
-                  textDecoration: "none",
-                  transition: "background 0.15s ease",
-                }}
-                className="admin-activity-item"
-              >
-                <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
-                  <span
+            {isReal ? (
+              activities.length > 0 ? (
+                activities.slice(0, 4).map((act, aIdx) => (
+                  <div
+                    key={act.id || act._id || `act-${aIdx}`}
                     style={{
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      color: "#2B2D2A",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      fontFamily: "var(--font-body), 'Inter', sans-serif",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 6px",
+                      borderBottom: aIdx === Math.min(activities.length, 4) - 1 ? "none" : "1px solid #E8E2D4",
                     }}
+                    className="admin-activity-item"
                   >
-                    {act.text}
-                  </span>
-                  <span style={{ fontSize: "12px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
-                    {act.time}
-                  </span>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
+                      <span
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 500,
+                          color: "#2B2D2A",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          fontFamily: "var(--font-body), 'Inter', sans-serif",
+                        }}
+                      >
+                        {act.title || act.details?.reason || (typeof act.details === "string" ? act.details : null) || act.action || "Admin Operation"}
+                      </span>
+                      <span style={{ fontSize: "12px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                        {act.createdAt ? new Date(act.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (act.time || "Recent")}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ padding: "20px 0", textAlign: "center", color: "#5A584F", fontSize: "14px", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                  No recent operations activity yet
                 </div>
-                <ChevronRight size={15} style={{ color: "#8A6B2E", flexShrink: 0, marginLeft: "8px" }} />
-              </Link>
-            ))}
+              )
+            ) : (
+              [
+                ...(recruiters.length > 0
+                  ? [
+                      {
+                        id: `act-org-${recruiters[0].id || recruiters[0]._id}`,
+                        text: `Organization '${recruiters[0].company || recruiters[0].companyName || recruiters[0].name || "Organization"}' registered - review pending`,
+                        time: recruiters[0].joinedDate || "Recent",
+                        link: "/admin/recruiter-management",
+                      },
+                    ]
+                  : []),
+                {
+                  id: "act-1",
+                  text: "Opportunity 'Project Tiger' awaiting review",
+                  time: "10m ago",
+                  link: "/admin/opportunity-review",
+                },
+                {
+                  id: "act-2",
+                  text: "Self-tape from Riya Sharma queued for relay",
+                  time: "25m ago",
+                  link: "/admin/auditions",
+                },
+                {
+                  id: "act-3",
+                  text: "Escrow TXN-9021 verified (₹1,45,000)",
+                  time: "1h ago",
+                  link: "/admin/payments",
+                },
+                {
+                  id: "act-4",
+                  text: "3 media portfolio items in moderation queue",
+                  time: "2h ago",
+                  link: "/admin/media-moderation",
+                },
+              ].slice(0, 4).map((act, aIdx) => (
+                <Link
+                  key={act.id}
+                  href={act.link}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "12px 6px",
+                    borderBottom: aIdx === 3 ? "none" : "1px solid #E8E2D4",
+                    textDecoration: "none",
+                    transition: "background 0.15s ease",
+                  }}
+                  className="admin-activity-item"
+                >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: 500,
+                        color: "#2B2D2A",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        fontFamily: "var(--font-body), 'Inter', sans-serif",
+                      }}
+                    >
+                      {act.text}
+                    </span>
+                    <span style={{ fontSize: "12px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                      {act.time}
+                    </span>
+                  </div>
+                  <ChevronRight size={15} style={{ color: "#8A6B2E", flexShrink: 0, marginLeft: "8px" }} />
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </div>

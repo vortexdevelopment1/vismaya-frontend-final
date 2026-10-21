@@ -748,6 +748,7 @@ export const recruiterService = {
   async updateOrganization(payload) { return this.saveOrganizationProfile(payload); },
   async getOpportunities() { return this.getMyOpportunities(); },
   async getProjects() { return this.getMyProjects(); },
+  async getMyApplications() { return { success: true, data: [] }; },
   async requestCancellation(opportunityId, payload) { return this.requestOpportunityCancellation(opportunityId, payload); },
   async deleteOpportunity(opportunityId, payload) { return this.requestOpportunityCancellation(opportunityId, payload); },
 };

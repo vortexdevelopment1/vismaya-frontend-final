@@ -56,7 +56,6 @@ export const validateRegisterInput = (data: any): { isValid: boolean; errors: st
             gstNumber: data?.gstNumber ? String(data.gstNumber).trim() : undefined,
             website: data?.website ? String(data.website).trim() : undefined,
             description: (data?.description || data?.aboutStudio || data?.about) ? String(data.description || data.aboutStudio || data.about).trim() : undefined,
-            isPaid: Boolean(data?.isPaid),
         }
     };
 };

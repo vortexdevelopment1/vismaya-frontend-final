@@ -407,5 +407,31 @@ export const talentService = {
     }
     return apiClient.put("/api/talent/settings/notifications", payload);
   },
+
+  /**
+   * Fetch authenticated talent's auditions
+   */
+  async getMyAuditions() {
+    if (!isRealMode("talent")) {
+      return { success: true, data: [] };
+    }
+    const res = await apiClient.get("/api/auditions/my");
+    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.auditions) ? res.auditions : Array.isArray(res) ? res : [];
+    return {
+      success: true,
+      data: docs.map(mapAudition),
+    };
+  },
+
+  /**
+   * Submit self-tape for an audition
+   */
+  async submitSelfTape(auditionId, payload) {
+    if (!isRealMode("talent")) {
+      return { success: true, message: "Self-tape submitted (Mock)" };
+    }
+    const res = await apiClient.post(`/api/auditions/${auditionId}/self-tape`, payload);
+    return res?.data || res;
+  },
 };
 

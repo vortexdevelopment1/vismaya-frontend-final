@@ -420,8 +420,8 @@ function RegisterPageContent() {
     setNameError("");
     setPasswordError("");
     if (role === "organization") {
-      setName("Zee Films Studio");
-      setEmail("casting@zeefilms.com");
+      setName("Acme Productions Studio");
+      setEmail("casting@acmeproductions.io");
       setOrgPhone("+91 98765 43210");
     } else {
       setName("Aanya Sharma");
@@ -599,7 +599,6 @@ function RegisterPageContent() {
         phone: cleanContact,
         mobile: cleanContact,
         profilePhoto: photoUrl,
-        isPaid: true,
         stageName: name.trim(),
         primaryProfession: primaryCraft,
         skills: skills ? skills.split(",").map((s) => s.trim()).filter(Boolean) : [],
@@ -1026,7 +1025,7 @@ function RegisterPageContent() {
                       id="input-reg-name"
                       type="text"
                       suppressHydrationWarning
-                      placeholder={selectedRole === "organization" ? "e.g. Zee Films Studio" : "e.g. Aanya Sharma"}
+                      placeholder={selectedRole === "organization" ? "e.g. Acme Studios" : "e.g. Aanya Sharma"}
                       value={name}
                       onChange={(e) => {
                         setName(e.target.value);

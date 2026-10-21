@@ -320,7 +320,7 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {companyProfile.name || "Zee Films Studio"}
+                  {companyProfile?.companyName || companyProfile?.name || companyProfile?.studioName || ""}
                 </span>
                 <span
                   style={{

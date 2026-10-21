@@ -34,17 +34,54 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
+import { isRealMode } from "@/lib/api/config";
+import { adminService } from "@/lib/api/services/adminService";
 
 export default function OpportunityReviewPage() {
+  const workflow = useWorkflow();
+  const [realOpportunities, setRealOpportunities] = useState([]);
+  const [realProjects, setRealProjects] = useState([]);
+  const [realOrganizations, setRealOrganizations] = useState([]);
+  const [loading, setLoading] = useState(() => isRealMode("admin"));
+
+  const loadData = async () => {
+    if (!isRealMode("admin")) return;
+    try {
+      const [oppsRes, projsRes, orgsRes] = await Promise.allSettled([
+        adminService.getAllOpportunities(),
+        adminService.getAllProjects(),
+        adminService.getOrganizationDirectory(),
+      ]);
+      if (oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data)) {
+        setRealOpportunities(oppsRes.value.data);
+      }
+      if (projsRes.status === "fulfilled" && Array.isArray(projsRes.value?.data)) {
+        setRealProjects(projsRes.value.data);
+      }
+      if (orgsRes.status === "fulfilled" && Array.isArray(orgsRes.value?.data)) {
+        setRealOrganizations(orgsRes.value.data);
+      }
+    } catch (err) {
+      console.warn("Failed to load real opportunity review data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const opportunities = isRealMode("admin") ? realOpportunities : (workflow.opportunities || []);
+  const projects = isRealMode("admin") ? realProjects : (workflow.projects || []);
+  const organizations = isRealMode("admin") ? realOrganizations : (workflow.organizations || []);
+  const isHydrated = isRealMode("admin") ? !loading : workflow.isHydrated;
+
   const {
-    opportunities = [],
-    projects = [],
-    organizations = [],
     adminApproveAndPublish,
     adminRequestChanges,
     adminReject,
-    isHydrated,
-  } = useWorkflow();
+  } = workflow;
 
   // Tab State: "All" is the default first tab
   const [filterTab, setFilterTab] = useState("All"); // All | Submitted | Changes Requested | Rejected
@@ -213,29 +250,59 @@ export default function OpportunityReviewPage() {
   };
 
   // Action Handlers
-  const handleApprove = (e) => {
+  const handleApprove = async (e) => {
     e.preventDefault();
     if (!approveModalOpp) return;
-    adminApproveAndPublish(
-      approveModalOpp.id,
-      approveNote || "Verified and published by Vismaya Casting Desk."
-    );
+    const oppId = approveModalOpp.id;
+    const note = approveNote || "Verified and published by Vismaya Casting Desk.";
+    if (isRealMode("admin")) {
+      try {
+        await adminService.approveOpportunity(oppId, { note });
+        await loadData();
+      } catch (err) {
+        console.error("Failed to approve opportunity:", err);
+      }
+    } else {
+      adminApproveAndPublish(oppId, note);
+    }
     setApproveModalOpp(null);
     setApproveNote("");
   };
 
-  const handleRequestChanges = (e) => {
+  const handleRequestChanges = async (e) => {
     e.preventDefault();
     if (!changesModalOpp || !changesNote.trim()) return;
-    adminRequestChanges(changesModalOpp.id, changesNote.trim());
+    const oppId = changesModalOpp.id;
+    const corrections = changesNote.trim();
+    if (isRealMode("admin")) {
+      try {
+        await adminService.requestOpportunityCorrections(oppId, { corrections });
+        await loadData();
+      } catch (err) {
+        console.error("Failed to request changes on opportunity:", err);
+      }
+    } else {
+      adminRequestChanges(oppId, corrections);
+    }
     setChangesModalOpp(null);
     setChangesNote("");
   };
 
-  const handleReject = (e) => {
+  const handleReject = async (e) => {
     e.preventDefault();
     if (!rejectModalOpp || !rejectReason.trim()) return;
-    adminReject(rejectModalOpp.id, rejectReason.trim());
+    const oppId = rejectModalOpp.id;
+    const reason = rejectReason.trim();
+    if (isRealMode("admin")) {
+      try {
+        await adminService.rejectOpportunity(oppId, { reason });
+        await loadData();
+      } catch (err) {
+        console.error("Failed to reject opportunity:", err);
+      }
+    } else {
+      adminReject(oppId, reason);
+    }
     setRejectModalOpp(null);
     setRejectReason("");
   };
@@ -567,7 +634,7 @@ export default function OpportunityReviewPage() {
                     {/* 1. Organization */}
                     <div className="opp-fact-cell">
                       <span className="opp-fact-label">Organization</span>
-                      <strong className="opp-fact-val">{selectedOrg?.name || "Zee Films"}</strong>
+                      <strong className="opp-fact-val">{selectedOrg?.name || "Organization"}</strong>
                       <span className="opp-fact-sub">
                         {selectedOrg?.type || "Production House"} &bull; {selectedOrg?.status || "Verified"}
                       </span>

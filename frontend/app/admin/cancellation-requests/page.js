@@ -16,16 +16,58 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
+import { isRealMode } from "@/lib/api/config";
+import { adminService } from "@/lib/api/services/adminService";
 
 export default function AdminCancellationRequestsPage() {
+  const workflow = useWorkflow();
+  const [realCancellations, setRealCancellations] = useState([]);
+  const [realOpportunities, setRealOpportunities] = useState([]);
+  const [realOrganizations, setRealOrganizations] = useState([]);
+  const [realApplications, setRealApplications] = useState([]);
+  const [loading, setLoading] = useState(() => isRealMode("admin"));
+
+  const loadData = async () => {
+    if (!isRealMode("admin")) return;
+    try {
+      const [cancRes, oppsRes, orgsRes, appsRes] = await Promise.allSettled([
+        adminService.getCancellationRequests(),
+        adminService.getAllOpportunities(),
+        adminService.getOrganizationDirectory(),
+        adminService.getAllApplications(),
+      ]);
+      if (cancRes.status === "fulfilled" && Array.isArray(cancRes.value?.data)) {
+        setRealCancellations(cancRes.value.data);
+      }
+      if (oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data)) {
+        setRealOpportunities(oppsRes.value.data);
+      }
+      if (orgsRes.status === "fulfilled" && Array.isArray(orgsRes.value?.data)) {
+        setRealOrganizations(orgsRes.value.data);
+      }
+      if (appsRes.status === "fulfilled" && Array.isArray(appsRes.value?.data)) {
+        setRealApplications(appsRes.value.data);
+      }
+    } catch (err) {
+      console.warn("Failed to load real cancellations:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const cancellationRequests = isRealMode("admin") ? realCancellations : (workflow.cancellationRequests || []);
+  const opportunities = isRealMode("admin") ? realOpportunities : (workflow.opportunities || []);
+  const organizations = isRealMode("admin") ? realOrganizations : (workflow.organizations || []);
+  const applications = isRealMode("admin") ? realApplications : (workflow.applications || []);
+  const isHydrated = isRealMode("admin") ? !loading : workflow.isHydrated;
+
   const {
-    cancellationRequests = [],
-    opportunities = [],
-    organizations = [],
-    applications = [],
     adminResolveCancellation,
-    isHydrated,
-  } = useWorkflow();
+  } = workflow;
 
   const [statusFilter, setStatusFilter] = useState("Pending"); // Pending | Approved | Declined | ALL
   const [searchQuery, setSearchQuery] = useState("");

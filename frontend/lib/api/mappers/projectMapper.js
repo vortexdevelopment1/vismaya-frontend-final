@@ -21,7 +21,7 @@ export function fromApi(project) {
     type: project.projectType || project.type || "Feature Film",
     projectType: project.projectType || project.type || "Feature Film",
     description: project.description || "",
-    status: toFrontendStatus("project", project.status || "active"),
+    status: toFrontendStatus("project", (project.status || "active").toLowerCase()),
     rawStatus: project.status || "active",
     createdAt: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
     updatedAt: project.updatedAt ? new Date(project.updatedAt).toISOString() : null,

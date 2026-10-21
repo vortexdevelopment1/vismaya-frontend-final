@@ -10,6 +10,7 @@ import PasswordInput from "@/components/PasswordInput";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowRight, Lock, Mail, Sparkles, AlertCircle } from "lucide-react";
+import { isRealMode } from "@/lib/api/config";
 
 function LoginFormContent() {
   const router = useRouter();
@@ -17,8 +18,8 @@ function LoginFormContent() {
   const redirectPath = searchParams ? searchParams.get("redirect") : null;
   const { login, getDashboardPath } = useAuth();
 
-  const [email, setEmail] = useState("aanya.sharma@vismaya.io");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState(() => isRealMode("auth") ? "" : "aanya.sharma@vismaya.io");
+  const [password, setPassword] = useState(() => isRealMode("auth") ? "" : "password123");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -123,84 +124,86 @@ function LoginFormContent() {
         </p>
       </div>
 
-      {/* Fast Demo Access */}
-      <div
-        style={{
-          backgroundColor: "var(--bg-alt, #F0EEE7)",
-          border: "1px solid var(--border-color, #E4E1D9)",
-          borderRadius: "var(--radius-card, 6px)",
-          padding: "14px",
-          marginBottom: "24px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <Sparkles size={13} style={{ color: "var(--gold)" }} />
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: "600",
-              color: "var(--gold)",
-              textTransform: "uppercase",
-              letterSpacing: "0.10em",
-            }}
-          >
-            Quick Demo Workspace
-          </span>
+      {/* Fast Demo Access (mock mode only) */}
+      {!isRealMode("auth") && (
+        <div
+          style={{
+            backgroundColor: "var(--bg-alt, #F0EEE7)",
+            border: "1px solid var(--border-color, #E4E1D9)",
+            borderRadius: "var(--radius-card, 6px)",
+            padding: "14px",
+            marginBottom: "24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Sparkles size={13} style={{ color: "var(--gold)" }} />
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: "600",
+                color: "var(--gold)",
+                textTransform: "uppercase",
+                letterSpacing: "0.10em",
+              }}
+            >
+              Quick Demo Workspace
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+            <Link
+              href="/talent/dashboard"
+              style={{
+                fontSize: "11px",
+                textAlign: "center",
+                padding: "6px 4px",
+                borderRadius: "var(--radius-btn, 4px)",
+                backgroundColor: "var(--bg-surface, #FFFFFF)",
+                border: "1px solid var(--border-color, #E4E1D9)",
+                color: "var(--text-primary, #292C29)",
+                fontWeight: "600",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                textDecoration: "none",
+                minHeight: "36px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.18s ease",
+              }}
+              className="demo-btn"
+            >
+              Talent
+            </Link>
+            <Link
+              href="/recruiter/dashboard"
+              style={{
+                fontSize: "11px",
+                textAlign: "center",
+                padding: "6px 4px",
+                borderRadius: "var(--radius-btn, 4px)",
+                backgroundColor: "var(--bg-surface, #FFFFFF)",
+                border: "1px solid var(--border-color, #E4E1D9)",
+                color: "var(--text-primary, #292C29)",
+                fontWeight: "600",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                textDecoration: "none",
+                minHeight: "36px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.18s ease",
+              }}
+              className="demo-btn"
+            >
+              Studio
+            </Link>
+          </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-          <Link
-            href="/talent/dashboard"
-            style={{
-              fontSize: "11px",
-              textAlign: "center",
-              padding: "6px 4px",
-              borderRadius: "var(--radius-btn, 4px)",
-              backgroundColor: "var(--bg-surface, #FFFFFF)",
-              border: "1px solid var(--border-color, #E4E1D9)",
-              color: "var(--text-primary, #292C29)",
-              fontWeight: "600",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              textDecoration: "none",
-              minHeight: "36px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.18s ease",
-            }}
-            className="demo-btn"
-          >
-            Talent
-          </Link>
-          <Link
-            href="/recruiter/dashboard"
-            style={{
-              fontSize: "11px",
-              textAlign: "center",
-              padding: "6px 4px",
-              borderRadius: "var(--radius-btn, 4px)",
-              backgroundColor: "var(--bg-surface, #FFFFFF)",
-              border: "1px solid var(--border-color, #E4E1D9)",
-              color: "var(--text-primary, #292C29)",
-              fontWeight: "600",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              textDecoration: "none",
-              minHeight: "36px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.18s ease",
-            }}
-            className="demo-btn"
-          >
-            Studio
-          </Link>
-        </div>
-      </div>
+      )}
 
       {formError && (
         <div

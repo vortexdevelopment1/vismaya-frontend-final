@@ -31,9 +31,7 @@ export default function TalentNotificationsPage() {
 
   const notifications = useMemo(() => {
     if (isRealMode("notifications") || isRealMode("talent")) {
-      return Array.isArray(ctxNotifications) && ctxNotifications.length > 0
-        ? ctxNotifications
-        : getNotificationsForRole("talent", currentTalentId);
+      return Array.isArray(ctxNotifications) ? ctxNotifications : [];
     }
     return getNotificationsForRole("talent", currentTalentId);
   }, [ctxNotifications, getNotificationsForRole, currentTalentId]);

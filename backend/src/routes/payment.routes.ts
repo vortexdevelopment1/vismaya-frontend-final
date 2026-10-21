@@ -39,6 +39,13 @@ router.post(
     verifyPayment
 );
 
+router.post(
+    "/mock-confirm",
+    authenticateUser,
+    paymentLimiter,
+    verifyPayment
+);
+
 // Webhook endpoint (gateway server-to-server)
 router.post(
     "/webhook",

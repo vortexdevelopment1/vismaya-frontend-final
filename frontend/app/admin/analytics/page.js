@@ -433,11 +433,11 @@ export default function AdminAnalyticsPage() {
                   outline: "none",
                 }}
               >
-                <option value="All Registered Talent">All Registered Talent (1,166 artists)</option>
-                <option value="Verified Talent (Mumbai)">Verified Talent (Mumbai - 693 artists)</option>
-                <option value="Verified Talent (Delhi NCR)">Verified Talent (Delhi NCR - 270 artists)</option>
-                <option value="All Recruiters">All Recruiters &amp; Agencies (118 companies)</option>
-                <option value="All Platform Users">All Platform Users (1,284 users)</option>
+                <option value="All Registered Talent">All Registered Talent {metricsData?.talents?.total != null ? `(${metricsData.talents.total} artists)` : ""}</option>
+                <option value="Verified Talent (Mumbai)">Verified Talent (Mumbai)</option>
+                <option value="Verified Talent (Delhi NCR)">Verified Talent (Delhi NCR)</option>
+                <option value="All Recruiters">All Recruiters &amp; Agencies {metricsData?.organizations?.total != null ? `(${metricsData.organizations.total} companies)` : ""}</option>
+                <option value="All Platform Users">All Platform Users {metricsData?.users?.total != null ? `(${metricsData.users.total} users)` : ""}</option>
               </select>
             </div>
 

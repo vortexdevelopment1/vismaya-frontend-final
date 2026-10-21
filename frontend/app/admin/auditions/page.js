@@ -19,17 +19,54 @@ import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
 import VideoPlayer from "@/components/shared/VideoPlayer";
+import { isRealMode } from "@/lib/api/config";
+import { adminService } from "@/lib/api/services/adminService";
 
 export default function AdminAuditionsManagementPage() {
+  const workflow = useWorkflow();
+  const [realAuditions, setRealAuditions] = useState([]);
+  const [realOpportunities, setRealOpportunities] = useState([]);
+  const [realOrganizations, setRealOrganizations] = useState([]);
+  const [loading, setLoading] = useState(() => isRealMode("admin"));
+
+  const loadData = async () => {
+    if (!isRealMode("admin")) return;
+    try {
+      const [audsRes, oppsRes, orgsRes] = await Promise.allSettled([
+        adminService.getPendingAuditions(),
+        adminService.getAllOpportunities(),
+        adminService.getOrganizationDirectory(),
+      ]);
+      if (audsRes.status === "fulfilled" && Array.isArray(audsRes.value?.data)) {
+        setRealAuditions(audsRes.value.data);
+      }
+      if (oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data)) {
+        setRealOpportunities(oppsRes.value.data);
+      }
+      if (orgsRes.status === "fulfilled" && Array.isArray(orgsRes.value?.data)) {
+        setRealOrganizations(orgsRes.value.data);
+      }
+    } catch (err) {
+      console.warn("Failed to load real auditions:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const auditions = isRealMode("admin") ? realAuditions : (workflow.auditions || []);
+  const opportunities = isRealMode("admin") ? realOpportunities : (workflow.opportunities || []);
+  const organizations = isRealMode("admin") ? realOrganizations : (workflow.organizations || []);
+  const isHydrated = isRealMode("admin") ? !loading : workflow.isHydrated;
+
   const {
-    auditions = [],
-    opportunities = [],
-    organizations = [],
     adminRelayAudition,
     submitSelfTape,
     adminForwardSelfTape,
-    isHydrated,
-  } = useWorkflow();
+  } = workflow;
 
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [orgFilter, setOrgFilter] = useState("ALL");

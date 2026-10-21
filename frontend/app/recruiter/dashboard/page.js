@@ -30,13 +30,21 @@ import { PRICING_CONFIG } from "@/lib/config/pricing";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { isRealMode } from "@/lib/api/config";
 
+import { recruiterService } from "@/lib/api/services/recruiterService";
+
 export default function OrganizationDashboardPage() {
-  const [credits, setCredits] = React.useState({ balance: 100, lowBalanceWarning: false });
+  const [credits, setCredits] = React.useState({ balance: 0, lowBalanceWarning: false });
   const [buyPlan, setBuyPlan] = React.useState(null);
+  const [realProjects, setRealProjects] = React.useState([]);
+  const [realOpportunities, setRealOpportunities] = React.useState([]);
+  const [realApplications, setRealApplications] = React.useState([]);
+  const [realAuditions, setRealAuditions] = React.useState([]);
+  const [orgProfile, setOrgProfile] = React.useState(null);
+  const [loadingReal, setLoadingReal] = React.useState(() => isRealMode("recruiter") || isRealMode("projects"));
 
   const loadCredits = React.useCallback(async () => {
     try {
-      const res = await paymentService.getCredits("org-1");
+      const res = await paymentService.getCredits();
       if (res) {
         setCredits(res);
       }
@@ -48,6 +56,45 @@ export default function OrganizationDashboardPage() {
   React.useEffect(() => {
     loadCredits();
   }, [loadCredits]);
+
+  React.useEffect(() => {
+    if (!isRealMode("recruiter") && !isRealMode("projects")) return;
+    let mounted = true;
+    async function loadData() {
+      try {
+        const [projRes, oppRes, appRes, audRes, profRes] = await Promise.allSettled([
+          recruiterService.getMyProjects(),
+          recruiterService.getMyOpportunities(),
+          recruiterService.getMyApplications(),
+          recruiterService.getOrganizationAuditions(),
+          recruiterService.getOrganizationProfile(),
+        ]);
+        if (mounted) {
+          if (projRes.status === "fulfilled" && Array.isArray(projRes.value?.data)) {
+            setRealProjects(projRes.value.data);
+          }
+          if (oppRes.status === "fulfilled" && Array.isArray(oppRes.value?.data)) {
+            setRealOpportunities(oppRes.value.data);
+          }
+          if (appRes.status === "fulfilled" && Array.isArray(appRes.value?.data)) {
+            setRealApplications(appRes.value.data);
+          }
+          if (audRes.status === "fulfilled" && Array.isArray(audRes.value?.data)) {
+            setRealAuditions(audRes.value.data);
+          }
+          if (profRes.status === "fulfilled" && profRes.value?.data) {
+            setOrgProfile(profRes.value.data);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load recruiter data:", err?.message);
+      } finally {
+        if (mounted) setLoadingReal(false);
+      }
+    }
+    loadData();
+    return () => { mounted = false; };
+  }, []);
 
   const {
     projects,
@@ -64,32 +111,29 @@ export default function OrganizationDashboardPage() {
     }
   }, [refreshProjects]);
 
-  // Active organization scope (default org-1: Zee Films)
+  // Active organization scope
   const isReal = isRealMode("projects") || isRealMode("recruiter");
-  const orgId = "org-1";
-  const orgProjects = projects.filter((p) => {
-    if (!p) return false;
-    if (isReal) return p.orgId !== "org-2";
-    return p.orgId === orgId || !p.orgId;
-  });
-  const orgOpportunities = opportunities.filter((o) => {
-    if (!o) return false;
-    if (isReal) return o.orgId !== "org-2";
-    return o.orgId === orgId || !o.orgId;
-  });
+  const orgProjects = isReal ? realProjects : projects.filter((p) => p && (p.orgId === "org-1" || !p.orgId));
+  const orgOpportunities = isReal ? realOpportunities : opportunities.filter((o) => o && (o.orgId === "org-1" || !o.orgId));
   const orgOppIds = orgOpportunities.map((o) => o.id);
 
-  const orgApplications = applications.filter((a) => orgOppIds.includes(a.opportunityId));
-  const orgAuditions = auditions.filter((aud) => aud.orgId === orgId || orgOppIds.includes(aud.opportunityId));
+  const orgApplications = isReal ? realApplications : applications.filter((a) => orgOppIds.includes(a.opportunityId));
+  const orgAuditions = isReal ? realAuditions : auditions.filter((aud) => aud.orgId === "org-1" || orgOppIds.includes(aud.opportunityId));
 
   // Derived counts for stat cards
-  const activeProjectsCount = orgProjects.filter((p) => p.status === "Active").length;
-  const liveOpportunitiesCount = orgOpportunities.filter((o) => o.status === "Published").length;
+  const activeProjectsCount = orgProjects.filter((p) => (p.status || "").toLowerCase() === "active").length;
+  const liveOpportunitiesCount = orgOpportunities.filter((o) => (o.status || "").toLowerCase() === "published").length;
   const applicantsToReviewCount = orgApplications.filter(
-    (a) => a.status === "Applied" || a.status === "Under Review"
+    (a) => {
+      const s = (a.status || "").toLowerCase();
+      return s === "applied" || s === "under review" || s === "under_review";
+    }
   ).length;
   const pendingAuditionsCount = orgAuditions.filter(
-    (aud) => aud.status === "Requested" || aud.status === "Relayed to Talent" || aud.status === "Self-tape Received"
+    (aud) => {
+      const s = (aud.status || "").toLowerCase();
+      return s === "requested" || s === "relayed to talent" || s === "self-tape received";
+    }
   ).length;
 
   // Action needed list
@@ -118,7 +162,7 @@ export default function OrganizationDashboardPage() {
       <PageHeader
         title="Organization Overview"
         subtitle="Manage casting projects, post verified opportunities, screen talent submissions, and track audition self-tapes."
-        badge="Zee Films • Verified Production House"
+        badge={orgProfile?.companyName ? `${orgProfile.companyName} • Verified Production House` : "Verified Production House"}
         action={
           <div className="recruiter-dash-header-actions" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <button
@@ -926,8 +970,8 @@ export default function OrganizationDashboardPage() {
         >
           <PaymentCard
             type={buyPlan}
-            userName="Zee Films Casting Desk"
-            userEmail="casting@zeefilms.com"
+            userName={orgProfile?.name || orgProfile?.companyName || "Organization Casting Desk"}
+            userEmail={orgProfile?.email || orgProfile?.contactEmail || "casting@vismaya.com"}
             onSuccess={() => {
               loadCredits();
               setBuyPlan(null);

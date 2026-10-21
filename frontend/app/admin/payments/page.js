@@ -349,7 +349,7 @@ export default function AdminPaymentsPage() {
         <div className="admin-payment-detail-item">
           <span className="admin-payment-detail-label">Gateway</span>
           <span className="admin-payment-detail-val">
-            {row.paymentGateway || "Mock Gateway"}
+            {row.paymentGateway || "Razorpay"}
           </span>
         </div>
       </div>

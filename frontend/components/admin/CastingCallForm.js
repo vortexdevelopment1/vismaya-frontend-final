@@ -361,7 +361,7 @@ export default function CastingCallForm({
                   type="text"
                   value={formData.recruiterName}
                   onChange={(e) => handleChange("recruiterName", e.target.value)}
-                  placeholder="e.g. Zee Films"
+                  placeholder="e.g. Acme Productions"
                   style={{
                     width: "100%",
                     padding: "10px 14px",

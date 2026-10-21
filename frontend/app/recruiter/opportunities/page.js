@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Briefcase,
@@ -15,6 +15,8 @@ import {
 import EmptyState from "@/components/shared/EmptyState";
 import Modal from "@/components/shared/Modal";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { isRealMode } from "@/lib/api/config";
+import { recruiterService } from "@/lib/api/services/recruiterService";
 
 const STATUS_FILTERS = [
   "All",
@@ -31,16 +33,57 @@ const STATUS_FILTERS = [
 const TABLE_GRID_COLUMNS = "minmax(200px, 1fr) 140px 155px 105px 145px 250px";
 
 export default function MyOpportunitiesPage() {
+  const workflow = useWorkflow();
+  const [realOpportunities, setRealOpportunities] = useState([]);
+  const [realProjects, setRealProjects] = useState([]);
+  const [realApplications, setRealApplications] = useState([]);
+  const [loading, setLoading] = useState(() => isRealMode("recruiter") || isRealMode("opportunities"));
+
+  const loadData = async () => {
+    if (!isRealMode("recruiter") && !isRealMode("opportunities")) return;
+    try {
+      const oppRes = await recruiterService.getMyOpportunities().catch((e) => {
+        console.warn("getMyOpportunities error:", e);
+        return null;
+      });
+      if (oppRes && Array.isArray(oppRes.data)) {
+        setRealOpportunities(oppRes.data);
+      }
+
+      if (typeof recruiterService.getMyProjects === "function") {
+        const projRes = await recruiterService.getMyProjects().catch(() => null);
+        if (projRes && Array.isArray(projRes.data)) {
+          setRealProjects(projRes.data);
+        }
+      }
+
+      if (typeof recruiterService.getMyApplications === "function") {
+        const appRes = await recruiterService.getMyApplications().catch(() => null);
+        if (appRes && Array.isArray(appRes.data)) {
+          setRealApplications(appRes.data);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to load recruiter opportunities:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const isReal = isRealMode("recruiter") || isRealMode("opportunities");
+  const opportunities = isReal ? realOpportunities : (workflow.opportunities || []);
+  const projects = isReal ? realProjects : (workflow.projects || []);
+  const applications = isReal ? realApplications : (workflow.applications || []);
+  const orgOpportunities = isReal ? opportunities : opportunities.filter((o) => o.orgId === "org-1" || !o.orgId);
+
   const {
-    opportunities,
-    projects,
-    applications,
     requestCancellation,
     markOpportunityCompleted,
-  } = useWorkflow();
-
-  const orgId = "org-1";
-  const orgOpportunities = opportunities.filter((o) => o.orgId === orgId);
+  } = workflow;
 
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,13 +100,13 @@ export default function MyOpportunitiesPage() {
     const matchesStatus =
       statusFilter === "All"
         ? true
-        : opp.status.toLowerCase() === statusFilter.toLowerCase();
-    const proj = projects.find((p) => p.id === opp.projectId);
+        : (opp?.status || "").toLowerCase() === statusFilter.toLowerCase();
+    const proj = projects.find((p) => (p.id || p._id) === opp.projectId);
     const matchesSearch =
       !searchTerm ||
-      opp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      opp.opportunityType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (proj && proj.title.toLowerCase().includes(searchTerm.toLowerCase()));
+      (opp?.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (opp?.opportunityType || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (proj && (proj.title || "").toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
 

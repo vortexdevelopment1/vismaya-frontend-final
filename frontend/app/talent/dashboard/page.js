@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   FileText,
@@ -31,6 +31,7 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { useAuth } from "@/context/AuthContext";
 import { isRealMode } from "@/lib/api/config";
+import { talentService } from "@/lib/api/services/talentService";
 
 export default function TalentDashboardPage() {
   const { user } = useAuth();
@@ -50,6 +51,28 @@ export default function TalentDashboardPage() {
     profileChecklist,
   } = useTalent();
 
+  const [realApplications, setRealApplications] = useState([]);
+  const [realAuditions, setRealAuditions] = useState([]);
+
+  useEffect(() => {
+    if (!isRealMode("talent") && !isRealMode("applications")) return;
+    let mounted = true;
+    Promise.allSettled([
+      talentService.getMyApplications(),
+      talentService.getMyAuditions(),
+    ]).then(([appsRes, audsRes]) => {
+      if (mounted) {
+        if (appsRes.status === "fulfilled" && Array.isArray(appsRes.value?.data)) {
+          setRealApplications(appsRes.value.data);
+        }
+        if (audsRes.status === "fulfilled" && Array.isArray(audsRes.value?.data)) {
+          setRealAuditions(audsRes.value.data);
+        }
+      }
+    }).catch((err) => console.warn(err));
+    return () => { mounted = false; };
+  }, []);
+
   const [isPaid, setIsPaid] = useState(() => {
     if (isRealMode("payments") && user?.isPaid) return true;
     return paymentService.isTalentPaid();
@@ -62,41 +85,34 @@ export default function TalentDashboardPage() {
   // Filter entities for current talent
   const myApplications = useMemo(() => {
     if (isRealMode("applications") || isRealMode("talent")) {
-      return Array.isArray(talentCtxApplications) && talentCtxApplications.length > 0
-        ? talentCtxApplications
-        : applications.filter((a) => {
-            const tId = a.talentId?._id || a.talentId?.id || a.talentId || a.userId;
-            return tId && (tId === currentTalentId || tId === user?.id || tId === user?._id || tId === profile?.id || tId === profile?._id || tId === profile?.vismayaId);
-          });
+      return realApplications;
     }
     return applications.filter((a) => a.talentId === currentTalentId);
-  }, [applications, talentCtxApplications, currentTalentId, user, profile]);
+  }, [applications, realApplications, currentTalentId]);
 
   const myAuditions = useMemo(() => {
     if (isRealMode("talent")) {
-      return auditions.filter((aud) => {
-        const tId = aud.talentId?._id || aud.talentId?.id || aud.talentId || aud.userId;
-        return tId && (tId === currentTalentId || tId === user?.id || tId === user?._id || tId === profile?.id || tId === profile?._id || tId === profile?.vismayaId);
-      });
+      return realAuditions;
     }
     return auditions.filter((aud) => aud.talentId === currentTalentId);
-  }, [auditions, currentTalentId, user, profile]);
+  }, [auditions, realAuditions, currentTalentId]);
 
   const talentNotifications = useMemo(() => {
     if (isRealMode("notifications") || isRealMode("talent")) {
-      return Array.isArray(talentCtxNotifications) && talentCtxNotifications.length > 0
-        ? talentCtxNotifications
-        : getNotificationsForRole("talent", currentTalentId);
+      return Array.isArray(talentCtxNotifications) ? talentCtxNotifications : [];
     }
     return getNotificationsForRole("talent", currentTalentId);
   }, [talentCtxNotifications, getNotificationsForRole, currentTalentId]);
 
   // Derived dashboard stats
   const totalAppsCount = myApplications.length;
-  const shortlistedCount = myApplications.filter((a) => a.status === "Shortlisted").length;
-  const selectedCount = myApplications.filter((a) => a.status === "Selected").length;
+  const shortlistedCount = myApplications.filter((a) => (a.status || "").toLowerCase() === "shortlisted").length;
+  const selectedCount = myApplications.filter((a) => (a.status || "").toLowerCase() === "selected").length;
   const pendingAuditionsCount = myAuditions.filter(
-    (aud) => aud.status === "Relayed to Talent"
+    (aud) => {
+      const s = (aud.status || "").toLowerCase();
+      return s === "relayed to talent" || s === "relayed" || s === "requested";
+    }
   ).length;
 
   const recentApplications = myApplications.slice(0, 4);

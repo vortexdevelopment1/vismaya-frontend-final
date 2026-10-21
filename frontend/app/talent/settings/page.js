@@ -218,7 +218,7 @@ export default function TalentSettingsPage() {
         addToast({
           type: "success",
           title: "Account Profile Saved",
-          message: "Your profile identification and base city/state have been updated (Mock).",
+          message: "Your profile identification and base city/state have been updated.",
         });
       }
     } catch (err) {

@@ -2321,7 +2321,7 @@ export function WorkflowProvider({ children }) {
     if (getAuthToken() && (isRealMode("projects") || isRealMode("recruiter"))) {
       try {
         const res = await recruiterService.getProjects();
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           dispatch({
             type: "SET_PROJECTS",
             payload: res.data,

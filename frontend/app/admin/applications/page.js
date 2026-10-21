@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   FileText,
@@ -24,15 +24,57 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
+import { isRealMode } from "@/lib/api/config";
+import { adminService } from "@/lib/api/services/adminService";
 
 export default function AdminApplicationsOverviewPage() {
-  const {
-    applications = [],
-    opportunities = [],
-    organizations = [],
-    auditions = [],
-    isHydrated,
-  } = useWorkflow();
+  const workflow = useWorkflow();
+  const [realApplications, setRealApplications] = useState([]);
+  const [realOpportunities, setRealOpportunities] = useState([]);
+  const [realOrganizations, setRealOrganizations] = useState([]);
+  const [realAuditions, setRealAuditions] = useState([]);
+  const [loading, setLoading] = useState(() => isRealMode("admin"));
+
+  useEffect(() => {
+    if (!isRealMode("admin")) return;
+    let mounted = true;
+    async function loadData() {
+      try {
+        const [appsRes, oppsRes, orgsRes, audsRes] = await Promise.allSettled([
+          adminService.getAllApplications(),
+          adminService.getAllOpportunities(),
+          adminService.getOrganizationDirectory(),
+          adminService.getPendingAuditions(),
+        ]);
+        if (mounted) {
+          if (appsRes.status === "fulfilled" && Array.isArray(appsRes.value?.data)) {
+            setRealApplications(appsRes.value.data);
+          }
+          if (oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data)) {
+            setRealOpportunities(oppsRes.value.data);
+          }
+          if (orgsRes.status === "fulfilled" && Array.isArray(orgsRes.value?.data)) {
+            setRealOrganizations(orgsRes.value.data);
+          }
+          if (audsRes.status === "fulfilled" && Array.isArray(audsRes.value?.data)) {
+            setRealAuditions(audsRes.value.data);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load real admin applications:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    loadData();
+    return () => { mounted = false; };
+  }, []);
+
+  const applications = isRealMode("admin") ? realApplications : (workflow.applications || []);
+  const opportunities = isRealMode("admin") ? realOpportunities : (workflow.opportunities || []);
+  const organizations = isRealMode("admin") ? realOrganizations : (workflow.organizations || []);
+  const auditions = isRealMode("admin") ? realAuditions : (workflow.auditions || []);
+  const isHydrated = isRealMode("admin") ? !loading : workflow.isHydrated;
 
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [oppFilter, setOppFilter] = useState("ALL");

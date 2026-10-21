@@ -107,7 +107,7 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
             role,
             status: "pending",
             isEmailVerified: false,
-            isPaid: Boolean(validation.sanitized?.isPaid)
+            isPaid: false
         });
 
         // Atomically initialize domain profile so data is not lost prior to approval
@@ -130,7 +130,7 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
                     bio: validation.sanitized.bio || "",
                     currentCity: validation.sanitized.city || "Mumbai",
                     profilePhoto: validation.sanitized.profilePhoto || "",
-                    isPaid: user.isPaid,
+                    isPaid: false,
                     status: "pending"
                 });
             } else if (role === "organization") {
@@ -151,16 +151,6 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
                     website: validation.sanitized.website,
                     description: validation.sanitized.description
                 });
-
-                try {
-                    await CreditLedger.create({
-                        organizationId: org._id,
-                        includedCredits: 100,
-                        balance: 100
-                    });
-                } catch (creditErr) {
-                    console.warn("[RegisterUser] Credit ledger init notice:", creditErr);
-                }
 
                 try {
                     await Verification.create({

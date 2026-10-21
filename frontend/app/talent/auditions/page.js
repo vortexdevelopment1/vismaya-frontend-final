@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Video,
@@ -29,20 +29,38 @@ import { useTalent } from "@/lib/talent/TalentContext";
 import { mediaService } from "@/lib/api/services/mediaService";
 import { useAuth } from "@/context/AuthContext";
 import { isRealMode } from "@/lib/api/config";
+import { talentService } from "@/lib/api/services/talentService";
 
 export default function TalentAuditionsPage() {
   const { user } = useAuth();
   const { profile, addToast } = useTalent();
-  const { auditions, getOpportunity, getProject, submitSelfTape, isHydrated } = useWorkflow();
+  const workflow = useWorkflow();
+  const { getOpportunity, getProject, submitSelfTape } = workflow;
+
+  const [realAuditions, setRealAuditions] = useState([]);
+  const [loadingReal, setLoadingReal] = useState(() => isRealMode("talent"));
+
+  const loadAuditions = async () => {
+    if (!isRealMode("talent")) return;
+    try {
+      const res = await talentService.getMyAuditions();
+      if (res && Array.isArray(res.data)) {
+        setRealAuditions(res.data);
+      }
+    } catch (err) {
+      console.warn("Could not load talent auditions:", err);
+    } finally {
+      setLoadingReal(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAuditions();
+  }, []);
 
   const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
-  const myAuditions = auditions.filter((a) => {
-    if (isRealMode("talent")) {
-      const tId = a.talentId?._id || a.talentId?.id || a.talentId || a.userId;
-      return tId && (tId === currentTalentId || tId === user?.id || tId === user?._id || tId === profile?.id || tId === profile?._id || tId === profile?.vismayaId);
-    }
-    return a.talentId === currentTalentId;
-  });
+  const myAuditions = isRealMode("talent") ? realAuditions : (workflow.auditions || []).filter((a) => a.talentId === currentTalentId);
+  const isHydrated = isRealMode("talent") ? !loadingReal : workflow.isHydrated;
 
   // Form states per audition card
   const [activeUploadId, setActiveUploadId] = useState(null);
@@ -110,11 +128,22 @@ export default function TalentAuditionsPage() {
 
     try {
         const uploaded = await mediaService.uploadFile(fileData.file, { folder: "vismaya/self-tapes" });
-        await submitSelfTape(audId, uploaded.url, note, {
-          thumbnailUrl: uploaded.thumbnailUrl,
-          durationSeconds: uploaded.duration,
-          fileSizeBytes: uploaded.bytes,
-        });
+        if (isRealMode("talent")) {
+          await talentService.submitSelfTape(audId, {
+            videoUrl: uploaded.url,
+            notes: note,
+            thumbnailUrl: uploaded.thumbnailUrl,
+            durationSeconds: uploaded.duration,
+            fileSizeBytes: uploaded.bytes,
+          });
+          await loadAuditions();
+        } else {
+          await submitSelfTape(audId, uploaded.url, note, {
+            thumbnailUrl: uploaded.thumbnailUrl,
+            durationSeconds: uploaded.duration,
+            fileSizeBytes: uploaded.bytes,
+          });
+        }
         addToast({
           type: "success",
           title: "Self-Tape Submitted!",

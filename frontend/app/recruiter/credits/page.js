@@ -23,8 +23,8 @@ import { PRICING_CONFIG } from "@/lib/config/pricing";
 
 export default function RecruiterCreditsPage() {
   const [credits, setCredits] = useState({
-    balance: 100,
-    includedCredits: 100,
+    balance: 0,
+    includedCredits: 0,
     purchasedCredits: 0,
     consumedCredits: 0,
     lowBalanceWarning: false,
@@ -36,7 +36,7 @@ export default function RecruiterCreditsPage() {
 
   const loadData = async () => {
     try {
-      const credRes = await paymentService.getCredits("org-1");
+      const credRes = await paymentService.getCredits();
       if (credRes) setCredits(credRes);
 
       const viewedRes = await paymentService.getViewedTalents();
@@ -63,7 +63,7 @@ export default function RecruiterCreditsPage() {
       <PageHeader
         title="Organization Credits"
         subtitle="Track profile-view credits, review previously unlocked comp-cards, and top up views for casting."
-        badge="Zee Films • Studio Ledger"
+        badge="Organization • Studio Ledger"
         action={
           <button
             type="button"
@@ -530,8 +530,8 @@ export default function RecruiterCreditsPage() {
         >
           <PaymentCard
             type={buyPlan}
-            userName="Zee Films Casting Desk"
-            userEmail="casting@zeefilms.com"
+            userName="Organization Casting Desk"
+            userEmail="casting@vismaya.com"
             onSuccess={handleBuySuccess}
             onCancel={() => setBuyPlan(null)}
             isModal={true}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   FolderKanban,
@@ -23,14 +23,57 @@ import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
 
+import { isRealMode } from "@/lib/api/config";
+import { adminService } from "@/lib/api/services/adminService";
+
 export default function AdminProjectsPage() {
-  const {
-    projects = [],
-    opportunities = [],
-    organizations = [],
-    applications = [],
-    isHydrated,
-  } = useWorkflow();
+  const workflow = useWorkflow();
+  const [realProjects, setRealProjects] = useState([]);
+  const [realOpportunities, setRealOpportunities] = useState([]);
+  const [realOrganizations, setRealOrganizations] = useState([]);
+  const [realApplications, setRealApplications] = useState([]);
+  const [loading, setLoading] = useState(() => isRealMode("admin"));
+
+  useEffect(() => {
+    if (!isRealMode("admin")) return;
+    let mounted = true;
+    async function loadData() {
+      try {
+        const [projsRes, oppsRes, orgsRes, appsRes] = await Promise.allSettled([
+          adminService.getAllProjects(),
+          adminService.getAllOpportunities(),
+          adminService.getOrganizationDirectory(),
+          adminService.getAllApplications(),
+        ]);
+        if (mounted) {
+          if (projsRes.status === "fulfilled" && Array.isArray(projsRes.value?.data)) {
+            setRealProjects(projsRes.value.data);
+          }
+          if (oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data)) {
+            setRealOpportunities(oppsRes.value.data);
+          }
+          if (orgsRes.status === "fulfilled" && Array.isArray(orgsRes.value?.data)) {
+            setRealOrganizations(orgsRes.value.data);
+          }
+          if (appsRes.status === "fulfilled" && Array.isArray(appsRes.value?.data)) {
+            setRealApplications(appsRes.value.data);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load real admin projects:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    loadData();
+    return () => { mounted = false; };
+  }, []);
+
+  const projects = isRealMode("admin") ? realProjects : (workflow.projects || []);
+  const opportunities = isRealMode("admin") ? realOpportunities : (workflow.opportunities || []);
+  const organizations = isRealMode("admin") ? realOrganizations : (workflow.organizations || []);
+  const applications = isRealMode("admin") ? realApplications : (workflow.applications || []);
+  const isHydrated = isRealMode("admin") ? !loading : workflow.isHydrated;
 
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [orgFilter, setOrgFilter] = useState("ALL");
@@ -293,7 +336,7 @@ export default function AdminProjectsPage() {
                           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                             <Building2 size={13} style={{ color: "#5A584F" }} />
                             <span style={{ fontWeight: 600, color: "#2B2D2A" }}>
-                              {org?.name || "Zee Films"}
+                              {org?.name || "Organization"}
                             </span>
                           </div>
                           <div style={{ fontSize: "12px", color: "#5A584F", marginTop: "2px" }}>
@@ -413,7 +456,7 @@ export default function AdminProjectsPage() {
                   <div className="admin-project-org-row">
                     <Building2 size={13} style={{ color: "#8A6B2E", flexShrink: 0 }} />
                     <span className="admin-project-org-name">
-                      {org?.name || "Zee Films"}
+                      {org?.name || "Organization"}
                     </span>
                     <span className="admin-project-org-type">
                       • {org?.type || "Production House"}
@@ -476,7 +519,7 @@ export default function AdminProjectsPage() {
               <div>
                 <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Organization</span>
                 <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
-                  {getOrgForProject(selectedProject.orgId)?.name || "Zee Films"}
+                  {getOrgForProject(selectedProject.orgId)?.name || "Organization"}
                 </strong>
               </div>
               <div>

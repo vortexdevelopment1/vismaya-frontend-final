@@ -12,6 +12,8 @@ import {
   mapBroadcast,
   mapTalentProfile,
   mapOrganization,
+  mapProject,
+  mapApplication,
 } from "../mappers/index.js";
 import {
   initialTalents,
@@ -84,6 +86,50 @@ export const adminService = {
       success: true,
       data: docs.map(mapUser),
     };
+  },
+
+  /**
+   * Fetch aggregate dashboard metrics
+   */
+  async getDashboardMetrics() {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        data: {
+          users: { verifiedTalent: 1284, activeOrganization: 14, pending: 3 },
+          opportunities: { published: 5, pendingReview: 2, cancellationRequests: 0 },
+          applications: { total: 42 },
+          auditions: { pendingRelay: 1, selfTapesToForward: 2 },
+        },
+      };
+    }
+
+    const res = await apiClient.get("/api/admin/dashboard");
+    return {
+      success: true,
+      data: res?.metrics || res?.data || res,
+    };
+  },
+
+  /**
+   * Verify the current admin session
+   */
+  async verifyAdminSession() {
+    if (!isRealMode("admin")) {
+      return { success: true, isAdmin: true };
+    }
+    try {
+      await apiClient.get("/api/admin/dashboard");
+      return {
+        success: true,
+        isAdmin: true,
+      };
+    } catch {
+      return {
+        success: false,
+        isAdmin: false,
+      };
+    }
   },
 
   /**
@@ -311,6 +357,69 @@ export const adminService = {
       return { success: true, message: "Profile change reviewed (Mock)" };
     }
     return apiClient.patch(`/api/admin/profile-changes/${profileId}/review`, payload);
+  },
+
+  /**
+   * Fetch all opportunities across platform (Admin view)
+   */
+  async getAllOpportunities(params = {}) {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        data: initialRequirementRequests.map(mapOpportunity),
+        total: initialRequirementRequests.length,
+      };
+    }
+
+    const res = await apiClient.get("/api/admin/opportunities", { params });
+    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.opportunities) ? res.opportunities : Array.isArray(res) ? res : [];
+    return {
+      success: true,
+      data: docs.map(mapOpportunity),
+      total: res?.total || docs.length,
+    };
+  },
+
+  /**
+   * Fetch all applications across platform (Admin view)
+   */
+  async getAllApplications(params = {}) {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        data: initialApplications.map(mapApplication),
+        total: initialApplications.length,
+      };
+    }
+
+    const res = await apiClient.get("/api/admin/applications", { params });
+    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.applications) ? res.applications : Array.isArray(res) ? res : [];
+    return {
+      success: true,
+      data: docs.map(mapApplication),
+      total: res?.total || docs.length,
+    };
+  },
+
+  /**
+   * Fetch all projects across platform (Admin view)
+   */
+  async getAllProjects(params = {}) {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        data: [],
+        total: 0,
+      };
+    }
+
+    const res = await apiClient.get("/api/admin/projects", { params });
+    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.projects) ? res.projects : Array.isArray(res) ? res : [];
+    return {
+      success: true,
+      data: docs.map(mapProject),
+      total: res?.total || docs.length,
+    };
   },
 
   /**
