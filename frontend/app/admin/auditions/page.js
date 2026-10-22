@@ -13,8 +13,10 @@ import {
   Send,
   Upload,
   X,
+  Loader2,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { useAdmin } from "@/lib/admin/AdminContext";
 import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
@@ -100,6 +102,9 @@ export default function AdminAuditionsManagementPage() {
     submitSelfTape,
     adminForwardSelfTape,
   } = workflow;
+
+  const adminCtx = useAdmin();
+  const addToast = adminCtx?.addToast;
 
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [orgFilter, setOrgFilter] = useState("ALL");
@@ -212,8 +217,22 @@ export default function AdminAuditionsManagementPage() {
         );
       }
       setRelayModalAud(null);
+      if (addToast) {
+        addToast({
+          type: "success",
+          title: "Audition Relayed",
+          message: "Audition instructions verified and relayed to talent successfully.",
+        });
+      }
     } catch (err) {
       console.error("Relay failed:", err);
+      if (addToast) {
+        addToast({
+          type: "danger",
+          title: "Relay Failed",
+          message: err?.response?.data?.message || err?.message || "Failed to relay audition request.",
+        });
+      }
     } finally {
       setIsActionLoading(false);
     }
@@ -236,8 +255,22 @@ export default function AdminAuditionsManagementPage() {
       }
       setRejectRequestModalAud(null);
       setRejectRequestReason("");
+      if (addToast) {
+        addToast({
+          type: "success",
+          title: "Audition Request Rejected",
+          message: "Audition request rejected and organization notified.",
+        });
+      }
     } catch (err) {
       console.error("Reject audition request failed:", err);
+      if (addToast) {
+        addToast({
+          type: "danger",
+          title: "Rejection Failed",
+          message: err?.response?.data?.message || err?.message || "Failed to reject audition request.",
+        });
+      }
     } finally {
       setIsActionLoading(false);
     }
@@ -735,7 +768,12 @@ export default function AdminAuditionsManagementPage() {
       {relayModalAud && (
         <Modal
           isOpen={!!relayModalAud}
-          onClose={() => setRelayModalAud(null)}
+          onClose={() => {
+            if (!isActionLoading) {
+              setRelayModalAud(null);
+            }
+          }}
+          preventClose={isActionLoading}
           title="Relay Audition Invitation to Talent"
         >
           <form onSubmit={handleRelay} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -750,27 +788,51 @@ export default function AdminAuditionsManagementPage() {
               </label>
               <textarea
                 rows={4}
+                disabled={isActionLoading}
                 value={relayNote}
                 onChange={(e) => setRelayNote(e.target.value)}
                 placeholder="Include dialogue scene lines, character nuances, lighting advice..."
                 className="aud-modal-textarea"
+                style={{
+                  opacity: isActionLoading ? 0.7 : 1,
+                  cursor: isActionLoading ? "not-allowed" : "text",
+                }}
               />
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
               <button
                 type="button"
-                onClick={() => setRelayModalAud(null)}
+                disabled={isActionLoading}
+                onClick={() => {
+                  if (!isActionLoading) {
+                    setRelayModalAud(null);
+                  }
+                }}
                 className="aud-modal-cancel-btn"
+                style={{
+                  opacity: isActionLoading ? 0.5 : 1,
+                  cursor: isActionLoading ? "not-allowed" : "pointer",
+                }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
+                disabled={isActionLoading}
                 className="aud-btn-primary"
-                style={{ padding: "0 20px", height: "42px" }}
+                style={{
+                  padding: "0 20px",
+                  height: "42px",
+                  opacity: isActionLoading ? 0.7 : 1,
+                  cursor: isActionLoading ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
               >
-                Relay to Artist
+                {isActionLoading && <Loader2 size={16} className="animate-spin" />}
+                <span>{isActionLoading ? "Relaying..." : "Relay to Artist"}</span>
               </button>
             </div>
           </form>
@@ -947,7 +1009,12 @@ export default function AdminAuditionsManagementPage() {
       {rejectRequestModalAud && (
         <Modal
           isOpen={!!rejectRequestModalAud}
-          onClose={() => setRejectRequestModalAud(null)}
+          onClose={() => {
+            if (!isActionLoading) {
+              setRejectRequestModalAud(null);
+            }
+          }}
+          preventClose={isActionLoading}
           title="Reject Audition Request (Reason Required)"
         >
           <form onSubmit={handleRejectRequest} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>

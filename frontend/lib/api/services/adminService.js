@@ -5,6 +5,7 @@
 
 import { apiClient } from "../client.js";
 import { isRealMode } from "../config.js";
+import { toCancellationTabStatus } from "../statusMapper.js";
 import {
   mapUser,
   mapOpportunity,
@@ -403,35 +404,62 @@ export const adminService = {
   },
 
   /**
-   * Fetch pending cancellation requests (Admin queue)
+   * Fetch opportunity cancellation requests (Admin queue)
    */
-  async getCancellationRequests() {
+  async getCancellationRequests(params = {}) {
     if (!isRealMode("admin")) {
       return { success: true, data: [] };
     }
-    const res = await apiClient.get("/api/admin/cancellation-requests");
-    const rawOpps = Array.isArray(res?.opportunities) ? res.opportunities : Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+    const res = await apiClient.get("/api/admin/cancellation-requests", { params });
+    const rawOpps = Array.isArray(res?.opportunities)
+      ? res.opportunities
+      : Array.isArray(res?.requests)
+      ? res.requests
+      : Array.isArray(res?.data)
+      ? res.data
+      : Array.isArray(res)
+      ? res
+      : [];
+
     const mapped = rawOpps.map((opp) => {
       const oppId = opp._id?.toString() || opp.id;
       const orgId = opp.organizationId?._id?.toString() || opp.organizationId?.toString() || opp.projectId?.organizationId?._id?.toString() || opp.projectId?.organizationId?.toString() || "";
-      let status = "Pending";
-      const rawStatus = (opp.status || "").toLowerCase();
-      if (rawStatus === "cancelled" || rawStatus === "canceled") status = "Approved";
-      else if (rawStatus === "published" || rawStatus === "rejected") status = "Declined";
-      else status = "Pending";
+
+      const reqRecord = opp.cancellationRequest || {};
+      const rawDecision = reqRecord.decision || (opp.status === "cancelled" ? "approved" : opp.status === "cancellation_requested" ? "pending" : "declined");
+      const status = toCancellationTabStatus(rawDecision || opp.status);
+      const decision = status === "Approved" ? "approved" : status === "Declined" ? "declined" : "pending";
+
+      const proj = opp.projectId && typeof opp.projectId === "object" ? opp.projectId : null;
+      const org = opp.organizationId && typeof opp.organizationId === "object"
+        ? opp.organizationId
+        : (proj?.organizationId && typeof proj.organizationId === "object" ? proj.organizationId : null);
+
+      const organizationName = opp.organizationName || org?.organizationName || org?.name || "Organization";
+      const projectName = opp.projectName || proj?.projectName || "Project";
+      const opportunityTitle = opp.opportunityTitle || opp.title || "Opportunity";
 
       return {
         id: oppId,
+        _id: oppId,
         opportunityId: oppId,
         orgId,
-        reason: opp.cancellationReason || "No reason provided",
-        status,
+        reason: reqRecord.reason || opp.cancellationReason || "No reason provided",
+        status, // "Pending" | "Approved" | "Declined"
+        decision, // "pending" | "approved" | "declined"
         rawStatus: opp.status,
-        requestedAt: opp.cancellationRequestedAt || opp.updatedAt || opp.createdAt,
-        title: opp.title,
+        requestedAt: reqRecord.requestedAt || opp.cancellationRequestedAt || opp.updatedAt || opp.createdAt,
+        decidedAt: reqRecord.decidedAt || opp.cancellationReviewedAt || null,
+        adminNote: reqRecord.adminNote || opp.adminNote || "",
+        declineReason: reqRecord.declineReason || reqRecord.adminNote || "",
+        title: opportunityTitle,
+        opportunityTitle,
+        projectName,
+        organizationName,
         opportunity: opp,
       };
     });
+
     return {
       success: true,
       data: mapped,
@@ -449,13 +477,19 @@ export const adminService = {
       return { success: true, message: "Cancellation reviewed (Mock)" };
     }
     const action = String(payload.action || payload.decision || "").toLowerCase().includes("reject") || String(payload.decision || "").toLowerCase().includes("decline") ? "reject" : "approve";
-    const reason = payload.reason || payload.adminNote || payload.rejectionReason || "";
+    const reason = payload.reason || payload.adminNote || payload.declineReason || payload.rejectionReason || "";
     const body = {
       action,
-      ...(reason ? { reason, rejectionReason: reason, adminNote: reason } : {}),
+      adminNote: reason,
+      reason,
+      declineReason: reason,
     };
     const res = await apiClient.patch(`/api/admin/opportunities/${opportunityId}/review-cancellation`, body);
-    return res?.data || res;
+    return {
+      success: true,
+      data: res?.data || res?.opportunity || res,
+      message: res?.message || `Cancellation request ${action}d successfully`,
+    };
   },
 
   /**
@@ -516,50 +550,6 @@ export const adminService = {
     return {
       success: true,
       data: docs.map(mapOpportunity),
-    };
-  },
-
-  /**
-   * Fetch opportunity cancellation requests
-   */
-  async getCancellationRequests(params = {}) {
-    if (!isRealMode("admin")) {
-      return {
-        success: true,
-        data: initialRequirementRequests.map(mapOpportunity),
-      };
-    }
-
-    const res = await apiClient.get("/api/admin/opportunities/cancellations", { params });
-    const docs = Array.isArray(res?.data)
-      ? res.data
-      : Array.isArray(res?.cancellations)
-      ? res.cancellations
-      : Array.isArray(res?.opportunities)
-      ? res.opportunities
-      : Array.isArray(res)
-      ? res
-      : [];
-    return {
-      success: true,
-      data: docs.map(mapOpportunity),
-    };
-  },
-
-  /**
-   * Review opportunity cancellation request (Spec Section 31 & 44)
-   * @param {string} opportunityId
-   * @param {Object} payload { action: "approve" | "reject", reason?: string, adminNote?: string }
-   */
-  async reviewOpportunityCancellation(opportunityId, payload = {}) {
-    if (!isRealMode("admin")) {
-      return { success: true, message: `Cancellation ${payload.action || "reviewed"} (Mock)` };
-    }
-    const res = await apiClient.patch(`/api/admin/opportunities/${opportunityId}/review-cancellation`, payload);
-    return {
-      success: true,
-      data: res?.data || res?.opportunity || res,
-      message: res?.message || `Cancellation request ${payload.action || "processed"} successfully`,
     };
   },
 

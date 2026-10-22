@@ -1674,18 +1674,75 @@ export const requestOpportunityCorrections = async (req: Request, res: Response)
 
 export const getCancellationRequests = async (req: Request, res: Response): Promise<any> => {
     try {
-        const opportunities = await Opportunity.find({ status: "cancellation_requested" })
+        const opportunities = await Opportunity.find({
+            $or: [
+                { "cancellationRequest.decision": { $in: ["pending", "approved", "declined"] } },
+                { status: "cancellation_requested" },
+                { status: "cancelled", cancellationReason: { $exists: true, $ne: "" } }
+            ]
+        })
             .populate({
                 path: "projectId",
                 select: "projectName organizationId projectType",
                 populate: {
                     path: "organizationId",
-                    select: "organizationName contactPerson contactEmail contactNumber"
+                    select: "organizationName contactPerson contactEmail contactNumber name"
                 }
             })
-            .sort({ cancellationRequestedAt: -1 });
+            .sort({ "cancellationRequest.requestedAt": -1, cancellationRequestedAt: -1, updatedAt: -1 });
 
-        res.status(200).json({ success: true, count: opportunities.length, opportunities });
+        const formattedRequests = opportunities.map((opp: any) => {
+            const oppObj = opp.toObject ? opp.toObject() : opp;
+            let reqRecord = oppObj.cancellationRequest;
+
+            if (!reqRecord) {
+                let decision: "pending" | "approved" | "declined" = "pending";
+                if (oppObj.status === "cancelled") {
+                    decision = "approved";
+                } else if (oppObj.status === "cancellation_requested") {
+                    decision = "pending";
+                } else {
+                    decision = "declined";
+                }
+
+                reqRecord = {
+                    reason: oppObj.cancellationReason || "No reason provided",
+                    requestedAt: oppObj.cancellationRequestedAt || oppObj.updatedAt || oppObj.createdAt,
+                    decision,
+                    decidedAt: oppObj.cancellationReviewedAt || null,
+                    decidedBy: oppObj.cancellationReviewedBy || null,
+                    adminNote: oppObj.correctionNotes || "",
+                    declineReason: decision === "declined" ? (oppObj.rejectionReason || "Request declined") : ""
+                };
+            }
+
+            const proj = oppObj.projectId || {};
+            const org = oppObj.organizationId || proj.organizationId || {};
+            const orgName = org.organizationName || org.name || "Unknown Organization";
+            const projectName = proj.projectName || oppObj.projectName || "Unknown Project";
+
+            return {
+                ...oppObj,
+                cancellationRequest: reqRecord,
+                decision: reqRecord.decision,
+                reason: reqRecord.reason,
+                requestedAt: reqRecord.requestedAt,
+                decidedAt: reqRecord.decidedAt,
+                adminNote: reqRecord.adminNote,
+                declineReason: reqRecord.declineReason,
+                opportunityTitle: oppObj.title,
+                projectName,
+                organizationName: orgName
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            count: formattedRequests.length,
+            opportunities: formattedRequests,
+            requests: formattedRequests,
+            data: formattedRequests
+        });
     } catch (error: any) {
         console.error("Get cancellation requests error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while fetching cancellation requests" });
@@ -1695,19 +1752,36 @@ export const getCancellationRequests = async (req: Request, res: Response): Prom
 export const reviewOpportunityCancellation = async (req: Request, res: Response): Promise<any> => {
     try {
         const { opportunityId } = req.params;
-        const { action } = req.body; // "approve" or "reject"
+        const { action, reason, adminNote, declineReason } = req.body; // "approve" or "reject"
+        const normalizedAction = (action || "").toLowerCase() === "approve" ? "approve" : "reject";
+        const note = adminNote || reason || "";
+        const declineNote = declineReason || adminNote || reason || "Cancellation request was not approved";
 
         const opportunity = await Opportunity.findById(opportunityId);
         if (!opportunity) {
             return res.status(404).json({ success: false, message: "Opportunity not found" });
         }
 
-        const alreadyProcessed = (action === "approve" && opportunity.status === "cancelled") ||
-            (action === "reject" && opportunity.status !== "cancellation_requested");
+        const alreadyProcessed = (normalizedAction === "approve" && opportunity.status === "cancelled" && opportunity.cancellationRequest?.decision === "approved") ||
+            (normalizedAction === "reject" && opportunity.cancellationRequest?.decision === "declined");
         let affectedCount = 0;
 
-        if (action === "approve") {
+        if (normalizedAction === "approve") {
             opportunity.status = "cancelled";
+            opportunity.cancellationReviewedAt = new Date();
+            opportunity.cancellationReviewedBy = req.user?.userId as any;
+
+            if (!opportunity.cancellationRequest) {
+                opportunity.cancellationRequest = {
+                    reason: opportunity.cancellationReason || "Cancellation requested",
+                    requestedAt: opportunity.cancellationRequestedAt || opportunity.updatedAt || new Date(),
+                    decision: "approved"
+                };
+            }
+            opportunity.cancellationRequest.decision = "approved";
+            opportunity.cancellationRequest.decidedBy = req.user?.userId as any;
+            opportunity.cancellationRequest.decidedAt = new Date();
+            opportunity.cancellationRequest.adminNote = note;
 
             if (!alreadyProcessed) {
                 // Find all active applications (applied, under_review, shortlisted, selected)
@@ -1770,7 +1844,7 @@ export const reviewOpportunityCancellation = async (req: Request, res: Response)
                             recipientId: org.userId,
                             type: "opportunity_cancelled",
                             title: "Opportunity Cancellation Approved",
-                            message: `Your cancellation request for opportunity "${opportunity.title}" has been approved.`,
+                            message: `Your cancellation request for opportunity "${opportunity.title}" has been approved.${note ? ` Note: ${note}` : ""}`,
                             referenceId: opportunity._id,
                             referenceType: "Opportunity",
                             sendEmailAlert: true
@@ -1779,10 +1853,25 @@ export const reviewOpportunityCancellation = async (req: Request, res: Response)
                 }
             }
         } else {
-            if (!alreadyProcessed) {
-                const isExpired = (opportunity as any).applicationDeadline && new Date((opportunity as any).applicationDeadline) < new Date();
-                opportunity.status = (isExpired ? "closed" : (opportunity.statusBeforeCancellationRequest || "published")) as any;
+            const isExpired = (opportunity as any).applicationDeadline && new Date((opportunity as any).applicationDeadline) < new Date();
+            opportunity.status = (isExpired ? "closed" : (opportunity.statusBeforeCancellationRequest || "published")) as any;
+            opportunity.cancellationReviewedAt = new Date();
+            opportunity.cancellationReviewedBy = req.user?.userId as any;
 
+            if (!opportunity.cancellationRequest) {
+                opportunity.cancellationRequest = {
+                    reason: opportunity.cancellationReason || "Cancellation requested",
+                    requestedAt: opportunity.cancellationRequestedAt || opportunity.updatedAt || new Date(),
+                    decision: "declined"
+                };
+            }
+            opportunity.cancellationRequest.decision = "declined";
+            opportunity.cancellationRequest.decidedBy = req.user?.userId as any;
+            opportunity.cancellationRequest.decidedAt = new Date();
+            opportunity.cancellationRequest.declineReason = declineNote;
+            opportunity.cancellationRequest.adminNote = declineNote;
+
+            if (!alreadyProcessed) {
                 // Resolve org
                 let org = (opportunity as any).organizationId ? await Organization.findById((opportunity as any).organizationId) : null;
                 if (!org && opportunity.projectId) {
@@ -1792,13 +1881,13 @@ export const reviewOpportunityCancellation = async (req: Request, res: Response)
                     }
                 }
 
-                // Notify organization of rejection
+                // Notify organization of rejection with decline reason
                 if (org && org.userId) {
                     await notifyUser({
                         recipientId: org.userId,
                         type: "opportunity_cancellation_reviewed",
                         title: "Opportunity Cancellation Request Rejected",
-                        message: `Your cancellation request for opportunity "${opportunity.title}" was not approved by administration. The opportunity remains active.`,
+                        message: `Your cancellation request for opportunity "${opportunity.title}" was not approved by administration. Reason: ${declineNote}. The opportunity remains active.`,
                         referenceId: opportunity._id,
                         referenceType: "Opportunity",
                         sendEmailAlert: true
@@ -1808,22 +1897,20 @@ export const reviewOpportunityCancellation = async (req: Request, res: Response)
         }
 
         if (!alreadyProcessed) {
-            opportunity.cancellationReviewedAt = new Date();
-            opportunity.cancellationReviewedBy = req.user?.userId as any;
             await opportunity.save();
 
             await logAdminAction({
                 adminId: (req.user?.userId as any),
-                action: `CANCELLATION_${action.toUpperCase()}`,
+                action: `CANCELLATION_${normalizedAction.toUpperCase()}`,
                 targetType: "Opportunity",
                 targetId: opportunity._id,
-                details: `Cancellation request ${action}d. Applications affected: ${affectedCount}`
+                details: `Cancellation request ${normalizedAction}d. Reason: ${note || declineNote}. Applications affected: ${affectedCount}`
             });
         }
 
         res.status(200).json({
             success: true,
-            message: `Cancellation request ${action}d successfully`,
+            message: `Cancellation request ${normalizedAction}d successfully`,
             opportunity,
             applicationsAffected: affectedCount
         });
@@ -3219,7 +3306,12 @@ export const getDashboardMetrics = async (req: Request, res: Response): Promise<
             Opportunity.countDocuments(),
             Opportunity.countDocuments({ status: "published" } as any),
             Opportunity.countDocuments({ status: { $in: ["pending", "under_vismaya_review"] } } as any),
-            Opportunity.countDocuments({ status: "cancellation_requested" }),
+            Opportunity.countDocuments({
+                $or: [
+                    { "cancellationRequest.decision": "pending" },
+                    { status: "cancellation_requested" }
+                ]
+            } as any),
             Application.countDocuments(),
             Audition.countDocuments(),
             Audition.countDocuments({ status: "requested" }),

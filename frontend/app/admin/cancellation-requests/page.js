@@ -11,13 +11,17 @@ import {
   CheckCircle2,
   XCircle,
   X,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { useAdmin } from "@/lib/admin/AdminContext";
 import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
 import { isRealMode } from "@/lib/api/config";
 import { adminService } from "@/lib/api/services/adminService";
+import { toCancellationTabStatus } from "@/lib/api/statusMapper";
 
 export default function AdminCancellationRequestsPage() {
   const workflow = useWorkflow();
@@ -69,6 +73,10 @@ export default function AdminCancellationRequestsPage() {
     adminResolveCancellation,
   } = workflow;
 
+  const adminCtx = useAdmin();
+  const addToast = adminCtx?.addToast;
+  const refreshCancellations = adminCtx?.refreshCancellations;
+
   const [statusFilter, setStatusFilter] = useState("Pending"); // Pending | Approved | Declined | ALL
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -79,13 +87,40 @@ export default function AdminCancellationRequestsPage() {
   const [declineModalReq, setDeclineModalReq] = useState(null);
   const [declineReason, setDeclineReason] = useState("");
 
-  // Status counts
+  // Action loading, error, and feedback banner state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalError, setModalError] = useState(null);
+  const [banner, setBanner] = useState(null); // { message: string, type: "success" | "error" }
+
+  const showBanner = (message, type = "success") => {
+    setBanner({ message, type });
+    setTimeout(() => {
+      setBanner(null);
+    }, 4000);
+  };
+
+  // Status counts using tolerant mapper
+  const getReqTabStatus = (r) => {
+    return toCancellationTabStatus(r?.status || r?.rawStatus, r?.decision);
+  };
+
   const statusCounts = useMemo(() => {
+    let pending = 0;
+    let approved = 0;
+    let declined = 0;
+
+    for (const r of cancellationRequests) {
+      const s = getReqTabStatus(r);
+      if (s === "Approved") approved++;
+      else if (s === "Declined") declined++;
+      else pending++;
+    }
+
     return {
       ALL: cancellationRequests.length,
-      Pending: cancellationRequests.filter((r) => r.status === "Pending").length,
-      Approved: cancellationRequests.filter((r) => r.status === "Approved").length,
-      Declined: cancellationRequests.filter((r) => r.status === "Declined").length,
+      Pending: pending,
+      Approved: approved,
+      Declined: declined,
     };
   }, [cancellationRequests]);
 
@@ -101,21 +136,25 @@ export default function AdminCancellationRequestsPage() {
   const filteredRequests = useMemo(() => {
     return cancellationRequests.filter((req) => {
       // Status filter
-      if (statusFilter !== "ALL" && req.status !== statusFilter) {
-        return false;
+      if (statusFilter !== "ALL") {
+        const s = getReqTabStatus(req);
+        if (s !== statusFilter) {
+          return false;
+        }
       }
 
       // Search query filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const opp = opportunities.find((o) => o.id === req.opportunityId);
-        const org = organizations.find((o) => o.id === req.orgId);
+        const opp = opportunities.find((o) => (o.id || o._id) === req.opportunityId) || req.opportunity;
+        const org = organizations.find((o) => (o.id || o._id) === req.orgId);
 
         const match =
-          (opp?.title || "").toLowerCase().includes(q) ||
+          (opp?.title || req.opportunityTitle || req.title || "").toLowerCase().includes(q) ||
           (opp?.opportunityType || "").toLowerCase().includes(q) ||
-          (org?.name || "").toLowerCase().includes(q) ||
-          (req.reason || "").toLowerCase().includes(q);
+          (org?.name || req.organizationName || "").toLowerCase().includes(q) ||
+          (req.reason || "").toLowerCase().includes(q) ||
+          (req.declineReason || req.adminNote || "").toLowerCase().includes(q);
 
         if (!match) return false;
       }
@@ -162,8 +201,11 @@ export default function AdminCancellationRequestsPage() {
   // Handlers
   const handleConfirmApprove = async (e) => {
     e.preventDefault();
-    if (!approveModalReq) return;
-    const note = approveNote || "Cancellation request approved by Vismaya compliance desk.";
+    if (isSubmitting || !approveModalReq) return;
+    setIsSubmitting(true);
+    setModalError(null);
+
+    const note = approveNote.trim() || "Cancellation request approved by Vismaya compliance desk.";
     try {
       if (isRealMode("admin")) {
         await adminService.reviewOpportunityCancellation(approveModalReq.opportunityId || approveModalReq.id, {
@@ -172,23 +214,41 @@ export default function AdminCancellationRequestsPage() {
           reason: note,
         });
         await loadData();
+        if (refreshCancellations) {
+          await refreshCancellations();
+        }
       } else {
         adminResolveCancellation(approveModalReq.id, "Approved", note);
       }
-    } catch (err) {
-      console.error("Failed to approve cancellation:", err);
-      alert(err?.response?.data?.message || err?.message || "Failed to approve cancellation request");
-    } finally {
+
       setApproveModalReq(null);
       setApproveNote("");
+      const successMsg = "Cancellation approved. The opportunity is now cancelled and the organization and applicants have been notified.";
+      showBanner(successMsg, "success");
+      if (addToast) {
+        addToast({
+          type: "success",
+          title: "Cancellation Approved",
+          message: successMsg,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to approve cancellation:", err);
+      const errMsg = err?.response?.data?.message || err?.message || "Something went wrong, please try again";
+      setModalError(errMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleConfirmDecline = async (e) => {
     e.preventDefault();
-    if (!declineModalReq || !declineReason.trim()) {
+    if (isSubmitting || !declineModalReq || !declineReason.trim()) {
       return;
     }
+    setIsSubmitting(true);
+    setModalError(null);
+
     const reason = declineReason.trim();
     try {
       if (isRealMode("admin")) {
@@ -198,24 +258,40 @@ export default function AdminCancellationRequestsPage() {
           reason,
         });
         await loadData();
+        if (refreshCancellations) {
+          await refreshCancellations();
+        }
       } else {
         adminResolveCancellation(declineModalReq.id, "Declined", reason);
       }
-    } catch (err) {
-      console.error("Failed to decline cancellation:", err);
-      alert(err?.response?.data?.message || err?.message || "Failed to decline cancellation request");
-    } finally {
+
       setDeclineModalReq(null);
       setDeclineReason("");
+      const successMsg = "Cancellation request declined. The organization has been notified.";
+      showBanner(successMsg, "success");
+      if (addToast) {
+        addToast({
+          type: "success",
+          title: "Cancellation Declined",
+          message: successMsg,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to decline cancellation:", err);
+      const errMsg = err?.response?.data?.message || err?.message || "Something went wrong, please try again";
+      setModalError(errMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   // Status pill using semantic system
-  const getStatusPill = (status) => {
-    if (status === "Approved") {
+  const getStatusPill = (status, req) => {
+    const tabStatus = req ? getReqTabStatus(req) : toCancellationTabStatus(status);
+    if (tabStatus === "Approved") {
       return <StatusBadge status="Approved" size="xs" />;
     }
-    if (status === "Declined") {
+    if (tabStatus === "Declined") {
       return <StatusBadge status="Declined" size="xs" />;
     }
     return <StatusBadge status="Pending" label="Pending Review" size="xs" />;
@@ -242,6 +318,47 @@ export default function AdminCancellationRequestsPage() {
           { label: "Cancellation Requests" },
         ]}
       />
+
+      {/* Inline Feedback Banner (Auto-dismisses after 4s) */}
+      {banner && (
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "12px 18px",
+            borderRadius: "8px",
+            backgroundColor: banner.type === "error" ? "#FEF2F2" : "#F0FDF4",
+            border: banner.type === "error" ? "1px solid #FECACA" : "1px solid #BBF7D0",
+            color: banner.type === "error" ? "#991B1B" : "#166534",
+            fontSize: "14px",
+            fontWeight: "500",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {banner.type === "error" ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
+            <span>{banner.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setBanner(null)}
+            aria-label="Dismiss banner"
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "inherit",
+              display: "flex",
+              alignItems: "center",
+              padding: "4px",
+            }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Filter Tabs Row */}
       <div className="cancel-tabs-row" role="tablist" aria-label="Cancellation request filters">
@@ -374,6 +491,11 @@ export default function AdminCancellationRequestsPage() {
                           <p title={req.reason} className="cancel-reason-text">
                             {req.reason}
                           </p>
+                          {(req.declineReason || req.adminNote) && getReqTabStatus(req) === "Declined" && (
+                            <p style={{ margin: "4px 0 0 0", fontSize: "0.75rem", color: "#C92A2A", fontWeight: 500 }}>
+                              Decline Reason: {req.declineReason || req.adminNote}
+                            </p>
+                          )}
                         </td>
 
                         {/* 4. Active Applicants Column */}
@@ -394,18 +516,19 @@ export default function AdminCancellationRequestsPage() {
 
                         {/* 6. Decision Status Column */}
                         <td style={{ padding: "16px 20px" }}>
-                          {getStatusPill(req.status)}
+                          {getStatusPill(req.status, req)}
                         </td>
 
                         {/* 7. Moderation Action Column */}
                         <td style={{ padding: "16px 20px", textAlign: "right" }}>
-                          {isPending ? (
+                          {getReqTabStatus(req) === "Pending" ? (
                             <div className="cancel-actions-cluster">
                               <button
                                 type="button"
                                 onClick={() => {
                                   setApproveModalReq(req);
                                   setApproveNote("");
+                                  setModalError(null);
                                 }}
                                 className="cancel-btn-approve"
                               >
@@ -418,6 +541,7 @@ export default function AdminCancellationRequestsPage() {
                                 onClick={() => {
                                   setDeclineModalReq(req);
                                   setDeclineReason("");
+                                  setModalError(null);
                                 }}
                                 className="cancel-btn-decline"
                               >
@@ -426,9 +550,16 @@ export default function AdminCancellationRequestsPage() {
                               </button>
                             </div>
                           ) : (
-                            <span className="cancel-resolved-date">
-                              Resolved {formatRequestedDate(req.resolvedAt).date}
-                            </span>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+                              <span className="cancel-resolved-date">
+                                Resolved {formatRequestedDate(req.decidedAt || req.resolvedAt || req.cancellationReviewedAt).date}
+                              </span>
+                              {(req.declineReason || req.adminNote) && (
+                                <span style={{ fontSize: "0.75rem", color: "#8A6B2E", maxWidth: "180px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={req.declineReason || req.adminNote}>
+                                  Note: {req.declineReason || req.adminNote}
+                                </span>
+                              )}
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -445,7 +576,7 @@ export default function AdminCancellationRequestsPage() {
               const opp = getOpportunityForReq(req.opportunityId) || req.opportunity;
               const org = getOrgForReq(req.orgId, opp);
               const apps = getApplicantsForOpp(req.opportunityId);
-              const isPending = req.status === "Pending";
+              const isPending = getReqTabStatus(req) === "Pending";
               const { date, time } = formatRequestedDate(req.requestedAt);
 
               return (
@@ -454,16 +585,16 @@ export default function AdminCancellationRequestsPage() {
                   <div className="cancel-mobile-top">
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <strong className="cancel-opp-title" style={{ fontSize: "15px" }}>
-                        {opp?.title || "Opportunity"}
+                        {opp?.title || req.opportunityTitle || req.title || "Opportunity"}
                       </strong>
-                      {opp?.opportunityType && (
+                      {(opp?.opportunityType || req.projectName) && (
                         <span className="cancel-opp-category" style={{ marginTop: "4px" }}>
-                          {opp.opportunityType}
+                          {opp?.opportunityType || req.projectName}
                         </span>
                       )}
                     </div>
                     <div style={{ flexShrink: 0 }}>
-                      {getStatusPill(req.status)}
+                      {getStatusPill(req.status, req)}
                     </div>
                   </div>
 
@@ -473,7 +604,7 @@ export default function AdminCancellationRequestsPage() {
                       <div className="cancel-org-icon-wrap" style={{ width: "26px", height: "26px" }}>
                         <Building2 size={13} style={{ color: "#8A6B2E" }} />
                       </div>
-                      <span className="cancel-org-name">{org?.name || "Organization"}</span>
+                      <span className="cancel-org-name">{org?.name || req.organizationName || "Organization"}</span>
                     </div>
 
                     <div className="cancel-date-stack" style={{ alignItems: "flex-end" }}>
@@ -490,6 +621,11 @@ export default function AdminCancellationRequestsPage() {
                     <p className="cancel-reason-text" style={{ WebkitLineClamp: 3, maxWidth: "100%" }}>
                       {req.reason}
                     </p>
+                    {(req.declineReason || req.adminNote) && getReqTabStatus(req) === "Declined" && (
+                      <p style={{ margin: "4px 0 0 0", fontSize: "0.75rem", color: "#C92A2A", fontWeight: 500 }}>
+                        Decline Reason: {req.declineReason || req.adminNote}
+                      </p>
+                    )}
                   </div>
 
                   {/* Applicants tag & Action buttons */}
@@ -502,7 +638,7 @@ export default function AdminCancellationRequestsPage() {
 
                       {!isPending && (
                         <span className="cancel-resolved-date">
-                          Resolved {formatRequestedDate(req.resolvedAt).date}
+                          Resolved {formatRequestedDate(req.decidedAt || req.resolvedAt || req.cancellationReviewedAt).date}
                         </span>
                       )}
                     </div>
@@ -514,6 +650,7 @@ export default function AdminCancellationRequestsPage() {
                           onClick={() => {
                             setApproveModalReq(req);
                             setApproveNote("");
+                            setModalError(null);
                           }}
                           className="cancel-btn-approve"
                           style={{ height: "40px", justifyContent: "center" }}
@@ -526,6 +663,7 @@ export default function AdminCancellationRequestsPage() {
                           onClick={() => {
                             setDeclineModalReq(req);
                             setDeclineReason("");
+                            setModalError(null);
                           }}
                           className="cancel-btn-decline"
                           style={{ height: "40px", justifyContent: "center" }}
@@ -548,10 +686,36 @@ export default function AdminCancellationRequestsPage() {
       {approveModalReq && (
         <Modal
           isOpen={!!approveModalReq}
-          onClose={() => setApproveModalReq(null)}
+          onClose={() => {
+            if (!isSubmitting) {
+              setApproveModalReq(null);
+              setModalError(null);
+            }
+          }}
+          preventClose={isSubmitting}
           title="Approve Opportunity Cancellation"
         >
           <form onSubmit={handleConfirmApprove} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+            {modalError && (
+              <div
+                style={{
+                  padding: "10px 14px",
+                  backgroundColor: "#FEF2F2",
+                  border: "1px solid #FCA5A5",
+                  borderRadius: "6px",
+                  color: "#B91C1C",
+                  fontSize: "13px",
+                  lineHeight: "1.4",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "8px",
+                }}
+              >
+                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "2px" }} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <div className="cancel-modal-warning-box">
               <strong style={{ color: "#B42318", display: "block", marginBottom: "4px" }}>
                 Impact Warning:
@@ -565,27 +729,52 @@ export default function AdminCancellationRequestsPage() {
               </label>
               <textarea
                 rows={3}
+                disabled={isSubmitting}
                 value={approveNote}
                 onChange={(e) => setApproveNote(e.target.value)}
                 placeholder="Cancellation verified and approved by Vismaya compliance desk."
                 className="cancel-modal-textarea"
+                style={{
+                  opacity: isSubmitting ? 0.7 : 1,
+                  cursor: isSubmitting ? "not-allowed" : "text",
+                }}
               />
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
               <button
                 type="button"
-                onClick={() => setApproveModalReq(null)}
+                disabled={isSubmitting}
+                onClick={() => {
+                  if (!isSubmitting) {
+                    setApproveModalReq(null);
+                    setModalError(null);
+                  }
+                }}
                 className="cancel-modal-cancel-btn"
+                style={{
+                  opacity: isSubmitting ? 0.5 : 1,
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="cancel-btn-approve"
-                style={{ padding: "0 22px", height: "42px" }}
+                style={{
+                  padding: "0 22px",
+                  height: "42px",
+                  opacity: isSubmitting ? 0.7 : 1,
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
               >
-                Confirm Cancellation
+                {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+                <span>{isSubmitting ? "Approving..." : "Confirm Cancellation"}</span>
               </button>
             </div>
           </form>
@@ -596,10 +785,36 @@ export default function AdminCancellationRequestsPage() {
       {declineModalReq && (
         <Modal
           isOpen={!!declineModalReq}
-          onClose={() => setDeclineModalReq(null)}
+          onClose={() => {
+            if (!isSubmitting) {
+              setDeclineModalReq(null);
+              setModalError(null);
+            }
+          }}
+          preventClose={isSubmitting}
           title="Decline Cancellation Request"
         >
           <form onSubmit={handleConfirmDecline} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+            {modalError && (
+              <div
+                style={{
+                  padding: "10px 14px",
+                  backgroundColor: "#FEF2F2",
+                  border: "1px solid #FCA5A5",
+                  borderRadius: "6px",
+                  color: "#B91C1C",
+                  fontSize: "13px",
+                  lineHeight: "1.4",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "8px",
+                }}
+              >
+                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "2px" }} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.6, fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
               Specify the reason for declining this request. The opportunity will remain Published and the organization will be notified.
             </p>
@@ -616,33 +831,59 @@ export default function AdminCancellationRequestsPage() {
               <textarea
                 rows={4}
                 required
+                disabled={isSubmitting}
                 value={declineReason}
                 onChange={(e) => setDeclineReason(e.target.value)}
                 placeholder="E.g. Candidate selection process is already in final stages. Please contact compliance desk..."
                 className="cancel-modal-textarea"
+                style={{
+                  opacity: isSubmitting ? 0.7 : 1,
+                  cursor: isSubmitting ? "not-allowed" : "text",
+                  borderColor: !declineReason.trim() ? "#FCA5A5" : undefined,
+                }}
               />
+              {!declineReason.trim() && (
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#B42318", marginTop: "2px" }}>
+                  <AlertCircle size={14} />
+                  <span>A decline reason is required before submitting.</span>
+                </div>
+              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
               <button
                 type="button"
-                onClick={() => setDeclineModalReq(null)}
+                disabled={isSubmitting}
+                onClick={() => {
+                  if (!isSubmitting) {
+                    setDeclineModalReq(null);
+                    setModalError(null);
+                  }
+                }}
                 className="cancel-modal-cancel-btn"
+                style={{
+                  opacity: isSubmitting ? 0.5 : 1,
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={!declineReason.trim()}
+                disabled={isSubmitting || !declineReason.trim()}
                 className="cancel-btn-decline"
                 style={{
                   padding: "0 22px",
                   height: "42px",
-                  opacity: declineReason.trim() ? 1 : 0.6,
-                  cursor: declineReason.trim() ? "pointer" : "not-allowed",
+                  opacity: (isSubmitting || !declineReason.trim()) ? 0.6 : 1,
+                  cursor: (isSubmitting || !declineReason.trim()) ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                Decline Request
+                {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+                <span>{isSubmitting ? "Declining..." : "Decline Request"}</span>
               </button>
             </div>
           </form>

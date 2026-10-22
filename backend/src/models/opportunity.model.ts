@@ -39,6 +39,16 @@ export interface IOpportunity extends Document {
     cancellationRequestedAt?: Date;
     cancellationReviewedAt?: Date;
     cancellationReviewedBy?: Types.ObjectId;
+    cancellationRequest?: {
+        requestedBy?: Types.ObjectId;
+        reason: string;
+        requestedAt: Date;
+        decision: "pending" | "approved" | "declined";
+        decidedBy?: Types.ObjectId;
+        decidedAt?: Date;
+        adminNote?: string;
+        declineReason?: string;
+    };
     publishedAt?: Date;
     closedAt?: Date;
     autoClosedAt?: Date;
@@ -190,6 +200,16 @@ const opportunitySchema = new Schema<IOpportunity>(
         cancellationReviewedBy: {
             type: Schema.Types.ObjectId,
             ref: "User"
+        },
+        cancellationRequest: {
+            requestedBy: { type: Schema.Types.ObjectId, ref: "User" },
+            reason: { type: String, trim: true },
+            requestedAt: { type: Date },
+            decision: { type: String, enum: ["pending", "approved", "declined"] },
+            decidedBy: { type: Schema.Types.ObjectId, ref: "User" },
+            decidedAt: { type: Date },
+            adminNote: { type: String, trim: true },
+            declineReason: { type: String, trim: true }
         },
 
         publishedAt: {

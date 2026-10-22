@@ -19,6 +19,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
     pendingRecruitersCount,
     pendingMediaCount,
     pendingVerificationsCount = 0,
+    pendingCancellationsCount: adminCtxPendingCancellations,
   } = useAdmin();
 
   const {
@@ -32,7 +33,9 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
   const pendingAuditionsCount = auditions.filter(
     (a) => a.status === "Requested" || a.status === "Self-tape Received"
   ).length;
-  const pendingCancellationsCount = cancellationRequests.filter((c) => c.status === "Pending").length;
+  const pendingCancellationsCount = adminCtxPendingCancellations !== undefined
+    ? adminCtxPendingCancellations
+    : cancellationRequests.filter((c) => (c.status || "").toLowerCase() === "pending" || (c.decision || "").toLowerCase() === "pending").length;
   const unreadAdminNotificationsCount = notifications.filter(
     (n) => !n.read && (n.toRole === "vismaya" || (!n.toRole && !n.toUserId))
   ).length;

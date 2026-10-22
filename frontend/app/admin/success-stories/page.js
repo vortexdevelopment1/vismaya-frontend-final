@@ -20,6 +20,7 @@ export default function SuccessStoriesApprovalPage() {
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [rejectingStory, setRejectingStory] = useState(null);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
   const showToast = (msg) => {
@@ -63,41 +64,48 @@ export default function SuccessStoriesApprovalPage() {
 
   const handleApprove = async (story) => {
     const id = story._id || story.id;
-    if (isRealMode("admin")) {
-      try {
+    if (actionLoadingId) return;
+    setActionLoadingId(id);
+    try {
+      if (isRealMode("admin")) {
         await adminService.reviewSuccessStory(id, { decision: "approve" });
         setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
         showToast("Success story approved for platform showcase.");
-      } catch (err) {
-        showToast(err?.response?.data?.message || err?.message || "Failed to approve story");
+      } else {
+        setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
+        showToast("Success story approved (Mock).");
       }
-    } else {
-      setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
-      showToast("Success story approved (Mock).");
+    } catch (err) {
+      showToast(err?.response?.data?.message || err?.message || "Failed to approve story");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
   const handleRejectSubmit = async (reason) => {
-    if (!rejectingStory) return;
+    if (!rejectingStory || actionLoadingId) return;
     const trimmedReason = (reason || "").trim();
     if (!trimmedReason) {
       showToast("Please provide a reason for rejecting this story.");
       return;
     }
     const id = rejectingStory._id || rejectingStory.id;
-    if (isRealMode("admin")) {
-      try {
+    setActionLoadingId(id);
+    try {
+      if (isRealMode("admin")) {
         await adminService.reviewSuccessStory(id, { decision: "reject", rejectionReason: trimmedReason });
         setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
         showToast("Success story rejected with feedback.");
         setRejectingStory(null);
-      } catch (err) {
-        showToast(err?.response?.data?.message || err?.message || "Failed to reject story");
+      } else {
+        setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
+        showToast("Success story rejected (Mock).");
+        setRejectingStory(null);
       }
-    } else {
-      setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
-      showToast("Success story rejected (Mock).");
-      setRejectingStory(null);
+    } catch (err) {
+      showToast(err?.response?.data?.message || err?.message || "Failed to reject story");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -180,6 +188,7 @@ export default function SuccessStoriesApprovalPage() {
               <div style={{ display: "flex", gap: "10px", marginTop: "auto", paddingTop: "6px" }}>
                 <button
                   type="button"
+                  disabled={actionLoadingId === (story._id || story.id)}
                   onClick={() => handleApprove(story)}
                   style={{
                     flex: 1,
@@ -190,14 +199,23 @@ export default function SuccessStoriesApprovalPage() {
                     border: "none",
                     fontSize: "12px",
                     fontWeight: 700,
-                    cursor: "pointer",
+                    cursor: actionLoadingId === (story._id || story.id) ? "not-allowed" : "pointer",
+                    opacity: actionLoadingId === (story._id || story.id) ? 0.7 : 1,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     gap: "6px",
                   }}
                 >
-                  <CheckCircle size={14} /> Approve &amp; Publish
+                  {actionLoadingId === (story._id || story.id) ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Approving...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle size={14} /> Approve &amp; Publish
+                    </>
+                  )}
                 </button>
 
                 <button

@@ -597,6 +597,12 @@ export const requestOpportunityCancellation = async (req: Request, res: Response
         opportunity.status = "cancellation_requested";
         opportunity.cancellationReason = cancellationReason;
         opportunity.cancellationRequestedAt = new Date();
+        opportunity.cancellationRequest = {
+            requestedBy: userId as any,
+            reason: cancellationReason,
+            requestedAt: new Date(),
+            decision: "pending"
+        };
 
         await opportunity.save();
 

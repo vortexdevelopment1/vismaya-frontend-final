@@ -37,9 +37,36 @@ export const OPPORTUNITY_BACKEND_STATUS_MAP = {
   cancelled: "cancelled",
   canceled: "cancelled",
   closed: "closed",
-  completed: "completed",
   draft: "pending",
 };
+
+// Cancellation Request Decision / Tab Mapping
+export const CANCELLATION_TAB_STATUS_MAP = {
+  pending: "Pending",
+  cancellation_requested: "Pending",
+  "cancellation requested": "Pending",
+  approved: "Approved",
+  cancelled: "Approved",
+  canceled: "Approved",
+  declined: "Declined",
+  rejected: "Declined",
+};
+
+export function toCancellationTabStatus(val, decision) {
+  // If decision is provided ("approved" | "declined" | "pending"), it takes precedence
+  if (decision) {
+    const d = String(decision).trim().toLowerCase().replace(/[\s_-]+/g, "");
+    if (d === "approved" || d === "cancelled" || d === "canceled") return "Approved";
+    if (d === "declined" || d === "rejected") return "Declined";
+    if (d === "pending") return "Pending";
+  }
+
+  if (!val) return "Pending";
+  const cleaned = String(val).trim().toLowerCase().replace(/[\s_-]+/g, "");
+  if (cleaned === "approved" || cleaned === "cancelled" || cleaned === "canceled") return "Approved";
+  if (cleaned === "declined" || cleaned === "rejected") return "Declined";
+  return "Pending";
+}
 
 // 2. Application Statuses
 export const APPLICATION_STATUS_MAP = {

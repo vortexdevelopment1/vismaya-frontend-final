@@ -53,6 +53,9 @@ export function AdminProvider({ children }) {
   // 15. Verifications State
   const [verifications, setVerifications] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().verifications || []));
 
+  // 16. Cancellation Requests State
+  const [cancellationRequests, setCancellationRequests] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().cancellationRequests || []));
+
   // Fetch real data on mount when in real API mode
   useEffect(() => {
     if (!isRealMode("admin")) return;
@@ -98,6 +101,9 @@ export function AdminProvider({ children }) {
           }
           if (verRes.status === "fulfilled" && Array.isArray(verRes.value?.data)) {
             setVerifications(verRes.value.data);
+          }
+          if (cancRes.status === "fulfilled" && Array.isArray(cancRes.value?.data)) {
+            setCancellationRequests(cancRes.value.data);
           }
         }
       } catch (err) {
@@ -1208,6 +1214,23 @@ export function AdminProvider({ children }) {
     }
   };
 
+  const pendingCancellationsCount = cancellationRequests.filter(
+    (c) => (c.status || "").toLowerCase() === "pending" || (c.decision || "").toLowerCase() === "pending"
+  ).length;
+
+  const refreshCancellations = async () => {
+    if (isRealMode("admin")) {
+      try {
+        const res = await adminService.getCancellationRequests();
+        if (Array.isArray(res?.data)) {
+          setCancellationRequests(res.data);
+        }
+      } catch (err) {
+        console.warn("Failed to refresh cancellations in context:", err);
+      }
+    }
+  };
+
   return (
     <AdminContext.Provider
       value={{
@@ -1272,6 +1295,10 @@ export function AdminProvider({ children }) {
         pendingMediaCount,
         pendingRequirementsCount,
         pendingVerificationsCount,
+        pendingCancellationsCount,
+        cancellationRequests,
+        setCancellationRequests,
+        refreshCancellations,
         verifications,
         setVerifications,
         refreshVerifications,

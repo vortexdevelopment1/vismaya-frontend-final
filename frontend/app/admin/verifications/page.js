@@ -30,6 +30,7 @@ export default function VerificationQueuesPage() {
   const [activeStatusTab, setActiveStatusTab] = useState("pending");
   const [activeQueueFilter, setActiveQueueFilter] = useState("all");
   const [actionModal, setActionModal] = useState(null); // { type: 'reject' | 'request_info', verification }
+  const [actionLoadingId, setActionLoadingId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
   const showToast = (msg) => {
@@ -133,17 +134,21 @@ export default function VerificationQueuesPage() {
       return;
     }
     const id = ver._id || ver.id;
-    if (isRealMode("admin")) {
-      try {
+    if (actionLoadingId) return;
+    setActionLoadingId(id);
+    try {
+      if (isRealMode("admin")) {
         const res = await adminService.reviewVerification(id, { action: "approve", status: "verified", notes: "Approved by Admin" });
         showToast(res?.message || `Verification for ${ver.userName || "user"} approved successfully.`);
         await loadData();
-      } catch (err) {
-        showToast(err?.message || "Failed to approve verification");
+      } else {
+        setVerifications((prev) => prev.filter((v) => (v._id || v.id) !== id));
+        showToast(`Verification for ${ver.userName || "user"} approved (Mock).`);
       }
-    } else {
-      setVerifications((prev) => prev.filter((v) => (v._id || v.id) !== id));
-      showToast(`Verification for ${ver.userName || "user"} approved (Mock).`);
+    } catch (err) {
+      showToast(err?.message || "Failed to approve verification");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -631,6 +636,7 @@ export default function VerificationQueuesPage() {
 
                       <button
                         type="button"
+                        disabled={actionLoadingId === (ver._id || ver.id)}
                         onClick={() => handleApprove(ver)}
                         style={{
                           padding: "8px 18px",
@@ -640,13 +646,22 @@ export default function VerificationQueuesPage() {
                           color: "#FFFFFF",
                           fontSize: "12px",
                           fontWeight: 700,
-                          cursor: "pointer",
+                          cursor: actionLoadingId === (ver._id || ver.id) ? "not-allowed" : "pointer",
+                          opacity: actionLoadingId === (ver._id || ver.id) ? 0.7 : 1,
                           display: "flex",
                           alignItems: "center",
                           gap: "6px",
                         }}
                       >
-                        <CheckCircle size={14} /> Approve Verification
+                        {actionLoadingId === (ver._id || ver.id) ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin" /> Approving...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle size={14} /> Approve Verification
+                          </>
+                        )}
                       </button>
                     </>
                   )}
