@@ -1365,7 +1365,7 @@ export const getAllOpportunitiesAdmin = async (req: Request, res: Response): Pro
             Opportunity.find(filter)
                 .populate({
                     path: "projectId",
-                    select: "projectName organizationId projectType title type",
+                    select: "projectName organizationId projectType title type description status",
                     populate: {
                         path: "organizationId",
                         select: "organizationName contactPerson contactEmail contactNumber"
@@ -1377,13 +1377,49 @@ export const getAllOpportunitiesAdmin = async (req: Request, res: Response): Pro
             Opportunity.countDocuments(filter)
         ]);
 
+        const rawProjectIds = opportunities
+            .map((o: any) => o.projectId?._id || o.projectId)
+            .filter(Boolean);
+        const projectObjectIds = rawProjectIds
+            .filter((id: any) => mongoose.Types.ObjectId.isValid(id.toString()))
+            .map((id: any) => new mongoose.Types.ObjectId(id.toString()));
+        const projectIdStrings = rawProjectIds.map((id: any) => id.toString());
+        const allProjectIds = [...projectObjectIds, ...projectIdStrings];
+
+        const oppCounts = allProjectIds.length > 0 ? await Opportunity.aggregate([
+            {
+                $match: {
+                    projectId: { $in: allProjectIds },
+                    status: { $ne: "deleted" },
+                    isDeleted: { $ne: true }
+                }
+            },
+            { $group: { _id: "$projectId", count: { $sum: 1 } } }
+        ]) : [];
+
+        const countMap = new Map<string, number>();
+        for (const c of oppCounts) {
+            const key = c._id.toString();
+            countMap.set(key, (countMap.get(key) || 0) + c.count);
+        }
+
+        const enrichedOpportunities = opportunities.map((opp: any) => {
+            const oppObj = opp.toObject ? opp.toObject() : { ...opp };
+            if (oppObj.projectId && typeof oppObj.projectId === "object") {
+                const pId = oppObj.projectId._id?.toString() || oppObj.projectId.id?.toString() || "";
+                oppObj.projectId.opportunityCount = countMap.get(pId) || 0;
+                oppObj.projectId.opportunitiesCount = oppObj.projectId.opportunityCount;
+            }
+            return oppObj;
+        });
+
         res.status(200).json({
             success: true,
-            count: opportunities.length,
+            count: enrichedOpportunities.length,
             total,
             page: pageNum,
             totalPages: Math.ceil(total / limitNum),
-            opportunities
+            opportunities: enrichedOpportunities
         });
     } catch (error: any) {
         console.error("Get all admin opportunities error:", error);
@@ -1473,13 +1509,44 @@ export const getAllProjectsAdmin = async (req: Request, res: Response): Promise<
             Project.countDocuments(filter)
         ]);
 
+        const rawProjectIds = projects.map(p => p._id).filter(Boolean);
+        const projectObjectIds = rawProjectIds
+            .filter((id: any) => mongoose.Types.ObjectId.isValid(id.toString()))
+            .map((id: any) => new mongoose.Types.ObjectId(id.toString()));
+        const projectIdStrings = rawProjectIds.map((id: any) => id.toString());
+        const allProjectIds = [...projectObjectIds, ...projectIdStrings];
+
+        const opportunityCounts = allProjectIds.length > 0 ? await Opportunity.aggregate([
+            {
+                $match: {
+                    projectId: { $in: allProjectIds },
+                    status: { $ne: "deleted" },
+                    isDeleted: { $ne: true }
+                }
+            },
+            { $group: { _id: "$projectId", count: { $sum: 1 } } }
+        ]) : [];
+
+        const oppCountMap: Record<string, number> = {};
+        for (const item of opportunityCounts) {
+            const key = item._id.toString();
+            oppCountMap[key] = (oppCountMap[key] || 0) + item.count;
+        }
+
+        const projectsWithStats = projects.map((p: any) => {
+            const pObj = p.toObject ? p.toObject() : { ...p };
+            pObj.opportunityCount = oppCountMap[p._id.toString()] || 0;
+            pObj.opportunitiesCount = pObj.opportunityCount;
+            return pObj;
+        });
+
         res.status(200).json({
             success: true,
-            count: projects.length,
+            count: projectsWithStats.length,
             total,
             page: pageNum,
             totalPages: Math.ceil(total / limitNum),
-            projects
+            projects: projectsWithStats
         });
     } catch (error: any) {
         console.error("Get all admin projects error:", error);
@@ -1493,14 +1560,50 @@ export const getPendingOpportunities = async (req: Request, res: Response): Prom
             status: { $in: ["pending", "under_vismaya_review"] }
         }).populate({
             path: "projectId",
-            select: "projectName organizationId projectType",
+            select: "projectName organizationId projectType title type description status",
             populate: {
                 path: "organizationId",
                 select: "organizationName contactPerson contactEmail contactNumber"
             }
         }).sort({ createdAt: -1 });
 
-        res.status(200).json({ success: true, count: opportunities.length, opportunities });
+        const rawProjectIds = opportunities
+            .map((o: any) => o.projectId?._id || o.projectId)
+            .filter(Boolean);
+        const projectObjectIds = rawProjectIds
+            .filter((id: any) => mongoose.Types.ObjectId.isValid(id.toString()))
+            .map((id: any) => new mongoose.Types.ObjectId(id.toString()));
+        const projectIdStrings = rawProjectIds.map((id: any) => id.toString());
+        const allProjectIds = [...projectObjectIds, ...projectIdStrings];
+
+        const oppCounts = allProjectIds.length > 0 ? await Opportunity.aggregate([
+            {
+                $match: {
+                    projectId: { $in: allProjectIds },
+                    status: { $ne: "deleted" },
+                    isDeleted: { $ne: true }
+                }
+            },
+            { $group: { _id: "$projectId", count: { $sum: 1 } } }
+        ]) : [];
+
+        const countMap = new Map<string, number>();
+        for (const c of oppCounts) {
+            const key = c._id.toString();
+            countMap.set(key, (countMap.get(key) || 0) + c.count);
+        }
+
+        const enrichedOpportunities = opportunities.map((opp: any) => {
+            const oppObj = opp.toObject ? opp.toObject() : { ...opp };
+            if (oppObj.projectId && typeof oppObj.projectId === "object") {
+                const pId = oppObj.projectId._id?.toString() || oppObj.projectId.id?.toString() || "";
+                oppObj.projectId.opportunityCount = countMap.get(pId) || 0;
+                oppObj.projectId.opportunitiesCount = oppObj.projectId.opportunityCount;
+            }
+            return oppObj;
+        });
+
+        res.status(200).json({ success: true, count: enrichedOpportunities.length, opportunities: enrichedOpportunities });
     } catch (error: any) {
         console.error("Get pending opportunities error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while fetching pending opportunities" });
@@ -1514,6 +1617,14 @@ export const approveOpportunity = async (req: Request, res: Response): Promise<a
 
         if (!opportunity) {
             return res.status(404).json({ success: false, message: "Opportunity not found" });
+        }
+
+        const project = await Project.findById(opportunity.projectId);
+        if (project && project.status === "suspended") {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot approve opportunity: The parent project is suspended."
+            });
         }
 
         opportunity.status = "published";

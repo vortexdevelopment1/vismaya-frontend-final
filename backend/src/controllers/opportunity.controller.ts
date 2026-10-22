@@ -218,15 +218,43 @@ export const createOpportunity = async (req: Request, res: Response): Promise<an
             });
         }
 
+        const rawRoles = Array.isArray(req.body.roles) ? req.body.roles : [];
+        const normalizedRoles = rawRoles.map((r: any) => {
+            const skillsArr = Array.isArray(r.skills)
+                ? r.skills
+                : (typeof r.skills === "string" ? r.skills.split(",").map((s: string) => s.trim()).filter(Boolean) : []);
+            const languagesArr = Array.isArray(r.languages)
+                ? r.languages
+                : (typeof r.language === "string" ? r.language.split(",").map((s: string) => s.trim()).filter(Boolean) : (Array.isArray(r.language) ? r.language : []));
+            return {
+                roleName: String(r.roleName || r.name || r.role || "").trim(),
+                count: Number(r.count || r.positionsCount) || 1,
+                positionsCount: Number(r.positionsCount || r.count) || 1,
+                ageRange: r.ageRange ? String(r.ageRange).trim() : undefined,
+                ageMin: r.ageMin !== undefined && r.ageMin !== null ? Number(r.ageMin) : undefined,
+                ageMax: r.ageMax !== undefined && r.ageMax !== null ? Number(r.ageMax) : undefined,
+                gender: r.gender ? String(r.gender).trim() : undefined,
+                description: r.description ? String(r.description).trim() : undefined,
+                skills: skillsArr,
+                languages: languagesArr
+            };
+        }).filter((r: any) => Boolean(r.roleName));
+
+        const effectiveRole = String(role || normalizedRoles[0]?.roleName || title).trim();
+        const effectivePositionsCount = positionsCount
+            ? parseInt(positionsCount, 10)
+            : (normalizedRoles.length > 0 ? normalizedRoles.reduce((acc: number, r: any) => acc + (Number(r.count) || 1), 0) : 1);
+
         const opportunity = await Opportunity.create({
             projectId: project._id,
             title: String(title).trim(),
             summary: String(summary).trim(),
-            role: String(role).trim(),
+            role: effectiveRole,
+            roles: normalizedRoles.length > 0 ? normalizedRoles : undefined,
             location: String(location).trim(),
             deadline: new Date(deadline),
             remuneration: remuneration ? String(remuneration).trim() : undefined,
-            positionsCount: positionsCount ? parseInt(positionsCount, 10) : undefined,
+            positionsCount: effectivePositionsCount,
             eligibility: eligibility || {},
             customQuestions: Array.isArray(customQuestions) ? customQuestions : [],
             status: "pending",
@@ -298,7 +326,7 @@ export const updateOpportunity = async (req: Request, res: Response): Promise<an
         }
 
         const allowedFields = [
-            "title", "summary", "role", "location", "deadline", "remuneration",
+            "title", "summary", "role", "roles", "location", "deadline", "remuneration",
             "positionsCount", "eligibility", "customQuestions"
         ];
 
@@ -308,6 +336,26 @@ export const updateOpportunity = async (req: Request, res: Response): Promise<an
             if (req.body[field] !== undefined) {
                 if (field === "deadline") {
                     opportunity.deadline = new Date(req.body.deadline);
+                } else if (field === "roles" && Array.isArray(req.body.roles)) {
+                    const normRoles = req.body.roles.map((r: any) => ({
+                        roleName: String(r.roleName || r.name || r.role || "").trim(),
+                        count: Number(r.count || r.positionsCount) || 1,
+                        positionsCount: Number(r.positionsCount || r.count) || 1,
+                        ageRange: r.ageRange ? String(r.ageRange).trim() : undefined,
+                        ageMin: r.ageMin !== undefined && r.ageMin !== null ? Number(r.ageMin) : undefined,
+                        ageMax: r.ageMax !== undefined && r.ageMax !== null ? Number(r.ageMax) : undefined,
+                        gender: r.gender ? String(r.gender).trim() : undefined,
+                        description: r.description ? String(r.description).trim() : undefined,
+                        skills: Array.isArray(r.skills) ? r.skills : (typeof r.skills === "string" ? r.skills.split(",").map((s: string) => s.trim()).filter(Boolean) : []),
+                        languages: Array.isArray(r.languages) ? r.languages : (typeof r.language === "string" ? r.language.split(",").map((s: string) => s.trim()).filter(Boolean) : [])
+                    })).filter((r: any) => Boolean(r.roleName));
+                    opportunity.roles = normRoles as any;
+                    if (normRoles.length > 0) {
+                        if (!req.body.role) opportunity.role = normRoles[0].roleName;
+                        if (!req.body.positionsCount) {
+                            opportunity.positionsCount = normRoles.reduce((acc: number, r: any) => acc + (Number(r.count) || 1), 0);
+                        }
+                    }
                 } else {
                     (opportunity as any)[field] = req.body[field];
                 }

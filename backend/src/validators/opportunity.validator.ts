@@ -21,9 +21,10 @@ export const validateOpportunityCreate = (data: any): { isValid: boolean; errors
     if (projectName !== undefined && (typeof projectName !== "string" || !projectName.trim())) {
         errors.push("Project name must be a non-empty string");
     }
+    const effectiveRole = role || (Array.isArray(data?.roles) && data.roles[0]?.roleName);
     if (!title || typeof title !== "string" || !title.trim()) errors.push("Title is required");
     if (!summary || typeof summary !== "string" || !summary.trim()) errors.push("Summary is required");
-    if (!role || typeof role !== "string" || !role.trim()) errors.push("Role title is mandatory");
+    if (!effectiveRole || typeof effectiveRole !== "string" || !effectiveRole.trim()) errors.push("Role title is mandatory");
     if (!location || typeof location !== "string" || !location.trim()) errors.push("Location is required");
 
     if (!deadline) {

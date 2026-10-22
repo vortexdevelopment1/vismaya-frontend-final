@@ -112,7 +112,11 @@ export default function AdminProjectsPage() {
   }, [projects, statusFilter, orgFilter, searchQuery, organizations]);
 
   const getOpportunitiesForProject = (projId) => {
-    return opportunities.filter((o) => o.projectId === projId);
+    if (!projId) return [];
+    return opportunities.filter((o) => {
+      const oppProjId = o.projectId?._id || o.projectId?.id || o.projectId;
+      return String(oppProjId) === String(projId);
+    });
   };
 
   const getOrgForProject = (orgId) => {
@@ -312,6 +316,7 @@ export default function AdminProjectsPage() {
                   {filteredProjects.map((proj) => {
                     const org = getOrgForProject(proj.orgId);
                     const opps = getOpportunitiesForProject(proj.id);
+                    const oppCount = proj.opportunityCount ?? proj.opportunitiesCount ?? opps.length;
 
                     return (
                       <tr
@@ -353,15 +358,15 @@ export default function AdminProjectsPage() {
                               gap: "6px",
                               padding: "4px 10px",
                               borderRadius: "999px",
-                              backgroundColor: opps.length > 0 ? "rgba(138, 107, 46, 0.12)" : "#F3EFE6",
-                              color: opps.length > 0 ? "#6E5420" : "#5A584F",
-                              border: opps.length > 0 ? "1px solid rgba(138, 107, 46, 0.25)" : "1px solid #E8E2D4",
+                              backgroundColor: oppCount > 0 ? "rgba(138, 107, 46, 0.12)" : "#F3EFE6",
+                              color: oppCount > 0 ? "#6E5420" : "#5A584F",
+                              border: oppCount > 0 ? "1px solid rgba(138, 107, 46, 0.25)" : "1px solid #E8E2D4",
                               fontWeight: 700,
                               fontSize: "12px",
                             }}
                           >
                             <Megaphone size={12} />
-                            <span>{opps.length} {opps.length === 1 ? "Opportunity" : "Opportunities"}</span>
+                            <span>{oppCount} {oppCount === 1 ? "Opportunity" : "Opportunities"}</span>
                           </span>
                         </td>
 
@@ -468,7 +473,7 @@ export default function AdminProjectsPage() {
                       <span className="admin-project-detail-label">Opportunities</span>
                       <span className="admin-project-opps-chip">
                         <Megaphone size={11} />
-                        <span>{opps.length} {opps.length === 1 ? "Role" : "Roles"}</span>
+                        <span>{oppCount} {oppCount === 1 ? "Opportunity" : "Opportunities"}</span>
                       </span>
                     </div>
 
@@ -541,18 +546,20 @@ export default function AdminProjectsPage() {
                 Synopsis &amp; Production Scope:
               </strong>
               <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
-                {selectedProject.description || "Comprehensive multi-episode OTT thriller with high-stakes medical emergency and investigative storylines."}
+                {selectedProject.description || "No description provided."}
               </p>
             </div>
 
             <div>
               <strong style={{ fontSize: "14px", color: "#2B2D2A", display: "block", marginBottom: "8px" }}>
-                Opportunities Created Under This Project:
+                Opportunities Created Under This Project ({selectedProject.opportunityCount ?? selectedProject.opportunitiesCount ?? getOpportunitiesForProject(selectedProject.id).length}):
               </strong>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {getOpportunitiesForProject(selectedProject.id).length === 0 ? (
                   <span style={{ fontSize: "13px", color: "#5A584F" }}>
-                    No opportunities posted under this project yet.
+                    {(selectedProject.opportunityCount || selectedProject.opportunitiesCount)
+                      ? `${selectedProject.opportunityCount || selectedProject.opportunitiesCount} opportunities recorded under this project.`
+                      : "No opportunities posted under this project yet."}
                   </span>
                 ) : (
                   getOpportunitiesForProject(selectedProject.id).map((opp) => {

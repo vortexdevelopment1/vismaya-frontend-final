@@ -6,11 +6,26 @@ export interface ICustomQuestion {
     isRequired: boolean;
 }
 
+export interface IOpportunityRole {
+    _id?: Types.ObjectId;
+    roleName: string;
+    count?: number;
+    positionsCount?: number;
+    ageRange?: string;
+    ageMin?: number;
+    ageMax?: number;
+    gender?: string;
+    description?: string;
+    skills?: string[];
+    languages?: string[];
+}
+
 export interface IOpportunity extends Document {
     projectId: Types.ObjectId;
     title: string;
     summary: string;
     role: string;
+    roles?: IOpportunityRole[];
     location: string;
     deadline: Date;
     remuneration?: string;
@@ -70,6 +85,50 @@ const customQuestionSchema = new Schema<ICustomQuestion>({
     }
 }, { _id: true });
 
+const opportunityRoleSchema = new Schema<IOpportunityRole>({
+    roleName: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    count: {
+        type: Number,
+        default: 1,
+        min: 1
+    },
+    positionsCount: {
+        type: Number,
+        default: 1,
+        min: 1
+    },
+    ageRange: {
+        type: String,
+        trim: true
+    },
+    ageMin: {
+        type: Number
+    },
+    ageMax: {
+        type: Number
+    },
+    gender: {
+        type: String,
+        trim: true
+    },
+    description: {
+        type: String,
+        trim: true
+    },
+    skills: [{
+        type: String,
+        trim: true
+    }],
+    languages: [{
+        type: String,
+        trim: true
+    }]
+}, { _id: true });
+
 const opportunitySchema = new Schema<IOpportunity>(
     {
         projectId: {
@@ -95,6 +154,8 @@ const opportunitySchema = new Schema<IOpportunity>(
             required: true,
             trim: true
         },
+
+        roles: [opportunityRoleSchema],
 
         location: {
             type: String,

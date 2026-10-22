@@ -60,6 +60,8 @@ function SubmitOpportunityForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formErrors, setFormErrors] = useState({});
   const [submittedStatus, setSubmittedStatus] = useState(null); // null | 'submitted' | 'draft'
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
   // Inline Project Creation Toggle
   const [isInlineProject, setIsInlineProject] = useState(orgProjects.length === 0);
@@ -145,6 +147,16 @@ function SubmitOpportunityForm() {
       }
     }
   }, [editId, opportunities]);
+
+  // Auto-sync projectId when real projects load if currently empty or set to mock id
+  useEffect(() => {
+    if (!preselectedProjectId && (!formData.projectId || formData.projectId.startsWith("proj-"))) {
+      const realProj = orgProjects.find((p) => p && p.id && !p.id.startsWith("proj-"));
+      if (realProj) {
+        setFormData((prev) => ({ ...prev, projectId: realProj.id }));
+      }
+    }
+  }, [orgProjects, preselectedProjectId, formData.projectId]);
 
   const minDeadlineDate = useMemo(() => {
     const d = new Date();
@@ -313,8 +325,8 @@ function SubmitOpportunityForm() {
         ageMin: Number(formData.ageMin) || 18,
         ageMax: Number(formData.ageMax) || 60,
         gender: formData.gender,
-        languages: formData.languages.split(",").map((s) => s.trim()).filter(Boolean),
-        skills: formData.skills.split(",").map((s) => s.trim()).filter(Boolean),
+        languages: typeof formData.languages === "string" ? formData.languages.split(",").map((s) => s.trim()).filter(Boolean) : (Array.isArray(formData.languages) ? formData.languages : []),
+        skills: typeof formData.skills === "string" ? formData.skills.split(",").map((s) => s.trim()).filter(Boolean) : (Array.isArray(formData.skills) ? formData.skills : []),
         experience: formData.experience,
         location: formData.eligibilityLocation,
       },
@@ -322,8 +334,21 @@ function SubmitOpportunityForm() {
       isDraft,
     };
 
-    submitOpportunity(payload);
-    setSubmittedStatus(isDraft ? "draft" : "submitted");
+    setSubmitError(null);
+    setIsSubmitting(true);
+    try {
+      await submitOpportunity(payload);
+      setSubmittedStatus(isDraft ? "draft" : "submitted");
+    } catch (err) {
+      console.error("Opportunity creation failed:", err);
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to submit opportunity. Please verify the information and try again.";
+      setSubmitError(errMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const steps = [
@@ -733,6 +758,31 @@ function SubmitOpportunityForm() {
             boxSizing: "border-box",
           }}
         >
+          {submitError && (
+            <div
+              style={{
+                marginBottom: "24px",
+                padding: "16px 18px",
+                borderRadius: "12px",
+                backgroundColor: "#FEF2F2",
+                border: "1px solid #FCA5A5",
+                color: "#991B1B",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "12px",
+                fontSize: "14px",
+                lineHeight: 1.5,
+              }}
+            >
+              <AlertCircle size={20} style={{ flexShrink: 0, marginTop: "2px", color: "#DC2626" }} />
+              <div>
+                <strong style={{ display: "block", marginBottom: "2px", fontWeight: 600 }}>
+                  Submission Failed
+                </strong>
+                <span>{submitError}</span>
+              </div>
+            </div>
+          )}
           {/* STEP 1: PROJECT LINK */}
           {currentStep === 1 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
@@ -1614,6 +1664,7 @@ function SubmitOpportunityForm() {
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               <button
                 type="button"
+                disabled={isSubmitting}
                 onClick={() => handleFormSubmit(true)}
                 style={{
                   padding: "0 20px",
@@ -1625,7 +1676,8 @@ function SubmitOpportunityForm() {
                   backgroundColor: "#FFFFFF",
                   border: "1px solid #8A6B2E",
                   color: "#8A6B2E",
-                  cursor: "pointer",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  opacity: isSubmitting ? 0.7 : 1,
                   display: "inline-flex",
                   alignItems: "center",
                   transition: "all 0.18s ease",
@@ -1633,7 +1685,7 @@ function SubmitOpportunityForm() {
                 className="v-btn-outline-gold"
               >
                 <Save size={16} />
-                <span>Save Draft</span>
+                <span>{isSubmitting ? "Saving..." : "Save Draft"}</span>
               </button>
 
               {currentStep < 4 ? (
@@ -1664,6 +1716,7 @@ function SubmitOpportunityForm() {
               ) : (
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => handleFormSubmit(false)}
                   style={{
                     padding: "0 28px",
@@ -1675,7 +1728,8 @@ function SubmitOpportunityForm() {
                     backgroundColor: "#8A6B2E",
                     border: "none",
                     color: "#FFFFFF",
-                    cursor: "pointer",
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
+                    opacity: isSubmitting ? 0.7 : 1,
                     display: "inline-flex",
                     alignItems: "center",
                     boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
@@ -1684,7 +1738,7 @@ function SubmitOpportunityForm() {
                   className="v-btn-primary"
                 >
                   <Check size={17} strokeWidth={2.5} />
-                  <span>Submit to Vismaya</span>
+                  <span>{isSubmitting ? "Submitting..." : "Submit to Vismaya"}</span>
                 </button>
               )}
             </div>
@@ -1939,6 +1993,7 @@ function SubmitOpportunityForm() {
 
         <button
           type="button"
+          disabled={isSubmitting}
           onClick={() => handleFormSubmit(true)}
           className="new-opp-mobile-save-btn"
           style={{
@@ -1951,6 +2006,8 @@ function SubmitOpportunityForm() {
             border: "1px solid #8A6B2E",
             borderRadius: "10px",
             color: "#8A6B2E",
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+            opacity: isSubmitting ? 0.7 : 1,
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1958,7 +2015,7 @@ function SubmitOpportunityForm() {
           }}
         >
           <Save size={16} />
-          <span>Save draft</span>
+          <span>{isSubmitting ? "Saving..." : "Save draft"}</span>
         </button>
 
         {currentStep < 4 ? (
@@ -1988,6 +2045,7 @@ function SubmitOpportunityForm() {
         ) : (
           <button
             type="button"
+            disabled={isSubmitting}
             onClick={() => handleFormSubmit(false)}
             className="new-opp-mobile-primary-btn"
             style={{
@@ -2000,6 +2058,8 @@ function SubmitOpportunityForm() {
               border: "none",
               borderRadius: "10px",
               color: "#FFFFFF",
+              cursor: isSubmitting ? "not-allowed" : "pointer",
+              opacity: isSubmitting ? 0.7 : 1,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
@@ -2007,7 +2067,7 @@ function SubmitOpportunityForm() {
             }}
           >
             <Check size={16} strokeWidth={2.5} />
-            <span>Submit</span>
+            <span>{isSubmitting ? "Submitting..." : "Submit"}</span>
           </button>
         )}
       </div>

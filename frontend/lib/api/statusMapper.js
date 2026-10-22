@@ -228,6 +228,7 @@ export const PROJECT_STATUS_MAP = {
   active: "Active",
   completed: "Completed",
   cancelled: "Cancelled",
+  suspended: "Suspended",
 };
 
 export const PROJECT_BACKEND_STATUS_MAP = {
@@ -235,6 +236,7 @@ export const PROJECT_BACKEND_STATUS_MAP = {
   completed: "completed",
   cancelled: "cancelled",
   canceled: "cancelled",
+  suspended: "suspended",
 };
 
 // 9. Broadcast Statuses

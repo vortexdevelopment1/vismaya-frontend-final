@@ -225,16 +225,39 @@ export default function OpportunityReviewPage() {
   }, [filteredOpportunities, selectedOppId]);
 
   const selectedProject = useMemo(() => {
-    return selectedOpportunity
-      ? projects.find((p) => p.id === selectedOpportunity.projectId)
-      : null;
+    if (!selectedOpportunity) return null;
+    const oppProj = selectedOpportunity.project;
+    const targetProjId = String(selectedOpportunity.projectId || oppProj?.id || oppProj?._id || "");
+    const found = projects.find(
+      (p) => String(p.id || p._id) === targetProjId
+    );
+    if (found) {
+      const count = found.opportunityCount ?? found.opportunitiesCount ?? oppProj?.opportunityCount ?? oppProj?.opportunitiesCount ?? 0;
+      return {
+        ...found,
+        opportunityCount: count,
+        opportunitiesCount: count,
+      };
+    }
+    if (oppProj) return oppProj;
+    return null;
   }, [selectedOpportunity, projects]);
 
   const selectedOrg = useMemo(() => {
-    return selectedOpportunity
-      ? organizations.find((o) => o.id === selectedOpportunity.orgId)
-      : null;
-  }, [selectedOpportunity, organizations]);
+    if (!selectedOpportunity) return null;
+    const orgId = selectedOpportunity.orgId || selectedProject?.orgId || selectedProject?.organizationId;
+    const found = organizations.find((o) => String(o.id || o._id) === String(orgId));
+    if (found) return found;
+    if (selectedOpportunity.project?.organizationName && selectedOpportunity.project.organizationName !== "Not provided") {
+      return { name: selectedOpportunity.project.organizationName, type: "Organization", status: "Active" };
+    }
+    return null;
+  }, [selectedOpportunity, selectedProject, organizations]);
+
+  const isProjectSuspended = useMemo(() => {
+    const rawSt = String(selectedProject?.rawStatus || selectedProject?.status || "").toLowerCase();
+    return rawSt === "suspended";
+  }, [selectedProject]);
 
   // Keyboard navigation through list items
   const handleKeyDown = (e, index) => {
@@ -269,6 +292,14 @@ export default function OpportunityReviewPage() {
   const handleApprove = async (e) => {
     e.preventDefault();
     if (!approveModalOpp) return;
+    if (isProjectSuspended) {
+      addToast({
+        type: "danger",
+        title: "Action Blocked",
+        message: "Cannot approve opportunity: The parent project is suspended.",
+      });
+      return;
+    }
     const oppId = approveModalOpp.id;
     const note = approveNote || "Verified and published by Vismaya Casting Desk.";
     if (isRealMode("admin")) {
@@ -658,11 +689,15 @@ export default function OpportunityReviewPage() {
                   <div className="opp-header-actions">
                     <button
                       type="button"
+                      disabled={isProjectSuspended}
                       onClick={() => {
+                        if (isProjectSuspended) return;
                         setApproveModalOpp(selectedOpportunity);
                         setApproveNote("");
                       }}
-                      className="btn-primary opp-action-btn"
+                      className={`btn-primary opp-action-btn ${isProjectSuspended ? "opp-btn-disabled" : ""}`}
+                      title={isProjectSuspended ? "Cannot approve: Parent project is suspended" : "Approve & Publish"}
+                      style={isProjectSuspended ? { opacity: 0.45, cursor: "not-allowed" } : {}}
                     >
                       <CheckCircle2 size={15} />
                       <span>Approve &amp; Publish</span>
@@ -697,13 +732,111 @@ export default function OpportunityReviewPage() {
 
               {/* Detail Content Body */}
               <div className="opp-detail-content-body">
-                {/* 4B. Key Facts: ONE clean 3-col grid inside ONE section surface */}
+                {/* Suspended Parent Project Warning Banner */}
+                {isProjectSuspended && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "12px",
+                      padding: "14px 16px",
+                      borderRadius: "10px",
+                      backgroundColor: "rgba(180, 35, 24, 0.08)",
+                      border: "1px solid rgba(180, 35, 24, 0.28)",
+                      color: "#B42318",
+                      marginBottom: "16px",
+                    }}
+                  >
+                    <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: "2px", color: "#B42318" }} />
+                    <div style={{ fontSize: "13px", lineHeight: "1.5" }}>
+                      <strong style={{ display: "block", fontSize: "14px", fontWeight: "700", marginBottom: "2px" }}>
+                        Parent Project is Suspended
+                      </strong>
+                      Approval is blocked because the parent project &ldquo;{selectedProject?.title || selectedProject?.projectName || "Unknown"}&rdquo; is currently suspended. This opportunity cannot be approved or published until the project suspension is lifted.
+                    </div>
+                  </div>
+                )}
+
+                {/* Parent Project Context Card */}
                 <div className="opp-section-block">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px", flexWrap: "wrap", gap: "10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <FolderKanban size={16} style={{ color: "#8A6B2E" }} />
+                      <h3 className="opp-section-heading" style={{ margin: 0 }}>Parent Project Context</h3>
+                    </div>
+                    <Link
+                      href="/admin/projects"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        fontSize: "12.5px",
+                        fontWeight: "600",
+                        color: "#8A6B2E",
+                        textDecoration: "none",
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        backgroundColor: "#F3EFE6",
+                        border: "1px solid #E8E2D4",
+                        transition: "all 0.18s ease",
+                      }}
+                    >
+                      <span>View in Projects Directory</span>
+                      <ChevronRight size={13} />
+                    </Link>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px", padding: "14px 16px", borderRadius: "10px", backgroundColor: "#FAF8F5", border: "1px solid #E8E2D4", marginBottom: "12px" }}>
+                    <div>
+                      <span style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.04em", color: "#7c869e", display: "block", marginBottom: "3px" }}>Project Name</span>
+                      <strong style={{ fontSize: "14px", color: "#2B2D2A", display: "block" }}>
+                        {selectedProject?.title || selectedProject?.projectName || selectedOpportunity.projectName || "Not provided"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.04em", color: "#7c869e", display: "block", marginBottom: "3px" }}>Organization</span>
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", display: "block" }}>
+                        {selectedOrg?.name || selectedProject?.organizationName || "Not provided"}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.04em", color: "#7c869e", display: "block", marginBottom: "3px" }}>Project Status</span>
+                      <div>
+                        <StatusBadge status={selectedProject?.status || "Active"} size="xs" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <span style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.04em", color: "#7c869e", display: "block", marginBottom: "3px" }}>Project Opportunities</span>
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", display: "block" }}>
+                        {(() => {
+                          const count = selectedProject?.opportunityCount ?? selectedProject?.opportunitiesCount ?? selectedOpportunity?.project?.opportunityCount ?? selectedOpportunity?.project?.opportunitiesCount ?? opportunities.filter(o => {
+                            const oppProjId = o.projectId?._id || o.projectId?.id || o.projectId;
+                            return String(oppProjId) === String(selectedProject?.id || selectedProject?._id);
+                          }).length;
+                          return `${count} ${count === 1 ? "Opportunity" : "Opportunities"}`;
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.04em", color: "#7c869e", display: "block", marginBottom: "4px" }}>Project Description</span>
+                    <p style={{ fontSize: "13px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
+                      {selectedProject?.description && selectedProject.description !== "Not provided" ? selectedProject.description : "No description provided for this project."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 4B. Key Facts: ONE clean 3-col grid inside ONE section surface */}
+                <div className="opp-section-block opp-divider-top">
                   <div className="opp-key-facts-grid">
                     {/* 1. Organization */}
                     <div className="opp-fact-cell">
                       <span className="opp-fact-label">Organization</span>
-                      <strong className="opp-fact-val">{selectedOrg?.name || "Organization"}</strong>
+                      <strong className="opp-fact-val">{selectedOrg?.name || selectedProject?.organizationName || "Not provided"}</strong>
                       <span className="opp-fact-sub">
                         {selectedOrg?.type || "Production House"} &bull; {selectedOrg?.status || "Verified"}
                       </span>
@@ -712,16 +845,16 @@ export default function OpportunityReviewPage() {
                     {/* 2. Project Link */}
                     <div className="opp-fact-cell">
                       <span className="opp-fact-label">Project</span>
-                      <strong className="opp-fact-val">{selectedProject?.title || "Mumbai Diaries"}</strong>
+                      <strong className="opp-fact-val">{selectedProject?.title || selectedProject?.projectName || selectedOpportunity.projectName || "Not provided"}</strong>
                       <span className="opp-fact-sub">
-                        {selectedProject?.type || "OTT Series"}
+                        {selectedProject?.type || selectedProject?.projectType || "Not provided"}
                       </span>
                     </div>
 
                     {/* 3. Location */}
                     <div className="opp-fact-cell">
                       <span className="opp-fact-label">Location</span>
-                      <strong className="opp-fact-val">{selectedOpportunity.location || "Mumbai"}</strong>
+                      <strong className="opp-fact-val">{selectedOpportunity.location || "Not provided"}</strong>
                       <span className="opp-fact-sub">On-location / Studio</span>
                     </div>
 
@@ -729,7 +862,7 @@ export default function OpportunityReviewPage() {
                     <div className="opp-fact-cell">
                       <span className="opp-fact-label">Remuneration</span>
                       <strong className="opp-fact-val" style={{ color: "var(--gold)" }}>
-                        {selectedOpportunity.remuneration || "Standard Industry Scale"}
+                        {selectedOpportunity.remuneration || "Not provided"}
                       </strong>
                       <span className="opp-fact-sub">Direct Production Payout</span>
                     </div>
@@ -737,7 +870,7 @@ export default function OpportunityReviewPage() {
                     {/* 5. Application Deadline */}
                     <div className="opp-fact-cell">
                       <span className="opp-fact-label">Application Deadline</span>
-                      <strong className="opp-fact-val">{selectedOpportunity.deadline}</strong>
+                      <strong className="opp-fact-val">{selectedOpportunity.deadline || "Not provided"}</strong>
                       <span className="opp-fact-sub">Auto-closing at 23:59 IST</span>
                     </div>
 
@@ -748,7 +881,9 @@ export default function OpportunityReviewPage() {
                         {(selectedOpportunity.roles || []).length} Available{" "}
                         {(selectedOpportunity.roles || []).length === 1 ? "Role" : "Roles"}
                       </strong>
-                      <span className="opp-fact-sub">Casting breakdowns below</span>
+                      <span className="opp-fact-sub">
+                        {selectedOpportunity.positionsCount || (selectedOpportunity.roles || []).length || 1} total {(selectedOpportunity.positionsCount || (selectedOpportunity.roles || []).length) === 1 ? "opening" : "openings"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -757,7 +892,7 @@ export default function OpportunityReviewPage() {
                 <div className="opp-section-block opp-divider-top">
                   <h3 className="opp-section-heading">Brief summary</h3>
                   <p className="opp-description-text">
-                    {selectedOpportunity.summary || selectedOpportunity.fullBrief}
+                    {selectedOpportunity.summary || selectedOpportunity.fullBrief || "No brief summary provided."}
                   </p>
                 </div>
 
@@ -807,20 +942,20 @@ export default function OpportunityReviewPage() {
 
                         <div className="opp-preview-public-details">
                           <p style={{ fontSize: "0.85rem", color: "#a3acc2", margin: 0, lineHeight: 1.55 }}>
-                            {selectedOpportunity.summary || selectedOpportunity.fullBrief}
+                            {selectedOpportunity.summary || selectedOpportunity.fullBrief || "Not provided"}
                           </p>
                           <div className="opp-preview-tags">
                             <span className="opp-preview-tag">
                               <MapPin size={12} style={{ color: "var(--gold)" }} />
-                              <span>{selectedOpportunity.location}</span>
+                              <span>{selectedOpportunity.location || "Not provided"}</span>
                             </span>
                             <span className="opp-preview-tag">
                               <DollarSign size={12} style={{ color: "var(--gold)" }} />
-                              <span>{selectedOpportunity.remuneration}</span>
+                              <span>{selectedOpportunity.remuneration || "Not provided"}</span>
                             </span>
                             <span className="opp-preview-tag">
                               <Calendar size={12} style={{ color: "var(--gold)" }} />
-                              <span>Closes: {selectedOpportunity.deadline}</span>
+                              <span>Closes: {selectedOpportunity.deadline || "Not provided"}</span>
                             </span>
                           </div>
                         </div>
@@ -833,15 +968,16 @@ export default function OpportunityReviewPage() {
                         </div>
                         <p className="opp-loggedin-text">
                           {selectedOpportunity.fullBrief ||
-                            "Full audition script instructions, detailed character arcs, scene sides, and ensemble breakdown available upon applying."}
+                            selectedOpportunity.summary ||
+                            "Not provided"}
                         </p>
                         {selectedOpportunity.eligibility && (
                           <div className="opp-eligibility-strip">
                             <span style={{ color: "#7c869e", fontWeight: 600 }}>Eligibility Match: </span>
                             <span>
-                              Age {selectedOpportunity.eligibility.ageMin}–{selectedOpportunity.eligibility.ageMax} &bull;{" "}
-                              {selectedOpportunity.eligibility.languages?.join(", ") || "All Languages"} &bull;{" "}
-                              {selectedOpportunity.eligibility.location}
+                              Age {selectedOpportunity.eligibility.ageMin ? `${selectedOpportunity.eligibility.ageMin}–${selectedOpportunity.eligibility.ageMax || ""}` : "Not provided"} &bull;{" "}
+                              {selectedOpportunity.eligibility.languages?.length > 0 ? selectedOpportunity.eligibility.languages.join(", ") : "Not provided"} &bull;{" "}
+                              {selectedOpportunity.eligibility.workingCities?.join(", ") || selectedOpportunity.location || "Not provided"}
                             </span>
                           </div>
                         )}
@@ -867,6 +1003,7 @@ export default function OpportunityReviewPage() {
                     {(selectedOpportunity.roles || []).map((role, idx) => {
                       const isMulti = (selectedOpportunity.roles || []).length > 3;
                       const isOpen = isMulti ? (expandedRoles[idx] !== undefined ? expandedRoles[idx] : idx === 0) : true;
+                      const countVal = Number(role.count || role.positionsCount) || 1;
 
                       return (
                         <div
@@ -879,7 +1016,7 @@ export default function OpportunityReviewPage() {
                           <div className="opp-role-top-row">
                             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                               <strong className="opp-role-name">
-                                {role.roleName}
+                                {role.roleName || "Not provided"}
                               </strong>
                               {isMulti && (
                                 <span style={{ color: "#7c869e" }}>
@@ -888,7 +1025,7 @@ export default function OpportunityReviewPage() {
                               )}
                             </div>
                             <span className="opp-openings-chip">
-                              {role.count} {role.count === 1 ? "opening" : "openings"}
+                              {countVal} {countVal === 1 ? "opening" : "openings"}
                             </span>
                           </div>
 
@@ -897,34 +1034,24 @@ export default function OpportunityReviewPage() {
                             <div className="opp-role-body">
                               {/* Meta chips */}
                               <div className="opp-role-chips-row">
-                                {role.ageRange && (
-                                  <span className="opp-role-meta-chip">
-                                    Age: <strong>{role.ageRange}</strong>
-                                  </span>
-                                )}
-                                {role.gender && (
-                                  <span className="opp-role-meta-chip">
-                                    Gender: <strong>{role.gender}</strong>
-                                  </span>
-                                )}
-                                {role.language && (
-                                  <span className="opp-role-meta-chip">
-                                    Languages: <strong>{role.language}</strong>
-                                  </span>
-                                )}
-                                {role.skills && Array.isArray(role.skills) && (
-                                  <span className="opp-role-meta-chip">
-                                    Skills: <strong>{role.skills.join(", ")}</strong>
-                                  </span>
-                                )}
+                                <span className="opp-role-meta-chip">
+                                  Age: <strong>{role.ageRange || "Not provided"}</strong>
+                                </span>
+                                <span className="opp-role-meta-chip">
+                                  Gender: <strong>{role.gender || "Not provided"}</strong>
+                                </span>
+                                <span className="opp-role-meta-chip">
+                                  Languages: <strong>{role.language || "Not provided"}</strong>
+                                </span>
+                                <span className="opp-role-meta-chip">
+                                  Skills: <strong>{Array.isArray(role.skills) && role.skills.length > 0 ? role.skills.join(", ") : "Not provided"}</strong>
+                                </span>
                               </div>
 
                               {/* Description */}
-                              {role.description && (
-                                <p className="opp-role-desc">
-                                  {role.description}
-                                </p>
-                              )}
+                              <p className="opp-role-desc" style={{ marginTop: "10px" }}>
+                                {role.description && role.description !== "Not provided" ? role.description : "No specific role description provided."}
+                              </p>
                             </div>
                           )}
                         </div>
@@ -939,12 +1066,21 @@ export default function OpportunityReviewPage() {
                 <div className="mobile-fixed-action-bar">
                   <button
                     type="button"
+                    disabled={isProjectSuspended}
                     onClick={() => {
+                      if (isProjectSuspended) return;
                       setApproveModalOpp(selectedOpportunity);
                       setApproveNote("");
                     }}
                     className="btn-primary"
-                    style={{ flex: 1, minHeight: "42px", justifyContent: "center" }}
+                    style={{
+                      flex: 1,
+                      minHeight: "42px",
+                      justifyContent: "center",
+                      opacity: isProjectSuspended ? 0.45 : 1,
+                      cursor: isProjectSuspended ? "not-allowed" : "pointer",
+                    }}
+                    title={isProjectSuspended ? "Cannot approve: Parent project is suspended" : "Approve & Publish"}
                   >
                     <CheckCircle2 size={16} />
                     <span>Approve &amp; Publish</span>
