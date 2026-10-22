@@ -50,6 +50,7 @@ export const adminService = {
         broadcasts: [],
         notifications: [],
         activities: [],
+        verifications: [],
       };
     }
     return {
@@ -66,6 +67,26 @@ export const adminService = {
       broadcasts: initialBroadcasts,
       notifications: initialAdminNotifications,
       activities: initialRecentAdminActivity,
+      verifications: [
+        {
+          _id: "ver-mock-1",
+          id: "ver-mock-1",
+          userId: "usr-1",
+          userName: "Aarav Sharma",
+          verificationType: "identity",
+          status: "pending",
+          documentType: "Aadhaar / Passport",
+        },
+        {
+          _id: "ver-mock-2",
+          id: "ver-mock-2",
+          userId: "usr-2",
+          userName: "Ananya Roy",
+          verificationType: "professional",
+          status: "pending",
+          documentType: "IMDb / Credit Contract",
+        },
+      ],
     };
   },
   /**
@@ -382,6 +403,62 @@ export const adminService = {
   },
 
   /**
+   * Fetch pending cancellation requests (Admin queue)
+   */
+  async getCancellationRequests() {
+    if (!isRealMode("admin")) {
+      return { success: true, data: [] };
+    }
+    const res = await apiClient.get("/api/admin/cancellation-requests");
+    const rawOpps = Array.isArray(res?.opportunities) ? res.opportunities : Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+    const mapped = rawOpps.map((opp) => {
+      const oppId = opp._id?.toString() || opp.id;
+      const orgId = opp.organizationId?._id?.toString() || opp.organizationId?.toString() || opp.projectId?.organizationId?._id?.toString() || opp.projectId?.organizationId?.toString() || "";
+      let status = "Pending";
+      const rawStatus = (opp.status || "").toLowerCase();
+      if (rawStatus === "cancelled" || rawStatus === "canceled") status = "Approved";
+      else if (rawStatus === "published" || rawStatus === "rejected") status = "Declined";
+      else status = "Pending";
+
+      return {
+        id: oppId,
+        opportunityId: oppId,
+        orgId,
+        reason: opp.cancellationReason || "No reason provided",
+        status,
+        rawStatus: opp.status,
+        requestedAt: opp.cancellationRequestedAt || opp.updatedAt || opp.createdAt,
+        title: opp.title,
+        opportunity: opp,
+      };
+    });
+    return {
+      success: true,
+      data: mapped,
+      total: res?.count || mapped.length,
+    };
+  },
+
+  /**
+   * Review an opportunity cancellation request
+   * @param {string} opportunityId
+   * @param {Object} payload { action: 'approve' | 'reject', reason?: string, adminNote?: string }
+   */
+  async reviewOpportunityCancellation(opportunityId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Cancellation reviewed (Mock)" };
+    }
+    const action = String(payload.action || payload.decision || "").toLowerCase().includes("reject") || String(payload.decision || "").toLowerCase().includes("decline") ? "reject" : "approve";
+    const reason = payload.reason || payload.adminNote || payload.rejectionReason || "";
+    const body = {
+      action,
+      ...(reason ? { reason, rejectionReason: reason, adminNote: reason } : {}),
+    };
+    const res = await apiClient.patch(`/api/admin/opportunities/${opportunityId}/review-cancellation`, body);
+    return res?.data || res;
+  },
+
+  /**
    * Fetch all applications across platform (Admin view)
    */
   async getAllApplications(params = {}) {
@@ -454,10 +531,35 @@ export const adminService = {
     }
 
     const res = await apiClient.get("/api/admin/opportunities/cancellations", { params });
-    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.cancellations) ? res.cancellations : Array.isArray(res) ? res : [];
+    const docs = Array.isArray(res?.data)
+      ? res.data
+      : Array.isArray(res?.cancellations)
+      ? res.cancellations
+      : Array.isArray(res?.opportunities)
+      ? res.opportunities
+      : Array.isArray(res)
+      ? res
+      : [];
     return {
       success: true,
       data: docs.map(mapOpportunity),
+    };
+  },
+
+  /**
+   * Review opportunity cancellation request (Spec Section 31 & 44)
+   * @param {string} opportunityId
+   * @param {Object} payload { action: "approve" | "reject", reason?: string, adminNote?: string }
+   */
+  async reviewOpportunityCancellation(opportunityId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: `Cancellation ${payload.action || "reviewed"} (Mock)` };
+    }
+    const res = await apiClient.patch(`/api/admin/opportunities/${opportunityId}/review-cancellation`, payload);
+    return {
+      success: true,
+      data: res?.data || res?.opportunity || res,
+      message: res?.message || `Cancellation request ${payload.action || "processed"} successfully`,
     };
   },
 
@@ -673,8 +775,9 @@ export const adminService = {
 
   /**
    * Fetch pending identity/professional/business verifications
+   * @param {Object} params - e.g. { status: "all", verificationType: "identity" }
    */
-  async getPendingVerifications() {
+  async getPendingVerifications(params = {}) {
     if (!isRealMode("admin")) {
       return {
         success: true,
@@ -682,7 +785,9 @@ export const adminService = {
       };
     }
 
-    const res = await apiClient.get("/api/admin/verifications/pending");
+    const query = new URLSearchParams(params).toString();
+    const endpoint = `/api/admin/verifications/pending${query ? `?${query}` : ""}`;
+    const res = await apiClient.get(endpoint);
     const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.verifications) ? res.verifications : Array.isArray(res) ? res : [];
     return {
       success: true,
@@ -693,7 +798,7 @@ export const adminService = {
   /**
    * Review a verification submission
    * @param {string} verificationId
-   * @param {Object} payload { status, notes }
+   * @param {Object} payload { action, status, notes, rejectionReason }
    */
   async reviewVerification(verificationId, payload) {
     if (!isRealMode("admin")) {
@@ -703,10 +808,19 @@ export const adminService = {
       };
     }
 
-    const res = await apiClient.patch(`/api/admin/verifications/${verificationId}/review`, payload);
+    // Normalize payload to include action for backend
+    const normalizedPayload = {
+      action: payload.action || (payload.status === "verified" ? "approve" : payload.status === "rejected" ? "reject" : payload.status),
+      status: payload.status,
+      notes: payload.notes,
+      rejectionReason: payload.rejectionReason || payload.notes,
+      ...payload,
+    };
+
+    const res = await apiClient.patch(`/api/admin/verifications/${verificationId}/review`, normalizedPayload);
     const doc = res?.data || res?.verification || res;
     return {
-      success: true,
+      success: res?.success ?? true,
       data: doc ? mapVerification(doc) : null,
       message: res?.message,
     };
@@ -948,10 +1062,7 @@ export const adminService = {
   },
 
   async reviewSuccessStory(storyId, payload) {
-    if (!isRealMode("admin")) {
-      return { success: true, message: "Success story reviewed (Mock)" };
-    }
-    return apiClient.patch(`/api/admin/success-stories/${storyId}/review`, payload);
+    return this.reviewSuccessStoryNormalized(storyId, payload);
   },
 
   // Aliases for backward compatibility & dispatching
@@ -1253,12 +1364,23 @@ export const adminService = {
   /**
    * Review a Success Story submission
    */
-  async reviewSuccessStory(storyId, payload = {}) {
+  async reviewSuccessStoryNormalized(storyId, payload = {}) {
     if (!isRealMode("admin")) {
       return { success: true, message: "Success story reviewed (Mock)" };
     }
-    const res = await apiClient.patch(`/api/admin/success-stories/${storyId}/review`, payload);
+    const decision = payload.decision || (payload.action === "reject" ? "reject" : payload.action === "approve" ? "approve" : payload.action);
+    const rejectionReason = payload.rejectionReason || payload.feedback || payload.reason || "";
+    const body = {
+      decision,
+      ...(rejectionReason ? { rejectionReason } : {}),
+      ...(payload.displayOrder !== undefined ? { displayOrder: payload.displayOrder } : {}),
+    };
+    const res = await apiClient.patch(`/api/admin/success-stories/${storyId}/review`, body);
     return res?.data || res;
+  },
+
+  async reviewSuccessStory(storyId, payload = {}) {
+    return this.reviewSuccessStoryNormalized(storyId, payload);
   },
 
   /**

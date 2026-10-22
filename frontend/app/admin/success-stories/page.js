@@ -65,11 +65,11 @@ export default function SuccessStoriesApprovalPage() {
     const id = story._id || story.id;
     if (isRealMode("admin")) {
       try {
-        await adminService.reviewSuccessStory(id, { action: "approve" });
+        await adminService.reviewSuccessStory(id, { decision: "approve" });
         setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
         showToast("Success story approved for platform showcase.");
       } catch (err) {
-        showToast(err?.message || "Failed to approve story");
+        showToast(err?.response?.data?.message || err?.message || "Failed to approve story");
       }
     } else {
       setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
@@ -79,20 +79,26 @@ export default function SuccessStoriesApprovalPage() {
 
   const handleRejectSubmit = async (reason) => {
     if (!rejectingStory) return;
+    const trimmedReason = (reason || "").trim();
+    if (!trimmedReason) {
+      showToast("Please provide a reason for rejecting this story.");
+      return;
+    }
     const id = rejectingStory._id || rejectingStory.id;
     if (isRealMode("admin")) {
       try {
-        await adminService.reviewSuccessStory(id, { action: "reject", feedback: reason });
+        await adminService.reviewSuccessStory(id, { decision: "reject", rejectionReason: trimmedReason });
         setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
         showToast("Success story rejected with feedback.");
+        setRejectingStory(null);
       } catch (err) {
-        showToast(err?.message || "Failed to reject story");
+        showToast(err?.response?.data?.message || err?.message || "Failed to reject story");
       }
     } else {
       setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
       showToast("Success story rejected (Mock).");
+      setRejectingStory(null);
     }
-    setRejectingStory(null);
   };
 
   return (

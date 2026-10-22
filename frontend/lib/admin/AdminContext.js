@@ -50,6 +50,9 @@ export function AdminProvider({ children }) {
   // 14. Toasts State
   const [toasts, setToasts] = useState([]);
 
+  // 15. Verifications State
+  const [verifications, setVerifications] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().verifications || []));
+
   // Fetch real data on mount when in real API mode
   useEffect(() => {
     if (!isRealMode("admin")) return;
@@ -92,6 +95,9 @@ export function AdminProvider({ children }) {
           }
           if (logsRes.status === "fulfilled" && Array.isArray(logsRes.value?.data)) {
             setActivities(logsRes.value.data);
+          }
+          if (verRes.status === "fulfilled" && Array.isArray(verRes.value?.data)) {
+            setVerifications(verRes.value.data);
           }
         }
       } catch (err) {
@@ -1182,9 +1188,25 @@ export function AdminProvider({ children }) {
   const pendingRequirementsCount = requirementRequests.filter(
     (r) => r.status === "New" || r.status === "Needs Clarification" || r.status === "Ready to Publish"
   ).length;
+  const pendingVerificationsCount = verifications.filter(
+    (v) => (v.status || "").toLowerCase() === "pending" || (v.rawStatus || "").toLowerCase() === "pending"
+  ).length;
   const totalPendingApprovals =
-    pendingTalentsCount + pendingRecruitersCount + pendingMediaCount + pendingRequirementsCount;
+    pendingTalentsCount + pendingRecruitersCount + pendingMediaCount + pendingRequirementsCount + pendingVerificationsCount;
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
+
+  const refreshVerifications = async () => {
+    if (isRealMode("admin")) {
+      try {
+        const res = await adminService.getPendingVerifications();
+        if (Array.isArray(res?.data)) {
+          setVerifications(res.data);
+        }
+      } catch (err) {
+        console.warn("Failed to refresh verifications in context:", err);
+      }
+    }
+  };
 
   return (
     <AdminContext.Provider
@@ -1249,6 +1271,10 @@ export function AdminProvider({ children }) {
         pendingRecruitersCount,
         pendingMediaCount,
         pendingRequirementsCount,
+        pendingVerificationsCount,
+        verifications,
+        setVerifications,
+        refreshVerifications,
         totalPendingApprovals,
         unreadNotificationsCount,
       }}

@@ -3,6 +3,8 @@ const require = createRequire(import.meta.url);
 const { chromium } = require("../../frontend/node_modules/playwright");
 import mongoose from "../../backend/node_modules/mongoose/index.js";
 import bcrypt from "../../backend/node_modules/bcrypt/bcrypt.js";
+import fs from "fs";
+import path from "path";
 import {
   connectDB,
   frontendUrl,
@@ -19,6 +21,7 @@ const tracked = {
   drafts: [],
   otps: [],
   payments: [],
+  verifications: [],
 };
 
 async function run() {
@@ -180,6 +183,21 @@ async function run() {
     }
 
     // Complete registration
+    console.log("Filling Step 5 Accreditation Documents fields...");
+    await page.fill('input[placeholder*="U92100MH2018PTC312456"]', "U92100MH2018PTC312456");
+    const sampleDocPath = path.resolve(process.cwd(), "scripts/audit/sample_biz_doc.pdf");
+    if (!fs.existsSync(sampleDocPath)) {
+      fs.writeFileSync(sampleDocPath, "%PDF-1.4 Business Registration Proof Document");
+    }
+    const fileInputs = await page.$$('input[type="file"]');
+    if (fileInputs.length > 0) {
+      await fileInputs[0].setInputFiles(sampleDocPath);
+      await page.waitForSelector('text=Registration Document', { timeout: 10000 });
+    }
+    await page.check('input[type="checkbox"]');
+    await page.fill('textarea[placeholder*="threshold"]', "Turnover under 20L threshold");
+    await page.fill('input[placeholder*="vismaya.io"]', "https://paramountstudios.com");
+
     console.log("Submitting final organization registration...");
     await page.click('button:has-text("Enter Organization Dashboard")');
 
@@ -257,6 +275,10 @@ async function run() {
     // CLEANUP & ORPHAN PROFILE COUNT INTEGRITY
     // -------------------------------------------------------------
     console.log("\n--- CLEANUP & HYGIENE VERIFICATION ---");
+    const sampleDocPath = path.resolve(process.cwd(), "scripts/audit/sample_biz_doc.pdf");
+    if (fs.existsSync(sampleDocPath)) {
+      try { fs.unlinkSync(sampleDocPath); } catch {}
+    }
     const delUsers = await db.collection("users").deleteMany({ _id: { $in: tracked.users } });
     const delOrgs = await db.collection("organizations").deleteMany({ _id: { $in: tracked.orgs } });
     const delDrafts = await db.collection("registrationdrafts").deleteMany({
@@ -264,6 +286,9 @@ async function run() {
     });
     const delOtps = await db.collection("otps").deleteMany({
       email: { $regex: new RegExp(PREFIX, "i") },
+    });
+    await db.collection("verifications").deleteMany({
+      userId: { $in: tracked.users }
     });
 
     // Check orphan profiles

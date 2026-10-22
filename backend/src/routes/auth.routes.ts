@@ -35,8 +35,10 @@ import {
     forgotPassword,
     verifyOtp,
     resetPassword,
-    checkAvailability
+    checkAvailability,
+    uploadAccreditationDocument
  } from "../controllers/auth.controller.js";
+import { handleAccreditationUpload, verifyUploadMagicBytes } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -49,6 +51,13 @@ router.post("/admin/reset-password", adminResetPasswordLimiter, adminResetPasswo
 // Registration & Verification
 router.post("/check-availability", draftLimiter, checkAvailability);
 router.post("/register", authLimiter, registerUser);
+router.post(
+    "/upload-accreditation-document",
+    draftLimiter,
+    handleAccreditationUpload,
+    verifyUploadMagicBytes,
+    uploadAccreditationDocument
+);
 router.post("/verify-registration", otpLimiter, verifyRegistration);
 router.post("/resend-registration-otp", otpLimiter, resendRegistrationOtp);
 

@@ -18,6 +18,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
     pendingTalentsCount,
     pendingRecruitersCount,
     pendingMediaCount,
+    pendingVerificationsCount = 0,
   } = useAdmin();
 
   const {
@@ -74,7 +75,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
       case "pendingOrganizations":
         return pendingRecruitersCount;
       case "pendingVerifications":
-        return pendingTalentsCount + pendingRecruitersCount;
+        return pendingVerificationsCount;
       case "pendingMedia":
         return pendingMediaCount;
       case "pendingOpportunities":

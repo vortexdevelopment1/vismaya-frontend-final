@@ -238,7 +238,7 @@ export function RecruiterProvider({ children }) {
   const deleteRequirement = async (id) => {
     if (isRealMode("recruiter")) {
       try {
-        await recruiterService.requestOpportunityCancellation(id, { reason: "Cancellation requested by recruiter" });
+        await recruiterService.requestOpportunityCancellation(id, { cancellationReason: "Cancellation requested by recruiter" });
       } catch (err) {
         addToast({
           type: "danger",

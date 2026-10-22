@@ -30,9 +30,12 @@ import {
   Pencil,
   Loader2,
   Info,
+  Upload,
+  X,
+  ExternalLink,
 } from "lucide-react";
 import { PRICING_CONFIG } from "@/lib/config/pricing";
-import { getAuthToken } from "@/lib/api/client";
+import { getAuthToken, setAuthToken } from "@/lib/api/client";
 import { isRealMode } from "@/lib/api/config";
 import { uploadMedia } from "@/lib/api/uploadMedia";
 import { authService } from "@/lib/api/services/authService";
@@ -237,8 +240,137 @@ function RegisterPageContent() {
     "Premier Bollywood and regional feature film and commercial production house."
   );
   const [genres, setGenres] = useState("Feature Films, OTT Series, Ad Commercials");
+  // Step 5 (Org): Accreditation Documents & Legal Credentials
   const [cinNumber, setCinNumber] = useState("U92100MH2018PTC312456");
+  const [regNumberError, setRegNumberError] = useState("");
+  const [businessDocUrl, setBusinessDocUrl] = useState("");
+  const [businessDocName, setBusinessDocName] = useState("");
+  const [businessDocError, setBusinessDocError] = useState("");
+  const [isUploadingBusinessDoc, setIsUploadingBusinessDoc] = useState(false);
+
   const [gstNumber, setGstNumber] = useState("27AABCZ1234F1Z5");
+  const [isGstExempt, setIsGstExempt] = useState(false);
+  const [gstExemptionReason, setGstExemptionReason] = useState("");
+  const [gstCertUrl, setGstCertUrl] = useState("");
+  const [gstCertName, setGstCertName] = useState("");
+  const [gstError, setGstError] = useState("");
+  const [isUploadingGstCert, setIsUploadingGstCert] = useState(false);
+
+  const [professionalProofUrl, setProfessionalProofUrl] = useState("");
+  const [professionalProofDocUrl, setProfessionalProofDocUrl] = useState("");
+  const [professionalProofDocName, setProfessionalProofDocName] = useState("");
+  const [professionalProofError, setProfessionalProofError] = useState("");
+  const [isUploadingProfProof, setIsUploadingProfProof] = useState(false);
+
+  const [otherEvidenceList, setOtherEvidenceList] = useState([]); // [{ url, name }]
+  const [otherEvidenceError, setOtherEvidenceError] = useState("");
+  const [isUploadingOther, setIsUploadingOther] = useState(false);
+
+  const validateRegNumberFormat = (val) => {
+    if (!val || typeof val !== "string" || !val.trim()) {
+      return "Registration number is required.";
+    }
+    const clean = val.trim().toUpperCase();
+    const isCinLike = clean.length === 21 || /^[LU][0-9]{5}/.test(clean);
+    if (isCinLike) {
+      const cinRegex = /^[LU][0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6}$/;
+      if (!cinRegex.test(clean)) {
+        return "Invalid CIN format. Must be 21 characters (e.g. U92100MH2018PTC312456).";
+      }
+    } else {
+      const alphanumericRegex = /^[A-Z0-9\-\/]{6,30}$/;
+      if (!alphanumericRegex.test(clean)) {
+        return "Registration number must be 6-30 alphanumeric characters (LLPIN / Udyam).";
+      }
+    }
+    return null;
+  };
+
+  const validateGstFormat = (val, exempt) => {
+    if (exempt) return null;
+    if (!val || typeof val !== "string" || !val.trim()) {
+      return "GSTIN is required unless exempt.";
+    }
+    const clean = val.trim().toUpperCase();
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (!gstRegex.test(clean)) {
+      return "Invalid GSTIN format (15 characters, e.g. 27AABCZ1234F1Z5).";
+    }
+    return null;
+  };
+
+  const handleFileUpload = async (e, setUrl, setName, setError, setUploading) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setError("");
+    const allowed = ["application/pdf", "image/jpeg", "image/png"];
+    if (!allowed.includes(file.type)) {
+      setError("Invalid file type. Only PDF, JPG, and PNG files under 5 MB are accepted.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("File exceeds 5 MB limit. Please upload a file smaller than 5 MB.");
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const res = await authService.uploadAccreditationDocument(file);
+      if (res?.url) {
+        setUrl(res.url);
+        setName(res.originalFilename || file.name);
+      } else {
+        setError(res?.message || "Upload failed. Please try again.");
+      }
+    } catch (err) {
+      setError(err?.message || "Upload failed. Please check file and try again.");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleAddOtherEvidence = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setOtherEvidenceError("");
+    if (otherEvidenceList.length >= 2) {
+      setOtherEvidenceError("You can upload a maximum of 2 additional evidence files.");
+      e.target.value = "";
+      return;
+    }
+    const allowed = ["application/pdf", "image/jpeg", "image/png"];
+    if (!allowed.includes(file.type)) {
+      setOtherEvidenceError("Invalid file type. Only PDF, JPG, and PNG files under 5 MB are accepted.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setOtherEvidenceError("File exceeds 5 MB limit. Please upload a file smaller than 5 MB.");
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      setIsUploadingOther(true);
+      const res = await authService.uploadAccreditationDocument(file);
+      if (res?.url) {
+        setOtherEvidenceList((prev) => [
+          ...prev,
+          { url: res.url, name: res.originalFilename || file.name },
+        ]);
+      } else {
+        setOtherEvidenceError(res?.message || "Upload failed. Please try again.");
+      }
+    } catch (err) {
+      setOtherEvidenceError(err?.message || "Upload failed. Please check file and try again.");
+    } finally {
+      setIsUploadingOther(false);
+      e.target.value = "";
+    }
+  };
 
   // Step 5 (Talent): Professional Identity
   const [primaryCraft, setPrimaryCraft] = useState("Actor / Screen Artist");
@@ -248,6 +380,7 @@ function RegisterPageContent() {
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRegistrationComplete, setIsRegistrationComplete] = useState(false);
   const [formError, setFormError] = useState("");
 
   // Store only the lightweight draft session identifier (no form data in localStorage)
@@ -503,6 +636,10 @@ function RegisterPageContent() {
       }
     }
 
+    try {
+      authService.resendRegistrationOtp({ email }).catch(() => {});
+    } catch {}
+
     setOtpSent(true);
     setResendTimer(60);
     setCurrentStep(2);
@@ -510,7 +647,7 @@ function RegisterPageContent() {
   };
 
   // Step 2: Verify OTP
-  const handleVerifyOtp = (e) => {
+  const handleVerifyOtp = async (e) => {
     e.preventDefault();
     if (!otp || otp.length < 4) {
       setFormError("Please enter the verification code sent to your email.");
@@ -518,6 +655,17 @@ function RegisterPageContent() {
     }
 
     setFormError("");
+    try {
+      const verifyRes = await authService.verifyRegistration({ email, otp: otp.trim() });
+      if (verifyRes && verifyRes.success === false) {
+        setFormError(verifyRes.message || "Invalid verification code. Please check and try again.");
+        return;
+      }
+    } catch (vErr) {
+      setFormError(vErr.message || "Invalid verification code. Please check and try again.");
+      return;
+    }
+
     const nextStep = 3;
     setCurrentStep(nextStep);
     saveDraft({ step: nextStep });
@@ -585,10 +733,62 @@ function RegisterPageContent() {
     setEmailError("");
     setNameError("");
     setPasswordError("");
+    setRegNumberError("");
+    setBusinessDocError("");
+    setGstError("");
+    setProfessionalProofError("");
+
+    if (selectedRole === "organization") {
+      let hasClientErr = false;
+
+      // 1. Registration Number validation
+      const regErr = validateRegNumberFormat(cinNumber);
+      if (regErr) {
+        setRegNumberError(regErr);
+        hasClientErr = true;
+      }
+
+      // 2. Business registration document upload validation
+      if (!businessDocUrl) {
+        setBusinessDocError("Business registration document upload is required.");
+        hasClientErr = true;
+      }
+
+      // 3. GSTIN + Certificate or Exemption reason
+      if (!isGstExempt) {
+        const gstErr = validateGstFormat(gstNumber, false);
+        if (gstErr) {
+          setGstError(gstErr);
+          hasClientErr = true;
+        } else if (!gstCertUrl) {
+          setGstError("GST certificate upload is required when GST registered.");
+          hasClientErr = true;
+        }
+      } else {
+        if (!gstExemptionReason || gstExemptionReason.trim().length < 3) {
+          setGstError("Please provide a valid reason for GST exemption (minimum 3 characters).");
+          hasClientErr = true;
+        }
+      }
+
+      // 4. Professional / Industry proof (website/portfolio link or uploaded document)
+      const hasLink = Boolean((website && website.trim()) || (professionalProofUrl && professionalProofUrl.trim()));
+      const hasDoc = Boolean(professionalProofDocUrl);
+      if (!hasLink && !hasDoc) {
+        setProfessionalProofError("Please provide either a website/portfolio link or upload a professional proof document.");
+        hasClientErr = true;
+      }
+
+      if (hasClientErr) {
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     try {
       const rawContact = selectedRole === "organization" ? orgPhone : phone;
       const cleanContact = normalizeIndianMobile(rawContact);
+      const effectiveWebsite = professionalProofUrl.trim() || (website ? website.trim() : undefined);
       const payload = {
         role: selectedRole === "organization" ? "organization" : "talent",
         email: email.trim(),
@@ -604,15 +804,31 @@ function RegisterPageContent() {
         skills: skills ? skills.split(",").map((s) => s.trim()).filter(Boolean) : [],
         bio: bio ? bio.trim() : "",
         companyType: selectedRole === "organization" ? companyType : undefined,
-        cinNumber: selectedRole === "organization" ? cinNumber : undefined,
-        registrationNumber: selectedRole === "organization" ? cinNumber : undefined,
-        gstNumber: selectedRole === "organization" ? gstNumber : undefined,
-        website: selectedRole === "organization" ? website : undefined,
+        cinNumber: selectedRole === "organization" ? cinNumber.trim().toUpperCase() : undefined,
+        registrationNumber: selectedRole === "organization" ? cinNumber.trim().toUpperCase() : undefined,
+        gstNumber: selectedRole === "organization" ? (isGstExempt ? undefined : gstNumber.trim().toUpperCase()) : undefined,
+        isGstExempt: selectedRole === "organization" ? Boolean(isGstExempt) : undefined,
+        gstExemptionReason: selectedRole === "organization" && isGstExempt ? gstExemptionReason.trim() : undefined,
+        businessRegistrationDocUrl: selectedRole === "organization" ? businessDocUrl : undefined,
+        businessRegistrationDocName: selectedRole === "organization" ? businessDocName : undefined,
+        gstCertificateUrl: selectedRole === "organization" && !isGstExempt ? gstCertUrl : undefined,
+        gstCertificateDocName: selectedRole === "organization" && !isGstExempt ? gstCertName : undefined,
+        professionalProofType: selectedRole === "organization" ? (professionalProofDocUrl && effectiveWebsite ? "both" : (professionalProofDocUrl ? "document" : "website")) : undefined,
+        professionalProofUrl: selectedRole === "organization" ? effectiveWebsite : undefined,
+        professionalProofDocUrl: selectedRole === "organization" ? professionalProofDocUrl : undefined,
+        professionalProofDocName: selectedRole === "organization" ? professionalProofDocName : undefined,
+        otherEvidenceUrls: selectedRole === "organization" ? otherEvidenceList.map((i) => i.url) : undefined,
+        otherEvidenceDocNames: selectedRole === "organization" ? otherEvidenceList.map((i) => i.name) : undefined,
+        website: selectedRole === "organization" ? effectiveWebsite : undefined,
         description: selectedRole === "organization" ? aboutStudio : undefined,
       };
 
       const res = await register(payload);
       if (res.success && res.user) {
+        if (res.token) {
+          setAuthToken(res.token);
+        }
+
         if (selectedRole === "talent") {
           try {
             await talentService.saveProfile({
@@ -634,11 +850,14 @@ function RegisterPageContent() {
               companyType,
               phone: cleanContact,
               city: city || "Mumbai",
-              website,
+              website: effectiveWebsite,
               about: aboutStudio,
               genres: genres ? genres.split(",").map((g) => g.trim()).filter(Boolean) : [],
-              cinNumber,
-              gstNumber,
+              cinNumber: cinNumber.trim().toUpperCase(),
+              registrationNumber: cinNumber.trim().toUpperCase(),
+              gstNumber: isGstExempt ? undefined : gstNumber.trim().toUpperCase(),
+              isGstExempt: Boolean(isGstExempt),
+              gstExemptionReason: isGstExempt ? gstExemptionReason.trim() : undefined,
             });
           } catch (orgErr) {
             console.warn("Could not auto-save organization profile:", orgErr?.message);
@@ -656,7 +875,10 @@ function RegisterPageContent() {
             } catch (e) {}
           }
         }
-        router.push(getDashboardPath(selectedRole));
+        setIsRegistrationComplete(true);
+        setTimeout(() => {
+          router.push(getDashboardPath(selectedRole));
+        }, 1500);
       } else {
         const errMsg = res.error || "Registration error occurred. Please try again.";
         const lower = errMsg.toLowerCase();
@@ -693,6 +915,7 @@ function RegisterPageContent() {
         }
       }
     } catch (err) {
+      console.error("[handleFinalSubmit] CAUGHT ERROR:", err);
       const errMsg = err.message || "An unexpected error occurred.";
       const lower = errMsg.toLowerCase();
       if (lower.includes("mobile") || lower.includes("phone")) {
@@ -786,7 +1009,7 @@ function RegisterPageContent() {
 
         <div className="public-container" style={{ position: "relative", zIndex: 5, display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
           {/* Restart option when past step 1 */}
-          {currentStep > 1 && (
+          {!isRegistrationComplete && currentStep > 1 && (
             <div style={{ width: "100%", maxWidth: "520px", display: "flex", justifyContent: "flex-end", marginBottom: "8px" }}>
               <button
                 type="button"
@@ -808,67 +1031,69 @@ function RegisterPageContent() {
           )}
 
           {/* Stepper Progress Indicator */}
-          <div
-            className="register-stepper"
-            style={{
-              width: "100%",
-              maxWidth: "520px",
-              marginBottom: "20px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              position: "relative",
-            }}
-          >
-            {stepLabels.map((lbl, idx) => {
-              const stepNum = idx + 1;
-              const isPassed = currentStep > stepNum;
-              const isCurrent = currentStep === stepNum;
-              return (
-                <div
-                  key={lbl}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "4px",
-                    zIndex: 2,
-                    flex: 1,
-                  }}
-                >
+          {!isRegistrationComplete && (
+            <div
+              className="register-stepper"
+              style={{
+                width: "100%",
+                maxWidth: "520px",
+                marginBottom: "20px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                position: "relative",
+              }}
+            >
+              {stepLabels.map((lbl, idx) => {
+                const stepNum = idx + 1;
+                const isPassed = currentStep > stepNum;
+                const isCurrent = currentStep === stepNum;
+                return (
                   <div
+                    key={lbl}
                     style={{
-                      width: "28px",
-                      height: "28px",
-                      borderRadius: "50%",
-                      backgroundColor: isPassed ? "#8A6B2E" : isCurrent ? "#F3EFE6" : "#FAF9F7",
-                      border: isPassed ? "2px solid #8A6B2E" : isCurrent ? "2px solid #8A6B2E" : "1px solid #E8E2D4",
-                      color: isPassed ? "#FFFFFF" : isCurrent ? "#8A6B2E" : "#777970",
                       display: "flex",
+                      flexDirection: "column",
                       alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "12px",
-                      fontWeight: "600",
+                      gap: "4px",
+                      zIndex: 2,
+                      flex: 1,
                     }}
                   >
-                    {isPassed ? "✓" : stepNum}
+                    <div
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "50%",
+                        backgroundColor: isPassed ? "#8A6B2E" : isCurrent ? "#F3EFE6" : "#FAF9F7",
+                        border: isPassed ? "2px solid #8A6B2E" : isCurrent ? "2px solid #8A6B2E" : "1px solid #E8E2D4",
+                        color: isPassed ? "#FFFFFF" : isCurrent ? "#8A6B2E" : "#777970",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {isPassed ? "✓" : stepNum}
+                    </div>
+                    <span
+                      style={{
+                        fontSize: "10.5px",
+                        fontWeight: isCurrent ? "600" : "500",
+                        color: isCurrent ? "#8A6B2E" : "#777970",
+                        textAlign: "center",
+                        lineHeight: 1.2,
+                        display: "block",
+                      }}
+                    >
+                      {lbl}
+                    </span>
                   </div>
-                  <span
-                    style={{
-                      fontSize: "10.5px",
-                      fontWeight: isCurrent ? "600" : "500",
-                      color: isCurrent ? "#8A6B2E" : "#777970",
-                      textAlign: "center",
-                      lineHeight: 1.2,
-                      display: "block",
-                    }}
-                  >
-                    {lbl}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Stepper Main Card */}
           <div
@@ -889,7 +1114,7 @@ function RegisterPageContent() {
             {/* Header / Subtitle */}
             <div style={{ textAlign: "center", marginBottom: "22px" }}>
               <div className="eyebrow" style={{ marginBottom: "10px", justifyContent: "center" }}>
-                <span>Vismaya Onboarding</span>
+                <span>{isRegistrationComplete ? "Registration Complete" : "Vismaya Onboarding"}</span>
               </div>
 
               <h1
@@ -902,19 +1127,31 @@ function RegisterPageContent() {
                   lineHeight: 1.25,
                 }}
               >
-                {currentStep === 1 && "Create Your Account"}
-                {currentStep === 2 && "Verify Email Address"}
-                {currentStep === 3 && (selectedRole === "talent" ? "Profile Photo & Details" : "One-Time Registration")}
-                {currentStep === 4 && (selectedRole === "talent" ? "One-Time Registration" : "Studio Profile")}
-                {currentStep === 5 && (selectedRole === "talent" ? "Craft & Specializations" : "Accreditation Documents")}
+                {isRegistrationComplete ? (
+                  "Welcome to Vismaya Creative Studios"
+                ) : (
+                  <>
+                    {currentStep === 1 && "Create Your Account"}
+                    {currentStep === 2 && "Verify Email Address"}
+                    {currentStep === 3 && (selectedRole === "talent" ? "Profile Photo & Details" : "One-Time Registration")}
+                    {currentStep === 4 && (selectedRole === "talent" ? "One-Time Registration" : "Studio Profile")}
+                    {currentStep === 5 && (selectedRole === "talent" ? "Craft & Specializations" : "Accreditation Documents")}
+                  </>
+                )}
               </h1>
 
               <p style={{ fontSize: "13.5px", color: "var(--text-secondary, #777970)", margin: 0 }}>
-                {currentStep === 1 && "Join India's verified entertainment network."}
-                {currentStep === 2 && `Enter the 6-digit verification code sent to ${email}`}
-                {currentStep === 3 && (selectedRole === "talent" ? "Add a clear, recent photo of your face. It appears on your Vismaya profile and helps casting teams recognise you." : "Secure one-time registration with 100 included credits.")}
-                {currentStep === 4 && (selectedRole === "talent" ? "Complete one-time lifetime fee of ₹999." : "Tell artists and casting directors about your production house.")}
-                {currentStep === 5 && (selectedRole === "talent" ? "Finalize your professional profile to start applying." : "Corporate documentation for studio verification.")}
+                {isRegistrationComplete ? (
+                  "Your account registration has been processed successfully."
+                ) : (
+                  <>
+                    {currentStep === 1 && "Join India's verified entertainment network."}
+                    {currentStep === 2 && `Enter the 6-digit verification code sent to ${email}`}
+                    {currentStep === 3 && (selectedRole === "talent" ? "Add a clear, recent photo of your face. It appears on your Vismaya profile and helps casting teams recognise you." : "Secure one-time registration with 100 included credits.")}
+                    {currentStep === 4 && (selectedRole === "talent" ? "Complete one-time lifetime fee of ₹999." : "Tell artists and casting directors about your production house.")}
+                    {currentStep === 5 && (selectedRole === "talent" ? "Finalize your professional profile to start applying." : "Corporate documentation for studio verification.")}
+                  </>
+                )}
               </p>
             </div>
 
@@ -957,9 +1194,83 @@ function RegisterPageContent() {
               </div>
             )}
 
-            {/* ========================================================= */}
-            {/* STEP 1: ACCOUNT (ROLE + CREDENTIALS + GOOGLE AUTH)         */}
-            {/* ========================================================= */}
+            {isRegistrationComplete ? (
+              <div style={{ textAlign: "center", padding: "16px 8px" }}>
+                <div
+                  style={{
+                    width: "60px",
+                    height: "60px",
+                    borderRadius: "50%",
+                    backgroundColor: "#F3EFE6",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 16px",
+                  }}
+                >
+                  <CheckCircle2 size={34} style={{ color: "#8A6B2E" }} />
+                </div>
+                <h2
+                  style={{
+                    fontFamily: "var(--font-heading), Georgia, serif",
+                    fontSize: "20px",
+                    fontWeight: 600,
+                    color: "var(--text-primary, #292C29)",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Account Activated Successfully
+                </h2>
+                <p
+                  style={{
+                    fontSize: "13.5px",
+                    color: "var(--text-secondary, #5A584F)",
+                    maxWidth: "460px",
+                    margin: "0 auto 20px",
+                    lineHeight: "1.5",
+                  }}
+                >
+                  {selectedRole === "organization"
+                    ? "Your studio account has been activated with 100 included profile-view credits. Your accreditation documents have been submitted to compliance officers for review."
+                    : "Your talent account has been activated. Welcome to Vismaya's verified entertainment network!"}
+                </p>
+
+                <div
+                  style={{
+                    backgroundColor: "#FAF9F7",
+                    border: "1px solid #E8E2D4",
+                    borderRadius: "8px",
+                    padding: "12px 16px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "13px",
+                    color: "#8A6B2E",
+                    fontWeight: "600",
+                    marginBottom: "24px",
+                  }}
+                >
+                  <Sparkles size={16} />
+                  <span>Redirecting to your dashboard...</span>
+                </div>
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => router.push(getDashboardPath(selectedRole))}
+                    className="btn-primary"
+                    style={{ margin: "0 auto", padding: "0 28px", height: "44px", justifyContent: "center" }}
+                  >
+                    <span>Enter Dashboard Now</span>
+                    <ArrowRight size={15} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* ========================================================= */}
+                {/* STEP 1: ACCOUNT (ROLE + CREDENTIALS + GOOGLE AUTH)         */}
+                {/* ========================================================= */}
             {currentStep === 1 && (
               <form onSubmit={handleAccountSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 {/* Role Switcher */}
@@ -1239,6 +1550,7 @@ function RegisterPageContent() {
                     onClick={() => {
                       setResendTimer(60);
                       setOtpSent(true);
+                      authService.resendRegistrationOtp({ email }).catch(() => {});
                     }}
                     disabled={resendTimer > 0}
                     style={{
@@ -1858,36 +2170,364 @@ function RegisterPageContent() {
             )}
 
             {/* ========================================================= */}
-            {/* STEP 5 (ORG): VERIFICATION DOCUMENTS                     */}
+            {/* STEP 5 (ORG): ACCREDITATION DOCUMENTS                     */}
             {/* ========================================================= */}
             {currentStep === 5 && selectedRole === "organization" && (
-              <form onSubmit={handleFinalSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <form onSubmit={handleFinalSubmit} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+                {/* 1. Registration number */}
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                    Corporate Identity (CIN) / Registration No.
-                  </label>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      Registration number (CIN / LLPIN / Udyam) *
+                    </label>
+                  </div>
                   <input
                     type="text"
                     value={cinNumber}
-                    onChange={(e) => setCinNumber(e.target.value)}
-                    placeholder="e.g. U92100MH2018PTC312456"
-                    required
-                    style={{ width: "100%", height: "42px" }}
+                    onChange={(e) => {
+                      setCinNumber(e.target.value);
+                      if (regNumberError) setRegNumberError("");
+                    }}
+                    placeholder="e.g. U92100MH2018PTC312456, LLP-12345, or UDYAM-MH-01-0012345"
+                    style={{ width: "100%", height: "42px", borderColor: regNumberError ? "var(--danger, #C53030)" : undefined }}
                   />
+                  <div style={{ fontSize: "11px", color: "#777970", marginTop: "4px" }}>
+                    CIN must be 21 characters; LLPIN or Udyam must be 6-30 alphanumeric characters.
+                  </div>
+                  {regNumberError && (
+                    <div style={{ color: "var(--danger, #C53030)", fontSize: "12px", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <AlertCircle size={13} style={{ flexShrink: 0 }} />
+                      <span>{regNumberError}</span>
+                    </div>
+                  )}
                 </div>
 
+                {/* 2. Business registration document upload */}
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                    GST Identification Number (GSTIN)
-                  </label>
-                  <input
-                    type="text"
-                    value={gstNumber}
-                    onChange={(e) => setGstNumber(e.target.value)}
-                    placeholder="e.g. 27AABCZ1234F1Z5"
-                    required
-                    style={{ width: "100%", height: "42px" }}
-                  />
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      Business registration document upload *
+                    </label>
+                    <span style={{ fontSize: "10.5px", fontWeight: "600", color: "#8A6B2E", backgroundColor: "#F3EFE6", border: "1px solid #E8E2D4", borderRadius: "10px", padding: "1px 7px" }}>
+                      Required
+                    </span>
+                  </div>
+
+                  {businessDocUrl ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "#F4F8F4", border: "1px solid #C4DFC7", borderRadius: "6px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", overflow: "hidden" }}>
+                        <CheckCircle2 size={16} color="#2B5E3B" style={{ flexShrink: 0 }} />
+                        <span style={{ fontSize: "13px", fontWeight: 600, color: "#1F4228", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {businessDocName || "Registration Document"}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                        <a href={businessDocUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#8A6B2E", textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                          <ExternalLink size={12} /> View
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBusinessDocUrl("");
+                            setBusinessDocName("");
+                          }}
+                          style={{ background: "none", border: "none", color: "#9B1C1C", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : isUploadingBusinessDoc ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "14px", border: "1px dashed #E8E2D4", borderRadius: "6px", color: "#8A6B2E", fontSize: "13px" }}>
+                      <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+                      <span>Uploading document...</span>
+                    </div>
+                  ) : (
+                    <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "16px", border: businessDocError ? "1px dashed var(--danger, #C53030)" : "1px dashed #D0C9BA", borderRadius: "6px", cursor: "pointer", background: "#FAF9F7", transition: "border-color 0.15s" }}>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                        style={{ display: "none" }}
+                        onChange={(e) => handleFileUpload(e, setBusinessDocUrl, setBusinessDocName, setBusinessDocError, setIsUploadingBusinessDoc)}
+                      />
+                      <Upload size={18} color="#8A6B2E" style={{ marginBottom: "4px" }} />
+                      <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#2B2D2A" }}>
+                        Upload Incorporation / Registration Certificate
+                      </span>
+                      <span style={{ fontSize: "11px", color: "#777970" }}>PDF, JPG, PNG (Max 5 MB)</span>
+                    </label>
+                  )}
+                  {businessDocError && (
+                    <div style={{ color: "var(--danger, #C53030)", fontSize: "12px", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <AlertCircle size={13} style={{ flexShrink: 0 }} />
+                      <span>{businessDocError}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. GSTIN + Certificate OR Exemption */}
+                <div style={{ border: "1px solid #E8E2D4", borderRadius: "8px", padding: "14px", background: "#FCFBF9" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                    <span style={{ fontSize: "12px", fontWeight: "700", color: "#2B2D2A", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      Goods & Services Tax (GST)
+                    </span>
+                    <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12.5px", cursor: "pointer", color: "#4A483F", userSelect: "none" }}>
+                      <input
+                        type="checkbox"
+                        checked={isGstExempt}
+                        onChange={(e) => {
+                          setIsGstExempt(e.target.checked);
+                          if (gstError) setGstError("");
+                        }}
+                        style={{ width: "15px", height: "15px", accentColor: "#8A6B2E", cursor: "pointer" }}
+                      />
+                      <span style={{ fontWeight: 600 }}>Not GST registered</span>
+                    </label>
+                  </div>
+
+                  {!isGstExempt ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <div>
+                        <label style={{ display: "block", fontSize: "11.5px", fontWeight: "600", color: "#5A584F", marginBottom: "4px", textTransform: "uppercase" }}>
+                          GSTIN (15 characters) *
+                        </label>
+                        <input
+                          type="text"
+                          value={gstNumber}
+                          onChange={(e) => {
+                            setGstNumber(e.target.value.toUpperCase());
+                            if (gstError) setGstError("");
+                          }}
+                          placeholder="e.g. 27AABCZ1234F1Z5"
+                          maxLength={15}
+                          style={{ width: "100%", height: "40px" }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: "block", fontSize: "11.5px", fontWeight: "600", color: "#5A584F", marginBottom: "4px", textTransform: "uppercase" }}>
+                          GST Certificate Upload *
+                        </label>
+                        {gstCertUrl ? (
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#F4F8F4", border: "1px solid #C4DFC7", borderRadius: "6px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px", overflow: "hidden" }}>
+                              <CheckCircle2 size={15} color="#2B5E3B" style={{ flexShrink: 0 }} />
+                              <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#1F4228", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {gstCertName || "GST Certificate"}
+                              </span>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                              <a href={gstCertUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#8A6B2E", textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                                <ExternalLink size={12} /> View
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setGstCertUrl("");
+                                  setGstCertName("");
+                                }}
+                                style={{ background: "none", border: "none", color: "#9B1C1C", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        ) : isUploadingGstCert ? (
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "12px", border: "1px dashed #E8E2D4", borderRadius: "6px", color: "#8A6B2E", fontSize: "12.5px" }}>
+                            <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} />
+                            <span>Uploading certificate...</span>
+                          </div>
+                        ) : (
+                          <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "12px", border: "1px dashed #D0C9BA", borderRadius: "6px", cursor: "pointer", background: "#FAF9F7" }}>
+                            <input
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                              style={{ display: "none" }}
+                              onChange={(e) => handleFileUpload(e, setGstCertUrl, setGstCertName, setGstError, setIsUploadingGstCert)}
+                            />
+                            <Upload size={16} color="#8A6B2E" />
+                            <span style={{ fontSize: "12px", fontWeight: 600, color: "#2B2D2A" }}>Upload GST Certificate (PDF, JPG, PNG max 5 MB)</span>
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <label style={{ display: "block", fontSize: "11.5px", fontWeight: "600", color: "#5A584F", marginBottom: "4px", textTransform: "uppercase" }}>
+                        Reason for GST Exemption *
+                      </label>
+                      <input
+                        type="text"
+                        value={gstExemptionReason}
+                        onChange={(e) => {
+                          setGstExemptionReason(e.target.value);
+                          if (gstError) setGstError("");
+                        }}
+                        placeholder="e.g. Annual aggregate turnover is below ₹20L exemption threshold"
+                        style={{ width: "100%", height: "40px" }}
+                      />
+                    </div>
+                  )}
+
+                  {gstError && (
+                    <div style={{ color: "var(--danger, #C53030)", fontSize: "12px", marginTop: "8px", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <AlertCircle size={13} style={{ flexShrink: 0 }} />
+                      <span>{gstError}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Professional / Industry Proof */}
+                <div style={{ border: "1px solid #E8E2D4", borderRadius: "8px", padding: "14px", background: "#FCFBF9" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      Professional / Industry Proof *
+                    </label>
+                    <span style={{ fontSize: "10.5px", fontWeight: "600", color: "#8A6B2E", backgroundColor: "#F3EFE6", border: "1px solid #E8E2D4", borderRadius: "10px", padding: "1px 7px" }}>
+                      Required (At least one)
+                    </span>
+                  </div>
+                  <p style={{ fontSize: "11.5px", color: "#5A584F", margin: "0 0 10px 0" }}>
+                    Provide at least one: a studio/portfolio website URL or an uploaded trade/industry proof document.
+                  </p>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "11px", fontWeight: "600", color: "#777970", marginBottom: "4px", textTransform: "uppercase" }}>
+                        Website / Portfolio URL
+                      </label>
+                      <input
+                        type="url"
+                        value={professionalProofUrl || website}
+                        onChange={(e) => {
+                          setProfessionalProofUrl(e.target.value);
+                          if (professionalProofError) setProfessionalProofError("");
+                        }}
+                        placeholder="https://yourstudio.com or IMDb / Vimeo profile"
+                        style={{ width: "100%", height: "38px" }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: "block", fontSize: "11px", fontWeight: "600", color: "#777970", marginBottom: "4px", textTransform: "uppercase" }}>
+                        OR Upload Proof Document (Contract, Trade Association, License)
+                      </label>
+                      {professionalProofDocUrl ? (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#F4F8F4", border: "1px solid #C4DFC7", borderRadius: "6px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", overflow: "hidden" }}>
+                            <CheckCircle2 size={15} color="#2B5E3B" style={{ flexShrink: 0 }} />
+                            <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#1F4228", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {professionalProofDocName || "Professional Proof Document"}
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                            <a href={professionalProofDocUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#8A6B2E", textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                              <ExternalLink size={12} /> View
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProfessionalProofDocUrl("");
+                                setProfessionalProofDocName("");
+                              }}
+                              style={{ background: "none", border: "none", color: "#9B1C1C", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ) : isUploadingProfProof ? (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "10px", border: "1px dashed #E8E2D4", borderRadius: "6px", color: "#8A6B2E", fontSize: "12px" }}>
+                          <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                          <span>Uploading proof document...</span>
+                        </div>
+                      ) : (
+                        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "10px", border: "1px dashed #D0C9BA", borderRadius: "6px", cursor: "pointer", background: "#FAF9F7" }}>
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                            style={{ display: "none" }}
+                            onChange={(e) => handleFileUpload(e, setProfessionalProofDocUrl, setProfessionalProofDocName, setProfessionalProofError, setIsUploadingProfProof)}
+                          />
+                          <Upload size={15} color="#8A6B2E" />
+                          <span style={{ fontSize: "12px", fontWeight: 600, color: "#2B2D2A" }}>Upload Industry Proof (PDF, JPG, PNG max 5 MB)</span>
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  {professionalProofError && (
+                    <div style={{ color: "var(--danger, #C53030)", fontSize: "12px", marginTop: "8px", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <AlertCircle size={13} style={{ flexShrink: 0 }} />
+                      <span>{professionalProofError}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Other Evidence (Optional, up to 2 files) */}
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      Other evidence (Optional, up to 2 files)
+                    </label>
+                    <span style={{ fontSize: "11px", color: "#777970" }}>
+                      {otherEvidenceList.length} / 2 uploaded
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    {otherEvidenceList.map((item, idx) => (
+                      <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#FAF9F7", border: "1px solid #E8E2D4", borderRadius: "6px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", overflow: "hidden" }}>
+                          <FileCheck size={14} color="#8A6B2E" style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: "12px", fontWeight: 600, color: "#2B2D2A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {item.name || `Evidence ${idx + 1}`}
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "11.5px", color: "#8A6B2E", textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                            <ExternalLink size={11} /> View
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => setOtherEvidenceList((prev) => prev.filter((_, i) => i !== idx))}
+                            style={{ background: "none", border: "none", color: "#9B1C1C", fontSize: "11.5px", cursor: "pointer" }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {otherEvidenceList.length < 2 && (
+                      isUploadingOther ? (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px", border: "1px dashed #E8E2D4", borderRadius: "6px", color: "#8A6B2E", fontSize: "12px" }}>
+                          <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                          <span>Uploading additional evidence...</span>
+                        </div>
+                      ) : (
+                        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "10px", border: "1px dashed #D0C9BA", borderRadius: "6px", cursor: "pointer", background: "#FAF9F7" }}>
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                            style={{ display: "none" }}
+                            onChange={handleAddOtherEvidence}
+                          />
+                          <Upload size={14} color="#8A6B2E" />
+                          <span style={{ fontSize: "12px", fontWeight: 600, color: "#4A483F" }}>
+                            + Add Evidence File (PDF, JPG, PNG max 5 MB)
+                          </span>
+                        </label>
+                      )
+                    )}
+                  </div>
+
+                  {otherEvidenceError && (
+                    <div style={{ color: "var(--danger, #C53030)", fontSize: "12px", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <AlertCircle size={13} style={{ flexShrink: 0 }} />
+                      <span>{otherEvidenceError}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div
@@ -1899,35 +2539,39 @@ function RegisterPageContent() {
                     display: "flex",
                     alignItems: "center",
                     gap: "10px",
-                    fontSize: "12.5px",
+                    fontSize: "12px",
                     color: "#5A584F",
                   }}
                 >
-                  <FileCheck size={18} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                  <ShieldCheck size={18} style={{ color: "#8A6B2E", flexShrink: 0 }} />
                   <span>
-                    Your organization will be verified after your documents are reviewed.
+                    Accreditation documents are stored securely and reviewed exclusively by authorized Vismaya compliance officers.
                   </span>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isUploadingBusinessDoc || isUploadingGstCert || isUploadingProfProof || isUploadingOther}
                   className="btn-primary"
-                  style={{ width: "100%", justifyContent: "center", height: "44px", marginTop: "8px" }}
+                  style={{ width: "100%", justifyContent: "center", height: "44px", marginTop: "6px" }}
                 >
-                  <span>{isSubmitting ? "Activating Studio Account..." : "Enter Organization Dashboard"}</span>
+                  <span>{isSubmitting ? "Submitting Registration..." : "Complete Registration & Enter Dashboard"}</span>
                   <ArrowRight size={15} />
                 </button>
               </form>
             )}
+              </>
+            )}
 
             {/* Bottom link: Sign In */}
-            <div style={{ textAlign: "center", marginTop: "22px", fontSize: "13px", color: "var(--text-secondary, #777970)" }}>
-              Already have an account?{" "}
-              <Link href="/login" style={{ color: "var(--gold)", fontWeight: "600", textDecoration: "none" }}>
-                Sign In
-              </Link>
-            </div>
+            {!isRegistrationComplete && (
+              <div style={{ textAlign: "center", marginTop: "22px", fontSize: "13px", color: "var(--text-secondary, #777970)" }}>
+                Already have an account?{" "}
+                <Link href="/login" style={{ color: "var(--gold)", fontWeight: "600", textDecoration: "none" }}>
+                  Sign In
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </section>

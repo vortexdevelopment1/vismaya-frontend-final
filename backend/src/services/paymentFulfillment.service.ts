@@ -143,36 +143,45 @@ export const fulfilTransaction = async ({
                 await profile.save();
             }
         } else if (transaction.packageType === "industry_annual_4999") {
-            const org = await Organization.findOneAndUpdate(
-                { userId: transaction.userId },
-                { $set: { isPaid: true, paidAt: new Date() } },
-                { returnDocument: "after" }
-            );
+            let targetOrgId = transaction.organizationId;
+            if (transaction.userId) {
+                const org = await Organization.findOneAndUpdate(
+                    { userId: transaction.userId },
+                    { $set: { paidAt: new Date() } },
+                    { returnDocument: "after" }
+                );
+                if (org) targetOrgId = org._id;
+            }
 
-            const targetOrgId = org ? org._id : (transaction.organizationId || transaction.userId);
-            await initializeOrganizationCredits(targetOrgId);
+            if (targetOrgId) {
+                await initializeOrganizationCredits(targetOrgId);
+            }
         } else if (transaction.packageType === "credit_single_100" || transaction.packageType === "credit_bundle_25_2000") {
             let targetOrgId = transaction.organizationId;
-            if (!targetOrgId) {
+            if (!targetOrgId && transaction.userId) {
                 const org = await Organization.findOne({ userId: transaction.userId });
                 targetOrgId = org ? org._id : transaction.userId;
             }
 
-            await addPurchasedCredits(
-                targetOrgId,
-                transaction.creditsAwarded,
-                transaction._id
-            );
+            if (targetOrgId) {
+                await addPurchasedCredits(
+                    targetOrgId,
+                    transaction.creditsAwarded,
+                    transaction._id
+                );
+            }
         }
 
         // Send notifications and confirmation email
         try {
-            await notifyUser({
-                recipientId: transaction.userId,
-                type: "payment_success",
-                title: "Payment Successful",
-                message: `Your payment of ₹${transaction.amount} was successfully processed. Invoice: ${invoiceNumber}`
-            });
+            if (transaction.userId) {
+                await notifyUser({
+                    recipientId: transaction.userId,
+                    type: "payment_success",
+                    title: "Payment Successful",
+                    message: `Your payment of ₹${transaction.amount} was successfully processed. Invoice: ${invoiceNumber}`
+                });
+            }
 
             if (user && user.email) {
                 await sendEmail({

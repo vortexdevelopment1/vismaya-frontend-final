@@ -390,4 +390,21 @@ export const authService = {
     }
     return apiClient.post("/api/auth/logout");
   },
+
+  /**
+   * Upload accreditation document for organization registration (PDF/JPG/PNG max 5MB)
+   * @param {File} file
+   */
+  async uploadAccreditationDocument(file) {
+    if (!isRealMode("auth")) {
+      return {
+        success: true,
+        url: URL.createObjectURL(file),
+        originalFilename: file.name,
+      };
+    }
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiClient.post("/api/auth/upload-accreditation-document", formData);
+  },
 };

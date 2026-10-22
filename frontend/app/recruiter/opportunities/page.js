@@ -110,17 +110,33 @@ export default function MyOpportunitiesPage() {
     return matchesStatus && matchesSearch;
   });
 
-  const handleRequestCancellation = (e) => {
+  const handleRequestCancellation = async (e) => {
     e.preventDefault();
+    if (!cancelModalOpp) return;
+
+    const oppStatus = (cancelModalOpp?.rawStatus || cancelModalOpp?.status || "").toLowerCase();
+    if (oppStatus !== "published") {
+      setCancelError("Only published opportunities can be requested for cancellation.");
+      return;
+    }
+
     if (!cancelReason.trim()) {
       setCancelError("Please provide a reason for cancellation.");
       return;
     }
 
-    requestCancellation(cancelModalOpp.id, cancelReason.trim());
-    setCancelModalOpp(null);
-    setCancelReason("");
-    setCancelError("");
+    try {
+      setCancelError("");
+      await recruiterService.requestOpportunityCancellation(cancelModalOpp.id, {
+        cancellationReason: cancelReason.trim(),
+      });
+      setCancelModalOpp(null);
+      setCancelReason("");
+      setCancelError("");
+      await loadData();
+    } catch (err) {
+      setCancelError(err?.response?.data?.message || err?.message || "Failed to submit cancellation request");
+    }
   };
 
   const handleConfirmMarkCompleted = () => {
@@ -433,7 +449,7 @@ export default function MyOpportunitiesPage() {
                   const proj = projects.find((p) => p.id === opp.projectId);
                   const oppApps = applications.filter((a) => a.opportunityId === opp.id);
                   const canEdit = opp.status === "Draft" || opp.status === "Changes Requested";
-                  const canRequestCancel = opp.status === "Published" || opp.status === "Submitted";
+                  const canRequestCancel = (opp.status || "").toLowerCase() === "published";
                   const canMarkCompleted = opp.status === "Published" || opp.status === "Closed";
 
                   return (
@@ -722,7 +738,7 @@ export default function MyOpportunitiesPage() {
                 const proj = projects.find((p) => p.id === opp.projectId);
                 const oppApps = applications.filter((a) => a.opportunityId === opp.id);
                 const canEdit = opp.status === "Draft" || opp.status === "Changes Requested";
-                const canRequestCancel = opp.status === "Published" || opp.status === "Submitted";
+                const canRequestCancel = (opp.status || "").toLowerCase() === "published";
                 const canMarkCompleted = opp.status === "Published" || opp.status === "Closed";
 
                 return (

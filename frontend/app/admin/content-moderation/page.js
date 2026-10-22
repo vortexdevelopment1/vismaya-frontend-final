@@ -468,12 +468,8 @@ export default function ContentModerationPage() {
       ) : (
         <EmptyState
           icon={ImageIcon}
-          title="No Media in Queue"
-          description={
-            activeTab === "Pending"
-              ? "All submitted photos, reels, and media items have been moderated."
-              : `No items found in the '${activeTab}' filter.`
-          }
+          title="No Media Needs Review"
+          description="No media needs review right now. Items appear here when an upload or report is flagged."
         />
       )}
 

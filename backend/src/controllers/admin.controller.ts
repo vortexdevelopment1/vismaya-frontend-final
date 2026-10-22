@@ -2400,12 +2400,63 @@ export const getPendingVerifications = async (req: Request, res: Response): Prom
 export const reviewVerification = async (req: Request, res: Response): Promise<any> => {
     try {
         const { verificationId } = req.params;
-        const { action, notes, rejectionReason } = req.body; // "approve", "reject", "request_more_info"
+        const { action: inputAction, status: inputStatus, decision, notes, rejectionReason } = req.body;
+
+        // Normalize action from various client payloads
+        let action = inputAction || decision;
+        if (!action && inputStatus) {
+            if (inputStatus === "verified" || inputStatus === "approved") {
+                action = "approve";
+            } else if (inputStatus === "rejected") {
+                action = "reject";
+            } else if (inputStatus === "request_more_info" || inputStatus === "more_info_needed") {
+                action = "request_more_info";
+            }
+        }
+
+        if (!action || !["approve", "reject", "request_more_info"].includes(action)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid action. Must be 'approve', 'reject', or 'request_more_info'."
+            });
+        }
 
         const verification = await Verification.findById(verificationId);
         if (!verification) {
             return res.status(404).json({ success: false, message: "Verification record not found" });
         }
+
+        // Rule for rejected items: Cannot approve a rejected verification directly
+        if (verification.status === "rejected" && action === "approve") {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot approve a rejected verification. A new verification request must be submitted."
+            });
+        }
+
+        if (verification.status === "verified" && action === "approve") {
+            return res.status(400).json({
+                success: false,
+                message: "Verification is already approved."
+            });
+        }
+
+        if (!verification.userId) {
+            return res.status(400).json({
+                success: false,
+                message: "User account not found for this verification record."
+            });
+        }
+
+        const user = await User.findById(verification.userId);
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: "User account no longer exists for this verification record."
+            });
+        }
+
+        const adminUserId = req.user?.userId || (req.user as any)?._id;
 
         if (action === "approve") {
             // T9: Professional verification requirements check
@@ -2429,11 +2480,32 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
                 }
             }
 
+            if (verification.verificationType === "organization_business") {
+                const org = await Organization.findOne({
+                    $or: [{ userId: verification.userId }, { _id: verification.userId }]
+                });
+                if (!org) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Organization record not found for this verification."
+                    });
+                }
+
+                await Organization.findByIdAndUpdate(org._id, {
+                    verificationState: "verified",
+                    status: "active",
+                    "verificationStatus.businessVerified": true,
+                    isVerified: true
+                });
+                await User.findByIdAndUpdate(verification.userId, { status: "active", isVerified: true });
+            }
+
             verification.status = "verified";
             (verification as any).verifiedAt = new Date();
-            (verification as any).verifiedBy = req.user?.userId;
+            (verification as any).verifiedBy = adminUserId;
             (verification as any).reviewNotes = notes || "";
             verification.rejectionReason = undefined;
+            verification.moreInfoRequested = false;
 
             await TalentProfile.findOneAndUpdate(
                 { userId: verification.userId },
@@ -2444,19 +2516,6 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
                 }
             );
 
-            if (verification.verificationType === "organization_business") {
-                await Organization.findOneAndUpdate(
-                    { userId: verification.userId },
-                    {
-                        verificationState: "verified",
-                        status: "active",
-                        "verificationStatus.businessVerified": true,
-                        isVerified: true
-                    }
-                );
-                await User.findByIdAndUpdate(verification.userId, { status: "active", isVerified: true });
-            }
-
             await notifyUser({
                 recipientId: verification.userId,
                 type: "verification_update",
@@ -2464,7 +2523,10 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
                 message: `Your ${verification.verificationType || "account"} verification has been approved by Vismaya Admin.`
             });
         } else if (action === "request_more_info") {
-            verification.status = "more_info_needed" as any;
+            // Keep status within schema enum ["pending", "verified", "rejected", "suspended"]
+            verification.status = "pending";
+            verification.moreInfoRequested = true;
+            verification.moreInfoNotes = notes || "Additional documentation required.";
             (verification as any).reviewNotes = notes || "Additional documentation required.";
 
             await notifyUser({
@@ -2476,13 +2538,14 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
         } else {
             verification.status = "rejected";
             (verification as any).verifiedAt = undefined;
-            (verification as any).verifiedBy = req.user?.userId;
+            (verification as any).verifiedBy = adminUserId;
             (verification as any).reviewNotes = notes || "";
-            verification.rejectionReason = rejectionReason || "Documents insufficient";
+            verification.rejectionReason = rejectionReason || notes || "Documents insufficient";
+            verification.moreInfoRequested = false;
 
             if (verification.verificationType === "organization_business") {
                 await Organization.findOneAndUpdate(
-                    { userId: verification.userId },
+                    { $or: [{ userId: verification.userId }, { _id: verification.userId }] },
                     {
                         verificationState: "rejected",
                         status: "rejected",
@@ -2495,14 +2558,14 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
                 recipientId: verification.userId,
                 type: "verification_update",
                 title: "Verification Not Approved",
-                message: `Your verification request was not approved. Reason: ${rejectionReason || "Documents provided were insufficient."}`
+                message: `Your verification request was not approved. Reason: ${rejectionReason || notes || "Documents provided were insufficient."}`
             });
         }
 
         await verification.save();
 
         await logAdminAction({
-            adminId: (req.user?.userId as any),
+            adminId: adminUserId,
             action: `VERIFICATION_${action.toUpperCase()}`,
             targetType: "Verification",
             targetId: verification._id,
@@ -2511,7 +2574,19 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
 
         res.status(200).json({ success: true, message: `Verification ${action}d successfully`, verification });
     } catch (error: any) {
-        console.error("Review verification error:", error);
+        console.error("Review verification error:", error?.message, error?.stack);
+        if (error?.name === "ValidationError") {
+            return res.status(400).json({
+                success: false,
+                message: `Validation failed: ${Object.keys(error.errors || {}).join(", ")}`
+            });
+        }
+        if (error?.name === "CastError") {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid identifier format: ${error.path}`
+            });
+        }
         res.status(500).json({ success: false, message: "Something went wrong while reviewing verification" });
     }
 };

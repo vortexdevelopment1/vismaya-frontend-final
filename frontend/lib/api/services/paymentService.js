@@ -358,48 +358,60 @@ export const paymentService = {
    */
   async createPaymentOrder(type, metadata = {}) {
     const packageType = PACKAGE_TYPE_MAP[type] || type;
+    const isRegistration = type === "talent_registration" || type === "organization_registration";
 
-    if (isRealMode("payments") && getAuthToken()) {
-      const body = { packageType, ...metadata };
+    if ((isRealMode("payments") && getAuthToken()) || isRegistration) {
+      const body = {
+        packageType,
+        email: metadata.userEmail,
+        userEmail: metadata.userEmail,
+        userName: metadata.userName,
+        ...metadata
+      };
       // Pass couponCode explicitly if present
       if (metadata.couponCode) {
         body.couponCode = metadata.couponCode;
       }
-      const res = await apiClient.post("/api/payments/create-order", body);
-      const raw = res?.data || res;
-      const orderInfo = raw?.order || {};
-      const orderId = raw?.orderId || orderInfo.orderId || raw?.razorpayOrderId;
-      const razorpayOrderId = raw?.razorpayOrderId || orderInfo.razorpayOrderId || orderId;
-      const keyId = raw?.keyId || orderInfo.keyId || orderInfo.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
-      const mode = raw?.mode || orderInfo.mode || "razorpay";
-      const amount = raw?.amount ?? orderInfo.amount;
+      try {
+        const res = await apiClient.post("/api/payments/create-order", body);
+        const raw = res?.data || res;
+        const orderInfo = raw?.order || {};
+        const orderId = raw?.orderId || orderInfo.orderId || raw?.razorpayOrderId;
+        const razorpayOrderId = raw?.razorpayOrderId || orderInfo.razorpayOrderId || orderId;
+        const keyId = raw?.keyId || orderInfo.keyId || orderInfo.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+        const mode = raw?.mode || orderInfo.mode || "mock";
+        const amount = raw?.amount ?? orderInfo.amount;
 
-      const normalizedData = {
-        orderId,
-        razorpayOrderId,
-        keyId,
-        mode,
-        type,
-        packageType: orderInfo.packageType || packageType,
-        label: orderInfo.packageName || (type === "organization_registration" ? "Organization Registration" : "Talent Registration"),
-        baseAmount: orderInfo.originalAmount ?? amount,
-        discountAmount: orderInfo.discountAmount ?? 0,
-        finalAmount: amount,
-        amount,
-        currency: raw?.currency || orderInfo.currency || "INR",
-        createdAt: new Date().toISOString(),
-        ...orderInfo,
-      };
+        const normalizedData = {
+          orderId,
+          razorpayOrderId,
+          keyId,
+          mode,
+          type,
+          packageType: orderInfo.packageType || packageType,
+          label: orderInfo.packageName || (type === "organization_registration" ? "Organization Registration" : "Talent Registration"),
+          baseAmount: orderInfo.originalAmount ?? amount,
+          discountAmount: orderInfo.discountAmount ?? 0,
+          finalAmount: amount,
+          amount,
+          currency: raw?.currency || orderInfo.currency || "INR",
+          createdAt: new Date().toISOString(),
+          ...orderInfo,
+        };
 
-      return {
-        ...raw,
-        success: raw?.success ?? true,
-        mode,
-        orderId,
-        razorpayOrderId,
-        keyId,
-        data: normalizedData,
-      };
+        return {
+          ...raw,
+          success: raw?.success ?? true,
+          mode,
+          orderId,
+          razorpayOrderId,
+          keyId,
+          data: normalizedData,
+        };
+      } catch (err) {
+        console.warn("API create-order notice:", err?.message);
+        if (!isRegistration) throw err;
+      }
     }
 
     let baseAmount = PRICING_CONFIG.TALENT_FEE;
@@ -462,7 +474,8 @@ export const paymentService = {
     await new Promise((res) => setTimeout(res, 1500));
 
     // Real backend POST /api/payments/verify or /api/payments/mock-confirm
-    if (isRealMode("payments") && getAuthToken()) {
+    const isRegistration = payload.type === "talent_registration" || payload.type === "organization_registration";
+    if ((isRealMode("payments") && getAuthToken()) || isRegistration) {
       if (shouldFail) {
         return {
           success: false,

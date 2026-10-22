@@ -49,6 +49,8 @@ export interface IOrganization extends Document {
     cinNumber?: string;
     registrationNumber?: string;
     gstNumber?: string;
+    isGstExempt?: boolean;
+    gstExemptionReason?: string;
     organizationType?: string;
     description?: string;
     website?: string;
@@ -176,6 +178,16 @@ const organizationSchema = new Schema<IOrganization>(
         },
 
         gstNumber: {
+            type: String,
+            trim: true
+        },
+
+        isGstExempt: {
+            type: Boolean,
+            default: false
+        },
+
+        gstExemptionReason: {
             type: String,
             trim: true
         },

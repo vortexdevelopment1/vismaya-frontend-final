@@ -107,6 +107,8 @@ export const VERIFICATION_STATUS_MAP = {
   verified: "Verified",
   rejected: "Rejected",
   suspended: "Suspended",
+  more_info_requested: "More Information Requested",
+  more_info_needed: "More Information Requested",
 };
 
 export const VERIFICATION_BACKEND_STATUS_MAP = {
@@ -115,6 +117,10 @@ export const VERIFICATION_BACKEND_STATUS_MAP = {
   approved: "verified", // normalize "Approved" in UI to backend "verified"
   rejected: "rejected",
   suspended: "suspended",
+  "more information requested": "more_info_requested",
+  "more info requested": "more_info_requested",
+  more_info_requested: "more_info_requested",
+  more_info_needed: "more_info_requested",
 };
 
 // 5. Media Moderation Statuses

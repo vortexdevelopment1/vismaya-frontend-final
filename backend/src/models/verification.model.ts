@@ -20,6 +20,19 @@ export interface IBusinessData {
     businessRegNumber?: string;
     legalEntityName?: string;
     documentUrl?: string;
+    businessRegistrationDocUrl?: string;
+    businessRegistrationDocName?: string;
+    gstin?: string;
+    isGstExempt?: boolean;
+    gstExemptionReason?: string;
+    gstCertificateUrl?: string;
+    gstCertificateDocName?: string;
+    professionalProofType?: "website" | "document" | "both";
+    professionalProofUrl?: string;
+    professionalProofDocUrl?: string;
+    professionalProofDocName?: string;
+    otherEvidenceUrls?: string[];
+    otherEvidenceDocNames?: string[];
 }
 
 export interface IVerification extends Document {
@@ -82,7 +95,20 @@ const verificationSchema = new Schema<IVerification>(
             },
             businessRegNumber: { type: String, trim: true },
             legalEntityName: { type: String, trim: true },
-            documentUrl: { type: String, trim: true }
+            documentUrl: { type: String, trim: true },
+            businessRegistrationDocUrl: { type: String, trim: true },
+            businessRegistrationDocName: { type: String, trim: true },
+            gstin: { type: String, trim: true },
+            isGstExempt: { type: Boolean, default: false },
+            gstExemptionReason: { type: String, trim: true },
+            gstCertificateUrl: { type: String, trim: true },
+            gstCertificateDocName: { type: String, trim: true },
+            professionalProofType: { type: String, enum: ["website", "document", "both"] },
+            professionalProofUrl: { type: String, trim: true },
+            professionalProofDocUrl: { type: String, trim: true },
+            professionalProofDocName: { type: String, trim: true },
+            otherEvidenceUrls: [{ type: String, trim: true }],
+            otherEvidenceDocNames: [{ type: String, trim: true }]
         },
 
         status: {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   AlertOctagon,
@@ -125,15 +125,23 @@ export default function AdminCancellationRequestsPage() {
   }, [cancellationRequests, statusFilter, searchQuery, opportunities, organizations]);
 
   const getOpportunityForReq = (oppId) => {
-    return opportunities.find((o) => o.id === oppId);
+    return opportunities.find((o) => (o.id || o._id) === oppId);
   };
 
-  const getOrgForReq = (orgId) => {
-    return organizations.find((o) => o.id === orgId);
+  const getOrgForReq = (orgId, opp) => {
+    const found = organizations.find((o) => (o.id || o._id) === orgId);
+    if (found) return found;
+    if (opp?.projectId?.organizationId && typeof opp.projectId.organizationId === "object") {
+      return { name: opp.projectId.organizationId.organizationName || opp.projectId.organizationId.name };
+    }
+    if (opp?.organizationId && typeof opp.organizationId === "object") {
+      return { name: opp.organizationId.organizationName || opp.organizationId.name };
+    }
+    return null;
   };
 
   const getApplicantsForOpp = (oppId) => {
-    return applications.filter((a) => a.opportunityId === oppId);
+    return applications.filter((a) => (a.opportunityId || a.opportunity?._id || a.opportunity?.id) === oppId);
   };
 
   const formatRequestedDate = (isoStr) => {
@@ -152,26 +160,54 @@ export default function AdminCancellationRequestsPage() {
   };
 
   // Handlers
-  const handleConfirmApprove = (e) => {
+  const handleConfirmApprove = async (e) => {
     e.preventDefault();
     if (!approveModalReq) return;
-    adminResolveCancellation(
-      approveModalReq.id,
-      "Approved",
-      approveNote || "Cancellation request approved by Vismaya compliance desk."
-    );
-    setApproveModalReq(null);
-    setApproveNote("");
+    const note = approveNote || "Cancellation request approved by Vismaya compliance desk.";
+    try {
+      if (isRealMode("admin")) {
+        await adminService.reviewOpportunityCancellation(approveModalReq.opportunityId || approveModalReq.id, {
+          action: "approve",
+          adminNote: note,
+          reason: note,
+        });
+        await loadData();
+      } else {
+        adminResolveCancellation(approveModalReq.id, "Approved", note);
+      }
+    } catch (err) {
+      console.error("Failed to approve cancellation:", err);
+      alert(err?.response?.data?.message || err?.message || "Failed to approve cancellation request");
+    } finally {
+      setApproveModalReq(null);
+      setApproveNote("");
+    }
   };
 
-  const handleConfirmDecline = (e) => {
+  const handleConfirmDecline = async (e) => {
     e.preventDefault();
     if (!declineModalReq || !declineReason.trim()) {
       return;
     }
-    adminResolveCancellation(declineModalReq.id, "Declined", declineReason.trim());
-    setDeclineModalReq(null);
-    setDeclineReason("");
+    const reason = declineReason.trim();
+    try {
+      if (isRealMode("admin")) {
+        await adminService.reviewOpportunityCancellation(declineModalReq.opportunityId || declineModalReq.id, {
+          action: "reject",
+          adminNote: reason,
+          reason,
+        });
+        await loadData();
+      } else {
+        adminResolveCancellation(declineModalReq.id, "Declined", reason);
+      }
+    } catch (err) {
+      console.error("Failed to decline cancellation:", err);
+      alert(err?.response?.data?.message || err?.message || "Failed to decline cancellation request");
+    } finally {
+      setDeclineModalReq(null);
+      setDeclineReason("");
+    }
   };
 
   // Status pill using semantic system
@@ -301,8 +337,8 @@ export default function AdminCancellationRequestsPage() {
                 </thead>
                 <tbody>
                   {filteredRequests.map((req) => {
-                    const opp = getOpportunityForReq(req.opportunityId);
-                    const org = getOrgForReq(req.orgId);
+                    const opp = getOpportunityForReq(req.opportunityId) || req.opportunity;
+                    const org = getOrgForReq(req.orgId, opp);
                     const apps = getApplicantsForOpp(req.opportunityId);
                     const isPending = req.status === "Pending";
                     const { date, time } = formatRequestedDate(req.requestedAt);
@@ -406,8 +442,8 @@ export default function AdminCancellationRequestsPage() {
           {/* Mobile Cards View (< 768px) */}
           <div className="cancel-mobile-cards-stack">
             {filteredRequests.map((req) => {
-              const opp = getOpportunityForReq(req.opportunityId);
-              const org = getOrgForReq(req.orgId);
+              const opp = getOpportunityForReq(req.opportunityId) || req.opportunity;
+              const org = getOrgForReq(req.orgId, opp);
               const apps = getApplicantsForOpp(req.opportunityId);
               const isPending = req.status === "Pending";
               const { date, time } = formatRequestedDate(req.requestedAt);

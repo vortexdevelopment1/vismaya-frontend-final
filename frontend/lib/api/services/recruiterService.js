@@ -327,21 +327,33 @@ export const recruiterService = {
   /**
    * Request cancellation for an opportunity
    * @param {string} opportunityId
-   * @param {Object} payload { cancellationReason }
+   * @param {Object} payload
    */
-  async requestOpportunityCancellation(opportunityId, payload) {
-    if (!isRealMode("opportunities")) {
+  async requestOpportunityCancellation(opportunityId, payload = {}) {
+    if (!isRealMode("opportunities") && !isRealMode("recruiter")) {
       return {
         success: true,
         message: "Cancellation requested (Mock)",
       };
     }
 
-    const res = await apiClient.post(`/api/opportunities/${opportunityId}/cancel-request`, payload);
+    const cancellationReason =
+      typeof payload === "string"
+        ? payload.trim()
+        : (payload?.cancellationReason || payload?.reason || "").trim();
+
+    if (!cancellationReason) {
+      throw new Error("Cancellation reason is required");
+    }
+
+    const res = await apiClient.post(`/api/opportunities/${opportunityId}/cancel-request`, {
+      cancellationReason,
+      ...payload,
+    });
     return {
       success: true,
-      data: res?.data || res,
-      message: res?.message,
+      data: res?.data || res?.opportunity || res,
+      message: res?.message || "Cancellation request submitted for Vismaya review",
     };
   },
 

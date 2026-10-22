@@ -85,7 +85,7 @@ export const getOrganizationProfile = async (req: Request, res: Response): Promi
     try {
         const userId = req.user?.userId;
 
-        const organization = await Organization.findOne({ userId });
+        const organization = await Organization.findOne({ userId }).select("-verificationDocuments");
 
         if (!organization) {
             return res.status(404).json({

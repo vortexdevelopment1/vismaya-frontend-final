@@ -2408,11 +2408,12 @@ export function WorkflowProvider({ children }) {
   };
 
   const requestCancellation = async (opportunityId, reason) => {
-    if (isRealMode("recruiter")) {
+    if (isRealMode("recruiter") || isRealMode("opportunities")) {
       try {
-        await recruiterService.requestOpportunityCancellation(opportunityId, { reason });
+        await recruiterService.requestOpportunityCancellation(opportunityId, { cancellationReason: reason });
       } catch (err) {
         console.warn("Real requestCancellation failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "REQUEST_CANCELLATION", payload: { opportunityId, reason } });
@@ -2421,9 +2422,11 @@ export function WorkflowProvider({ children }) {
   const adminResolveCancellation = async (requestId, decision, adminNote) => {
     if (isRealMode("admin")) {
       try {
-        await adminService.reviewOpportunityCancellation(requestId, { decision, adminNote });
+        const action = String(decision || "").toLowerCase().includes("approv") ? "approve" : "reject";
+        await adminService.reviewOpportunityCancellation(requestId, { action, adminNote, reason: adminNote });
       } catch (err) {
         console.warn("Real adminResolveCancellation failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "ADMIN_RESOLVE_CANCELLATION", payload: { requestId, decision, adminNote } });
