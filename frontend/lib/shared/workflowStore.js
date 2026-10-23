@@ -1594,13 +1594,16 @@ function workflowReducer(state, action) {
       const timestamp = new Date().toISOString();
       const talentName = talentProfile?.name || talentProfile?.stageName || "Verified Talent";
 
+      const chosenRole = action.payload.roleName || action.payload.roleApplied || opp.roles?.[0]?.roleName || opp.role || "—";
       const newApp = {
-        id: `app-${Date.now()}`,
+        id: action.payload.id || `app-${Date.now()}`,
         opportunityId,
         talentId,
         talentName,
         talentProfile: talentProfile || {},
-        roleApplied: roleApplied || opp.roles[0]?.roleName || "Lead Role",
+        roleName: chosenRole,
+        roleApplied: chosenRole,
+        role: chosenRole,
         status: "Applied",
         appliedAt: timestamp,
         history: [
@@ -2441,18 +2444,20 @@ export function WorkflowProvider({ children }) {
     dispatch({ type: "MARK_OPPORTUNITY_COMPLETED", payload: { opportunityId } });
   };
 
-  const applyToOpportunity = async ({ opportunityId, talentId, talentProfile, roleApplied }) => {
+  const applyToOpportunity = async ({ opportunityId, talentId, talentProfile, roleApplied, roleName }) => {
+    const finalRole = roleName || roleApplied;
     if (isRealMode("applications")) {
       try {
         const res = await talentService.applyToOpportunity(opportunityId, {
-          roleApplied,
+          roleApplied: finalRole,
+          roleName: finalRole,
           coverNote: talentProfile?.bio,
           consentGiven: true,
         });
         if (res?.data) {
           dispatch({
             type: "APPLY_TO_OPPORTUNITY",
-            payload: { opportunityId, talentId, talentProfile, roleApplied, ...res.data },
+            payload: { opportunityId, talentId, talentProfile, roleApplied: finalRole, roleName: finalRole, ...res.data },
           });
           return res.data;
         }
@@ -2463,7 +2468,7 @@ export function WorkflowProvider({ children }) {
     }
     dispatch({
       type: "APPLY_TO_OPPORTUNITY",
-      payload: { opportunityId, talentId, talentProfile, roleApplied },
+      payload: { opportunityId, talentId, talentProfile, roleApplied: finalRole, roleName: finalRole },
     });
   };
 

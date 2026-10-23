@@ -9,6 +9,7 @@ export interface ICustomAnswer {
 export interface IApplication extends Document {
     opportunityId: Types.ObjectId;
     talentId: Types.ObjectId;
+    roleName?: string;
     coverNote?: string;
     customAnswers: ICustomAnswer[];
     consentGiven: boolean;
@@ -57,6 +58,11 @@ const applicationSchema = new Schema<IApplication>(
             type: Schema.Types.ObjectId,
             ref: "User",
             required: true
+        },
+
+        roleName: {
+            type: String,
+            trim: true
         },
 
         coverNote: {

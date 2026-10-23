@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -23,6 +23,8 @@ import {
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
+import { recruiterService } from "@/lib/api/services/recruiterService";
+import { isRealMode } from "@/lib/api/config";
 
 export default function OpportunityApplicantsPage() {
   const params = useParams();
@@ -47,16 +49,82 @@ export default function OpportunityApplicantsPage() {
     [projects, opportunity]
   );
 
-  const oppApplications = useMemo(
-    () => applications.filter((a) => a.opportunityId === opportunityId),
-    [applications, opportunityId]
-  );
+  const [realApplications, setRealApplications] = useState(null);
+  const [apiRoleCounts, setApiRoleCounts] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadApps() {
+      if (!opportunityId) return;
+      const isMongo = /^[0-9a-fA-F]{24}$/.test(String(opportunityId));
+      if (!isMongo && !isRealMode("applications") && !isRealMode("recruiter")) return;
+
+      try {
+        const res = await recruiterService.getOpportunityApplications(opportunityId);
+        if (!isMounted) return;
+        if (res?.data) {
+          setRealApplications(res.data);
+        }
+        if (res?.roleCounts) {
+          setApiRoleCounts(res.roleCounts);
+        }
+      } catch (err) {
+        console.error("Error fetching opportunity applications:", err);
+      }
+    }
+    loadApps();
+    return () => { isMounted = false; };
+  }, [opportunityId]);
+
+  const oppApplications = useMemo(() => {
+    if (realApplications) return realApplications;
+    return applications.filter((a) => a.opportunityId === opportunityId);
+  }, [realApplications, applications, opportunityId]);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [roleFilter, setRoleFilter] = useState("ALL");
   const [cityFilter, setCityFilter] = useState("ALL");
   const [ageRangeFilter, setAgeRangeFilter] = useState("ALL");
+
+  // Role counts
+  const roleCounts = useMemo(() => {
+    const counts = { ALL: oppApplications.length };
+    if (opportunity?.roles && opportunity.roles.length > 0) {
+      opportunity.roles.forEach((r) => {
+        counts[r.roleName] = 0;
+      });
+    } else if (opportunity?.role) {
+      counts[opportunity.role] = 0;
+    }
+
+    oppApplications.forEach((app) => {
+      const r = app.roleName || app.roleApplied || app.role || opportunity?.role || "—";
+      counts[r] = (counts[r] || 0) + 1;
+    });
+
+    if (apiRoleCounts) {
+      Object.assign(counts, apiRoleCounts);
+      counts.ALL = oppApplications.length;
+    }
+
+    return counts;
+  }, [oppApplications, opportunity, apiRoleCounts]);
+
+  const uniqueRoles = useMemo(() => {
+    const set = new Set();
+    if (opportunity?.roles && opportunity.roles.length > 0) {
+      opportunity.roles.forEach((r) => set.add(r.roleName));
+    } else if (opportunity?.role) {
+      set.add(opportunity.role);
+    }
+    oppApplications.forEach((app) => {
+      const r = app.roleName || app.roleApplied || app.role;
+      if (r) set.add(r);
+    });
+    return Array.from(set);
+  }, [oppApplications, opportunity]);
 
   // Unique cities from applicants
   const cities = useMemo(() => {
@@ -91,12 +159,20 @@ export default function OpportunityApplicantsPage() {
   // Filtered Applicants
   const filteredApplicants = useMemo(() => {
     return oppApplications.filter((app) => {
+      // Role Filter
+      if (roleFilter !== "ALL") {
+        const appRole = (app.roleName || app.roleApplied || app.role || opportunity?.role || "—").toLowerCase();
+        if (appRole !== roleFilter.toLowerCase()) {
+          return false;
+        }
+      }
+
       // Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const name = (app.talentName || "").toLowerCase();
         const stageName = (app.talentProfile?.stageName || "").toLowerCase();
-        const role = (app.roleApplied || "").toLowerCase();
+        const role = (app.roleName || app.roleApplied || app.role || "").toLowerCase();
         const city = (app.talentProfile?.city || "").toLowerCase();
         const skills = (app.talentProfile?.skills || []).join(" ").toLowerCase();
 
@@ -131,7 +207,7 @@ export default function OpportunityApplicantsPage() {
 
       return true;
     });
-  }, [oppApplications, searchQuery, statusFilter, cityFilter, ageRangeFilter]);
+  }, [oppApplications, searchQuery, statusFilter, roleFilter, cityFilter, ageRangeFilter, opportunity]);
 
   const getStatusBadge = (status) => {
     return <StatusBadge status={status} size="sm" />;
@@ -438,6 +514,25 @@ export default function OpportunityApplicantsPage() {
           )}
         </div>
 
+        {/* Role Filter Dropdown */}
+        {uniqueRoles.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "0.8rem", color: "#a3acc2", fontWeight: "600" }}>Role:</span>
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              style={selectStyle}
+            >
+              <option value="ALL">All Roles ({roleCounts.ALL ?? oppApplications.length})</option>
+              {uniqueRoles.map((r) => (
+                <option key={r} value={r}>
+                  {r} ({roleCounts[r] || 0})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* City Filter */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontSize: "0.8rem", color: "#a3acc2", fontWeight: "600" }}>City:</span>
@@ -471,11 +566,12 @@ export default function OpportunityApplicantsPage() {
           </select>
         </div>
 
-        {(searchQuery || statusFilter !== "ALL" || cityFilter !== "ALL" || ageRangeFilter !== "ALL") && (
+        {(searchQuery || statusFilter !== "ALL" || roleFilter !== "ALL" || cityFilter !== "ALL" || ageRangeFilter !== "ALL") && (
           <button
             onClick={() => {
               setSearchQuery("");
               setStatusFilter("ALL");
+              setRoleFilter("ALL");
               setCityFilter("ALL");
               setAgeRangeFilter("ALL");
             }}
@@ -638,7 +734,7 @@ export default function OpportunityApplicantsPage() {
                       {/* Applied Role */}
                       <td style={{ padding: "16px 20px" }}>
                         <div style={{ fontWeight: "600", color: "#2B2D2A" }}>
-                          {app.roleApplied || "Lead Role"}
+                          {app.roleName || app.roleApplied || app.role || opportunity?.role || "—"}
                         </div>
                       </td>
 
@@ -783,7 +879,7 @@ export default function OpportunityApplicantsPage() {
                           {app.talentName}
                         </div>
                         <div style={{ fontSize: "0.75rem", color: "#5A584F" }}>
-                          Role: <strong style={{ color: "#8A6B2E" }}>{app.roleApplied}</strong>
+                          Role: <strong style={{ color: "#8A6B2E" }}>{app.roleName || app.roleApplied || app.role || opportunity?.role || "—"}</strong>
                         </div>
                       </div>
                     </div>

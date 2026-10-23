@@ -1156,8 +1156,8 @@ export default function ShortlistAuditionsPage() {
 
                     {/* Role Applied & Project Subtitle */}
                     <div className="v-candidate-info-col">
-                      <div className="v-candidate-role-text" title={app.roleApplied || app.role}>
-                        {app.roleApplied || app.role || "Role Candidate"}
+                      <div className="v-candidate-role-text" title={app.roleName || app.roleApplied || app.role || "—"}>
+                        {app.roleName || app.roleApplied || app.role || "—"}
                       </div>
                       <div className="v-candidate-applied-date">
                         Applied on {formatPostedDate(app.appliedDate || app.appliedAt || app.createdAt)}

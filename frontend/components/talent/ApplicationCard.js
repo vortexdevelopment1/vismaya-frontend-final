@@ -337,7 +337,7 @@ export default function ApplicationCard({ application }) {
 
             <div className="app-card-role-project" style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", fontSize: "13px", color: "var(--text-secondary, #5A5C53)" }}>
               <span className="app-card-role">
-                Role: <strong style={{ color: "var(--text-primary, #292C29)" }}>{application.roleApplied || application.roleName || application.role || "Lead Role"}</strong>
+                Role: <strong style={{ color: "var(--text-primary, #292C29)" }}>{application.roleName || application.roleApplied || application.role || opportunity?.role || "—"}</strong>
               </span>
               {project && (
                 <span className="app-card-project">
@@ -375,7 +375,7 @@ export default function ApplicationCard({ application }) {
                 Congratulations! You are Selected
               </span>
               <span className="app-status-text" style={{ fontSize: "13px", color: "var(--text-secondary, #5A5C53)", lineHeight: 1.4, overflowWrap: "anywhere" }}>
-                The organization has officially confirmed your selection for <strong>{application.roleApplied}</strong>. Vismaya casting desk will assist with production onboarding.
+                The organization has officially confirmed your selection for <strong>{application.roleName || application.roleApplied || application.role || opportunity?.role || "the role"}</strong>. Vismaya casting desk will assist with production onboarding.
               </span>
             </div>
           </div>
@@ -747,8 +747,8 @@ export default function ApplicationCard({ application }) {
       <Modal
         isOpen={showDetails}
         onClose={() => setShowDetails(false)}
-        title={opportunity?.title || application.opportunityTitle || application.roleApplied}
-        subtitle={`Role: ${application.roleApplied || application.roleName || application.role || "Lead Role"} • Ref #${application.id || application._id}`}
+        title={opportunity?.title || application.opportunityTitle || application.roleApplied || "Application Details"}
+        subtitle={`Role: ${application.roleName || application.roleApplied || application.role || opportunity?.role || "—"} • Ref #${application.id || application._id}`}
         maxWidth="600px"
         footer={
           <button onClick={() => setShowDetails(false)} className="btn-secondary btn-dash app-modal-btn">
@@ -788,6 +788,12 @@ export default function ApplicationCard({ application }) {
               </span>
             </div>
 
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "var(--text-secondary, #5A5C53)" }}>Applied Role:</span>
+              <span style={{ color: "var(--gold, #9B7A3F)", fontWeight: "700" }}>
+                {application.roleName || application.roleApplied || application.role || opportunity?.role || "—"}
+              </span>
+            </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: "var(--text-secondary, #5A5C53)" }}>Candidate Name:</span>
               <span style={{ color: "var(--text-primary, #292C29)", fontWeight: "600" }}>
