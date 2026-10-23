@@ -80,6 +80,11 @@ export default function OrganizationSettingsPage() {
     );
   }, [organizations, realProfile]);
 
+  const isOrgRejected = useMemo(() => {
+    const s = String(currentOrg?.status || currentOrg?.verificationState || "").toLowerCase();
+    return s === "rejected";
+  }, [currentOrg]);
+
   const [activeTab, setActiveTab] = useState("profile");
   const [toastMessage, setToastMessage] = useState(null);
   const [toastType, setToastType] = useState("success");
@@ -963,8 +968,43 @@ export default function OrganizationSettingsPage() {
           {/* TAB 2: VERIFICATION STATUS */}
           {activeTab === "verification" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-              {/* Status Banner Card */}
-              <div className="settings-card">
+              {isOrgRejected ? (
+                <div className="settings-card" style={{ borderLeft: "4px solid #B42318" }}>
+                  <div className="settings-card-body" style={{ padding: "32px" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
+                      <AlertCircle size={28} color="#B42318" style={{ flexShrink: 0, marginTop: "2px" }} />
+                      <div>
+                        <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#B42318", margin: "0 0 8px 0" }}>
+                          Verification Rejected
+                        </h3>
+                        <p style={{ fontSize: "15px", color: "#2B2D2A", margin: "0 0 16px 0", lineHeight: "24px" }}>
+                          Your verification was rejected. Please contact Vismaya support.
+                        </p>
+                        <Link
+                          href="/support"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "8px 18px",
+                            backgroundColor: "#8A6B2E",
+                            color: "#FFFFFF",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            textDecoration: "none",
+                          }}
+                        >
+                          Contact Support
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Status Banner Card */}
+                  <div className="settings-card">
                 <div className="settings-card-body" style={{ padding: "32px" }}>
                   <div
                     className="verif-banner-row"
@@ -1137,8 +1177,10 @@ export default function OrganizationSettingsPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </>
           )}
+        </div>
+      )}
 
           {/* TAB 3: SECURITY & PASSWORD */}
           {activeTab === "security" && (

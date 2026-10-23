@@ -1,10 +1,20 @@
 import { Request, Response } from "express";
 import Verification from "../models/verification.model.js";
+import Organization from "../models/organization.model.js";
 
 export const submitIdentityVerification = async (req: Request, res: Response): Promise<any> => {
     try {
         const userId = req.user?.userId;
         const { idType, idNumber, documentFrontUrl, documentBackUrl, selfiePhotoUrl } = req.body;
+
+        let verification = await Verification.findOne({ userId, verificationType: "identity" });
+
+        if (verification && verification.status === "rejected") {
+            return res.status(403).json({
+                success: false,
+                message: "Your verification was rejected. Please contact Vismaya support."
+            });
+        }
 
         if (!idType || !idNumber || !documentFrontUrl || !selfiePhotoUrl) {
             return res.status(400).json({
@@ -12,8 +22,6 @@ export const submitIdentityVerification = async (req: Request, res: Response): P
                 message: "ID type, ID number, front document URL and selfie photo are required"
             });
         }
-
-        let verification = await Verification.findOne({ userId, verificationType: "identity" });
 
         if (!verification) {
             verification = new Verification({
@@ -67,6 +75,13 @@ export const submitProfessionalVerification = async (req: Request, res: Response
 
         let verification = await Verification.findOne({ userId, verificationType: "professional" });
 
+        if (verification && verification.status === "rejected") {
+            return res.status(403).json({
+                success: false,
+                message: "Your verification was rejected. Please contact Vismaya support."
+            });
+        }
+
         if (!verification) {
             verification = new Verification({
                 userId,
@@ -115,14 +130,22 @@ export const submitBusinessVerification = async (req: Request, res: Response): P
         const userId = req.user?.userId;
         const { businessRegType, businessRegNumber, legalEntityName, documentUrl } = req.body;
 
+        let verification = await Verification.findOne({ userId, verificationType: "organization_business" });
+        const org = await Organization.findOne({ userId });
+
+        if ((verification && verification.status === "rejected") || (org && (org.verificationState === "rejected" || org.status === "rejected"))) {
+            return res.status(403).json({
+                success: false,
+                message: "Your verification was rejected. Please contact Vismaya support."
+            });
+        }
+
         if (!businessRegType || !businessRegNumber || !legalEntityName || !documentUrl) {
             return res.status(400).json({
                 success: false,
                 message: "Business registration type, number, legal entity name and document URL are required"
             });
         }
-
-        let verification = await Verification.findOne({ userId, verificationType: "organization_business" });
 
         if (!verification) {
             verification = new Verification({

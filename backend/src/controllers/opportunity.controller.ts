@@ -157,9 +157,8 @@ const formatOpportunityForUser = (opportunity: any, userRole?: string, isOwner?:
         opp.eligibilityMatch = computeEligibilityMatch(opp, talentProfile);
     }
 
-    // If talent / general user (not owner or admin), hide organization private identity, remuneration, and project org id (§10, §21)
+    // If talent / general user (not owner or admin), hide moderation notes and project org id (§10, §21)
     if (!isOwner && userRole !== "admin") {
-        delete opp.remuneration;
         delete opp.rejectionReason;
         delete opp.correctionNotes;
         if (opp.projectId && typeof opp.projectId === "object") {

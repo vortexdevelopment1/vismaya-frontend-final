@@ -12,6 +12,7 @@ import Verification from "../models/verification.model.js";
 import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
 import { notifyUser } from "../services/notification.service.js";
+import { calculateAge } from "../validators/talentProfile.validator.js";
 
 export const applyForOpportunity = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -576,7 +577,18 @@ export const getApplicantPortfolio = async (req: Request, res: Response): Promis
         const documents = mediaItems.filter(m => m.mediaType === "document");
         const externalLinks = mediaItems.filter(m => m.mediaType === "external_link");
 
-        // Section 39 Clean Portfolio (no email, mobile, guardian, physical, remuneration)
+        // Section 39 Clean Portfolio (no email, mobile, guardian, physical, remuneration, exact DOB)
+        const rawApplicantDob = profile.dob || (profile as any).dateOfBirth;
+        const applicantAge = rawApplicantDob ? calculateAge(rawApplicantDob) : (typeof (profile as any).age === "number" ? (profile as any).age : null);
+        let applicantAgeRange: string | undefined = undefined;
+        if (applicantAge !== null) {
+            if (applicantAge < 18) applicantAgeRange = "Under 18";
+            else if (applicantAge <= 25) applicantAgeRange = "18-25";
+            else if (applicantAge <= 35) applicantAgeRange = "26-35";
+            else if (applicantAge <= 50) applicantAgeRange = "36-50";
+            else applicantAgeRange = "50+";
+        }
+
         const safePortfolio = {
             vismayaId: profile.vismayaId,
             name: `${profile.firstName || ""} ${profile.lastName || ""}`.trim() || profile.stageName || "Talent Candidate",
@@ -593,6 +605,8 @@ export const getApplicantPortfolio = async (req: Request, res: Response): Promis
             primaryDesignation: profile.primaryDesignation,
             specializations: profile.specializations || [],
             careerStage: profile.careerStage,
+            age: applicantAge,
+            ageRange: applicantAgeRange,
             currentCity: profile.currentCity,
             currentState: profile.currentState,
             country: profile.country,

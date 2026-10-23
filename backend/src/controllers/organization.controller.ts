@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Organization from "../models/organization.model.js";
 import User from "../models/user.model.js";
+import Verification from "../models/verification.model.js";
 
 const generateSlug = (name: string): string => {
     return name
@@ -184,6 +185,14 @@ export const uploadVerificationDocument = async (req: Request, res: Response): P
             return res.status(404).json({
                 success: false,
                 message: "Organization profile not found"
+            });
+        }
+
+        const existingVerification = await Verification.findOne({ userId, verificationType: "organization_business" });
+        if (organization.verificationState === "rejected" || organization.status === "rejected" || (existingVerification && existingVerification.status === "rejected")) {
+            return res.status(403).json({
+                success: false,
+                message: "Your verification was rejected. Please contact Vismaya support."
             });
         }
 

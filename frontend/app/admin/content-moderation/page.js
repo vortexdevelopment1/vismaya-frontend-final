@@ -666,7 +666,7 @@ export default function ContentModerationPage() {
               const isRestricted = rawState === "restricted";
               const isRemoved = rawState === "removed" || rawState === "rejected";
 
-              const ownerDisplayName = media?.ownerName || media?.talentName || (typeof media?.owner === "object" ? (media?.owner?.name || media?.owner?.email) : media?.owner) || "Talent Member";
+              const ownerDisplayName = media?.ownerName || media?.talentName || (media?.owner && typeof media.owner === "object" ? (media.owner.name || media.owner.email) : (media?.owner || "Unknown user"));
               const displayTitle = media?.title || media?.caption || "Portfolio Asset";
               const displayType = media?.mediaType || media?.type || "Photo";
               const isBusy = Boolean(actionLoading[mediaId]);
@@ -972,7 +972,7 @@ export default function ContentModerationPage() {
           }}
           onSubmit={handleRejectSubmit}
           title="Reject & Remove Content"
-          subtitle={`Provide a mandatory reason for rejecting media from ${rejectingMedia?.ownerName || rejectingMedia?.talentName || (typeof rejectingMedia?.owner === "object" ? (rejectingMedia?.owner?.name || rejectingMedia?.owner?.email) : rejectingMedia?.owner) || "talent"}.`}
+          subtitle={`Provide a mandatory reason for rejecting media from ${rejectingMedia?.ownerName || rejectingMedia?.talentName || (rejectingMedia?.owner && typeof rejectingMedia.owner === "object" ? (rejectingMedia.owner.name || rejectingMedia.owner.email) : (rejectingMedia?.owner || "Unknown user"))}.`}
           inputLabel="Reason for Rejection *"
           inputPlaceholder="E.g. Face not clearly visible / sunglasses violation / low resolution."
           submitText="Confirm Rejection"

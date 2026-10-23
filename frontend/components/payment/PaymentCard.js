@@ -522,7 +522,7 @@ export default function PaymentCard({
               </Link>
               <span style={{ color: "#D1C9B8" }}>•</span>
               <Link
-                href="/contact"
+                href="/support"
                 style={{
                   fontSize: "13px",
                   color: "#8A6B2E",

@@ -245,6 +245,7 @@ router.patch("/success-stories/:storyId/republish", authenticateUser, authorizeR
 
 // Transactions & Credit Balances
 router.get("/transactions", authenticateUser, authorizeRoles("admin"), getPaymentTransactions);
+router.get("/payments/transactions", authenticateUser, authorizeRoles("admin"), getPaymentTransactions);
 router.get("/credits/ledger", authenticateUser, authorizeRoles("admin"), getAdminCreditLedger);
 router.post("/credits/adjust", requireSuperAdmin, adjustCreditBalance);
 

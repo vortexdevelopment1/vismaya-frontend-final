@@ -110,14 +110,14 @@ export default function TalentOpportunityDetailsPage() {
   }
 
   // Eligibility Match Guidance Calculations (guidance only)
-  const talentAge = parseInt(profile.personal.age) || 22;
-  const talentGender = profile.personal.gender || "Female";
-  const talentCity = profile.personal.city || "Mumbai";
-  const talentLanguages = profile.languages || ["Hindi", "English", "Marathi"];
+  const talentAge = parseInt(profile?.personal?.age || profile?.age) || null;
+  const talentGender = profile?.personal?.gender || profile?.gender || null;
+  const talentCity = profile?.personal?.city || profile?.currentCity || null;
+  const talentLanguages = profile?.languages || [];
 
   const elAgeMin = opportunity.eligibility?.ageMin || 18;
   const elAgeMax = opportunity.eligibility?.ageMax || 60;
-  const isAgeMatch = talentAge >= elAgeMin && talentAge <= elAgeMax;
+  const isAgeMatch = talentAge ? (talentAge >= elAgeMin && talentAge <= elAgeMax) : true;
 
   const elGender = opportunity.eligibility?.gender || "Any";
   const isGenderMatch = elGender === "Any" || elGender.toLowerCase() === talentGender.toLowerCase();
@@ -268,7 +268,7 @@ export default function TalentOpportunityDetailsPage() {
             <Banknote size={20} style={{ color: "var(--gold)", flexShrink: 0 }} />
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "700" }}>Remuneration</span>
-              <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>{opportunity.remuneration || "Negotiable"}</span>
+              <span style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-primary)" }}>{opportunity.remuneration || "Not disclosed"}</span>
             </div>
           </div>
 

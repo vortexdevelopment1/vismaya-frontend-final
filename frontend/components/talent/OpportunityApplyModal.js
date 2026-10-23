@@ -93,9 +93,9 @@ export default function OpportunityApplyModal({ isOpen, onClose, opportunity, pr
         talentProfile: {
           name: profile?.personal?.fullName || user?.name || "Talent Member",
           stageName: profile?.personal?.stageName || profile?.personal?.fullName || user?.name || "Artist",
-          age: parseInt(profile?.personal?.age) || 22,
-          gender: profile?.personal?.gender || "Female",
-          city: profile?.personal?.city || user?.city || "Mumbai",
+          age: parseInt(profile?.personal?.age || profile?.age) || null,
+          gender: profile?.personal?.gender || profile?.gender || null,
+          city: profile?.personal?.city || profile?.currentCity || user?.city || "",
           phone: profile?.personal?.phone || user?.mobile || user?.phone || "",
           email: profile?.personal?.email || user?.email || "",
           avatar: profile?.avatar || user?.profilePhoto || "",

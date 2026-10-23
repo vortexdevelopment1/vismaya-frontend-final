@@ -125,6 +125,7 @@ app.use("/api/talent-profiles", talentProfileRoutes);
 app.use("/api/talent", talentProfileRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/verifications", verificationRoutes);
+app.use("/api/verification", verificationRoutes);
 app.use("/api/credits", creditRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/taxonomy", taxonomyRoutes);

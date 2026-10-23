@@ -242,7 +242,7 @@ export default function CandidateProfileModal({
             {[
               { id: "overview", label: "Artist Profile" },
               { id: "audition", label: "Audition Self-Tape", icon: Video },
-              { id: "portfolio", label: `Comp Cards (${candidate.portfolioCount || 4})`, icon: ImageIcon },
+              { id: "portfolio", label: `Comp Cards (${candidate.portfolioCount ?? candidate.photos?.length ?? 0})`, icon: ImageIcon },
             ].map((tab) => (
               <button
                 key={tab.id}

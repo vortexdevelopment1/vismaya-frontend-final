@@ -251,7 +251,7 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <Banknote size={15} style={{ color: "#8A6B2E" }} />
             <span style={{ color: "#8A6B2E", fontWeight: "700" }}>
-              {opportunity.remuneration || "Negotiable"}
+              {opportunity.remuneration || "Not disclosed"}
             </span>
           </div>
 

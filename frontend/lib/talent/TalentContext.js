@@ -985,10 +985,13 @@ export function TalentProvider({ children }) {
         });
         return res;
       } catch (err) {
+        const errorMsg = (err?.status === 403 || err?.message?.includes("rejected"))
+          ? "Your verification was rejected. Please contact Vismaya support."
+          : (err?.message || "Could not submit identity documents.");
         addToast({
           type: "danger",
           title: "Verification Submission Failed",
-          message: err?.message || "Could not submit identity documents.",
+          message: errorMsg,
         });
         throw err;
       }
@@ -1012,10 +1015,13 @@ export function TalentProvider({ children }) {
         });
         return res;
       } catch (err) {
+        const errorMsg = (err?.status === 403 || err?.message?.includes("rejected"))
+          ? "Your verification was rejected. Please contact Vismaya support."
+          : (err?.message || "Could not submit professional credits.");
         addToast({
           type: "danger",
           title: "Submission Failed",
-          message: err?.message || "Could not submit professional credits.",
+          message: errorMsg,
         });
         throw err;
       }

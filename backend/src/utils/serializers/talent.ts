@@ -3,6 +3,8 @@
  * Implements strict role-aware serializers per Specification §7 & §14
  */
 
+import { calculateAge } from "../../validators/talentProfile.validator.js";
+
 export const FORBIDDEN_PUBLIC_KEYS: readonly string[] = [
     "email",
     "mobile",
@@ -15,7 +17,9 @@ export const FORBIDDEN_PUBLIC_KEYS: readonly string[] = [
     "password",
     "otp",
     "token",
-    "identityData"
+    "identityData",
+    "dob",
+    "dateOfBirth"
 ];
 
 export const FORBIDDEN_ORGANIZATION_FULL_KEYS: readonly string[] = [
@@ -30,7 +34,9 @@ export const FORBIDDEN_ORGANIZATION_FULL_KEYS: readonly string[] = [
     "password",
     "otp",
     "token",
-    "identityData"
+    "identityData",
+    "dob",
+    "dateOfBirth"
 ];
 
 export const formatLastNameInitial = (firstName?: string | null, lastName?: string | null, stageName?: string | null): string => {
@@ -82,6 +88,17 @@ export const toLimitedPreview = (profile?: any, viewerRole = "guest", badges: Re
     if (!profile) return null;
     const p = profile.toObject ? profile.toObject() : { ...profile };
 
+    const rawDob = p.dob || p.dateOfBirth;
+    const computedAge = rawDob ? calculateAge(rawDob) : (typeof p.age === "number" ? p.age : null);
+    let ageRange: string | undefined = undefined;
+    if (computedAge !== null) {
+        if (computedAge < 18) ageRange = "Under 18";
+        else if (computedAge <= 25) ageRange = "18-25";
+        else if (computedAge <= 35) ageRange = "26-35";
+        else if (computedAge <= 50) ageRange = "36-50";
+        else ageRange = "50+";
+    }
+
     return {
         _id: p._id,
         vismayaId: p.vismayaId,
@@ -100,6 +117,8 @@ export const toLimitedPreview = (profile?: any, viewerRole = "guest", badges: Re
         secondaryDepartments: p.secondaryDepartments || [],
         specializations: p.specializations || [],
         careerStage: p.careerStage,
+        age: computedAge,
+        ageRange,
         currentCity: p.currentCity,
         currentState: p.currentState,
         country: p.country,
@@ -158,6 +177,20 @@ export const toFullProfile = (
 
     // For Organization or Guest: clean forbidden keys
     const safeProfile = { ...p };
+
+    // Derive age and ageRange server-side before stripping raw dob
+    const rawDob = p.dob || p.dateOfBirth;
+    if (rawDob) {
+        const computedAge = calculateAge(rawDob);
+        if (computedAge !== null) {
+            safeProfile.age = computedAge;
+            if (computedAge < 18) safeProfile.ageRange = "Under 18";
+            else if (computedAge <= 25) safeProfile.ageRange = "18-25";
+            else if (computedAge <= 35) safeProfile.ageRange = "26-35";
+            else if (computedAge <= 50) safeProfile.ageRange = "36-50";
+            else safeProfile.ageRange = "50+";
+        }
+    }
 
     // Strip strictly forbidden keys
     for (const key of FORBIDDEN_ORGANIZATION_FULL_KEYS) {
