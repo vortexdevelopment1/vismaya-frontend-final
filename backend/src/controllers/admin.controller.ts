@@ -1690,6 +1690,10 @@ export const rejectOpportunity = async (req: Request, res: Response): Promise<an
 
         opportunity.status = "rejected";
         opportunity.rejectionReason = finalReason;
+        opportunity.rejectedAt = new Date();
+        if (req.user?.userId) {
+            opportunity.rejectedBy = req.user.userId as any;
+        }
         await opportunity.save();
 
         await logAdminAction({
@@ -2405,10 +2409,11 @@ export const reviewAudition = async (req: Request, res: Response): Promise<any> 
             }
         } else {
             if (isSelfTapeReview) {
-                if (!rejectionReason || !rejectionReason.trim()) {
+                const finalReason = (rejectionReason || req.body?.reason || req.body?.adminNote || "").trim();
+                if (!finalReason || finalReason.length < 10) {
                     return res.status(400).json({
                         success: false,
-                        message: "A rejection reason is required for self-tape review"
+                        message: "Rejection reason is required and must be at least 10 characters"
                     });
                 }
 
@@ -2416,7 +2421,7 @@ export const reviewAudition = async (req: Request, res: Response): Promise<any> 
                 audition.vismayaApproval = "rejected";
                 audition.vismayaReviewedBy = req.user?.userId as any;
                 audition.vismayaReviewedAt = new Date();
-                audition.vismayaRejectionReason = rejectionReason.trim();
+                audition.vismayaRejectionReason = finalReason;
                 await audition.save();
 
                 await logAdminAction({
@@ -2424,7 +2429,7 @@ export const reviewAudition = async (req: Request, res: Response): Promise<any> 
                     action: "AUDITION_SELF_TAPE_REJECT",
                     targetType: "Audition",
                     targetId: audition._id,
-                    details: `Self-tape rejected. Reason: ${audition.vismayaRejectionReason}`,
+                    details: `Self-tape rejected. Reason: ${finalReason}`,
                     req
                 });
 
@@ -2432,12 +2437,12 @@ export const reviewAudition = async (req: Request, res: Response): Promise<any> 
                 const roleStr = audition.role || opp?.role || "Role";
                 const titleStr = opp?.title || "Opportunity";
 
-                // Notify Talent (no resubmission permitted)
+                // Notify Talent
                 await notifyUser({
                     recipientId: audition.talentId,
                     type: "audition_selftape_rejected",
                     title: "Self-Tape Rejected",
-                    message: `Your self-tape submission for ${roleStr} in "${titleStr}" was rejected by Vismaya moderation. Reason: ${audition.vismayaRejectionReason}. Resubmissions are not permitted.`,
+                    message: `Your self-tape submission for ${roleStr} in "${titleStr}" was rejected by Vismaya moderation. Reason: ${finalReason}`,
                     referenceId: audition._id,
                     referenceType: "Audition",
                     sendEmailAlert: true
@@ -2445,7 +2450,7 @@ export const reviewAudition = async (req: Request, res: Response): Promise<any> 
 
                 return res.status(200).json({
                     success: true,
-                    message: "Self-tape rejected. Talent notified and resubmission is not permitted.",
+                    message: "Self-tape rejected. Talent notified.",
                     audition
                 });
             } else {

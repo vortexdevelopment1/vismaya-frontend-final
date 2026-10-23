@@ -26,8 +26,10 @@ import {
 } from "lucide-react";
 import StatusBadge from "@/components/shared/StatusBadge";
 import ProgressBar from "@/components/shared/ProgressBar";
-import { useTalent } from "@/lib/talent/TalentContext";
+import ContactVismayaButton from "@/components/shared/ContactVismayaButton";
 import { validateMediaFile, optimizeCloudinaryUrl } from "@/lib/api/uploadMedia";
+import { PHOTO_UPLOAD_CONFIG, validatePhotoFile } from "@/lib/config/photoUpload";
+import { useTalent } from "@/lib/talent/TalentContext";
 
 // Category options for Step 1
 const CATEGORY_OPTIONS = [
@@ -383,13 +385,32 @@ export default function ProfileBuilder({ onFinish }) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
 
-    try {
-      validateMediaFile(file, "profilePhoto");
-      setSelectedPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
-    } catch (err) {
-      setPhotoError(err.message || "Photo must be JPG, PNG, or WebP.");
+    const basicCheck = validatePhotoFile(file);
+    if (!basicCheck.valid) {
+      setPhotoError(basicCheck.error);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+      return;
     }
+
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const dimCheck = validatePhotoFile(file, img.naturalWidth, img.naturalHeight);
+      if (!dimCheck.valid) {
+        URL.revokeObjectURL(objectUrl);
+        setPhotoError(dimCheck.error);
+        if (photoInputRef.current) photoInputRef.current.value = "";
+        return;
+      }
+      setSelectedPhotoFile(file);
+      setPhotoPreview(objectUrl);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      setPhotoError("Failed to decode image file. Please choose a valid image.");
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    };
+    img.src = objectUrl;
   };
 
   const handleSavePhoto = async () => {
@@ -1427,7 +1448,7 @@ export default function ProfileBuilder({ onFinish }) {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <p style={{ fontSize: "13px", color: "#5A584F", margin: 0, maxWidth: "440px", lineHeight: 1.5 }}>
-                  Clear, forward-facing commercial headshot in JPG, PNG, or WebP. Max 10 MB. Updates instantly across your profile and top bar.
+                  Clear, forward-facing commercial headshot ({PHOTO_UPLOAD_CONFIG.helperText}). Updates instantly across your profile and top bar.
                 </p>
 
                 <input
@@ -1886,6 +1907,12 @@ export default function ProfileBuilder({ onFinish }) {
                             <span>Evidence link</span>
                             <ExternalLink size={12} />
                           </a>
+                        )}
+
+                        {isRejected && (
+                          <div style={{ marginTop: "6px" }}>
+                            <ContactVismayaButton context="Rejected verification" reference={creditId} />
+                          </div>
                         )}
                       </div>
 

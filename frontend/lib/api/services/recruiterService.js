@@ -273,6 +273,27 @@ export const recruiterService = {
   },
 
   /**
+   * Get an opportunity by ID
+   * @param {string} opportunityId
+   */
+  async getOpportunityById(opportunityId) {
+    if (!isRealMode("opportunities")) {
+      const mock = initialRequirements.find((o) => o.id === opportunityId);
+      return {
+        success: true,
+        data: mock ? mapOpportunity(mock) : null,
+      };
+    }
+
+    const res = await apiClient.get(`/api/opportunities/${opportunityId}`);
+    const doc = res?.opportunity || res?.data || res;
+    return {
+      success: true,
+      data: doc ? mapOpportunity(doc) : null,
+    };
+  },
+
+  /**
    * Create a new casting brief (opportunity)
    * @param {Object} payload Casting brief details
    */

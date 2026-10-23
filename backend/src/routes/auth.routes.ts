@@ -36,11 +36,15 @@ import {
     verifyOtp,
     resetPassword,
     checkAvailability,
-    uploadAccreditationDocument
+    uploadAccreditationDocument,
+    getOtpConfig
  } from "../controllers/auth.controller.js";
 import { handleAccreditationUpload, verifyUploadMagicBytes } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
+
+// Public OTP Configuration
+router.get("/otp-config", getOtpConfig);
 
 // Dedicated Admin Authentication
 router.post("/admin/login", adminLoginLimiter, adminLogin);

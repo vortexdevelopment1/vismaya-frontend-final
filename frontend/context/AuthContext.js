@@ -54,7 +54,10 @@ const DOMAIN_STORAGE_KEYS = [
   "vismaya_payment_talent_status",
   "vismaya_credits",
   "vismaya_recruiter_profile",
-  "vismaya_admin_analytics"
+  "vismaya_admin_analytics",
+  "vismaya_registration_draft",
+  "vismaya_draft_token",
+  "vismaya_reg_session_active"
 ];
 
   const saveSession = useCallback((newUser, newToken) => {
@@ -97,7 +100,10 @@ const DOMAIN_STORAGE_KEYS = [
     removeAuthToken();
     if (typeof window !== "undefined") {
       try {
-        DOMAIN_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
+        DOMAIN_STORAGE_KEYS.forEach(k => {
+          localStorage.removeItem(k);
+          sessionStorage.removeItem(k);
+        });
       } catch {}
     }
   }, []);
@@ -130,7 +136,9 @@ const DOMAIN_STORAGE_KEYS = [
     try {
       const res = await authService.register(payload);
       if (res.success && res.user) {
-        saveSession(res.user, res.token);
+        if (res.token && res.user.status === "active") {
+          saveSession(res.user, res.token);
+        }
         return { success: true, user: res.user, token: res.token };
       } else {
         const msg = res.message || "Registration failed. Please check your details.";

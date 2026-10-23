@@ -188,8 +188,15 @@ export const uploadVerificationDocument = async (req: Request, res: Response): P
             });
         }
 
-        const existingVerification = await Verification.findOne({ userId, verificationType: "organization_business" });
-        if (organization.verificationState === "rejected" || organization.status === "rejected" || (existingVerification && existingVerification.status === "rejected")) {
+        const latestVerification = await Verification.findOne({ userId, verificationType: "organization_business" })
+            .sort({ createdAt: -1, submittedAt: -1 });
+
+        const sameTypeDocs = Array.isArray(organization.verificationDocuments)
+            ? organization.verificationDocuments.filter((d: any) => d.docType === docType)
+            : [];
+        const latestDoc = sameTypeDocs.length > 0 ? sameTypeDocs[sameTypeDocs.length - 1] : null;
+
+        if ((latestVerification && latestVerification.status === "rejected") || (latestDoc && latestDoc.status === "rejected")) {
             return res.status(403).json({
                 success: false,
                 message: "Your verification was rejected. Please contact Vismaya support."

@@ -14,6 +14,8 @@ import { USE_MOCK, isRealMode, API_URL } from "./config.js";
 import { getAuthToken, ApiError } from "./client.js";
 import { mapMedia } from "./mappers/index.js";
 
+import { PHOTO_UPLOAD_CONFIG } from "../config/photoUpload.js";
+
 // Validation limits
 export const MEDIA_LIMITS = {
   photo: {
@@ -22,9 +24,9 @@ export const MEDIA_LIMITS = {
     label: "Images (JPG, PNG, WebP) max 5 MB",
   },
   profilePhoto: {
-    maxBytes: 10 * 1024 * 1024, // 10 MB in sync with backend config (mediaLimits.ts)
-    allowedMimes: ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "image/jpg"],
-    label: "Profile photo (JPG, PNG, WebP) max 10 MB",
+    maxBytes: PHOTO_UPLOAD_CONFIG.maxSizeBytes, // 5 MB in sync with PHOTO_UPLOAD_CONFIG
+    allowedMimes: PHOTO_UPLOAD_CONFIG.allowedTypes,
+    label: PHOTO_UPLOAD_CONFIG.helperText,
   },
   video: {
     maxBytes: 100 * 1024 * 1024, // 100 MB for videos

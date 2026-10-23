@@ -7,8 +7,9 @@ import Organization from "../models/organization.model.js";
 import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
 import { notifyUser } from "../services/notification.service.js";
+import { logAdminAction } from "../services/audit.service.js";
 import { isSafeUrl } from "../utils/sanitize.util.js";
-import { AUDITION_CONFIG } from "../config/audition.config.js";
+import { AUDITION_CONFIG, maxResubmissionsAfterRejection } from "../config/audition.config.js";
 
 export const createAudition = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -221,26 +222,11 @@ export const submitSelfTape = async (req: Request, res: Response): Promise<any> 
             });
         }
 
-        // Validate status: one submission only. After talent submits, no replace and no second upload.
-        if (audition.selfTapeSubmission?.submittedAt || audition.status === "submitted" || audition.status === "forwarded_to_org") {
+        // Do not allow submission if the audition request itself is closed or cancelled
+        if (audition.status === "cancelled" || audition.status === "completed") {
             return res.status(400).json({
                 success: false,
-                message: "Self-tape has already been submitted for this audition. Second uploads or replacements are not permitted."
-            });
-        }
-
-        // A talent must NOT see, or be able to upload to, an audition whose request is pending or rejected
-        if (audition.vismayaApproval !== "approved" || audition.status === "rejected") {
-            return res.status(403).json({
-                success: false,
-                message: "Cannot submit self-tape: audition request is awaiting Vismaya approval or has been rejected"
-            });
-        }
-
-        if (audition.status !== "requested") {
-            return res.status(400).json({
-                success: false,
-                message: "Self-tape can only be submitted for requested auditions"
+                message: "Audition request is closed or cancelled. Resubmission is not permitted."
             });
         }
 
@@ -250,6 +236,40 @@ export const submitSelfTape = async (req: Request, res: Response): Promise<any> 
                 success: false,
                 message: "Self-tape submission deadline has passed"
             });
+        }
+
+        const isResubmission = audition.status === "rejected";
+
+        if (isResubmission) {
+            const currentCount = audition.resubmissionCount || 0;
+            if (currentCount >= maxResubmissionsAfterRejection) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Resubmission limit reached. Please contact Vismaya support."
+                });
+            }
+        } else {
+            // Initial submission validation
+            if (audition.selfTapeSubmission?.submittedAt || audition.status === "submitted" || audition.status === "forwarded_to_org") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Self-tape has already been submitted for this audition and is under review. Second uploads or replacements are not permitted."
+                });
+            }
+
+            if (audition.vismayaApproval !== "approved" && audition.status !== "requested") {
+                return res.status(403).json({
+                    success: false,
+                    message: "Cannot submit self-tape: audition request is awaiting Vismaya approval or has been rejected"
+                });
+            }
+
+            if (audition.status !== "requested") {
+                return res.status(400).json({
+                    success: false,
+                    message: `Self-tape can only be submitted for requested auditions. Current status is ${audition.status}.`
+                });
+            }
         }
 
         // Normalize video list
@@ -318,6 +338,19 @@ export const submitSelfTape = async (req: Request, res: Response): Promise<any> 
         const primaryVideo = videoList[0];
         const allUrls = videoList.map((v: any) => v.videoUrl);
 
+        if (isResubmission) {
+            if (!audition.rejectionHistory) {
+                audition.rejectionHistory = [];
+            }
+            audition.rejectionHistory.push({
+                videoUrl: audition.selfTapeSubmission?.videoUrl || audition.selfTapeSubmission?.videos?.[0]?.videoUrl,
+                reason: audition.vismayaRejectionReason || "Self-tape rejected by Vismaya moderation",
+                rejectedBy: audition.vismayaReviewedBy,
+                rejectedAt: audition.vismayaReviewedAt || new Date()
+            });
+            audition.resubmissionCount = (audition.resubmissionCount || 0) + 1;
+        }
+
         audition.selfTapeSubmission = {
             videoUrl: primaryVideo.videoUrl,
             videoUrls: allUrls,
@@ -333,23 +366,56 @@ export const submitSelfTape = async (req: Request, res: Response): Promise<any> 
 
         await audition.save();
 
-        // Notify Admins for review before relaying to organization
-        const adminUsers = await User.find({ role: "admin" }).select("_id");
-        for (const admin of adminUsers) {
-            await notifyUser({
-                recipientId: admin._id,
-                type: "audition_selftape_submitted",
-                title: "Self-Tape Submitted",
-                message: `Talent has submitted a self-tape for "${audition.role || 'Audition'}". Review required before relay to casting team.`,
-                referenceId: audition._id,
-                referenceType: "Audition",
-                sendEmailAlert: true
+        if (isResubmission) {
+            await logAdminAction({
+                adminId: talentId as any,
+                action: "AUDITION_SELF_TAPE_RESUBMIT",
+                targetType: "Audition",
+                targetId: audition._id,
+                details: `Self-tape resubmitted by talent (attempt ${audition.resubmissionCount}).`,
+                req
             });
+
+            // Notify Admins of resubmission
+            try {
+                const adminUsers = await User.find({ role: "admin", status: "active" }).select("_id");
+                for (const admin of adminUsers) {
+                    await notifyUser({
+                        recipientId: admin._id,
+                        type: "audition_resubmitted",
+                        title: "Audition Tape Resubmitted",
+                        message: `Talent has resubmitted an audition tape for "${audition.role || 'Audition'}". Review required before relay to casting team.`,
+                        referenceId: audition._id,
+                        referenceType: "Audition",
+                        sendEmailAlert: false
+                    });
+                }
+            } catch (notifErr: any) {
+                console.warn("[SubmitSelfTape] Admin notification warning:", notifErr.message);
+            }
+        } else {
+            // Notify Admins for initial review before relaying to organization
+            try {
+                const adminUsers = await User.find({ role: "admin", status: "active" }).select("_id");
+                for (const admin of adminUsers) {
+                    await notifyUser({
+                        recipientId: admin._id,
+                        type: "audition_selftape_submitted",
+                        title: "Self-Tape Submitted",
+                        message: `Talent has submitted a self-tape for "${audition.role || 'Audition'}". Review required before relay to casting team.`,
+                        referenceId: audition._id,
+                        referenceType: "Audition",
+                        sendEmailAlert: true
+                    });
+                }
+            } catch (notifErr: any) {
+                console.warn("[SubmitSelfTape] Admin notification warning:", notifErr.message);
+            }
         }
 
         res.status(200).json({
             success: true,
-            message: "Self-tape submitted successfully",
+            message: isResubmission ? "Self-tape resubmitted successfully and is pending Vismaya review" : "Self-tape submitted successfully",
             audition
         });
 
@@ -469,9 +535,8 @@ export const getAuditionsForApplication = async (req: Request, res: Response): P
             queryFilter.talentId = req.user.userId;
             queryFilter.$or = [
                 { vismayaApproval: "approved" },
-                { status: { $in: ["submitted", "forwarded_to_org"] } }
+                { status: { $in: ["submitted", "forwarded_to_org", "rejected", "reviewed", "completed"] } }
             ];
-            queryFilter.status = { $ne: "rejected" };
         }
 
         const rawAuditions = await Audition.find(queryFilter)
@@ -483,11 +548,13 @@ export const getAuditionsForApplication = async (req: Request, res: Response): P
         const isOrg = req.user?.role === "organization";
         const auditions = rawAuditions.map(aud => {
             const doc = aud.toObject ? aud.toObject() : { ...aud };
-            if (isOrg && doc.type === "self_tape" && doc.status !== "forwarded_to_org" && doc.status !== "reviewed") {
-                if (doc.selfTapeSubmission) {
-                    delete doc.selfTapeSubmission.videoUrl;
-                    delete doc.selfTapeSubmission.videoUrls;
-                    delete doc.selfTapeSubmission.videos;
+            const isApprovedByAdmin = doc.vismayaApproval === "approved" && (doc.status === "forwarded_to_org" || doc.status === "reviewed");
+            if (isOrg && doc.type === "self_tape" && !isApprovedByAdmin) {
+                delete doc.selfTapeSubmission;
+                delete doc.vismayaRejectionReason;
+                delete doc.rejectionHistory;
+                if (doc.status === "submitted" || doc.status === "rejected") {
+                    doc.status = "requested";
                 }
             }
             return doc;
@@ -623,9 +690,8 @@ export const getMyAuditions = async (req: Request, res: Response): Promise<any> 
             talentId,
             $or: [
                 { vismayaApproval: "approved" },
-                { status: { $in: ["submitted", "forwarded_to_org"] } }
-            ],
-            status: { $ne: "rejected" }
+                { status: { $in: ["submitted", "forwarded_to_org", "rejected", "reviewed", "completed"] } }
+            ]
         })
             .populate("opportunityId", "title role location deadline")
             .populate("projectId", "projectName")
@@ -669,10 +735,11 @@ export const getOrganizationAuditions = async (req: Request, res: Response): Pro
             const doc = aud.toObject ? aud.toObject() : { ...aud };
             const isApprovedByAdmin = doc.vismayaApproval === "approved" && (doc.status === "forwarded_to_org" || doc.status === "reviewed");
             if (doc.type === "self_tape" && !isApprovedByAdmin) {
-                if (doc.selfTapeSubmission) {
-                    delete doc.selfTapeSubmission.videoUrl;
-                    delete doc.selfTapeSubmission.videoUrls;
-                    delete doc.selfTapeSubmission.videos;
+                delete doc.selfTapeSubmission;
+                delete doc.vismayaRejectionReason;
+                delete doc.rejectionHistory;
+                if (doc.status === "submitted" || doc.status === "rejected") {
+                    doc.status = "requested";
                 }
             }
             return doc;

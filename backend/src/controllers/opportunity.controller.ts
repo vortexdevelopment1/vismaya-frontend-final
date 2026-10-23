@@ -6,6 +6,8 @@ import Organization from "../models/organization.model.js";
 import Application from "../models/application.model.js";
 import TalentProfile from "../models/talentProfile.model.js";
 import Report from "../models/report.model.js";
+import User from "../models/user.model.js";
+import { notifyUser } from "../services/notification.service.js";
 import { escapeRegex } from "../utils/sanitize.util.js";
 import { validateOpportunityCreate, validateOpportunityUpdate } from "../validators/opportunity.validator.js";
 
@@ -30,6 +32,9 @@ const resolveOpportunityProject = async (
         if (!project) return { error: { status: 404, message: "Project not found" } };
         if (String(project.organizationId) !== String(organizationId)) {
             return { error: { status: 403, message: "You can only use projects from your own organization" } };
+        }
+        if (["completed", "cancelled", "suspended"].includes(String(project.status || "").toLowerCase())) {
+            return { error: { status: 400, message: `Cannot add opportunities to a ${project.status} project` } };
         }
         return { project };
     }
@@ -311,10 +316,10 @@ export const updateOpportunity = async (req: Request, res: Response): Promise<an
             });
         }
 
-        if (["cancelled", "closed", "completed"].includes(opportunity.status)) {
+        if (opportunity.status !== "rejected" && opportunity.status !== "corrections_requested") {
             return res.status(400).json({
                 success: false,
-                message: `Cannot edit opportunity in '${opportunity.status}' state.`
+                message: `Cannot edit opportunity in '${opportunity.status}' state. Only rejected or corrections-requested opportunities can be edited and resubmitted.`
             });
         }
 
@@ -328,8 +333,6 @@ export const updateOpportunity = async (req: Request, res: Response): Promise<an
             "title", "summary", "role", "roles", "location", "deadline", "remuneration",
             "positionsCount", "eligibility", "customQuestions"
         ];
-
-        let isPublishedEdit = opportunity.status === "published";
 
         for (const field of allowedFields) {
             if (req.body[field] !== undefined) {
@@ -361,20 +364,47 @@ export const updateOpportunity = async (req: Request, res: Response): Promise<an
             }
         }
 
-        // O2: Editing a published opportunity moves it back to under_vismaya_review
-        if (isPublishedEdit || opportunity.status === "corrections_requested" || req.body.resubmit) {
-            opportunity.status = "under_vismaya_review";
-            opportunity.resubmittedAt = new Date();
+        // Resubmit: append previous rejection to rejectionHistory, reset to pending
+        if (opportunity.rejectionReason) {
+            if (!opportunity.rejectionHistory) {
+                opportunity.rejectionHistory = [];
+            }
+            opportunity.rejectionHistory.push({
+                reason: opportunity.rejectionReason,
+                rejectedBy: opportunity.rejectedBy,
+                rejectedAt: opportunity.rejectedAt || new Date()
+            });
         }
+
+        opportunity.status = "pending";
+        opportunity.submittedAt = new Date();
+        opportunity.resubmittedAt = new Date();
+        opportunity.resubmissionCount = (opportunity.resubmissionCount || 0) + 1;
 
         await opportunity.save();
         await opportunity.populate("projectId", "projectName");
 
+        // Notify admin side
+        try {
+            const adminUsers = await User.find({ role: "admin", status: "active" }).select("_id");
+            for (const admin of adminUsers) {
+                await notifyUser({
+                    recipientId: admin._id,
+                    type: "opportunity_resubmitted",
+                    title: "Opportunity Resubmitted",
+                    message: `Opportunity "${opportunity.title}" has been resubmitted for Vismaya review.`,
+                    referenceId: opportunity._id,
+                    referenceType: "Opportunity",
+                    sendEmailAlert: false
+                });
+            }
+        } catch (notifErr: any) {
+            console.warn("[UpdateOpportunity] Admin notification warning:", notifErr.message);
+        }
+
         res.status(200).json({
             success: true,
-            message: opportunity.status === "under_vismaya_review"
-                ? "Opportunity resubmitted for Vismaya review"
-                : "Opportunity updated successfully",
+            message: "Opportunity resubmitted for Vismaya review",
             opportunity: formatOpportunityForUser(opportunity, req.user?.role, true)
         });
 

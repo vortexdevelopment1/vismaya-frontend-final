@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import EmptyState from "@/components/shared/EmptyState";
 import Modal from "@/components/shared/Modal";
+import ContactVismayaButton from "@/components/shared/ContactVismayaButton";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { isRealMode } from "@/lib/api/config";
 import { recruiterService } from "@/lib/api/services/recruiterService";
@@ -23,6 +24,7 @@ const STATUS_FILTERS = [
   "Published",
   "Submitted",
   "Changes Requested",
+  "Rejected",
   "Draft",
   "Closed",
   "Cancel Requested",
@@ -97,10 +99,25 @@ export default function MyOpportunitiesPage() {
   const [completeModalOpp, setCompleteModalOpp] = useState(null);
 
   const filteredOpportunities = orgOpportunities.filter((opp) => {
-    const matchesStatus =
-      statusFilter === "All"
-        ? true
-        : (opp?.status || "").toLowerCase() === statusFilter.toLowerCase();
+    const st = (opp?.status || "").toLowerCase().trim();
+    const rawSt = (opp?.rawStatus || "").toLowerCase().trim();
+    const targetFilter = statusFilter.toLowerCase().trim();
+    let matchesStatus = false;
+    if (statusFilter === "All") {
+      matchesStatus = true;
+    } else if (targetFilter === "submitted") {
+      matchesStatus = st === "submitted" || st === "pending review" || st === "pending" || rawSt === "pending" || rawSt === "under_vismaya_review";
+    } else if (targetFilter === "rejected") {
+      matchesStatus = st === "rejected" || rawSt === "rejected";
+    } else if (targetFilter === "changes requested") {
+      matchesStatus = st === "changes requested" || st === "corrections requested" || rawSt === "corrections_requested";
+    } else if (targetFilter === "cancelled") {
+      matchesStatus = st === "cancelled" || st === "canceled" || rawSt === "cancelled";
+    } else if (targetFilter === "cancel requested") {
+      matchesStatus = st.includes("cancel") && st.includes("request");
+    } else {
+      matchesStatus = st === targetFilter || rawSt === targetFilter;
+    }
     const proj = projects.find((p) => (p.id || p._id) === opp.projectId);
     const matchesSearch =
       !searchTerm ||
@@ -448,6 +465,8 @@ export default function MyOpportunitiesPage() {
                 {filteredOpportunities.map((opp, idx) => {
                   const proj = projects.find((p) => p.id === opp.projectId);
                   const oppApps = applications.filter((a) => a.opportunityId === opp.id);
+                  const isRejected = (opp.status || "").toLowerCase() === "rejected" || (opp.rawStatus || "").toLowerCase() === "rejected";
+                  const isCancelled = (opp.status || "").toLowerCase() === "cancelled" || (opp.rawStatus || "").toLowerCase() === "cancelled";
                   const canEdit = opp.status === "Draft" || opp.status === "Changes Requested";
                   const canRequestCancel = (opp.status || "").toLowerCase() === "published";
                   const canMarkCompleted = opp.status === "Published" || opp.status === "Closed";
@@ -474,7 +493,7 @@ export default function MyOpportunitiesPage() {
                       {/* Column 1: Opportunity & Project */}
                       <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: 0 }}>
                         <Link
-                          href={`/recruiter/opportunities/${opp.id}/applicants`}
+                          href={`/recruiter/opportunities/${opp.id}`}
                           style={{
                             fontSize: "16px",
                             fontWeight: 600,
@@ -505,7 +524,61 @@ export default function MyOpportunitiesPage() {
                         >
                           Project: {proj?.title || "Assigned Project"}
                         </span>
-                        {opp.adminNote && (
+                        {isRejected && (
+                          <div
+                            style={{
+                              marginTop: "6px",
+                              padding: "10px 14px",
+                              borderRadius: "8px",
+                              backgroundColor: "rgba(180, 35, 24, 0.08)",
+                              border: "1px solid rgba(180, 35, 24, 0.28)",
+                              color: "#B42318",
+                              fontSize: "13px",
+                              lineHeight: 1.45,
+                            }}
+                            className="v-opp-rejection-box"
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: "700", marginBottom: "3px" }}>
+                              <XCircle size={14} style={{ color: "#B42318", flexShrink: 0 }} />
+                              <span>
+                                Rejection Reason {opp.rejectedAt ? `(${new Date(opp.rejectedAt).toLocaleDateString()})` : ""}:
+                              </span>
+                            </div>
+                            <div style={{ wordBreak: "break-word" }}>
+                              {opp.rejectionReason || opp.adminNote || "No rejection reason provided."}
+                            </div>
+                            <div style={{ marginTop: "8px" }}>
+                              <ContactVismayaButton context="Rejected opportunity" reference={opp.id || opp._id} />
+                            </div>
+                          </div>
+                        )}
+                        {!isRejected && opp.cancellationRequest?.decision === "declined" && (
+                          <div
+                            style={{
+                              marginTop: "6px",
+                              padding: "10px 14px",
+                              borderRadius: "8px",
+                              backgroundColor: "rgba(180, 35, 24, 0.08)",
+                              border: "1px solid rgba(180, 35, 24, 0.28)",
+                              color: "#B42318",
+                              fontSize: "13px",
+                              lineHeight: 1.45,
+                            }}
+                            className="v-opp-declined-cancel-box"
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: "700", marginBottom: "3px" }}>
+                              <XCircle size={14} style={{ color: "#B42318", flexShrink: 0 }} />
+                              <span>Cancellation Request Declined:</span>
+                            </div>
+                            <div style={{ wordBreak: "break-word" }}>
+                              {opp.cancellationRequest.declineReason || "Your cancellation request was declined by Vismaya moderation."}
+                            </div>
+                            <div style={{ marginTop: "8px" }}>
+                              <ContactVismayaButton context="Declined cancellation request" reference={opp.id || opp._id} />
+                            </div>
+                          </div>
+                        )}
+                        {!isRejected && opp.adminNote && (
                           <span
                             style={{
                               fontSize: "13px",
@@ -639,7 +712,61 @@ export default function MyOpportunitiesPage() {
                           <span>View</span>
                         </Link>
 
-                        {canEdit && (
+                        {isRejected && (
+                          <Link
+                            href={`/recruiter/opportunities/new?edit=${opp.id}`}
+                            style={{
+                              height: "38px",
+                              padding: "0 10px",
+                              borderRadius: "10px",
+                              border: "1px solid #8A6B2E",
+                              backgroundColor: "rgba(138, 107, 46, 0.08)",
+                              color: "#8A6B2E",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "5px",
+                              textDecoration: "none",
+                              whiteSpace: "nowrap",
+                              transition: "all 0.18s ease",
+                            }}
+                            className="v-action-btn-resubmit"
+                            title="Edit and resubmit rejected opportunity"
+                          >
+                            <Edit size={15} />
+                            <span>Edit &amp; Resubmit</span>
+                          </Link>
+                        )}
+
+                        {isCancelled && (
+                          <Link
+                            href={`/recruiter/opportunities/new?duplicateFrom=${opp.id}`}
+                            style={{
+                              height: "38px",
+                              padding: "0 10px",
+                              borderRadius: "10px",
+                              border: "1px solid #2B2D2A",
+                              backgroundColor: "#F3EFE6",
+                              color: "#2B2D2A",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "5px",
+                              textDecoration: "none",
+                              whiteSpace: "nowrap",
+                              transition: "all 0.18s ease",
+                            }}
+                            className="v-action-btn-duplicate"
+                            title="Duplicate as new opportunity"
+                          >
+                            <PlusCircle size={15} />
+                            <span>Duplicate as new</span>
+                          </Link>
+                        )}
+
+                        {canEdit && !isRejected && (
                           <Link
                             href={`/recruiter/opportunities/new?edit=${opp.id}`}
                             style={{
@@ -737,6 +864,8 @@ export default function MyOpportunitiesPage() {
               {filteredOpportunities.map((opp) => {
                 const proj = projects.find((p) => p.id === opp.projectId);
                 const oppApps = applications.filter((a) => a.opportunityId === opp.id);
+                const isRejected = (opp.status || "").toLowerCase() === "rejected" || (opp.rawStatus || "").toLowerCase() === "rejected";
+                const isCancelled = (opp.status || "").toLowerCase() === "cancelled" || (opp.rawStatus || "").toLowerCase() === "cancelled";
                 const canEdit = opp.status === "Draft" || opp.status === "Changes Requested";
                 const canRequestCancel = (opp.status || "").toLowerCase() === "published";
                 const canMarkCompleted = opp.status === "Published" || opp.status === "Closed";
@@ -780,7 +909,7 @@ export default function MyOpportunitiesPage() {
                       </div>
 
                       <Link
-                        href={`/recruiter/opportunities/${opp.id}/applicants`}
+                        href={`/recruiter/opportunities/${opp.id}`}
                         style={{
                           fontSize: "17px",
                           fontWeight: 600,
@@ -849,7 +978,59 @@ export default function MyOpportunitiesPage() {
                       </div>
                     </div>
 
-                    {opp.adminNote && (
+                    {isRejected && (
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#B42318",
+                          padding: "10px 14px",
+                          borderRadius: "10px",
+                          backgroundColor: "rgba(180, 35, 24, 0.08)",
+                          border: "1px solid rgba(180, 35, 24, 0.28)",
+                          lineHeight: 1.45,
+                        }}
+                        className="v-card-note-box mo-card-rejection"
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: "700", marginBottom: "3px" }}>
+                          <XCircle size={14} style={{ color: "#B42318", flexShrink: 0 }} />
+                          <span>Rejection Reason {opp.rejectedAt ? `(${new Date(opp.rejectedAt).toLocaleDateString()})` : ""}:</span>
+                        </div>
+                        <div style={{ wordBreak: "break-word" }}>
+                          {opp.rejectionReason || opp.adminNote || "No rejection reason provided."}
+                        </div>
+                        <div style={{ marginTop: "8px" }}>
+                          <ContactVismayaButton context="Rejected opportunity" reference={opp.id || opp._id} />
+                        </div>
+                      </div>
+                    )}
+
+                    {!isRejected && opp.cancellationRequest?.decision === "declined" && (
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#B42318",
+                          padding: "10px 14px",
+                          borderRadius: "10px",
+                          backgroundColor: "rgba(180, 35, 24, 0.08)",
+                          border: "1px solid rgba(180, 35, 24, 0.28)",
+                          lineHeight: 1.45,
+                        }}
+                        className="v-card-note-box mo-card-declined-cancel"
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: "700", marginBottom: "3px" }}>
+                          <XCircle size={14} style={{ color: "#B42318", flexShrink: 0 }} />
+                          <span>Cancellation Request Declined:</span>
+                        </div>
+                        <div style={{ wordBreak: "break-word" }}>
+                          {opp.cancellationRequest.declineReason || "Your cancellation request was declined by Vismaya moderation."}
+                        </div>
+                        <div style={{ marginTop: "8px" }}>
+                          <ContactVismayaButton context="Declined cancellation request" reference={opp.id || opp._id} />
+                        </div>
+                      </div>
+                    )}
+
+                    {!isRejected && opp.adminNote && (
                       <div
                         style={{
                           fontSize: "13px",
@@ -889,7 +1070,51 @@ export default function MyOpportunitiesPage() {
                         <span>View</span>
                       </Link>
 
-                      {canEdit && (
+                      {isRejected && (
+                        <Link
+                          href={`/recruiter/opportunities/new?edit=${opp.id}`}
+                          style={{
+                            borderRadius: "10px",
+                            border: "1px solid #8A6B2E",
+                            backgroundColor: "rgba(138, 107, 46, 0.08)",
+                            color: "#8A6B2E",
+                            fontWeight: 600,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                            textDecoration: "none",
+                          }}
+                          className="v-mobile-action-resubmit mo-btn-resubmit"
+                        >
+                          <Edit size={16} />
+                          <span>Edit &amp; Resubmit</span>
+                        </Link>
+                      )}
+
+                      {isCancelled && (
+                        <Link
+                          href={`/recruiter/opportunities/new?duplicateFrom=${opp.id}`}
+                          style={{
+                            borderRadius: "10px",
+                            border: "1px solid #2B2D2A",
+                            backgroundColor: "#F3EFE6",
+                            color: "#2B2D2A",
+                            fontWeight: 600,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                            textDecoration: "none",
+                          }}
+                          className="v-mobile-action-duplicate mo-btn-duplicate"
+                        >
+                          <PlusCircle size={16} />
+                          <span>Duplicate as new</span>
+                        </Link>
+                      )}
+
+                      {canEdit && !isRejected && (
                         <Link
                           href={`/recruiter/opportunities/new?edit=${opp.id}`}
                           style={{

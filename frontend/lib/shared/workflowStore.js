@@ -2361,7 +2361,12 @@ export function WorkflowProvider({ children }) {
   const submitOpportunity = async (opportunityData) => {
     if (isRealMode("recruiter")) {
       try {
-        const res = await recruiterService.createOpportunity(opportunityData);
+        let res;
+        if (opportunityData.id) {
+          res = await recruiterService.updateOpportunity(opportunityData.id, opportunityData);
+        } else {
+          res = await recruiterService.createOpportunity(opportunityData);
+        }
         if (res?.data) {
           dispatch({ type: "SUBMIT_OPPORTUNITY", payload: res.data });
           return res.data;

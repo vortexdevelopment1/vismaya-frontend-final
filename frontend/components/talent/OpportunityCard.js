@@ -33,10 +33,11 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
   );
 
   const now = new Date().getTime();
-  const deadlineTime = new Date(opportunity.deadline).getTime();
-  const diffDays = Math.ceil((deadlineTime - now) / (1000 * 60 * 60 * 24));
-  const isExpired = diffDays < 0;
-  const isUrgent = diffDays >= 0 && diffDays <= 3;
+  const deadlineTime = opportunity.deadline ? new Date(opportunity.deadline).getTime() : NaN;
+  const hasValidDeadline = !isNaN(deadlineTime);
+  const diffDays = hasValidDeadline ? Math.ceil((deadlineTime - now) / (1000 * 60 * 60 * 24)) : null;
+  const isExpired = diffDays !== null && diffDays < 0;
+  const isUrgent = diffDays !== null && diffDays >= 0 && diffDays <= 3;
 
   const rolesCount = opportunity.roles ? opportunity.roles.length : 1;
 
@@ -156,7 +157,7 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
           </span>
           <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
             <Calendar size={13} style={{ color: "#8A6B2E" }} />
-            {formatDate(opportunity.deadline)}
+            {hasValidDeadline ? formatDate(opportunity.deadline) : "—"}
           </span>
         </div>
       </div>

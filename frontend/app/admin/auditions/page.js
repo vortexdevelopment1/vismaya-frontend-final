@@ -478,9 +478,28 @@ export default function AdminAuditionsManagementPage() {
                               {(aud.talentName || "T").charAt(0).toUpperCase()}
                             </div>
                             <div style={{ minWidth: 0 }}>
-                              <strong className="aud-candidate-name">
-                                {aud.talentName}
-                              </strong>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                                <strong className="aud-candidate-name">
+                                  {aud.talentName}
+                                </strong>
+                                {(Number(aud.resubmissionCount || 0) > 0 || (aud.rejectionHistory && aud.rejectionHistory.length > 0)) && (
+                                  <span
+                                    style={{
+                                      fontSize: "10.5px",
+                                      fontWeight: 700,
+                                      backgroundColor: "#8A6B2E",
+                                      color: "#FFFFFF",
+                                      padding: "1px 6px",
+                                      borderRadius: "4px",
+                                      letterSpacing: "0.04em",
+                                      textTransform: "uppercase",
+                                    }}
+                                    title={`Resubmitted tape (Attempt ${(Number(aud.resubmissionCount || 0)) + 1})`}
+                                  >
+                                    Resubmitted
+                                  </span>
+                                )}
+                              </div>
                               <span className="aud-candidate-date">
                                 Requested {formatDate(aud.requestedAt)}
                               </span>
@@ -642,7 +661,25 @@ export default function AdminAuditionsManagementPage() {
                         {(aud.talentName || "T").charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <strong className="aud-candidate-name">{aud.talentName}</strong>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                          <strong className="aud-candidate-name">{aud.talentName}</strong>
+                          {(Number(aud.resubmissionCount || 0) > 0 || (aud.rejectionHistory && aud.rejectionHistory.length > 0)) && (
+                            <span
+                              style={{
+                                fontSize: "10px",
+                                fontWeight: 700,
+                                backgroundColor: "#8A6B2E",
+                                color: "#FFFFFF",
+                                padding: "1px 5px",
+                                borderRadius: "4px",
+                                letterSpacing: "0.04em",
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              Resubmitted
+                            </span>
+                          )}
+                        </div>
                         <span className="aud-candidate-date">{formatDate(aud.requestedAt)}</span>
                       </div>
                     </div>
@@ -901,6 +938,50 @@ export default function AdminAuditionsManagementPage() {
                 </p>
               </div>
 
+              {Array.isArray(previewVideoModalAud.rejectionHistory) && previewVideoModalAud.rejectionHistory.length > 0 && (
+                <div
+                  style={{
+                    backgroundColor: "rgba(180, 35, 24, 0.05)",
+                    border: "1px solid rgba(180, 35, 24, 0.22)",
+                    borderRadius: "12px",
+                    padding: "14px 16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <strong style={{ color: "#B42318", fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      Previous Rejection History ({previewVideoModalAud.rejectionHistory.length})
+                    </strong>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#8A6B2E", background: "#F3EFE6", padding: "2px 6px", borderRadius: "4px" }}>
+                      Resubmission #{Number(previewVideoModalAud.resubmissionCount || 1)}
+                    </span>
+                  </div>
+                  {previewVideoModalAud.rejectionHistory.map((h, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        fontSize: "13px",
+                        color: "#2B2D2A",
+                        paddingTop: i > 0 ? "8px" : 0,
+                        borderTop: i > 0 ? "1px solid rgba(180, 35, 24, 0.15)" : "none",
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      <div>
+                        <strong>Reason: </strong>
+                        <span>{h.reason || "No reason recorded"}</span>
+                      </div>
+                      <div style={{ fontSize: "11.5px", color: "#5A584F", marginTop: "2px" }}>
+                        Rejected {h.rejectedAt ? new Date(h.rejectedAt).toLocaleString() : "Earlier"}
+                        {h.videoUrl ? ` • Tape: ${h.videoUrl.split("/").pop()}` : ""}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
                 <button
                   type="button"
@@ -1072,25 +1153,44 @@ export default function AdminAuditionsManagementPage() {
         <Modal
           isOpen={!!rejectModalAud}
           onClose={() => setRejectModalAud(null)}
-          title="Reject Self-Tape"
+          title="Reject Self-Tape (Admin Reason Required)"
         >
           <form onSubmit={handleReject} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.6, fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
-              Specify the reason for rejecting the self-tape submitted by <strong style={{ color: "#2B2D2A" }}>{rejectModalAud.talentName}</strong>. The talent will be notified and resubmissions are not permitted.
+              Specify the reason for rejecting the self-tape submitted by <strong style={{ color: "#2B2D2A" }}>{rejectModalAud.talentName}</strong>. The talent will see this note on their audition page and receive an in-app notification.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
-                Rejection Reason (Required) *
-              </label>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                  Admin Note / Reason (Required, min 10 chars) *
+                </label>
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: rejectionReason.trim().length >= 10 ? "#2B5E3B" : "#B42318",
+                  }}
+                >
+                  {rejectionReason.trim().length >= 10
+                    ? `Valid (${rejectionReason.trim().length} chars)`
+                    : `${rejectionReason.trim().length}/10 chars`}
+                </span>
+              </div>
               <textarea
                 rows={4}
                 required
+                minLength={10}
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="e.g., Audio is distorted, script dialogue was skipped, inappropriate content..."
+                placeholder="e.g., Audio is distorted, script dialogue was skipped, inappropriate lighting..."
                 className="aud-modal-textarea"
               />
+              {rejectionReason.trim().length < 10 && (
+                <span style={{ fontSize: "12px", color: "#B42318" }}>
+                  The Reject button is disabled until your note is at least 10 characters.
+                </span>
+              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
@@ -1113,9 +1213,11 @@ export default function AdminAuditionsManagementPage() {
                   height: "42px",
                   fontWeight: 600,
                   fontSize: "13px",
-                  cursor: isActionLoading ? "not-allowed" : "pointer",
+                  cursor: (isActionLoading || rejectionReason.trim().length < 10) ? "not-allowed" : "pointer",
+                  opacity: (isActionLoading || rejectionReason.trim().length < 10) ? 0.5 : 1,
+                  transition: "opacity 0.16s ease",
                 }}
-                disabled={isActionLoading}
+                disabled={isActionLoading || rejectionReason.trim().length < 10}
               >
                 {isActionLoading ? "Rejecting..." : "Reject Tape"}
               </button>

@@ -14,25 +14,20 @@
  * 4. Fix EXIF orientation so phone photos are upright (handled via createImageBitmap / canvas).
  */
 
-export const BACKEND_PHOTO_MAX_BYTES = 10 * 1024 * 1024; // 10 MB (sync with backend mediaLimits.ts)
+import { PHOTO_UPLOAD_CONFIG } from "@/lib/config/photoUpload";
 
-export const ACCEPTED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"];
+export const BACKEND_PHOTO_MAX_BYTES = PHOTO_UPLOAD_CONFIG.maxSizeBytes; // 5 MB
 
-export const ACCEPTED_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/heic",
-  "image/heif",
-  "image/jpg",
-];
+export const ACCEPTED_EXTENSIONS = PHOTO_UPLOAD_CONFIG.allowedExtensions;
+
+export const ACCEPTED_MIME_TYPES = PHOTO_UPLOAD_CONFIG.allowedTypes;
 
 export const VALIDATION_MESSAGES = {
-  INVALID_TYPE: "Photo must be a JPG or PNG.",
-  TOO_SMALL: "Photo is too small. Please choose a larger photo.",
-  TOO_LARGE: "Photo is too large. Please choose a smaller one.",
+  INVALID_TYPE: "Photo must be a JPG, PNG, or WebP.",
+  TOO_SMALL: `Photo is smaller than ${PHOTO_UPLOAD_CONFIG.minWidth}x${PHOTO_UPLOAD_CONFIG.minHeight}px.`,
+  TOO_LARGE: `Photo is too large. Maximum allowed size is ${PHOTO_UPLOAD_CONFIG.maxSizeMB} MB.`,
   UPLOAD_FAILED: "Upload failed. Please try again.",
-  SHARPER_HINT: "A larger photo gives a sharper profile.",
+  SHARPER_HINT: "A higher resolution photo gives a sharper profile.",
 };
 
 /**
@@ -117,18 +112,19 @@ export async function loadImageSource(file) {
 
 /**
  * Check image dimensions against minimum rules.
- * Shorter side must be >= 300 px.
- * Shorter side between 300 and 599 px gets a non-blocking hint.
+ * Requires width >= minWidth and height >= minHeight (at least 400x400px).
  */
 export function checkImageDimensions(width, height) {
   const shorterSide = Math.min(width, height);
 
-  if (shorterSide < 300) {
+  if (width < PHOTO_UPLOAD_CONFIG.minWidth || height < PHOTO_UPLOAD_CONFIG.minHeight) {
     return {
       valid: false,
-      error: VALIDATION_MESSAGES.TOO_SMALL,
+      error: `Your photo is ${width}x${height}px. Minimum is ${PHOTO_UPLOAD_CONFIG.minWidth}x${PHOTO_UPLOAD_CONFIG.minHeight}px.`,
       hint: null,
       shorterSide,
+      width,
+      height
     };
   }
 
@@ -138,6 +134,8 @@ export function checkImageDimensions(width, height) {
       error: null,
       hint: VALIDATION_MESSAGES.SHARPER_HINT,
       shorterSide,
+      width,
+      height
     };
   }
 
@@ -146,6 +144,8 @@ export function checkImageDimensions(width, height) {
     error: null,
     hint: null,
     shorterSide,
+    width,
+    height
   };
 }
 

@@ -27,6 +27,8 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import { authService } from "@/lib/api/services/authService";
 import { isRealMode } from "@/lib/api/config";
 import { recruiterService } from "@/lib/api/services/recruiterService";
+import ContactVismayaButton from "@/components/shared/ContactVismayaButton";
+import { PHOTO_UPLOAD_CONFIG } from "@/lib/config/photoUpload";
 
 const SETTINGS_MENU_ITEMS = [
   { key: "profile", label: "Organization profile", icon: Building2 },
@@ -925,7 +927,7 @@ export default function OrganizationSettingsPage() {
                         Corporate watermark preview
                       </span>
                       <span className="form-hint branding-hint" style={{ marginTop: 0 }}>
-                        Recommended: Square PNG, WebP or SVG format. Minimum resolution 400x400px (Max file size 2MB).
+                        Format: {PHOTO_UPLOAD_CONFIG.helperText}.
                       </span>
                       <div className="branding-btn-wrap" style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
                         <button
@@ -980,23 +982,12 @@ export default function OrganizationSettingsPage() {
                         <p style={{ fontSize: "15px", color: "#2B2D2A", margin: "0 0 16px 0", lineHeight: "24px" }}>
                           Your verification was rejected. Please contact Vismaya support.
                         </p>
-                        <Link
-                          href="/support"
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            padding: "8px 18px",
-                            backgroundColor: "#8A6B2E",
-                            color: "#FFFFFF",
-                            borderRadius: "8px",
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            textDecoration: "none",
-                          }}
-                        >
-                          Contact Support
-                        </Link>
+                        <div style={{ marginTop: "8px" }}>
+                          <ContactVismayaButton
+                            context="Rejected verification"
+                            reference={currentOrg?.id || currentOrg?._id || currentOrg?.registrationNumber || ""}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

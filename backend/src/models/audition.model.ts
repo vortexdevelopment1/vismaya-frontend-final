@@ -20,6 +20,14 @@ export interface ISelfTapeSubmission {
     submittedAt?: Date;
 }
 
+export interface IAuditionRejection {
+    videoUrl?: string;
+    mediaId?: string;
+    reason: string;
+    rejectedBy?: Types.ObjectId;
+    rejectedAt: Date;
+}
+
 export interface IAudition extends Document {
     applicationId: Types.ObjectId;
     opportunityId: Types.ObjectId;
@@ -45,6 +53,8 @@ export interface IAudition extends Document {
     vismayaReviewedBy?: Types.ObjectId;
     vismayaReviewedAt?: Date;
     vismayaRejectionReason?: string;
+    resubmissionCount?: number;
+    rejectionHistory?: IAuditionRejection[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -217,7 +227,20 @@ const auditionSchema = new Schema<IAudition>(
         vismayaRejectionReason: {
             type: String,
             trim: true
-        }
+        },
+        resubmissionCount: {
+            type: Number,
+            default: 0
+        },
+        rejectionHistory: [
+            {
+                videoUrl: { type: String, trim: true },
+                mediaId: { type: String, trim: true },
+                reason: { type: String, required: true, trim: true },
+                rejectedBy: { type: Schema.Types.ObjectId, ref: "User" },
+                rejectedAt: { type: Date, default: Date.now }
+            }
+        ]
     },
     {
         timestamps: true

@@ -43,6 +43,14 @@ export interface IOpportunity extends Document {
     completionRequested: boolean;
     completionRequestedAt?: Date;
     rejectionReason?: string;
+    rejectedAt?: Date;
+    rejectedBy?: Types.ObjectId;
+    rejectionHistory?: {
+        reason: string;
+        rejectedBy?: Types.ObjectId;
+        rejectedAt?: Date;
+    }[];
+    resubmissionCount?: number;
     correctionNotes?: string;
     correctionRequestedAt?: Date;
     correctionRequestedBy?: Types.ObjectId;
@@ -219,6 +227,24 @@ const opportunitySchema = new Schema<IOpportunity>(
         rejectionReason: {
             type: String,
             trim: true
+        },
+        rejectedAt: {
+            type: Date
+        },
+        rejectedBy: {
+            type: Schema.Types.ObjectId,
+            ref: "User"
+        },
+        rejectionHistory: [
+            {
+                reason: { type: String, trim: true, required: true },
+                rejectedBy: { type: Schema.Types.ObjectId, ref: "User" },
+                rejectedAt: { type: Date, default: Date.now }
+            }
+        ],
+        resubmissionCount: {
+            type: Number,
+            default: 0
         },
 
         correctionNotes: {

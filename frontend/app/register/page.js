@@ -33,8 +33,10 @@ import {
   Upload,
   X,
   ExternalLink,
+  Clock,
 } from "lucide-react";
 import { PRICING_CONFIG } from "@/lib/config/pricing";
+import { PHOTO_UPLOAD_CONFIG } from "@/lib/config/photoUpload";
 import { getAuthToken, setAuthToken } from "@/lib/api/client";
 import { isRealMode } from "@/lib/api/config";
 import { uploadMedia } from "@/lib/api/uploadMedia";
@@ -94,10 +96,10 @@ function RegisterPageContent() {
 
   // 3. Form States
   // Step 1: Account
-  const [name, setName] = useState("Aanya Sharma");
-  const [email, setEmail] = useState("aanya.sharma@vismaya.io");
-  const [password, setPassword] = useState("secretpassword123");
-  const [confirmPassword, setConfirmPassword] = useState("secretpassword123");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [mobileError, setMobileError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [nameError, setNameError] = useState("");
@@ -108,11 +110,12 @@ function RegisterPageContent() {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
+  const [otpDemoMode, setOtpDemoMode] = useState(false);
 
   // Step 3 (Talent): Basic Identity + Photo
-  const [phone, setPhone] = useState("+91 98765 43210");
-  const [city, setCity] = useState("Mumbai");
-  const [age, setAge] = useState("24");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [age, setAge] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
   const [photoPreview, setPhotoPreview] = useState("");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -130,14 +133,22 @@ function RegisterPageContent() {
     setPhotoError("");
     setPhotoHint("");
 
-    // 1. Basic MIME/extension check: JPG, PNG, WebP, HEIC/HEIF
+    // 1. Basic MIME/extension check: JPG, PNG, WebP
     if (!isValidImageType(file)) {
-      setPhotoError(VALIDATION_MESSAGES.INVALID_TYPE);
+      setPhotoError("Photo must be a JPG, PNG, or WebP.");
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
-    // 2. Decode image source (auto EXIF orientation) and validate dimensions
+    // 2. Exact file size validation with actual vs required message
+    if (file.size > PHOTO_UPLOAD_CONFIG.maxSizeBytes) {
+      const actualMB = (file.size / (1024 * 1024)).toFixed(1);
+      setPhotoError(`Your photo is ${actualMB} MB. Maximum allowed size is ${PHOTO_UPLOAD_CONFIG.maxSizeMB} MB.`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    // 3. Decode image source (auto EXIF orientation) and validate dimensions
     try {
       const imgSource = await loadImageSource(file);
       const dimCheck = checkImageDimensions(imgSource.width, imgSource.height);
@@ -149,7 +160,7 @@ function RegisterPageContent() {
         return;
       }
 
-      // If shorter side between 300 and 599 px, set non-blocking hint
+      // If shorter side between 400 and 599 px, set non-blocking hint
       if (dimCheck.hint) {
         setPhotoHint(dimCheck.hint);
       } else {
@@ -161,7 +172,7 @@ function RegisterPageContent() {
       setCropModalOpen(true);
     } catch (err) {
       console.error("Photo decode error:", err);
-      setPhotoError(VALIDATION_MESSAGES.INVALID_TYPE);
+      setPhotoError(err?.message || "Invalid image file format.");
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -234,21 +245,19 @@ function RegisterPageContent() {
 
   // Step 2 & 4 (Org): Basic Org Identity & Org Profile
   const [companyType, setCompanyType] = useState("Production House");
-  const [orgPhone, setOrgPhone] = useState("+91 98765 43210");
-  const [website, setWebsite] = useState("https://zeefilms.com");
-  const [aboutStudio, setAboutStudio] = useState(
-    "Premier Bollywood and regional feature film and commercial production house."
-  );
-  const [genres, setGenres] = useState("Feature Films, OTT Series, Ad Commercials");
+  const [orgPhone, setOrgPhone] = useState("");
+  const [website, setWebsite] = useState("");
+  const [aboutStudio, setAboutStudio] = useState("");
+  const [genres, setGenres] = useState("");
   // Step 5 (Org): Accreditation Documents & Legal Credentials
-  const [cinNumber, setCinNumber] = useState("U92100MH2018PTC312456");
+  const [cinNumber, setCinNumber] = useState("");
   const [regNumberError, setRegNumberError] = useState("");
   const [businessDocUrl, setBusinessDocUrl] = useState("");
   const [businessDocName, setBusinessDocName] = useState("");
   const [businessDocError, setBusinessDocError] = useState("");
   const [isUploadingBusinessDoc, setIsUploadingBusinessDoc] = useState(false);
 
-  const [gstNumber, setGstNumber] = useState("27AABCZ1234F1Z5");
+  const [gstNumber, setGstNumber] = useState("");
   const [isGstExempt, setIsGstExempt] = useState(false);
   const [gstExemptionReason, setGstExemptionReason] = useState("");
   const [gstCertUrl, setGstCertUrl] = useState("");
@@ -374,13 +383,12 @@ function RegisterPageContent() {
 
   // Step 5 (Talent): Professional Identity
   const [primaryCraft, setPrimaryCraft] = useState("Actor / Screen Artist");
-  const [skills, setSkills] = useState("Method Acting, Kathak, Voice Modulation");
-  const [bio, setBio] = useState(
-    "Trained method actor with 3+ years of theatre and commercial experience in Mumbai."
-  );
+  const [skills, setSkills] = useState("");
+  const [bio, setBio] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRegistrationComplete, setIsRegistrationComplete] = useState(false);
+  const [isAccountActivated, setIsAccountActivated] = useState(false);
   const [formError, setFormError] = useState("");
 
   // Store only the lightweight draft session identifier (no form data in localStorage)
@@ -391,6 +399,7 @@ function RegisterPageContent() {
     if (typeof window !== "undefined") {
       try {
         localStorage.removeItem("vismaya_registration_draft");
+        sessionStorage.removeItem("vismaya_reg_session_active");
         const token = sessionStorage.getItem("vismaya_draft_token") || draftToken;
         if (token) {
           await authService.deleteDraft(token).catch(() => {});
@@ -407,42 +416,67 @@ function RegisterPageContent() {
     setOtpSent(false);
     setEmail("");
     setName("");
+    setPhone("");
+    setOrgPhone("");
+    setCity("");
+    setAge("");
+    setCompanyType("Production House");
+    setWebsite("");
+    setAboutStudio("");
+    setGenres("");
+    setCinNumber("");
+    setGstNumber("");
     setPhotoUrl("");
     setPhotoPreview("");
     setPhotoError("");
+    setPhotoHint("");
     setUploadProgress(0);
-    setPassword("secretpassword123");
-    setConfirmPassword("secretpassword123");
+    setPassword("");
+    setConfirmPassword("");
+    setSkills("");
+    setBio("");
+    setIsRegistrationComplete(false);
+    setIsAccountActivated(false);
   };
 
   // Restore registration draft directly from MongoDB database
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined") {
-      try {
-        const storedToken = sessionStorage.getItem("vismaya_draft_token");
-        if (storedToken) setDraftToken(storedToken);
-      } catch (e) {}
 
-      // Purge any legacy localStorage draft key so no form data resides in localStorage
+    // Fetch public OTP configuration (demo mode indicator)
+    authService
+      .getOtpConfig()
+      .then((cfg) => {
+        if (cfg?.demoMode) setOtpDemoMode(true);
+      })
+      .catch(() => {});
+
+    if (typeof window !== "undefined") {
+      // Purge any legacy localStorage draft key
       try {
         localStorage.removeItem("vismaya_registration_draft");
       } catch (e) {}
 
       const isResetRequested = searchParams?.get("reset") === "true" || searchParams?.get("new") === "true";
+      const isSessionActive = sessionStorage.getItem("vismaya_reg_session_active") === "true";
       const token = sessionStorage.getItem("vismaya_draft_token");
 
-      if (isResetRequested) {
+      // Requirement 2: The form must start empty on every fresh visit;
+      // any saved draft must be cleared on mount of a fresh register page.
+      // Keep in-progress state ONLY within the same active multi-step session.
+      if (isResetRequested || !isSessionActive) {
         if (token) {
           authService.deleteDraft(token).catch(() => {});
           sessionStorage.removeItem("vismaya_draft_token");
         }
+        sessionStorage.removeItem("vismaya_reg_session_active");
         setDraftToken(null);
         setCurrentStep(1);
         return;
       }
 
-      if (token) {
+      if (token && isSessionActive) {
+        setDraftToken(token);
         authService.getDraft(token).then((res) => {
           if (res?.success && res?.draft) {
             const d = res.draft;
@@ -456,6 +490,7 @@ function RegisterPageContent() {
               else setPhone(restoredMobile);
             }
             if (f.city) setCity(f.city);
+            if (f.age) setAge(f.age);
             if (f.photoUrl) setPhotoUrl(f.photoUrl);
             if (f.companyType) setCompanyType(f.companyType);
             if (f.website) setWebsite(f.website);
@@ -552,14 +587,31 @@ function RegisterPageContent() {
     setEmailError("");
     setNameError("");
     setPasswordError("");
-    if (role === "organization") {
-      setName("Acme Productions Studio");
-      setEmail("casting@acmeproductions.io");
-      setOrgPhone("+91 98765 43210");
-    } else {
-      setName("Aanya Sharma");
-      setEmail("aanya.sharma@vismaya.io");
-      setPhone("+91 98765 43210");
+    setName("");
+    setEmail("");
+    setPhone("");
+    setOrgPhone("");
+    setPassword("");
+    setConfirmPassword("");
+    setCity("");
+    setAge("");
+    setWebsite("");
+    setAboutStudio("");
+    setGenres("");
+    setCinNumber("");
+    setGstNumber("");
+    setSkills("");
+    setBio("");
+    setPhotoUrl("");
+    setPhotoPreview("");
+    setPhotoError("");
+    setPhotoHint("");
+    setUploadProgress(0);
+    setDraftToken(null);
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("vismaya_draft_token");
+      sessionStorage.removeItem("vismaya_reg_session_active");
+      localStorage.removeItem("vismaya_registration_draft");
     }
   };
 
@@ -643,6 +695,9 @@ function RegisterPageContent() {
     setOtpSent(true);
     setResendTimer(60);
     setCurrentStep(2);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("vismaya_reg_session_active", "true");
+    }
     saveDraft({ step: 2, phone: normalizedMobile, mobile: normalizedMobile });
   };
 
@@ -825,60 +880,26 @@ function RegisterPageContent() {
 
       const res = await register(payload);
       if (res.success && res.user) {
-        if (res.token) {
-          setAuthToken(res.token);
-        }
-
-        if (selectedRole === "talent") {
-          try {
-            await talentService.saveProfile({
-              stageName: name.trim(),
-              primaryProfession: primaryCraft,
-              skills: skills ? skills.split(",").map((s) => s.trim()).filter(Boolean) : [],
-              bio: bio.trim(),
-              currentCity: city || "Mumbai",
-              profilePhoto: photoUrl,
-              experienceRange: "1-3 years",
-            });
-          } catch (profErr) {
-            console.warn("Could not auto-save talent profile:", profErr?.message);
-          }
-        } else if (selectedRole === "organization") {
-          try {
-            await recruiterService.saveOrganizationProfile({
-              companyName: name.trim(),
-              companyType,
-              phone: cleanContact,
-              city: city || "Mumbai",
-              website: effectiveWebsite,
-              about: aboutStudio,
-              genres: genres ? genres.split(",").map((g) => g.trim()).filter(Boolean) : [],
-              cinNumber: cinNumber.trim().toUpperCase(),
-              registrationNumber: cinNumber.trim().toUpperCase(),
-              gstNumber: isGstExempt ? undefined : gstNumber.trim().toUpperCase(),
-              isGstExempt: Boolean(isGstExempt),
-              gstExemptionReason: isGstExempt ? gstExemptionReason.trim() : undefined,
-            });
-          } catch (orgErr) {
-            console.warn("Could not auto-save organization profile:", orgErr?.message);
-          }
-        }
-
-        // Clear registration draft from database upon successful onboarding
+        const activated = res.user.status === "active" && Boolean(res.token);
+        setIsAccountActivated(activated);
+        // Clear registration draft and active session from storage upon successful onboarding.
         const tokenToDelete = draftToken || (typeof window !== "undefined" ? sessionStorage.getItem("vismaya_draft_token") : null);
         if (tokenToDelete) {
           authService.deleteDraft(tokenToDelete).catch(() => {});
           if (typeof window !== "undefined") {
             try {
               sessionStorage.removeItem("vismaya_draft_token");
+              sessionStorage.removeItem("vismaya_reg_session_active");
               localStorage.removeItem("vismaya_registration_draft");
             } catch (e) {}
           }
         }
         setIsRegistrationComplete(true);
-        setTimeout(() => {
-          router.push(getDashboardPath(selectedRole));
-        }, 1500);
+        if (activated) {
+          setTimeout(() => {
+            router.push(getDashboardPath(selectedRole));
+          }, 1500);
+        }
       } else {
         const errMsg = res.error || "Registration error occurred. Please try again.";
         const lower = errMsg.toLowerCase();
@@ -1195,76 +1216,170 @@ function RegisterPageContent() {
             )}
 
             {isRegistrationComplete ? (
-              <div style={{ textAlign: "center", padding: "16px 8px" }}>
-                <div
-                  style={{
-                    width: "60px",
-                    height: "60px",
-                    borderRadius: "50%",
-                    backgroundColor: "#F3EFE6",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 16px",
-                  }}
-                >
-                  <CheckCircle2 size={34} style={{ color: "#8A6B2E" }} />
-                </div>
-                <h2
-                  style={{
-                    fontFamily: "var(--font-heading), Georgia, serif",
-                    fontSize: "20px",
-                    fontWeight: 600,
-                    color: "var(--text-primary, #292C29)",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Account Activated Successfully
-                </h2>
-                <p
-                  style={{
-                    fontSize: "13.5px",
-                    color: "var(--text-secondary, #5A584F)",
-                    maxWidth: "460px",
-                    margin: "0 auto 20px",
-                    lineHeight: "1.5",
-                  }}
-                >
-                  {selectedRole === "organization"
-                    ? "Your studio account has been activated with 100 included profile-view credits. Your accreditation documents have been submitted to compliance officers for review."
-                    : "Your talent account has been activated. Welcome to Vismaya's verified entertainment network!"}
-                </p>
+              <div style={{ textAlign: "center", padding: "20px 8px" }}>
+                {isAccountActivated ? (
+                  <>
+                    <div
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "50%",
+                        backgroundColor: "#FAF9F7",
+                        border: "2px solid #E8E2D4",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        margin: "0 auto 16px",
+                      }}
+                    >
+                      <CheckCircle2 size={34} style={{ color: "var(--gold, #8A6B2E)" }} />
+                    </div>
+                    <h2
+                      style={{
+                        fontFamily: "var(--font-heading), Georgia, serif",
+                        fontSize: "20px",
+                        fontWeight: 600,
+                        color: "var(--text-primary, #292C29)",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      Account Activated Successfully
+                    </h2>
+                    <p
+                      style={{
+                        fontSize: "13.5px",
+                        color: "var(--text-secondary, #5A584F)",
+                        maxWidth: "460px",
+                        margin: "0 auto 20px",
+                        lineHeight: "1.5",
+                      }}
+                    >
+                      {selectedRole === "organization"
+                        ? "Your studio account has been activated with 100 included profile-view credits. Your accreditation documents have been submitted to compliance officers for review."
+                        : "Your talent account has been activated. Welcome to Vismaya's verified entertainment network!"}
+                    </p>
 
-                <div
-                  style={{
-                    backgroundColor: "#FAF9F7",
-                    border: "1px solid #E8E2D4",
-                    borderRadius: "8px",
-                    padding: "12px 16px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontSize: "13px",
-                    color: "#8A6B2E",
-                    fontWeight: "600",
-                    marginBottom: "24px",
-                  }}
-                >
-                  <Sparkles size={16} />
-                  <span>Redirecting to your dashboard...</span>
-                </div>
+                    <div
+                      style={{
+                        backgroundColor: "#FAF9F7",
+                        border: "1px solid #E8E2D4",
+                        borderRadius: "8px",
+                        padding: "12px 16px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "13px",
+                        color: "#8A6B2E",
+                        fontWeight: "600",
+                        marginBottom: "24px",
+                      }}
+                    >
+                      <Sparkles size={16} />
+                      <span>Redirecting to your dashboard...</span>
+                    </div>
 
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => router.push(getDashboardPath(selectedRole))}
-                    className="btn-primary"
-                    style={{ margin: "0 auto", padding: "0 28px", height: "44px", justifyContent: "center" }}
-                  >
-                    <span>Enter Dashboard Now</span>
-                    <ArrowRight size={15} />
-                  </button>
-                </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => router.push(getDashboardPath(selectedRole))}
+                        className="btn-primary"
+                        style={{ margin: "0 auto", padding: "0 28px", height: "44px", justifyContent: "center" }}
+                      >
+                        <span>Enter Dashboard Now</span>
+                        <ArrowRight size={15} />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "50%",
+                        backgroundColor: "#F3EFE6",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        margin: "0 auto 16px",
+                      }}
+                    >
+                      <ShieldCheck size={34} style={{ color: "#8A6B2E" }} />
+                    </div>
+                    <h2
+                      style={{
+                        fontFamily: "var(--font-heading), Georgia, serif",
+                        fontSize: "20px",
+                        fontWeight: 600,
+                        color: "var(--text-primary, #292C29)",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      Registration Initiated - Pending Activation
+                    </h2>
+                    <p
+                      style={{
+                        fontSize: "13.5px",
+                        color: "var(--text-secondary, #5A584F)",
+                        maxWidth: "460px",
+                        margin: "0 auto 18px",
+                        lineHeight: "1.5",
+                      }}
+                    >
+                      {selectedRole === "organization"
+                        ? "Your organization registration is incomplete. Payment and OTP verification are required before your studio dashboard can be accessed."
+                        : "Your talent registration is incomplete. Payment and OTP verification are required before your talent dashboard can be accessed."}
+                    </p>
+
+                    <div
+                      style={{
+                        backgroundColor: "#FAF9F7",
+                        border: "1px solid #E8E2D4",
+                        borderRadius: "8px",
+                        padding: "12px 18px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        fontSize: "13px",
+                        color: "#8A6B2E",
+                        fontWeight: "600",
+                        marginBottom: "24px",
+                      }}
+                    >
+                      <Clock size={16} />
+                      <span>Status: Incomplete Registration (Payment / OTP Required)</span>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+                      <button
+                        type="button"
+                        onClick={() => router.push("/login")}
+                        className="btn-primary"
+                        style={{ padding: "0 28px", height: "44px", justifyContent: "center" }}
+                      >
+                        <span>Go to Sign In</span>
+                        <ArrowRight size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => router.push("/")}
+                        style={{
+                          height: "44px",
+                          padding: "0 22px",
+                          backgroundColor: "transparent",
+                          border: "1px solid #E8E2D4",
+                          borderRadius: "var(--radius-btn, 4px)",
+                          color: "#5A584F",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Return Home
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <>
@@ -1335,6 +1450,7 @@ function RegisterPageContent() {
                     <input
                       id="input-reg-name"
                       type="text"
+                      autoComplete="name"
                       suppressHydrationWarning
                       placeholder={selectedRole === "organization" ? "e.g. Acme Studios" : "e.g. Aanya Sharma"}
                       value={name}
@@ -1368,6 +1484,7 @@ function RegisterPageContent() {
                     <input
                       id="input-reg-email"
                       type="email"
+                      autoComplete="email"
                       suppressHydrationWarning
                       placeholder={selectedRole === "organization" ? "casting@studio.com" : "name@example.com"}
                       value={email}
@@ -1401,6 +1518,7 @@ function RegisterPageContent() {
                     <input
                       id="input-reg-mobile"
                       type="tel"
+                      autoComplete="tel"
                       suppressHydrationWarning
                       placeholder="+91 98765 43210"
                       value={selectedRole === "organization" ? orgPhone : phone}
@@ -1527,6 +1645,7 @@ function RegisterPageContent() {
                   <input
                     type="text"
                     maxLength={6}
+                    autoComplete="one-time-code"
                     placeholder="e.g. 123456"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.trim())}
@@ -1539,6 +1658,24 @@ function RegisterPageContent() {
                       fontWeight: "600",
                     }}
                   />
+                  {otpDemoMode && (
+                    <div
+                      id="otp-demo-mode-banner"
+                      style={{
+                        backgroundColor: "#F3EFE6",
+                        border: "1px solid #D0C9BA",
+                        borderRadius: "6px",
+                        padding: "8px 12px",
+                        marginTop: "8px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#8A6B2E",
+                        textAlign: "center",
+                      }}
+                    >
+                      Demo mode: use code 123456
+                    </div>
+                  )}
                   <div style={{ fontSize: "12px", color: "#5A584F", marginTop: "6px", textAlign: "center" }}>
                     Enter the 6-digit verification code sent to your email.
                   </div>
@@ -1795,10 +1932,10 @@ function RegisterPageContent() {
                       maxWidth: "420px",
                     }}
                   >
-                    JPG or PNG. Your face must be clearly visible. Group photos and AI-generated images are not accepted.
+                    {PHOTO_UPLOAD_CONFIG.helperText}. Your face must be clearly visible. Group photos and AI-generated images are not accepted.
                   </p>
 
-                  {/* Non-blocking Hint for 300-599px */}
+                  {/* Non-blocking Hint for 400-599px */}
                   {photoHint && !photoError && (
                     <div
                       style={{
@@ -1888,6 +2025,7 @@ function RegisterPageContent() {
                     </label>
                     <input
                       type="number"
+                      autoComplete="off"
                       value={age}
                       onChange={(e) => setAge(e.target.value)}
                       required
@@ -1911,6 +2049,7 @@ function RegisterPageContent() {
                     </label>
                     <input
                       type="text"
+                      autoComplete="address-level2"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       required
@@ -1941,6 +2080,7 @@ function RegisterPageContent() {
                     />
                     <input
                       type="tel"
+                      autoComplete="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       required
@@ -2092,6 +2232,7 @@ function RegisterPageContent() {
                   </label>
                   <input
                     type="text"
+                    autoComplete="off"
                     value={genres}
                     onChange={(e) => setGenres(e.target.value)}
                     placeholder="e.g. Feature Films, OTT Web Series, TVCs"
@@ -2137,6 +2278,7 @@ function RegisterPageContent() {
                   </label>
                   <input
                     type="text"
+                    autoComplete="off"
                     value={skills}
                     onChange={(e) => setSkills(e.target.value)}
                     placeholder="e.g. Method Acting, Hindi, English, Kathak"
@@ -2183,6 +2325,7 @@ function RegisterPageContent() {
                   </div>
                   <input
                     type="text"
+                    autoComplete="off"
                     value={cinNumber}
                     onChange={(e) => {
                       setCinNumber(e.target.value);
@@ -2293,6 +2436,7 @@ function RegisterPageContent() {
                         </label>
                         <input
                           type="text"
+                          autoComplete="off"
                           value={gstNumber}
                           onChange={(e) => {
                             setGstNumber(e.target.value.toUpperCase());

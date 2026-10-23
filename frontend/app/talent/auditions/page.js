@@ -30,7 +30,8 @@ import { mediaService } from "@/lib/api/services/mediaService";
 import { useAuth } from "@/context/AuthContext";
 import { isRealMode } from "@/lib/api/config";
 import { talentService } from "@/lib/api/services/talentService";
-import { AUDITION_CONFIG } from "@/lib/config/audition";
+import { AUDITION_CONFIG, maxResubmissionsAfterRejection } from "@/lib/config/audition";
+import ContactVismayaButton from "@/components/shared/ContactVismayaButton";
 
 export default function TalentAuditionsPage() {
   const { user } = useAuth();
@@ -319,14 +320,19 @@ export default function TalentAuditionsPage() {
 
             const rawStatus = (aud.rawStatus || aud.status || "").toLowerCase().replace(/\s+/g, "_");
             const isPastDeadline = aud.deadline && new Date() > new Date(aud.deadline);
-            const isSubmitted = rawStatus === "submitted" || rawStatus === "self_tape_received" || aud.status === "Submitted" || aud.status === "Self-tape Received" || Boolean(aud.selfTapeSubmission?.submittedAt);
-            const isForwarded = rawStatus === "forwarded_to_org" || aud.status === "Forwarded to Organization" || aud.status === "Forwarded to Org";
             const isRejected = rawStatus === "rejected" || aud.status === "Rejected" || aud.vismayaApproval === "rejected";
+            const isSubmitted = (rawStatus === "submitted" || rawStatus === "self_tape_received" || aud.status === "Submitted" || aud.status === "Self-tape Received" || Boolean(aud.selfTapeSubmission?.submittedAt)) && !isRejected;
+            const isForwarded = (rawStatus === "forwarded_to_org" || aud.status === "Forwarded to Organization" || aud.status === "Forwarded to Org") && !isRejected;
             const isRequested = (rawStatus === "requested" || aud.status === "Audition Requested" || aud.status === "Requested" || aud.status === "Relayed to Talent") && !isSubmitted && !isRejected;
             const isSelfTape = (aud.type || "").toLowerCase().includes("tape") || aud.type === "self_tape" || aud.type === "Audition";
 
-            // One submission only: after the talent submits, there is no replace and no second upload.
-            const canUpload = isSelfTape && isRequested && !isSubmitted && !isPastDeadline && !isForwarded && !isRejected;
+            const resubmissionCount = Number(aud.resubmissionCount || 0);
+            const isClosedOrCancelled = aud.status === "cancelled" || aud.status === "completed";
+            const canResubmit = isRejected && resubmissionCount < maxResubmissionsAfterRejection && !isPastDeadline && !isClosedOrCancelled;
+            const isFinalRejection = isRejected && (resubmissionCount >= maxResubmissionsAfterRejection || isClosedOrCancelled);
+
+            // One submission normally; if rejected, allows exactly one resubmission if limit not reached
+            const canUpload = isSelfTape && !isPastDeadline && !isForwarded && ((isRequested && !isSubmitted && !isRejected) || canResubmit);
             const isUploadOpen = canUpload;
 
             // Extract primary video
@@ -419,7 +425,7 @@ export default function TalentAuditionsPage() {
                       </span>
                     ) : isRejected ? (
                       <span style={{ fontSize: "0.785rem", fontWeight: 700, padding: "4px 10px", borderRadius: "6px", background: "rgba(180, 35, 24, 0.08)", color: "#B42318", border: "1px solid rgba(180, 35, 24, 0.25)" }}>
-                        Rejected
+                        {isFinalRejection ? "Rejected (Final Decision)" : "Rejected - Resubmission Allowed"}
                       </span>
                     ) : isPastDeadline ? (
                       <span style={{ fontSize: "0.785rem", fontWeight: 700, padding: "4px 10px", borderRadius: "6px", background: "rgba(180, 35, 24, 0.08)", color: "#B42318", border: "1px solid rgba(180, 35, 24, 0.25)" }}>
@@ -496,19 +502,41 @@ export default function TalentAuditionsPage() {
                     style={{
                       backgroundColor: "rgba(180, 35, 24, 0.06)",
                       border: "1px solid rgba(180, 35, 24, 0.25)",
-                      borderRadius: "6px",
-                      padding: "14px 18px",
+                      borderRadius: "8px",
+                      padding: "16px 20px",
                       display: "flex",
                       flexDirection: "column",
-                      gap: "4px",
+                      gap: "8px",
                     }}
                   >
-                    <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#B42318" }}>
-                      Vismaya Moderation Notice (Self-Tape Rejected):
-                    </span>
-                    <span style={{ fontSize: "0.825rem", color: "#5A584F", lineHeight: 1.5 }}>
-                      {aud.vismayaRejectionReason || "Your self-tape submission does not meet guidelines. Resubmissions are not permitted."}
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <AlertCircle size={18} style={{ color: "#B42318", flexShrink: 0 }} />
+                      <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#B42318" }}>
+                        Vismaya Moderation Notice (Self-Tape Rejected):
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "0.875rem", color: "#2B2D2A", lineHeight: 1.5, paddingLeft: "26px" }}>
+                      <strong>Reason for Rejection: </strong>
+                      <span>{aud.vismayaRejectionReason || "Your self-tape submission does not meet guidelines."}</span>
+                    </div>
+                    {canResubmit && (
+                      <div style={{ fontSize: "0.825rem", color: "#8A6B2E", fontWeight: 600, paddingLeft: "26px" }}>
+                        You are permitted one resubmission ({resubmissionCount}/{maxResubmissionsAfterRejection} used). Please review the admin feedback and upload your new self-tape below.
+                      </div>
+                    )}
+                    {isFinalRejection && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px", paddingLeft: "26px", marginTop: "2px" }}>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#B42318" }}>
+                          Final Decision: Resubmission limit reached ({resubmissionCount}/{maxResubmissionsAfterRejection}).
+                        </span>
+                        <span style={{ fontSize: "0.825rem", color: "#5A584F" }}>
+                          Further video resubmissions are not permitted for this audition. If you have questions, please reach out to Vismaya support.
+                        </span>
+                      </div>
+                    )}
+                    <div style={{ paddingLeft: "26px", marginTop: "4px" }}>
+                      <ContactVismayaButton context="Rejected audition tape" reference={aud.id || aud._id} />
+                    </div>
                   </div>
                 )}
 
@@ -574,7 +602,7 @@ export default function TalentAuditionsPage() {
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <Video size={18} className="aud-upload-icon" style={{ color: "var(--gold)" }} />
                         <h4 className="aud-upload-heading" style={{ fontSize: "0.95rem", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
-                          Submit Audition Self-Tape
+                          {canResubmit ? "Resubmit Audition Self-Tape" : "Submit Audition Self-Tape"}
                         </h4>
                       </div>
 

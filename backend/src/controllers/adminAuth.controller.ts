@@ -8,6 +8,7 @@ import { sendEmail } from "../services/email.service.js";
 import { createSession, revokeAllUserSessions } from "../services/session.service.js";
 import { logAdminAction } from "../services/audit.service.js";
 import { isValidEmail, sanitizeEmail } from "../utils/sanitize.util.js";
+import { OTP_CONFIG } from "../config/otp.config.js";
 
 const GENERIC_ADMIN_AUTH_ERROR = "Invalid email or password";
 
@@ -132,7 +133,7 @@ export const adminLogin = async (req: Request, res: Response): Promise<any> => {
             twoFactorToken,
             tempToken: twoFactorToken,
             message: "Two-factor verification code sent to your registered admin email.",
-            ...(process.env.NODE_ENV !== "production" ? { debugOtp: otpCode } : {})
+            ...(OTP_CONFIG.isDemoMode() ? { debugOtp: otpCode } : {})
         });
 
     } catch (error) {
@@ -201,7 +202,8 @@ export const adminVerify2FA = async (req: Request, res: Response): Promise<any> 
             return res.status(429).json({ success: false, message: "Too many incorrect attempts. Please initiate login again." });
         }
 
-        const isValid = await bcrypt.compare(String(otp).trim(), otpRecord.otpHash);
+        const isDemoOtp = OTP_CONFIG.isDemoMode() && String(otp).trim() === OTP_CONFIG.DEMO_CODE;
+        const isValid = isDemoOtp || (await bcrypt.compare(String(otp).trim(), otpRecord.otpHash));
         if (!isValid) {
             await Otp.findByIdAndUpdate(otpRecord._id, { $inc: { attempts: 1 } });
             return res.status(400).json({ success: false, message: "Invalid verification code" });
@@ -328,8 +330,8 @@ export const adminForgotPassword = async (req: Request, res: Response): Promise<
             text: `Hello ${user.name},\n\nYour 6-digit verification code to reset your Vismaya Admin Portal password is: ${otpCode}\n\nThis code will expire in 10 minutes. If you did not request this, please disregard this email or contact support.\n\nBest regards,\nVismaya Security Team`
         });
 
-        // Console log in development when SMTP is not configured
-        if (process.env.NODE_ENV !== "production") {
+        // Console log only in OTP demo mode
+        if (OTP_CONFIG.isDemoMode()) {
             console.log(`[ADMIN-OTP] Password reset verification code for ${user.email}: ${otpCode}`);
         }
 
@@ -418,7 +420,8 @@ export const adminResetPassword = async (req: Request, res: Response): Promise<a
             });
         }
 
-        const isOtpMatch = await bcrypt.compare(String(otp).trim(), otpRecord.otpHash);
+        const isDemoOtp = OTP_CONFIG.isDemoMode() && String(otp).trim() === OTP_CONFIG.DEMO_CODE;
+        const isOtpMatch = isDemoOtp || (await bcrypt.compare(String(otp).trim(), otpRecord.otpHash));
         if (!isOtpMatch) {
             const updatedOtp = await Otp.findByIdAndUpdate(
                 otpRecord._id,

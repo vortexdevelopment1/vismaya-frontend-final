@@ -407,4 +407,20 @@ export const authService = {
     formData.append("file", file);
     return apiClient.post("/api/auth/upload-accreditation-document", formData);
   },
+
+  /**
+   * Fetch OTP configuration (e.g. demo mode and fixed demo code)
+   */
+  async getOtpConfig() {
+    try {
+      const res = await apiClient.get("/api/auth/otp-config");
+      return res?.data || res;
+    } catch {
+      return {
+        success: true,
+        demoMode: process.env.NEXT_PUBLIC_OTP_DEMO_MODE === "true",
+        demoCode: process.env.NEXT_PUBLIC_OTP_DEMO_MODE === "true" ? "123456" : null,
+      };
+    }
+  },
 };

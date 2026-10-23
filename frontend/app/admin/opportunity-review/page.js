@@ -613,6 +613,23 @@ export default function OpportunityReviewPage() {
                       {opp.opportunityType}
                     </span>
                     <StatusBadge status={opp.status} size="xs" />
+                    {(opp.resubmissionCount > 0 || (opp.rejectionHistory && opp.rejectionHistory.length > 0)) && (
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          backgroundColor: "rgba(180, 35, 24, 0.12)",
+                          color: "#B42318",
+                          border: "1px solid rgba(180, 35, 24, 0.28)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        Resubmitted
+                      </span>
+                    )}
                   </div>
 
                   {/* Line 2: Opportunity Title (Clamped to 2 lines) */}
@@ -669,6 +686,23 @@ export default function OpportunityReviewPage() {
                       {selectedOpportunity.opportunityType}
                     </span>
                     <StatusBadge status={selectedOpportunity.status} size="xs" />
+                    {(selectedOpportunity.resubmissionCount > 0 || (selectedOpportunity.rejectionHistory && selectedOpportunity.rejectionHistory.length > 0)) && (
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          padding: "2px 8px",
+                          borderRadius: "4px",
+                          backgroundColor: "rgba(180, 35, 24, 0.12)",
+                          color: "#B42318",
+                          border: "1px solid rgba(180, 35, 24, 0.28)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        Resubmitted
+                      </span>
+                    )}
                   </div>
 
                   {/* Title (rendered once only) */}
@@ -732,6 +766,86 @@ export default function OpportunityReviewPage() {
 
               {/* Detail Content Body */}
               <div className="opp-detail-content-body">
+                {/* Resubmission & Previous Rejection History Section */}
+                {Boolean(selectedOpportunity.resubmissionCount > 0 || (selectedOpportunity.rejectionHistory && selectedOpportunity.rejectionHistory.length > 0)) && (
+                  <div
+                    style={{
+                      borderRadius: "12px",
+                      backgroundColor: "rgba(180, 35, 24, 0.04)",
+                      border: "1px solid rgba(180, 35, 24, 0.22)",
+                      padding: "16px 18px",
+                      marginBottom: "16px",
+                    }}
+                    className="opp-rejection-history-card"
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", marginBottom: "10px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <AlertTriangle size={18} style={{ color: "#B42318" }} />
+                        <strong style={{ fontSize: "14.5px", color: "#B42318" }}>
+                          Resubmitted Opportunity ({selectedOpportunity.resubmissionCount || selectedOpportunity.rejectionHistory?.length} revision{(selectedOpportunity.resubmissionCount || selectedOpportunity.rejectionHistory?.length) > 1 ? "s" : ""})
+                        </strong>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          backgroundColor: "#B42318",
+                          color: "#FFFFFF",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        Resubmitted
+                      </span>
+                    </div>
+
+                    <details open style={{ cursor: "pointer" }}>
+                      <summary style={{ fontSize: "13px", fontWeight: 600, color: "#5A584F", marginBottom: "10px" }}>
+                        Previous Rejection Reason(s) &amp; Admin Notes
+                      </summary>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
+                        {Array.isArray(selectedOpportunity.rejectionHistory) && selectedOpportunity.rejectionHistory.length > 0 ? (
+                          selectedOpportunity.rejectionHistory.map((h, i) => (
+                            <div
+                              key={i}
+                              style={{
+                                padding: "10px 14px",
+                                borderRadius: "8px",
+                                backgroundColor: "#FFFFFF",
+                                border: "1px solid rgba(180, 35, 24, 0.18)",
+                                fontSize: "13px",
+                                lineHeight: "1.45",
+                              }}
+                            >
+                              <div style={{ display: "flex", justifyContent: "space-between", color: "#7c869e", fontSize: "11.5px", marginBottom: "4px" }}>
+                                <span>Rejection #{i + 1}</span>
+                                <span>{h.rejectedAt ? new Date(h.rejectedAt).toLocaleDateString() : "Previous Cycle"}</span>
+                              </div>
+                              <div style={{ color: "#2B2D2A", fontWeight: 500 }}>{h.reason}</div>
+                            </div>
+                          ))
+                        ) : (
+                          <div
+                            style={{
+                              padding: "10px 14px",
+                              borderRadius: "8px",
+                              backgroundColor: "#FFFFFF",
+                              border: "1px solid rgba(180, 35, 24, 0.18)",
+                              fontSize: "13px",
+                              lineHeight: "1.45",
+                            }}
+                          >
+                            <div style={{ color: "#2B2D2A", fontWeight: 500 }}>
+                              {selectedOpportunity.rejectionReason || "Opportunity was previously rejected."}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </details>
+                  </div>
+                )}
                 {/* Suspended Parent Project Warning Banner */}
                 {isProjectSuspended && (
                   <div

@@ -3,6 +3,10 @@
  * client may change these later
  */
 
+// Maximum allowed resubmissions after an audition tape rejection (Spec / Client confirmed).
+// NOTE: Must match backend/src/config/audition.config.ts exactly.
+export const maxResubmissionsAfterRejection = 1;
+
 export const AUDITION_CONFIG = {
   ENABLE_LIVE_AUDITION: false, // set to true when real-time audition feature is ready
   SELF_TAPE_MAX_FILE_MB: 50,
@@ -10,6 +14,7 @@ export const AUDITION_CONFIG = {
   SELF_TAPE_ALLOWED_EXTENSIONS: ["mp4", "mov", "webm"],
   SELF_TAPE_MAX_DURATION_MIN: 5,
   SELF_TAPE_MAX_VIDEOS_PER_AUDITION: 1,
+  maxResubmissionsAfterRejection,
 };
 
 export default AUDITION_CONFIG;

@@ -19,6 +19,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import { supportEmail, supportWhatsapp as supportWhatsApp } from "@/lib/config/support";
 
 const SUPPORT_TOPICS = [
   {
@@ -150,9 +151,6 @@ const SUPPORT_TOPICS = [
 export default function SupportPage() {
   const [selectedTopic, setSelectedTopic] = useState("account");
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
-
-  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "";
-  const supportWhatsApp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || "";
 
   const currentTopic = SUPPORT_TOPICS.find((t) => t.id === selectedTopic) || SUPPORT_TOPICS[0];
 
