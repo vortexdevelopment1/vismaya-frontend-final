@@ -12,8 +12,11 @@ export interface ISuccessStory extends Document {
     projectName?: string;
     organizationName?: string;
     externalSharingConsent: boolean;
-    status: "pending" | "approved" | "rejected" | "archived";
+    status: "pending" | "approved" | "rejected" | "archived" | "unpublished";
     rejectionReason?: string;
+    unpublishReason?: string;
+    unpublishedAt?: Date;
+    unpublishedBy?: Types.ObjectId;
     reviewedBy?: Types.ObjectId;
     reviewedAt?: Date;
     displayOrder: number;
@@ -85,13 +88,27 @@ const successStorySchema = new Schema<ISuccessStory>(
 
         status: {
             type: String,
-            enum: ["pending", "approved", "rejected", "archived"],
+            enum: ["pending", "approved", "rejected", "archived", "unpublished"],
             default: "pending"
         },
 
         rejectionReason: {
             type: String,
             trim: true
+        },
+
+        unpublishReason: {
+            type: String,
+            trim: true
+        },
+
+        unpublishedAt: {
+            type: Date
+        },
+
+        unpublishedBy: {
+            type: Schema.Types.ObjectId,
+            ref: "User"
         },
 
         reviewedBy: {

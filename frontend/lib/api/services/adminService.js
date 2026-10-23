@@ -5,11 +5,17 @@
 
 import { apiClient } from "../client.js";
 import { isRealMode } from "../config.js";
+import { toCancellationTabStatus } from "../statusMapper.js";
 import {
   mapUser,
   mapOpportunity,
   mapVerification,
   mapBroadcast,
+  mapTalentProfile,
+  mapOrganization,
+  mapProject,
+  mapApplication,
+  mapAudition,
 } from "../mappers/index.js";
 import {
   initialTalents,
@@ -19,9 +25,71 @@ import {
   initialBroadcasts,
   initialRecentAdminActivity,
   initialAnalyticsData,
+  initialCastingCalls,
+  initialApplications,
+  initialShortlists,
+  initialBookings,
+  initialPayments,
+  initialSubscriptions,
+  initialAdminNotifications,
 } from "../../admin/mockData.js";
 
 export const adminService = {
+  getInitialState() {
+    if (isRealMode("admin")) {
+      return {
+        talents: [],
+        recruiters: [],
+        mediaQueue: [],
+        requirementRequests: [],
+        castingCalls: [],
+        applications: [],
+        shortlists: [],
+        bookings: [],
+        payments: [],
+        subscriptions: [],
+        broadcasts: [],
+        notifications: [],
+        activities: [],
+        verifications: [],
+      };
+    }
+    return {
+      talents: initialTalents,
+      recruiters: initialRecruiters,
+      mediaQueue: initialMediaQueue,
+      requirementRequests: initialRequirementRequests,
+      castingCalls: initialCastingCalls,
+      applications: initialApplications,
+      shortlists: initialShortlists,
+      bookings: initialBookings,
+      payments: initialPayments,
+      subscriptions: initialSubscriptions,
+      broadcasts: initialBroadcasts,
+      notifications: initialAdminNotifications,
+      activities: initialRecentAdminActivity,
+      verifications: [
+        {
+          _id: "ver-mock-1",
+          id: "ver-mock-1",
+          userId: "usr-1",
+          userName: "Aarav Sharma",
+          verificationType: "identity",
+          status: "pending",
+          documentType: "Aadhaar / Passport",
+        },
+        {
+          _id: "ver-mock-2",
+          id: "ver-mock-2",
+          userId: "usr-2",
+          userName: "Ananya Roy",
+          verificationType: "professional",
+          status: "pending",
+          documentType: "IMDb / Credit Contract",
+        },
+      ],
+    };
+  },
   /**
    * Fetch all registered users
    * @param {Object} params { role, status, page, limit }
@@ -41,6 +109,50 @@ export const adminService = {
       success: true,
       data: docs.map(mapUser),
     };
+  },
+
+  /**
+   * Fetch aggregate dashboard metrics
+   */
+  async getDashboardMetrics() {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        data: {
+          users: { verifiedTalent: 1284, activeOrganization: 14, pending: 3 },
+          opportunities: { published: 5, pendingReview: 2, cancellationRequests: 0 },
+          applications: { total: 42 },
+          auditions: { pendingRelay: 1, selfTapesToForward: 2 },
+        },
+      };
+    }
+
+    const res = await apiClient.get("/api/admin/dashboard");
+    return {
+      success: true,
+      data: res?.metrics || res?.data || res,
+    };
+  },
+
+  /**
+   * Verify the current admin session
+   */
+  async verifyAdminSession() {
+    if (!isRealMode("admin")) {
+      return { success: true, isAdmin: true };
+    }
+    try {
+      await apiClient.get("/api/admin/dashboard");
+      return {
+        success: true,
+        isAdmin: true,
+      };
+    } catch {
+      return {
+        success: false,
+        isAdmin: false,
+      };
+    }
   },
 
   /**
@@ -190,13 +302,30 @@ export const adminService = {
    */
   async getTalentDirectory(params = {}) {
     if (!isRealMode("admin")) {
-      return { success: true, data: initialTalents.map(mapUser) };
+      return { success: true, data: initialTalents.map(mapTalentProfile) };
     }
     const res = await apiClient.get("/api/admin/talents", { params });
-    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.talents) ? res.talents : [];
+    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.talents) ? res.talents : Array.isArray(res?.profiles) ? res.profiles : [];
     return {
       success: true,
-      data: docs.map(mapUser),
+      data: docs.map(mapTalentProfile),
+    };
+  },
+
+  /**
+   * Fetch talent detail by ID (Admin view)
+   * @param {string} talentId
+   */
+  async getTalentById(talentId) {
+    if (!isRealMode("admin")) {
+      const found = initialTalents.find((t) => t.id === talentId || t._id === talentId || t.vismayaId === talentId);
+      return { success: true, data: found ? mapTalentProfile(found) : null };
+    }
+    const res = await apiClient.get(`/api/admin/talents/${talentId}`);
+    const doc = res?.profile || res?.data || res;
+    return {
+      success: true,
+      data: doc ? mapTalentProfile(doc) : null,
     };
   },
 
@@ -205,13 +334,13 @@ export const adminService = {
    */
   async getOrganizationDirectory(params = {}) {
     if (!isRealMode("admin")) {
-      return { success: true, data: initialRecruiters.map(mapUser) };
+      return { success: true, data: initialRecruiters.map(mapOrganization) };
     }
     const res = await apiClient.get("/api/admin/organizations", { params });
     const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.organizations) ? res.organizations : [];
     return {
       success: true,
-      data: docs.map(mapUser),
+      data: docs.map(mapOrganization),
     };
   },
 
@@ -235,9 +364,10 @@ export const adminService = {
       return { success: true, data: [] };
     }
     const res = await apiClient.get("/api/admin/profile-changes");
+    const list = res?.profiles || res?.data || res?.profileChanges || [];
     return {
       success: true,
-      data: res?.data || res?.profileChanges || res || [],
+      data: Array.isArray(list) ? list : [],
     };
   },
 
@@ -254,6 +384,158 @@ export const adminService = {
   },
 
   /**
+   * Fetch all opportunities across platform (Admin view)
+   */
+  async getAllOpportunities(params = {}) {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        data: initialRequirementRequests.map(mapOpportunity),
+        total: initialRequirementRequests.length,
+      };
+    }
+
+    const res = await apiClient.get("/api/admin/opportunities", { params });
+    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.opportunities) ? res.opportunities : Array.isArray(res) ? res : [];
+    return {
+      success: true,
+      data: docs.map(mapOpportunity),
+      total: res?.total || docs.length,
+    };
+  },
+
+  /**
+   * Fetch opportunity cancellation requests (Admin queue)
+   */
+  async getCancellationRequests(params = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, data: [] };
+    }
+    const res = await apiClient.get("/api/admin/cancellation-requests", { params });
+    const rawOpps = Array.isArray(res?.opportunities)
+      ? res.opportunities
+      : Array.isArray(res?.requests)
+      ? res.requests
+      : Array.isArray(res?.data)
+      ? res.data
+      : Array.isArray(res)
+      ? res
+      : [];
+
+    const mapped = rawOpps.map((opp) => {
+      const oppId = opp._id?.toString() || opp.id;
+      const orgId = opp.organizationId?._id?.toString() || opp.organizationId?.toString() || opp.projectId?.organizationId?._id?.toString() || opp.projectId?.organizationId?.toString() || "";
+
+      const reqRecord = opp.cancellationRequest || {};
+      const rawDecision = reqRecord.decision || (opp.status === "cancelled" ? "approved" : opp.status === "cancellation_requested" ? "pending" : "declined");
+      const status = toCancellationTabStatus(rawDecision || opp.status);
+      const decision = status === "Approved" ? "approved" : status === "Declined" ? "declined" : "pending";
+
+      const proj = opp.projectId && typeof opp.projectId === "object" ? opp.projectId : null;
+      const org = opp.organizationId && typeof opp.organizationId === "object"
+        ? opp.organizationId
+        : (proj?.organizationId && typeof proj.organizationId === "object" ? proj.organizationId : null);
+
+      const organizationName = opp.organizationName || org?.organizationName || org?.name || "Organization";
+      const projectName = opp.projectName || proj?.projectName || "Project";
+      const opportunityTitle = opp.opportunityTitle || opp.title || "Opportunity";
+
+      return {
+        id: oppId,
+        _id: oppId,
+        opportunityId: oppId,
+        orgId,
+        reason: reqRecord.reason || opp.cancellationReason || "No reason provided",
+        status, // "Pending" | "Approved" | "Declined"
+        decision, // "pending" | "approved" | "declined"
+        rawStatus: opp.status,
+        requestedAt: reqRecord.requestedAt || opp.cancellationRequestedAt || opp.updatedAt || opp.createdAt,
+        decidedAt: reqRecord.decidedAt || opp.cancellationReviewedAt || null,
+        adminNote: reqRecord.adminNote || opp.adminNote || "",
+        declineReason: reqRecord.declineReason || reqRecord.adminNote || "",
+        title: opportunityTitle,
+        opportunityTitle,
+        projectName,
+        organizationName,
+        opportunity: opp,
+      };
+    });
+
+    return {
+      success: true,
+      data: mapped,
+      total: res?.count || mapped.length,
+    };
+  },
+
+  /**
+   * Review an opportunity cancellation request
+   * @param {string} opportunityId
+   * @param {Object} payload { action: 'approve' | 'reject', reason?: string, adminNote?: string }
+   */
+  async reviewOpportunityCancellation(opportunityId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Cancellation reviewed (Mock)" };
+    }
+    const action = String(payload.action || payload.decision || "").toLowerCase().includes("reject") || String(payload.decision || "").toLowerCase().includes("decline") ? "reject" : "approve";
+    const reason = payload.reason || payload.adminNote || payload.declineReason || payload.rejectionReason || "";
+    const body = {
+      action,
+      adminNote: reason,
+      reason,
+      declineReason: reason,
+    };
+    const res = await apiClient.patch(`/api/admin/opportunities/${opportunityId}/review-cancellation`, body);
+    return {
+      success: true,
+      data: res?.data || res?.opportunity || res,
+      message: res?.message || `Cancellation request ${action}d successfully`,
+    };
+  },
+
+  /**
+   * Fetch all applications across platform (Admin view)
+   */
+  async getAllApplications(params = {}) {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        data: initialApplications.map(mapApplication),
+        total: initialApplications.length,
+      };
+    }
+
+    const res = await apiClient.get("/api/admin/applications", { params });
+    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.applications) ? res.applications : Array.isArray(res) ? res : [];
+    return {
+      success: true,
+      data: docs.map(mapApplication),
+      total: res?.total || docs.length,
+    };
+  },
+
+  /**
+   * Fetch all projects across platform (Admin view)
+   */
+  async getAllProjects(params = {}) {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        data: [],
+        total: 0,
+      };
+    }
+
+    const res = await apiClient.get("/api/admin/projects", { params });
+    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.projects) ? res.projects : Array.isArray(res) ? res : [];
+    return {
+      success: true,
+      data: docs.map(mapProject),
+      total: res?.total || docs.length,
+    };
+  },
+
+  /**
    * Fetch pending opportunities review queue
    */
   async getPendingOpportunities() {
@@ -266,25 +548,6 @@ export const adminService = {
 
     const res = await apiClient.get("/api/admin/opportunities/pending");
     const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.opportunities) ? res.opportunities : Array.isArray(res) ? res : [];
-    return {
-      success: true,
-      data: docs.map(mapOpportunity),
-    };
-  },
-
-  /**
-   * Fetch opportunity cancellation requests
-   */
-  async getCancellationRequests(params = {}) {
-    if (!isRealMode("admin")) {
-      return {
-        success: true,
-        data: initialRequirementRequests.map(mapOpportunity),
-      };
-    }
-
-    const res = await apiClient.get("/api/admin/opportunities/cancellations", { params });
-    const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.cancellations) ? res.cancellations : Array.isArray(res) ? res : [];
     return {
       success: true,
       data: docs.map(mapOpportunity),
@@ -400,9 +663,10 @@ export const adminService = {
       return { success: true, data: [] };
     }
     const res = await apiClient.get("/api/admin/reports", { params });
+    const items = res?.reports || res?.data || (Array.isArray(res) ? res : []);
     return {
       success: true,
-      data: res?.data || res?.reports || res || [],
+      data: Array.isArray(items) ? items : [],
     };
   },
 
@@ -425,23 +689,54 @@ export const adminService = {
     if (!isRealMode("admin")) {
       return { success: true, data: [] };
     }
-    const res = await apiClient.get("/api/admin/auditions/pending", { params });
+    const res = await apiClient.get("/api/admin/auditions", { params });
+    const docs = Array.isArray(res?.auditions) ? res.auditions : Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
     return {
       success: true,
-      data: res?.data || res?.auditions || res || [],
+      data: docs.map(mapAudition),
     };
   },
 
   /**
    * Review audition request (Approve / Reject)
    * @param {string} auditionId
-   * @param {Object} payload { action, rejectionReason }
+   * @param {Object} payload { action, rejectionReason, scriptUrl }
    */
   async reviewAudition(auditionId, payload) {
     if (!isRealMode("admin")) {
       return { success: true, message: "Audition reviewed (Mock)" };
     }
     return apiClient.patch(`/api/admin/auditions/${auditionId}/review`, payload);
+  },
+
+  async approveAudition(auditionId, payload = {}) {
+    return this.reviewAudition(auditionId, { action: "approve", ...payload });
+  },
+
+  async rejectAudition(auditionId, payload = {}) {
+    const data = typeof payload === "string" ? { action: "reject", rejectionReason: payload } : { action: "reject", ...payload };
+    return this.reviewAudition(auditionId, data);
+  },
+
+  /**
+   * Relay audition request to talent (POST /api/admin/auditions/:id/relay)
+   */
+  async relayAudition(auditionId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Audition relayed (Mock)" };
+    }
+    return apiClient.post(`/api/admin/auditions/${auditionId}/relay`, payload);
+  },
+
+  /**
+   * Reject audition request (POST /api/admin/auditions/:id/reject-request)
+   */
+  async rejectAuditionRequest(auditionId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Audition request rejected (Mock)" };
+    }
+    const data = typeof payload === "string" ? { reason: payload } : payload;
+    return apiClient.post(`/api/admin/auditions/${auditionId}/reject-request`, data);
   },
 
   /**
@@ -452,9 +747,10 @@ export const adminService = {
       return { success: true, data: [] };
     }
     const res = await apiClient.get("/api/admin/reapplications/pending", { params });
+    const list = res?.applications || res?.data || res?.reapplications || [];
     return {
       success: true,
-      data: res?.data || res?.reapplications || res || [],
+      data: Array.isArray(list) ? list : [],
     };
   },
 
@@ -472,8 +768,9 @@ export const adminService = {
 
   /**
    * Fetch pending identity/professional/business verifications
+   * @param {Object} params - e.g. { status: "all", verificationType: "identity" }
    */
-  async getPendingVerifications() {
+  async getPendingVerifications(params = {}) {
     if (!isRealMode("admin")) {
       return {
         success: true,
@@ -481,7 +778,9 @@ export const adminService = {
       };
     }
 
-    const res = await apiClient.get("/api/admin/verifications/pending");
+    const query = new URLSearchParams(params).toString();
+    const endpoint = `/api/admin/verifications/pending${query ? `?${query}` : ""}`;
+    const res = await apiClient.get(endpoint);
     const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.verifications) ? res.verifications : Array.isArray(res) ? res : [];
     return {
       success: true,
@@ -492,7 +791,7 @@ export const adminService = {
   /**
    * Review a verification submission
    * @param {string} verificationId
-   * @param {Object} payload { status, notes }
+   * @param {Object} payload { action, status, notes, rejectionReason }
    */
   async reviewVerification(verificationId, payload) {
     if (!isRealMode("admin")) {
@@ -502,10 +801,19 @@ export const adminService = {
       };
     }
 
-    const res = await apiClient.patch(`/api/admin/verifications/${verificationId}/review`, payload);
+    // Normalize payload to include action for backend
+    const normalizedPayload = {
+      action: payload.action || (payload.status === "verified" ? "approve" : payload.status === "rejected" ? "reject" : payload.status),
+      status: payload.status,
+      notes: payload.notes,
+      rejectionReason: payload.rejectionReason || payload.notes,
+      ...payload,
+    };
+
+    const res = await apiClient.patch(`/api/admin/verifications/${verificationId}/review`, normalizedPayload);
     const doc = res?.data || res?.verification || res;
     return {
-      success: true,
+      success: res?.success ?? true,
       data: doc ? mapVerification(doc) : null,
       message: res?.message,
     };
@@ -514,27 +822,65 @@ export const adminService = {
   /**
    * Fetch pending media items for moderation
    */
+  /**
+   * Fetch pending media items for moderation (items needing review only)
+   */
   async getPendingMedia(params = {}) {
     if (!isRealMode("admin")) {
-      return { success: true, data: initialMediaQueue };
+      return { success: true, data: initialMediaQueue, media: initialMediaQueue };
     }
     const res = await apiClient.get("/api/admin/media/pending", { params });
+    const items = res?.media || res?.data || res?.mediaItems || [];
+    const arr = Array.isArray(items) ? items : [];
     return {
       success: true,
-      data: res?.data || res?.mediaItems || res || [],
+      data: arr,
+      media: arr,
+    };
+  },
+
+  /**
+   * Fetch media items for admin moderation (?state=live|admin_review|restricted|removed|all)
+   * Returns media with owner name, URL, pagination, plus accurate per-state counts
+   */
+  async getAdminMedia(params = {}) {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        data: initialMediaQueue,
+        media: initialMediaQueue,
+        counts: { pending: 0, approved: 0, rejected: 0, all: 0 },
+        pagination: { total: 0, page: 1, limit: 50, pages: 1 },
+      };
+    }
+    const res = await apiClient.get("/api/admin/media", { params });
+    const items = res?.media || res?.data || res?.mediaItems || [];
+    const arr = Array.isArray(items) ? items : [];
+    return {
+      success: true,
+      data: arr,
+      media: arr,
+      counts: res?.counts || { pending: 0, approved: 0, rejected: 0, all: 0 },
+      pagination: res?.pagination || { total: arr.length, page: 1, limit: 50, pages: 1 },
     };
   },
 
   /**
    * Review a media item
    * @param {string} mediaId
-   * @param {Object} payload { action, notes }
+   * @param {Object} payload { action, moderationReason, notes }
    */
-  async reviewMediaItem(mediaId, payload) {
+  async reviewMediaItem(mediaId, payload = {}) {
     if (!isRealMode("admin")) {
       return { success: true, message: "Media reviewed (Mock)" };
     }
-    return apiClient.patch(`/api/admin/media/${mediaId}/review`, payload);
+    const moderationReason = payload.moderationReason ?? payload.notes ?? payload.reason ?? "";
+    const body = {
+      ...payload,
+      moderationReason,
+      notes: moderationReason,
+    };
+    return apiClient.patch(`/api/admin/media/${mediaId}/review`, body);
   },
 
   /**
@@ -545,9 +891,10 @@ export const adminService = {
       return { success: true, data: [] };
     }
     const res = await apiClient.get("/api/admin/transactions", { params });
+    const list = res?.transactions || res?.data || (Array.isArray(res) ? res : []);
     return {
       success: true,
-      data: res?.data || res?.transactions || res || [],
+      data: Array.isArray(list) ? list : [],
     };
   },
 
@@ -578,9 +925,10 @@ export const adminService = {
       return { success: true, data: [] };
     }
     const res = await apiClient.get("/api/admin/coupons", { params });
+    const list = res?.coupons || res?.data || (Array.isArray(res) ? res : []);
     return {
       success: true,
-      data: res?.data || res?.coupons || res || [],
+      data: Array.isArray(list) ? list : [],
     };
   },
 
@@ -658,9 +1006,10 @@ export const adminService = {
     }
 
     const res = await apiClient.get("/api/admin/audit-logs", { params });
+    const list = res?.auditLogs || res?.logs || res?.data || (Array.isArray(res) ? res : []);
     return {
       success: true,
-      data: res?.data || res?.auditLogs || res,
+      data: Array.isArray(list) ? list : [],
     };
   },
 
@@ -697,21 +1046,38 @@ export const adminService = {
   /**
    * Featured Work selection (max 4 per profile - Spec §15 & §44)
    */
-  async setMediaFeaturedWork(mediaId, isFeatured) {
+  async setMediaFeaturedWork(mediaId, payload = {}) {
     if (!isRealMode("admin")) {
-      return { success: true, message: `Media ${isFeatured ? "featured" : "unfeatured"} (Mock)` };
+      const isFeat = typeof payload === "boolean" ? payload : Boolean(payload?.isFeatured ?? payload?.isFeaturedWork);
+      return { success: true, message: `Media ${isFeat ? "featured" : "unfeatured"} (Mock)` };
     }
-    return apiClient.patch(`/api/admin/media/${mediaId}/feature`, { isFeatured });
+    const isFeatured = typeof payload === "boolean"
+      ? payload
+      : (payload?.isFeatured !== undefined ? payload.isFeatured : payload?.isFeaturedWork);
+    const body = {
+      isFeatured: Boolean(isFeatured),
+      isFeaturedWork: Boolean(isFeatured),
+    };
+    const res = await apiClient.patch(`/api/admin/media/${mediaId}/feature`, body);
+    return res?.data || res;
+  },
+
+  /**
+   * Set media featured state (alias for setMediaFeaturedWork)
+   */
+  async setMediaFeatured(mediaId, isFeatured = true) {
+    return this.setMediaFeaturedWork(mediaId, { isFeatured });
   },
 
   /**
    * Copyright dispute hide / restore (Spec §40 & §44)
    */
-  async handleCopyrightDispute(mediaId, payload) {
+  async handleCopyrightDispute(mediaId, payload = {}) {
     if (!isRealMode("admin")) {
       return { success: true, message: "Dispute status updated (Mock)" };
     }
-    return apiClient.patch(`/api/admin/media/${mediaId}/dispute`, payload);
+    const res = await apiClient.patch(`/api/admin/media/${mediaId}/dispute`, payload);
+    return res?.data || res;
   },
 
   /**
@@ -721,36 +1087,88 @@ export const adminService = {
     if (!isRealMode("admin")) {
       return { success: true, message: "Informational profile created (Mock)" };
     }
-    return apiClient.post("/api/admin/informational-profiles", payload);
+    const res = await apiClient.post("/api/admin/informational-profiles", payload);
+    return res?.data || res;
   },
 
   /**
    * Get Informational Profiles
    */
-  async getInformationalProfiles() {
+  async getInformationalProfiles(params = {}) {
     if (!isRealMode("admin")) {
-      return { success: true, data: [] };
+      return { success: true, data: [], profiles: [] };
     }
-    const res = await apiClient.get("/api/admin/informational-profiles");
-    return { success: true, data: res?.profiles || res?.data || [] };
+    const res = await apiClient.get("/api/admin/informational-profiles", { params });
+    const items = res?.profiles || res?.data || [];
+    const arr = Array.isArray(items) ? items : [];
+    return {
+      success: true,
+      data: arr,
+      profiles: arr,
+    };
   },
 
   /**
    * Success Stories Review Queue (Spec §42 & §44)
    */
-  async getSuccessStories() {
+  async getSuccessStories(params = {}) {
     if (!isRealMode("admin")) {
-      return { success: true, data: [] };
+      return { success: true, data: [], stories: [], counts: { pending: 0, published: 0, unpublished: 0, rejected: 0, total: 0 } };
     }
-    const res = await apiClient.get("/api/admin/success-stories");
-    return { success: true, data: res?.stories || res?.data || [] };
+    const res = await apiClient.get("/api/admin/success-stories", { params });
+    const items = res?.stories || res?.data || [];
+    const arr = Array.isArray(items) ? items : [];
+    return {
+      success: true,
+      data: arr,
+      stories: arr,
+      counts: res?.counts || { pending: 0, published: 0, unpublished: 0, rejected: 0, total: 0 },
+      total: res?.total ?? arr.length,
+    };
   },
 
-  async reviewSuccessStory(storyId, payload) {
+  /**
+   * Review a Success Story submission
+   */
+  async reviewSuccessStory(storyId, payload = {}) {
     if (!isRealMode("admin")) {
       return { success: true, message: "Success story reviewed (Mock)" };
     }
-    return apiClient.patch(`/api/admin/success-stories/${storyId}/review`, payload);
+    const decision = payload.decision || (payload.action === "reject" ? "reject" : payload.action === "approve" ? "approve" : payload.action);
+    const rejectionReason = payload.rejectionReason || payload.feedback || payload.reason || "";
+    const body = {
+      decision,
+      ...(rejectionReason ? { rejectionReason } : {}),
+      ...(payload.displayOrder !== undefined ? { displayOrder: payload.displayOrder } : {}),
+    };
+    const res = await apiClient.patch(`/api/admin/success-stories/${storyId}/review`, body);
+    return res?.data || res;
+  },
+
+  /**
+   * Unpublish an approved success story (§42)
+   */
+  async unpublishSuccessStory(storyId, reason) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Success story unpublished (Mock)" };
+    }
+    const res = await apiClient.patch(`/api/admin/success-stories/${storyId}/unpublish`, { reason });
+    return res?.data || res;
+  },
+
+  /**
+   * Republish an unpublished success story (§42)
+   */
+  async republishSuccessStory(storyId) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Success story republished (Mock)" };
+    }
+    const res = await apiClient.patch(`/api/admin/success-stories/${storyId}/republish`, {});
+    return res?.data || res;
+  },
+
+  async reviewSuccessStoryNormalized(storyId, payload = {}) {
+    return this.reviewSuccessStory(storyId, payload);
   },
 
   // Aliases for backward compatibility & dispatching
@@ -939,6 +1357,27 @@ export const adminService = {
   },
 
   /**
+   * Request 6-digit email OTP for Admin Password Recovery
+   */
+  async adminForgotPassword({ email }) {
+    const res = await apiClient.post("/api/admin/auth/forgot-password", { email });
+    return res?.data || res;
+  },
+
+  /**
+   * Reset Admin Password with OTP and new password
+   */
+  async adminResetPassword({ email, otp, newPassword, confirmPassword }) {
+    const res = await apiClient.post("/api/admin/auth/reset-password", {
+      email,
+      otp,
+      newPassword,
+      confirmPassword,
+    });
+    return res?.data || res;
+  },
+
+  /**
    * Verified Server-Side Admin Session Check
    */
   async verifyAdminSession() {
@@ -967,91 +1406,6 @@ export const adminService = {
     }
   },
 
-  /**
-   * Set Featured Work on media item (max 4 per Spec Section 15)
-   */
-  async setMediaFeaturedWork(mediaId, payload = {}) {
-    if (!isRealMode("admin")) {
-      return { success: true, message: "Featured work updated (Mock)" };
-    }
-    const res = await apiClient.patch(`/api/admin/media/${mediaId}/feature`, payload);
-    return res?.data || res;
-  },
-
-  /**
-   * Handle copyright dispute on media (Spec Section 40)
-   */
-  async handleCopyrightDispute(mediaId, payload = {}) {
-    if (!isRealMode("admin")) {
-      return { success: true, message: "Dispute updated (Mock)" };
-    }
-    const res = await apiClient.patch(`/api/admin/media/${mediaId}/dispute`, payload);
-    return res?.data || res;
-  },
-
-  /**
-   * Create Informational Profile (Spec Section 41)
-   */
-  async createInformationalProfile(payload) {
-    if (!isRealMode("admin")) {
-      return { success: true, message: "Informational profile created (Mock)" };
-    }
-    const res = await apiClient.post("/api/admin/informational-profiles", payload);
-    return res?.data || res;
-  },
-
-  /**
-   * Fetch Informational Profiles
-   */
-  async getInformationalProfiles(params = {}) {
-    if (!isRealMode("admin")) {
-      return { success: true, data: [] };
-    }
-    const res = await apiClient.get("/api/admin/informational-profiles", { params });
-    return {
-      success: true,
-      data: res?.data || res?.profiles || res || [],
-    };
-  },
-
-  /**
-   * Fetch Success Stories moderation queue (Spec Section 42)
-   */
-  async getSuccessStories(params = {}) {
-    if (!isRealMode("admin")) {
-      return { success: true, data: [] };
-    }
-    const res = await apiClient.get("/api/admin/success-stories", { params });
-    return {
-      success: true,
-      data: res?.data || res?.stories || res || [],
-    };
-  },
-
-  /**
-   * Review a Success Story submission
-   */
-  async reviewSuccessStory(storyId, payload = {}) {
-    if (!isRealMode("admin")) {
-      return { success: true, message: "Success story reviewed (Mock)" };
-    }
-    const res = await apiClient.patch(`/api/admin/success-stories/${storyId}/review`, payload);
-    return res?.data || res;
-  },
-
-  /**
-   * Fetch Audit Logs
-   */
-  async getAuditLogs(params = {}) {
-    if (!isRealMode("admin")) {
-      return { success: true, data: [] };
-    }
-    const res = await apiClient.get("/api/admin/audit-logs", { params });
-    return {
-      success: true,
-      data: res?.data || res?.logs || res || [],
-    };
-  },
 
   /**
    * Global Admin Search
@@ -1075,7 +1429,89 @@ export const adminService = {
     return res?.data || res;
   },
 
-  async exportAdminData(type) {
-    return this.exportData(type);
+  /**
+   * Success Stories Moderation Queue (Spec Section 42)
+   */
+  async getSuccessStories(params = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, data: [], stories: [], counts: { pending: 0, published: 0, unpublished: 0, rejected: 0, total: 0 } };
+    }
+    const res = await apiClient.get("/api/admin/success-stories", { params });
+    const docs = Array.isArray(res?.stories) ? res.stories : Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+    return {
+      success: true,
+      data: docs,
+      stories: docs,
+      counts: res?.counts || { pending: 0, published: 0, unpublished: 0, rejected: 0, total: 0 },
+      total: res?.total ?? docs.length,
+    };
+  },
+
+  async reviewSuccessStory(storyId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Success story reviewed (Mock)" };
+    }
+    const decision = payload.decision || (payload.action === "reject" ? "reject" : payload.action === "approve" ? "approve" : payload.action);
+    const rejectionReason = payload.rejectionReason || payload.feedback || payload.reason || "";
+    const body = {
+      decision,
+      ...(rejectionReason ? { rejectionReason } : {}),
+      ...(payload.displayOrder !== undefined ? { displayOrder: payload.displayOrder } : {}),
+    };
+    const res = await apiClient.patch(`/api/admin/success-stories/${storyId}/review`, body);
+    return res?.data || res;
+  },
+
+  async reviewSuccessStoryNormalized(storyId, payload = {}) {
+    return this.reviewSuccessStory(storyId, payload);
+  },
+
+  /**
+   * Informational Profiles (§41 & §44)
+   */
+  async getInformationalProfiles(params) {
+    if (!isRealMode("admin")) {
+      return { success: true, data: [], profiles: [] };
+    }
+    const res = await apiClient.get("/api/admin/informational-profiles", { params });
+    const docs = Array.isArray(res?.profiles) ? res.profiles : Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+    return {
+      success: true,
+      data: docs,
+      profiles: docs,
+      count: res?.count ?? docs.length,
+    };
+  },
+
+  async createInformationalProfile(payload) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Profile created (Mock)" };
+    }
+    const res = await apiClient.post("/api/admin/informational-profiles", payload);
+    return res?.data || res;
+  },
+
+  async updateInformationalProfile(id, payload) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Profile updated (Mock)" };
+    }
+    const res = await apiClient.patch(`/api/admin/informational-profiles/${id}`, payload);
+    return res?.data || res;
+  },
+
+  async archiveInformationalProfile(id) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Profile archived (Mock)" };
+    }
+    const res = await apiClient.post(`/api/admin/informational-profiles/${id}/archive`);
+    return res?.data || res;
+  },
+
+  async restoreInformationalProfile(id) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Profile restored (Mock)" };
+    }
+    const res = await apiClient.post(`/api/admin/informational-profiles/${id}/restore`);
+    return res?.data || res;
   },
 };

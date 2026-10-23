@@ -23,7 +23,9 @@ export interface ICredit {
     referenceLink?: string;
     workEvidenceUrl?: string;
     isVerifiedCredit: boolean;
+    verificationStatus?: "pending" | "verified" | "rejected";
 }
+
 
 export interface ITraining {
     _id?: Types.ObjectId;
@@ -159,6 +161,8 @@ export interface ITalentProfile extends Document {
     isSearchable: boolean;
     isInformational?: boolean;
     isClaimable?: boolean;
+    isArchived?: boolean;
+    archivedAt?: Date;
     claimedBy?: Types.ObjectId;
     claimedAt?: Date;
     createdAt: Date;
@@ -205,7 +209,12 @@ const creditSchema = new Schema<ICredit>(
         characterName: { type: String, trim: true },
         referenceLink: { type: String, trim: true },
         workEvidenceUrl: { type: String, trim: true },
-        isVerifiedCredit: { type: Boolean, default: false }
+        isVerifiedCredit: { type: Boolean, default: false },
+        verificationStatus: {
+            type: String,
+            enum: ["pending", "verified", "rejected"],
+            default: "pending"
+        }
     },
     { _id: true }
 );
@@ -492,6 +501,15 @@ const talentProfileSchema = new Schema<ITalentProfile>(
         isClaimable: {
             type: Boolean,
             default: false
+        },
+
+        isArchived: {
+            type: Boolean,
+            default: false
+        },
+
+        archivedAt: {
+            type: Date
         },
 
         claimedBy: {

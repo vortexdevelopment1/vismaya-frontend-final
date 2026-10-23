@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 /**
  * General API rate limiter (protects against high-volume API abuse / scraping)
@@ -61,7 +61,7 @@ export const adminLimiter = rateLimit({
  */
 export const adminLoginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: process.env.NODE_ENV === "production" ? 5 : 50,
     standardHeaders: true,
     legacyHeaders: false,
     message: {
@@ -98,11 +98,54 @@ export const paymentLimiter = rateLimit({
     }
 });
 
+/**
+ * Admin Forgot Password limiter (5 requests per 15 min per IP/email)
+ */
+export const adminForgotPasswordLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: process.env.NODE_ENV === "production" ? 5 : 50,
+    keyGenerator: (req: any) => {
+        const email = req.body?.email ? String(req.body.email).toLowerCase().trim() : "";
+        const rawIp = req.ip || (req.headers && req.headers["x-forwarded-for"]) || "127.0.0.1";
+        const ip = ipKeyGenerator(Array.isArray(rawIp) ? rawIp[0] : String(rawIp));
+        return email ? `${ip}_${email}` : String(ip);
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many password reset requests for this account or IP. Please try again after 15 minutes."
+    }
+});
+
+/**
+ * Admin Reset Password limiter (5 requests per 15 min per IP/email)
+ */
+export const adminResetPasswordLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: process.env.NODE_ENV === "production" ? 5 : 50,
+    keyGenerator: (req: any) => {
+        const email = req.body?.email ? String(req.body.email).toLowerCase().trim() : "";
+        const rawIp = req.ip || (req.headers && req.headers["x-forwarded-for"]) || "127.0.0.1";
+        const ip = ipKeyGenerator(Array.isArray(rawIp) ? rawIp[0] : String(rawIp));
+        return email ? `${ip}_${email}` : String(ip);
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many password reset attempts for this account or IP. Please try again after 15 minutes."
+    }
+});
+
 export default {
     apiLimiter,
     authLimiter,
     draftLimiter,
     adminLimiter,
+    adminLoginLimiter,
+    adminForgotPasswordLimiter,
+    adminResetPasswordLimiter,
     otpLimiter,
     paymentLimiter
 };

@@ -1,10 +1,21 @@
 import { Request, Response } from "express";
 import Verification from "../models/verification.model.js";
+import Organization from "../models/organization.model.js";
 
 export const submitIdentityVerification = async (req: Request, res: Response): Promise<any> => {
     try {
         const userId = req.user?.userId;
         const { idType, idNumber, documentFrontUrl, documentBackUrl, selfiePhotoUrl } = req.body;
+
+        const latestVerification = await Verification.findOne({ userId, verificationType: "identity" })
+            .sort({ createdAt: -1, submittedAt: -1 });
+
+        if (latestVerification && latestVerification.status === "rejected") {
+            return res.status(403).json({
+                success: false,
+                message: "Your verification was rejected. Please contact Vismaya support."
+            });
+        }
 
         if (!idType || !idNumber || !documentFrontUrl || !selfiePhotoUrl) {
             return res.status(400).json({
@@ -13,7 +24,7 @@ export const submitIdentityVerification = async (req: Request, res: Response): P
             });
         }
 
-        let verification = await Verification.findOne({ userId, verificationType: "identity" });
+        let verification = latestVerification;
 
         if (!verification) {
             verification = new Verification({
@@ -65,7 +76,17 @@ export const submitProfessionalVerification = async (req: Request, res: Response
         const userId = req.user?.userId;
         const { creditsLinks, guildOrUnionName, guildMembershipNumber, supportingDocumentUrls } = req.body;
 
-        let verification = await Verification.findOne({ userId, verificationType: "professional" });
+        const latestVerification = await Verification.findOne({ userId, verificationType: "professional" })
+            .sort({ createdAt: -1, submittedAt: -1 });
+
+        if (latestVerification && latestVerification.status === "rejected") {
+            return res.status(403).json({
+                success: false,
+                message: "Your verification was rejected. Please contact Vismaya support."
+            });
+        }
+
+        let verification = latestVerification;
 
         if (!verification) {
             verification = new Verification({
@@ -115,6 +136,16 @@ export const submitBusinessVerification = async (req: Request, res: Response): P
         const userId = req.user?.userId;
         const { businessRegType, businessRegNumber, legalEntityName, documentUrl } = req.body;
 
+        const latestVerification = await Verification.findOne({ userId, verificationType: "organization_business" })
+            .sort({ createdAt: -1, submittedAt: -1 });
+
+        if (latestVerification && latestVerification.status === "rejected") {
+            return res.status(403).json({
+                success: false,
+                message: "Your verification was rejected. Please contact Vismaya support."
+            });
+        }
+
         if (!businessRegType || !businessRegNumber || !legalEntityName || !documentUrl) {
             return res.status(400).json({
                 success: false,
@@ -122,7 +153,7 @@ export const submitBusinessVerification = async (req: Request, res: Response): P
             });
         }
 
-        let verification = await Verification.findOne({ userId, verificationType: "organization_business" });
+        let verification = latestVerification;
 
         if (!verification) {
             verification = new Verification({

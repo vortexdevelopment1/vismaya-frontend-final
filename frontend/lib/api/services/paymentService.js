@@ -360,47 +360,58 @@ export const paymentService = {
     const packageType = PACKAGE_TYPE_MAP[type] || type;
     const isRegistration = type === "talent_registration" || type === "organization_registration";
 
-    if (isRealMode("payments") && getAuthToken() && !isRegistration) {
-      const body = { packageType, ...metadata };
+    if ((isRealMode("payments") && getAuthToken()) || isRegistration) {
+      const body = {
+        packageType,
+        email: metadata.userEmail,
+        userEmail: metadata.userEmail,
+        userName: metadata.userName,
+        ...metadata
+      };
       // Pass couponCode explicitly if present
       if (metadata.couponCode) {
         body.couponCode = metadata.couponCode;
       }
-      const res = await apiClient.post("/api/payments/create-order", body);
-      const raw = res?.data || res;
-      const orderInfo = raw?.order || {};
-      const orderId = raw?.orderId || orderInfo.orderId || raw?.razorpayOrderId;
-      const razorpayOrderId = raw?.razorpayOrderId || orderInfo.razorpayOrderId || orderId;
-      const keyId = raw?.keyId || orderInfo.keyId || orderInfo.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
-      const mode = raw?.mode || orderInfo.mode || "razorpay";
-      const amount = raw?.amount ?? orderInfo.amount;
+      try {
+        const res = await apiClient.post("/api/payments/create-order", body);
+        const raw = res?.data || res;
+        const orderInfo = raw?.order || {};
+        const orderId = raw?.orderId || orderInfo.orderId || raw?.razorpayOrderId;
+        const razorpayOrderId = raw?.razorpayOrderId || orderInfo.razorpayOrderId || orderId;
+        const keyId = raw?.keyId || orderInfo.keyId || orderInfo.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+        const mode = raw?.mode || orderInfo.mode || "mock";
+        const amount = raw?.amount ?? orderInfo.amount;
 
-      const normalizedData = {
-        orderId,
-        razorpayOrderId,
-        keyId,
-        mode,
-        type,
-        packageType: orderInfo.packageType || packageType,
-        label: orderInfo.packageName || (type === "organization_registration" ? "Organization Registration" : "Talent Registration"),
-        baseAmount: orderInfo.originalAmount ?? amount,
-        discountAmount: orderInfo.discountAmount ?? 0,
-        finalAmount: amount,
-        amount,
-        currency: raw?.currency || orderInfo.currency || "INR",
-        createdAt: new Date().toISOString(),
-        ...orderInfo,
-      };
+        const normalizedData = {
+          orderId,
+          razorpayOrderId,
+          keyId,
+          mode,
+          type,
+          packageType: orderInfo.packageType || packageType,
+          label: orderInfo.packageName || (type === "organization_registration" ? "Organization Registration" : "Talent Registration"),
+          baseAmount: orderInfo.originalAmount ?? amount,
+          discountAmount: orderInfo.discountAmount ?? 0,
+          finalAmount: amount,
+          amount,
+          currency: raw?.currency || orderInfo.currency || "INR",
+          createdAt: new Date().toISOString(),
+          ...orderInfo,
+        };
 
-      return {
-        ...raw,
-        success: raw?.success ?? true,
-        mode,
-        orderId,
-        razorpayOrderId,
-        keyId,
-        data: normalizedData,
-      };
+        return {
+          ...raw,
+          success: raw?.success ?? true,
+          mode,
+          orderId,
+          razorpayOrderId,
+          keyId,
+          data: normalizedData,
+        };
+      } catch (err) {
+        console.warn("API create-order notice:", err?.message);
+        if (!isRegistration) throw err;
+      }
     }
 
     let baseAmount = PRICING_CONFIG.TALENT_FEE;
@@ -462,9 +473,9 @@ export const paymentService = {
     // Simulate 1.5s gateway latency
     await new Promise((res) => setTimeout(res, 1500));
 
-    // Real backend POST /api/payments/verify (requires authenticated session)
+    // Real backend POST /api/payments/verify or /api/payments/mock-confirm
     const isRegistration = payload.type === "talent_registration" || payload.type === "organization_registration";
-    if (isRealMode("payments") && getAuthToken() && !isRegistration) {
+    if ((isRealMode("payments") && getAuthToken()) || isRegistration) {
       if (shouldFail) {
         return {
           success: false,
@@ -632,15 +643,8 @@ export const paymentService = {
         const res = await apiClient.get("/api/credits/balance");
         return res?.data || res;
       } catch (err) {
-        console.warn("Failed to fetch credits balance from backend, using safe fallback:", err?.message);
-        const defaultLedger = {
-          balance: PRICING_CONFIG.INCLUDED_CREDITS,
-          includedCredits: PRICING_CONFIG.INCLUDED_CREDITS,
-          purchasedCredits: 0,
-          consumedCredits: 0,
-          lowBalanceWarning: false,
-        };
-        return defaultLedger;
+        console.warn("Failed to fetch credits balance from backend:", err?.message);
+        throw err;
       }
     }
 
@@ -833,6 +837,17 @@ export const paymentService = {
    * Get list of previously viewed talent for organization
    */
   async getViewedTalents() {
+    if (isRealMode("credits") || isRealMode("payments")) {
+      try {
+        const res = await apiClient.get("/api/credits/viewed");
+        const list = Array.isArray(res?.data) ? res.data : Array.isArray(res?.history) ? res.history : Array.isArray(res) ? res : [];
+        return list;
+      } catch (err) {
+        console.warn("Failed to fetch viewed talents from backend:", err?.message);
+        return [];
+      }
+    }
+
     return safeGetStorage(STORAGE_KEYS.VIEWED_TALENTS, [
       {
         talentId: "tal-904",
@@ -917,8 +932,7 @@ export const paymentService = {
         });
       } catch (err) {
         console.error("Failed to fetch real admin transactions:", err);
-        const fallback = safeGetStorage(STORAGE_KEYS.TRANSACTIONS, SEED_TRANSACTIONS);
-        return Array.isArray(fallback) ? fallback : [];
+        return [];
       }
     }
 
@@ -944,7 +958,7 @@ export const paymentService = {
           if (!orgId) continue;
 
           if (!orgMap.has(orgId)) {
-            const orgName = (typeof org === "object" ? org?.organizationName : "") || `Organization (${orgId.slice(-6)})`;
+            const orgName = (typeof org === "object" ? (org?.name || org?.studioName || org?.organizationName) : "") || `Organization (${orgId.slice(-6)})`;
             const ob = entry.orgBalance || {};
             orgMap.set(orgId, {
               orgId,

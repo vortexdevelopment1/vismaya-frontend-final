@@ -1,7 +1,9 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
 export interface IPaymentTransaction extends Document {
-    userId: Types.ObjectId;
+    userId?: Types.ObjectId;
+    email?: string;
+    customerEmail?: string;
     organizationId?: Types.ObjectId;
     packageType: "talent_annual_999" | "industry_annual_4999" | "credit_single_100" | "credit_bundle_25_2000";
     amount: number;
@@ -27,7 +29,22 @@ const paymentTransactionSchema = new Schema<IPaymentTransaction>(
         userId: {
             type: Schema.Types.ObjectId,
             ref: "User",
-            required: true
+            required: false,
+            index: true
+        },
+
+        email: {
+            type: String,
+            lowercase: true,
+            trim: true,
+            index: true
+        },
+
+        customerEmail: {
+            type: String,
+            lowercase: true,
+            trim: true,
+            index: true
         },
 
         organizationId: {

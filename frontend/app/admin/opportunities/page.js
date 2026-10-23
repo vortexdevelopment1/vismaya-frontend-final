@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Megaphone,
@@ -24,22 +24,129 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
+import { isRealMode } from "@/lib/api/config";
+import { adminService } from "@/lib/api/services/adminService";
+import { useAdmin } from "@/lib/admin/AdminContext";
+import { isOpportunityPending, isOpportunityFinalized } from "@/lib/api/statusMapper";
 
 export default function AdminOpportunitiesPage() {
-  const {
-    opportunities = [],
-    projects = [],
-    organizations = [],
-    applications = [],
-    isHydrated,
-  } = useWorkflow();
+  const workflow = useWorkflow();
+  const adminCtx = useAdmin();
+  const addToast = adminCtx?.addToast || (({ title, message }) => console.log(title, message));
+  const [toastMessage, setToastMessage] = useState(null);
+  const showToast = (msg, type = "success") => {
+    setToastMessage(msg);
+    addToast({ type, title: type === "success" ? "Success" : "Notice", message: msg });
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const [realOpportunities, setRealOpportunities] = useState([]);
+  const [realProjects, setRealProjects] = useState([]);
+  const [realOrganizations, setRealOrganizations] = useState([]);
+  const [realApplications, setRealApplications] = useState([]);
+  const [loading, setLoading] = useState(() => isRealMode("admin"));
+
+  const loadData = async () => {
+    if (!isRealMode("admin")) return;
+    try {
+      const [oppsRes, projsRes, orgsRes, appsRes] = await Promise.allSettled([
+        adminService.getAllOpportunities(),
+        adminService.getAllProjects(),
+        adminService.getOrganizationDirectory(),
+        adminService.getAllApplications(),
+      ]);
+      if (oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data)) {
+        setRealOpportunities(oppsRes.value.data);
+      }
+      if (projsRes.status === "fulfilled" && Array.isArray(projsRes.value?.data)) {
+        setRealProjects(projsRes.value.data);
+      }
+      if (orgsRes.status === "fulfilled" && Array.isArray(orgsRes.value?.data)) {
+        setRealOrganizations(orgsRes.value.data);
+      }
+      if (appsRes.status === "fulfilled" && Array.isArray(appsRes.value?.data)) {
+        setRealApplications(appsRes.value.data);
+      }
+    } catch (err) {
+      console.warn("Failed to load real admin opportunities:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!isRealMode("admin")) return;
+    let mounted = true;
+    loadData().finally(() => {
+      if (mounted) setLoading(false);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const opportunities = isRealMode("admin") ? realOpportunities : (workflow.opportunities || []);
+  const projects = isRealMode("admin") ? realProjects : (workflow.projects || []);
+  const organizations = isRealMode("admin") ? realOrganizations : (workflow.organizations || []);
+  const applications = isRealMode("admin") ? realApplications : (workflow.applications || []);
+  const isHydrated = isRealMode("admin") ? !loading : workflow.isHydrated;
 
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [orgFilter, setOrgFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Detail Modal for read-only view
+  // Detail Modal for view and action
   const [viewModalOpp, setViewModalOpp] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const handleApproveFromModal = async () => {
+    if (!viewModalOpp || actionLoading) return;
+    setActionLoading(true);
+    try {
+      if (isRealMode("admin")) {
+        await adminService.approveOpportunity(viewModalOpp.id, { note: "Verified and published by Vismaya Casting Desk." });
+        showToast(`Opportunity "${viewModalOpp.title}" has been approved and published.`);
+        await loadData();
+      } else {
+        workflow.adminApproveAndPublish?.(viewModalOpp.id);
+        showToast(`Opportunity "${viewModalOpp.title}" approved and published.`);
+      }
+      setViewModalOpp(null);
+      setShowRejectForm(false);
+      setRejectReason("");
+    } catch (err) {
+      console.error("Failed to approve opportunity:", err);
+      showToast(err?.response?.data?.message || err?.message || "Failed to approve opportunity.", "danger");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectFromModal = async () => {
+    if (!viewModalOpp || actionLoading) return;
+    const reason = rejectReason.trim();
+    if (reason.length < 10) {
+      showToast("Rejection reason must be at least 10 characters.", "danger");
+      return;
+    }
+    setActionLoading(true);
+    try {
+      if (isRealMode("admin")) {
+        await adminService.rejectOpportunity(viewModalOpp.id, { reason, rejectionReason: reason });
+        showToast(`Opportunity "${viewModalOpp.title}" has been rejected.`);
+        await loadData();
+      } else {
+        workflow.adminReject?.(viewModalOpp.id, reason);
+        showToast(`Opportunity "${viewModalOpp.title}" rejected.`);
+      }
+      setViewModalOpp(null);
+      setShowRejectForm(false);
+      setRejectReason("");
+    } catch (err) {
+      console.error("Failed to reject opportunity:", err);
+      showToast(err?.response?.data?.message || err?.message || "Failed to reject opportunity.", "danger");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   // Status counts
   const statusCounts = useMemo(() => {
@@ -47,15 +154,19 @@ export default function AdminOpportunitiesPage() {
       ALL: opportunities.length,
       Published: 0,
       Submitted: 0,
-      "Changes Requested": 0,
       Closed: 0,
       Cancelled: 0,
       Completed: 0,
       Draft: 0,
     };
     opportunities.forEach((o) => {
-      if (counts[o.status] !== undefined) {
-        counts[o.status]++;
+      const s = String(o.status || "");
+      if (isOpportunityPending(s)) {
+        counts.Submitted++;
+      } else if (counts[s] !== undefined) {
+        counts[s]++;
+      } else if (s.toLowerCase() === "published" || s.toLowerCase() === "active") {
+        counts.Published++;
       }
     });
     return counts;
@@ -65,8 +176,15 @@ export default function AdminOpportunitiesPage() {
   const filteredOpportunities = useMemo(() => {
     return opportunities.filter((opp) => {
       // Status
-      if (statusFilter !== "ALL" && opp.status !== statusFilter) {
-        return false;
+      if (statusFilter !== "ALL") {
+        if (statusFilter === "Submitted") {
+          if (!isOpportunityPending(opp.status)) return false;
+        } else if (statusFilter === "Published") {
+          const s = String(opp.status || "").toLowerCase();
+          if (s !== "published" && s !== "active") return false;
+        } else if (opp.status !== statusFilter) {
+          return false;
+        }
       }
 
       // Organization
@@ -598,7 +716,7 @@ export default function AdminOpportunitiesPage() {
               <div>
                 <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Organization</span>
                 <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
-                  {getOrgForOpp(viewModalOpp.orgId)?.name || "Zee Films"}
+                  {getOrgForOpp(viewModalOpp.orgId)?.name || "Organization"}
                 </strong>
               </div>
               <div>
@@ -662,26 +780,180 @@ export default function AdminOpportunitiesPage() {
               Note: Organizations manage and edit their opportunity briefs directly. Admin holds publishing authorization and unpublish controls.
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button
-                type="button"
-                onClick={() => setViewModalOpp(null)}
+            {/* Rejection Form or Action Buttons */}
+            {showRejectForm ? (
+              <div
                 style={{
-                  padding: "10px 22px",
-                  borderRadius: "10px",
-                  backgroundColor: "#8A6B2E",
-                  color: "#FFFFFF",
-                  border: "none",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  marginTop: "8px",
+                  padding: "14px",
+                  backgroundColor: "#FFF8F8",
+                  border: "1px solid #FED7D7",
+                  borderRadius: "12px",
                 }}
               >
-                Close View
-              </button>
-            </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <label style={{ fontSize: "12px", fontWeight: "600", color: "#C53030" }}>
+                    Reason for Rejection * (minimum 10 characters)
+                  </label>
+                  <span style={{ fontSize: "11px", color: rejectReason.trim().length >= 10 ? "#2B8A3E" : "#C53030", fontWeight: 600 }}>
+                    {rejectReason.trim().length}/10 characters
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Specify why this opportunity submission cannot be published (min 10 characters)..."
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #E8B4B4",
+                    fontSize: "13px",
+                    backgroundColor: "#FFFFFF",
+                    color: "#2B2D2A",
+                    resize: "vertical",
+                  }}
+                />
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRejectForm(false);
+                      setRejectReason("");
+                    }}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: "8px",
+                      border: "1px solid #E8E2D4",
+                      background: "#FAF9F7",
+                      color: "#5A584F",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={actionLoading || rejectReason.trim().length < 10}
+                    onClick={handleRejectFromModal}
+                    style={{
+                      padding: "8px 18px",
+                      borderRadius: "8px",
+                      border: "none",
+                      backgroundColor: "#C53030",
+                      color: "#FFFFFF",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      cursor: actionLoading || rejectReason.trim().length < 10 ? "not-allowed" : "pointer",
+                      opacity: actionLoading || rejectReason.trim().length < 10 ? 0.6 : 1,
+                    }}
+                  >
+                    {actionLoading ? "Rejecting..." : "Confirm Rejection"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "4px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewModalOpp(null);
+                    setShowRejectForm(false);
+                    setRejectReason("");
+                  }}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: "10px",
+                    backgroundColor: "#FAF9F7",
+                    color: "#5A584F",
+                    border: "1px solid #E8E2D4",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Close View
+                </button>
+
+                {/* Show Approve and Reject buttons ONLY when in pending review state and not finalized */}
+                {isOpportunityPending(viewModalOpp.status) && !isOpportunityFinalized(viewModalOpp.status) && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowRejectForm(true)}
+                      style={{
+                        padding: "10px 18px",
+                        borderRadius: "10px",
+                        backgroundColor: "#FFF5F5",
+                        color: "#C53030",
+                        border: "1px solid #FED7D7",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Reject Submission
+                    </button>
+                    <button
+                      type="button"
+                      disabled={actionLoading}
+                      onClick={handleApproveFromModal}
+                      style={{
+                        padding: "10px 22px",
+                        borderRadius: "10px",
+                        backgroundColor: "#8A6B2E",
+                        color: "#FFFFFF",
+                        border: "none",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        cursor: actionLoading ? "not-allowed" : "pointer",
+                        opacity: actionLoading ? 0.7 : 1,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <CheckCircle2 size={15} />
+                      <span>{actionLoading ? "Approving..." : "Approve & Publish"}</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </Modal>
+      )}
+
+      {/* In-page Toast Notification */}
+      {toastMessage && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "24px",
+            right: "24px",
+            backgroundColor: "#2B2D2A",
+            color: "#FFFFFF",
+            padding: "12px 20px",
+            borderRadius: "10px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+            zIndex: 9999,
+            fontSize: "14px",
+            fontWeight: 500,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            border: "1px solid #8A6B2E",
+          }}
+        >
+          <CheckCircle2 size={16} color="#4ADE80" />
+          <span>{toastMessage}</span>
+        </div>
       )}
 
       <style jsx>{`

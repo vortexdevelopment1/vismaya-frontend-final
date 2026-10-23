@@ -45,8 +45,8 @@ export const logAdminAction = async ({
     req?: Request;
 }): Promise<IAdminAuditLog | null> => {
     try {
-        const ipAddress = req ? (req.headers["x-forwarded-for"] || req.socket.remoteAddress) : null;
-        const userAgent = req ? req.headers["user-agent"] : null;
+        const ipAddress = req ? (req.headers?.["x-forwarded-for"] || req.socket?.remoteAddress) : null;
+        const userAgent = req ? req.headers?.["user-agent"] : null;
         const normalizedTargetType = formatTargetType(targetType);
 
         return await AdminAuditLog.create({

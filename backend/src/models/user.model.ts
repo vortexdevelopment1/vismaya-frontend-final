@@ -18,6 +18,7 @@ export interface IUser extends Document {
     deletionRequestedAt?: Date;
     pendingEmail?: string;
     isPaid: boolean;
+    emailNotificationsEnabled?: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -146,6 +147,11 @@ const userSchema = new Schema<IUser>(
         isPaid: {
             type: Boolean,
             default: false
+        },
+
+        emailNotificationsEnabled: {
+            type: Boolean,
+            default: true
         }
     },
     {

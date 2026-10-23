@@ -47,11 +47,11 @@ export const notifyUser = async ({
         // Fetch user only if any external channel is needed
         const needsUser = sendEmailAlert || sendSmsAlert || sendWhatsappAlert;
         const recipient = needsUser
-            ? await User.findById(recipientId).select("email name mobile")
+            ? await User.findById(recipientId).select("email name mobile emailNotificationsEnabled")
             : null;
 
         // Email alert
-        if (sendEmailAlert && recipient?.email) {
+        if (sendEmailAlert && recipient?.email && recipient.emailNotificationsEnabled !== false) {
             await sendEmail({
                 to: recipient.email,
                 subject: emailSubject || title,

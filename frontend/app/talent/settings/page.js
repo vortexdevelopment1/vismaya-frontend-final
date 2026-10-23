@@ -1,87 +1,98 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   User,
   Shield,
   Bell,
   Lock,
-  Eye,
-  EyeOff,
   Trash2,
   Save,
   CheckCircle2,
   AlertCircle,
-  Smartphone,
-  MessageSquare,
-  Sparkles,
-  Info,
   Key,
   ShieldCheck,
   Mail,
-  MapPin,
-  Laptop,
+  Smartphone,
   Check,
   X,
-  Radio,
-  Globe,
+  Info,
+  RefreshCw,
 } from "lucide-react";
 import PageHeader from "@/components/shared/PageHeader";
 import Modal from "@/components/shared/Modal";
 import ProgressBar from "@/components/shared/ProgressBar";
 import PasswordInput from "@/components/PasswordInput";
 import { useTalent } from "@/lib/talent/TalentContext";
+import { useAuth } from "@/context/AuthContext";
 import { authService } from "@/lib/api/services/authService";
+import { talentService } from "@/lib/api/services/talentService";
 import { isRealMode } from "@/lib/api/config";
 
-
 export default function TalentSettingsPage() {
+  const auth = useAuth();
   const { profile, updateProfile, addToast, updateProfilePhoto, removeProfilePhoto } = useTalent();
 
   const [activeTab, setActiveTab] = useState("account");
   const tabNavRef = useRef(null);
   const settingsPhotoInputRef = useRef(null);
 
-  // Tab 1: Account Profile State
-  const [accountName, setAccountName] = useState(profile.personal.fullName || "");
-  const [accountEmail, setAccountEmail] = useState(profile.personal.email || "");
-  const [accountPhone, setAccountPhone] = useState(profile.personal.phone || "");
-  const [accountCity, setAccountCity] = useState(profile.personal.city || "");
+  // Tab 1: Account Profile Canonical Fields
+  const initialName = useMemo(() => profile?.personal?.fullName || profile?.name || auth?.user?.name || "", [profile, auth?.user]);
+  const initialEmail = useMemo(() => profile?.personal?.email || profile?.email || auth?.user?.email || "", [profile, auth?.user]);
+  const initialPhone = useMemo(() => profile?.personal?.phone || profile?.phone || profile?.personal?.mobile || profile?.mobile || auth?.user?.mobile || auth?.user?.phone || "", [profile, auth?.user]);
+  const initialCity = useMemo(() => profile?.personal?.city || profile?.city || profile?.currentCity || "", [profile]);
+  const initialState = useMemo(() => profile?.personal?.state || profile?.state || profile?.currentState || "", [profile]);
+  const isEmailVerified = Boolean(profile?.isEmailVerified !== undefined ? profile.isEmailVerified : (auth?.user?.isEmailVerified ?? false));
+  const primaryProfession = profile?.primaryProfession || profile?.personal?.primaryRole || profile?.profession || "Actor / Screen Artist";
 
-  // Tab 2: Password & Security State
+  const [accountName, setAccountName] = useState(initialName);
+  const [accountEmail, setAccountEmail] = useState(initialEmail);
+  const [accountPhone, setAccountPhone] = useState(initialPhone);
+  const [accountCity, setAccountCity] = useState(initialCity);
+  const [accountState, setAccountState] = useState(initialState);
+  const [isSavingAccount, setIsSavingAccount] = useState(false);
+
+  // Email Change Modal State (Spec §38: Email change allowed with re-verification)
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [newEmailInput, setNewEmailInput] = useState("");
+  const [emailPasswordInput, setEmailPasswordInput] = useState("");
+  const [emailOtpInput, setEmailOtpInput] = useState("");
+  const [isEmailOtpSent, setIsEmailOtpSent] = useState(false);
+  const [isEmailSubmitting, setIsEmailSubmitting] = useState(false);
+
+  // Tab 2: Password & Security State (Spec §38: Current password OR OTP)
+  const [passwordMode, setPasswordMode] = useState("current"); // "current" | "otp"
   const [currentPassword, setCurrentPassword] = useState("");
+  const [passwordOtp, setPasswordOtp] = useState("");
+  const [isPasswordOtpSent, setIsPasswordOtpSent] = useState(false);
+  const [isSendingPasswordOtp, setIsSendingPasswordOtp] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [sessions, setSessions] = useState([
-    {
-      id: "sess-1",
-      device: "Chrome on Windows 11",
-      location: "Mumbai, Maharashtra",
-      ip: "103.21.244.12",
-      current: true,
-      lastActive: "Active now",
-    },
-    {
-      id: "sess-2",
-      device: "Safari on iPhone 15 Pro",
-      location: "Mumbai, Maharashtra",
-      ip: "103.21.244.98",
-      current: false,
-      lastActive: "2 hours ago",
-    },
-  ]);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  // Tab 3: Notification Channels State
-  const [notifInApp, setNotifInApp] = useState(true);
-  const [notifEmail, setNotifEmail] = useState(true);
-  const [notifSms, setNotifSms] = useState(true);
-  const [notifWhatsApp, setNotifWhatsApp] = useState(true);
-  const [notifAnnouncements, setNotifAnnouncements] = useState(true);
+  // 2FA State (Spec §6 & §38: 2FA is optional)
+  const is2FAEnabled = Boolean(profile?.twoFactorEnabled !== undefined ? profile.twoFactorEnabled : (auth?.user?.twoFactorEnabled ?? false));
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [twoFAAction, setTwoFAAction] = useState("enable"); // "enable" | "disable"
+  const [twoFAOtpInput, setTwoFAOtpInput] = useState("");
+  const [twoFAPasswordInput, setTwoFAPasswordInput] = useState("");
+  const [is2FASubmitting, setIs2FASubmitting] = useState(false);
 
-  // Tab 4: Privacy & Data State
-  const [profileSearchable, setProfileSearchable] = useState(true);
+  // Tab 3: Notification Channels State (Spec §38: Email toggle only)
+  const [notifEmail, setNotifEmail] = useState(() => {
+    return profile?.emailNotificationsEnabled !== undefined
+      ? Boolean(profile.emailNotificationsEnabled)
+      : (auth?.user?.emailNotificationsEnabled !== undefined ? Boolean(auth.user.emailNotificationsEnabled) : true);
+  });
+  const [isUpdatingNotif, setIsUpdatingNotif] = useState(false);
+
+  // Tab 4: Account & Privacy (Spec §38: Delete profile request with OTP + confirmation)
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteOtpInput, setDeleteOtpInput] = useState("");
+  const [isDeleteOtpSent, setIsDeleteOtpSent] = useState(false);
+  const [isSendingDeleteOtp, setIsSendingDeleteOtp] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Auto-scroll mobile tabs when activeTab changes
   useEffect(() => {
@@ -95,15 +106,28 @@ export default function TalentSettingsPage() {
     }
   }, [activeTab]);
 
-  // Sync state if profile changes
+  // Sync state if profile or auth user changes
   useEffect(() => {
-    if (profile?.personal) {
-      setAccountName(profile.personal.fullName || "");
-      setAccountEmail(profile.personal.email || "");
-      setAccountPhone(profile.personal.phone || "");
-      setAccountCity(profile.personal.city || "");
-    }
-  }, [profile]);
+    const name = profile?.personal?.fullName || profile?.name || auth?.user?.name || "";
+    const email = profile?.personal?.email || profile?.email || auth?.user?.email || "";
+    const phone = profile?.personal?.phone || profile?.phone || profile?.personal?.mobile || profile?.mobile || auth?.user?.mobile || auth?.user?.phone || "";
+    const city = profile?.personal?.city || profile?.city || profile?.currentCity || "";
+    const state = profile?.personal?.state || profile?.state || profile?.currentState || "";
+
+    setAccountName(name);
+    setAccountEmail(email);
+    setAccountPhone(phone);
+    setAccountCity(city);
+    setAccountState(state);
+    setNotifEmail(
+      profile?.emailNotificationsEnabled !== undefined
+        ? Boolean(profile.emailNotificationsEnabled)
+        : (auth?.user?.emailNotificationsEnabled !== undefined ? Boolean(auth.user.emailNotificationsEnabled) : true)
+    );
+  }, [profile, auth?.user]);
+
+  // Check pristine state for Tab 1
+  const hasAccountChanges = (accountName.trim() !== initialName.trim()) || (accountCity.trim() !== initialCity.trim()) || (accountState.trim() !== initialState.trim());
 
   // Password Requirements & Strength
   const hasMinLength = newPassword.length >= 8;
@@ -134,30 +158,84 @@ export default function TalentSettingsPage() {
     return "var(--success)";
   };
 
-  // Handlers
-  const handleSaveAccount = (e) => {
+  // Handlers: Tab 1 Account Profile
+  const handleSaveAccount = async (e) => {
     if (e) e.preventDefault();
-    updateProfile({
-      personal: {
-        ...profile.personal,
-        fullName: accountName,
-        email: accountEmail,
-        phone: accountPhone,
-        city: accountCity,
-      },
-    });
-    addToast({
-      type: "success",
-      title: "Account Profile Saved",
-      message: "Your primary account contact and identification details have been updated.",
-    });
+    if (!hasAccountChanges || isSavingAccount) return;
+
+    setIsSavingAccount(true);
+    try {
+      if (isRealMode("talent")) {
+        const res = await talentService.updateSettings({
+          fullName: accountName.trim(),
+          name: accountName.trim(),
+          city: accountCity.trim(),
+          currentCity: accountCity.trim(),
+          state: accountState.trim(),
+          currentState: accountState.trim(),
+        });
+
+        if (res?.success) {
+          if (auth?.updateUser) {
+            auth.updateUser({ name: accountName.trim() });
+          }
+          await updateProfile({
+            city: accountCity.trim(),
+            currentCity: accountCity.trim(),
+            state: accountState.trim(),
+            currentState: accountState.trim(),
+            personal: {
+              ...profile.personal,
+              fullName: accountName.trim(),
+              city: accountCity.trim(),
+              state: accountState.trim(),
+            },
+          });
+          addToast({
+            type: "success",
+            title: "Account Profile Saved",
+            message: "Your profile identification and base city/state have been updated.",
+          });
+        } else {
+          throw new Error(res?.message || "Failed to save settings");
+        }
+      } else {
+        updateProfile({
+          city: accountCity.trim(),
+          currentCity: accountCity.trim(),
+          state: accountState.trim(),
+          currentState: accountState.trim(),
+          personal: {
+            ...profile.personal,
+            fullName: accountName.trim(),
+            city: accountCity.trim(),
+            state: accountState.trim(),
+          },
+        });
+        if (auth?.updateUser) {
+          auth.updateUser({ name: accountName.trim() });
+        }
+        addToast({
+          type: "success",
+          title: "Account Profile Saved",
+          message: "Your profile identification and base city/state have been updated.",
+        });
+      }
+    } catch (err) {
+      addToast({
+        type: "danger",
+        title: "Save Failed",
+        message: err.message || "Could not save account profile changes.",
+      });
+    } finally {
+      setIsSavingAccount(false);
+    }
   };
 
   const handleCancelAccount = () => {
-    setAccountName(profile.personal.fullName || "");
-    setAccountEmail(profile.personal.email || "");
-    setAccountPhone(profile.personal.phone || "");
-    setAccountCity(profile.personal.city || "");
+    setAccountName(initialName);
+    setAccountCity(initialCity);
+    setAccountState(initialState);
     addToast({
       type: "info",
       title: "Changes Reverted",
@@ -165,9 +243,125 @@ export default function TalentSettingsPage() {
     });
   };
 
+  // Email Change Handlers (Spec §38)
+  const handleRequestEmailOtp = async (e) => {
+    if (e) e.preventDefault();
+    if (!newEmailInput || !/^\S+@\S+\.\S+$/.test(newEmailInput)) {
+      addToast({ type: "danger", title: "Invalid Email", message: "Please enter a valid new email address." });
+      return;
+    }
+    if (newEmailInput.toLowerCase().trim() === accountEmail.toLowerCase().trim()) {
+      addToast({ type: "danger", title: "Same Email", message: "New email must be different from current email." });
+      return;
+    }
+
+    setIsEmailSubmitting(true);
+    try {
+      const res = await authService.requestEmailChange({
+        newEmail: newEmailInput.trim(),
+        password: emailPasswordInput,
+      });
+      if (res?.success || !isRealMode("auth")) {
+        setIsEmailOtpSent(true);
+        addToast({
+          type: "success",
+          title: "Verification Code Sent",
+          message: `A 6-digit verification code has been dispatched to ${newEmailInput}.`,
+        });
+      } else {
+        throw new Error(res?.message || "Failed to send email verification code");
+      }
+    } catch (err) {
+      addToast({
+        type: "danger",
+        title: "Request Failed",
+        message: err.message || "Could not initiate email change.",
+      });
+    } finally {
+      setIsEmailSubmitting(false);
+    }
+  };
+
+  const handleVerifyEmailChange = async (e) => {
+    if (e) e.preventDefault();
+    if (!emailOtpInput || emailOtpInput.trim().length !== 6) {
+      addToast({ type: "danger", title: "Invalid Code", message: "Please enter the 6-digit verification code." });
+      return;
+    }
+
+    setIsEmailSubmitting(true);
+    try {
+      const res = await authService.verifyEmailChange({
+        newEmail: newEmailInput.trim(),
+        otp: emailOtpInput.trim(),
+      });
+      if (res?.success || !isRealMode("auth")) {
+        setAccountEmail(newEmailInput.trim());
+        if (auth?.updateUser) {
+          auth.updateUser({ email: newEmailInput.trim(), isEmailVerified: true });
+        }
+        await updateProfile({
+          isEmailVerified: true,
+          personal: {
+            ...profile.personal,
+            email: newEmailInput.trim(),
+            isEmailVerified: true,
+          },
+        });
+        setShowEmailModal(false);
+        setIsEmailOtpSent(false);
+        setNewEmailInput("");
+        setEmailPasswordInput("");
+        setEmailOtpInput("");
+        addToast({
+          type: "success",
+          title: "Email Verified & Updated",
+          message: "Your primary account email is now verified and active.",
+        });
+      } else {
+        throw new Error(res?.message || "Invalid verification code");
+      }
+    } catch (err) {
+      addToast({
+        type: "danger",
+        title: "Verification Failed",
+        message: err.message || "Failed to verify new email.",
+      });
+    } finally {
+      setIsEmailSubmitting(false);
+    }
+  };
+
+  // Handlers: Tab 2 Password Update (Spec §38: Current password OR OTP)
+  const handleSendPasswordOtp = async () => {
+    setIsSendingPasswordOtp(true);
+    try {
+      const res = await authService.requestChangePasswordOtp();
+      if (res?.success || !isRealMode("auth")) {
+        setIsPasswordOtpSent(true);
+        addToast({
+          type: "success",
+          title: "Code Dispatched",
+          message: `Verification code sent to ${accountEmail || "your registered email"}.`,
+        });
+      } else {
+        throw new Error(res?.message || "Failed to send verification code");
+      }
+    } catch (err) {
+      addToast({
+        type: "danger",
+        title: "Request Failed",
+        message: err.message || "Could not dispatch password verification code.",
+      });
+    } finally {
+      setIsSendingPasswordOtp(false);
+    }
+  };
+
   const handleUpdatePassword = async (e) => {
     if (e) e.preventDefault();
-    if (!currentPassword) {
+
+    if (passwordMode === "current" && !currentPassword) {
       addToast({
         type: "danger",
         title: "Current Password Required",
@@ -175,6 +369,16 @@ export default function TalentSettingsPage() {
       });
       return;
     }
+
+    if (passwordMode === "otp" && (!passwordOtp || passwordOtp.trim().length !== 6)) {
+      addToast({
+        type: "danger",
+        title: "Verification Code Required",
+        message: "Please enter the 6-digit verification code sent to your email.",
+      });
+      return;
+    }
+
     if (!hasMinLength || !hasNumber || !hasSymbol) {
       addToast({
         type: "danger",
@@ -183,87 +387,235 @@ export default function TalentSettingsPage() {
       });
       return;
     }
+
     if (newPassword !== confirmPassword) {
       addToast({
         type: "danger",
         title: "Passwords Do Not Match",
-        message: "New password and confirmation password must match.",
+        message: "New password and confirmation password must match exactly.",
       });
       return;
     }
 
-    if (isRealMode("auth")) {
+    setIsUpdatingPassword(true);
+    try {
+      const payload = {
+        newPassword,
+        ...(passwordMode === "current" ? { currentPassword } : { otp: passwordOtp.trim() }),
+      };
+      const res = await authService.changePassword(payload);
+      if (res?.success || !isRealMode("auth")) {
+        addToast({
+          type: "success",
+          title: "Password Updated",
+          message: "Your authentication credentials have been securely updated.",
+        });
+        setCurrentPassword("");
+        setPasswordOtp("");
+        setIsPasswordOtpSent(false);
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        throw new Error(res?.message || "Could not update password.");
+      }
+    } catch (err) {
+      addToast({
+        type: "danger",
+        title: "Password Update Failed",
+        message: err.message || "An error occurred while updating password.",
+      });
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleCancelPassword = () => {
+    setCurrentPassword("");
+    setPasswordOtp("");
+    setIsPasswordOtpSent(false);
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
+  // Handlers: 2FA Management (Spec §6 & §38)
+  const handleOpen2FAModal = async (action) => {
+    setTwoFAAction(action);
+    setTwoFAOtpInput("");
+    setTwoFAPasswordInput("");
+    setShow2FAModal(true);
+
+    if (action === "enable") {
       try {
-        const res = await authService.changePassword({ currentPassword, newPassword });
-        if (!res.success) {
+        const res = await authService.setup2FA();
+        if (res?.success || !isRealMode("auth")) {
           addToast({
-            type: "danger",
-            title: "Password Update Failed",
-            message: res.message || "Could not update password. Please check your current password.",
+            type: "info",
+            title: "2FA Setup Code Sent",
+            message: `Verification code sent to ${accountEmail || "your registered email"}.`,
           });
-          return;
         }
       } catch (err) {
         addToast({
           type: "danger",
-          title: "Password Update Failed",
-          message: err.message || "An error occurred while updating password.",
+          title: "Setup Failed",
+          message: err.message || "Could not generate 2FA setup code.",
         });
-        return;
       }
     }
-
-    addToast({
-      type: "success",
-      title: "Password Updated",
-      message: "Your authentication credentials have been securely updated.",
-    });
-
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
   };
 
-
-  const handleCancelPassword = () => {
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+  const handleConfirm2FA = async (e) => {
+    if (e) e.preventDefault();
+    setIs2FASubmitting(true);
+    try {
+      if (twoFAAction === "enable") {
+        if (!twoFAOtpInput || twoFAOtpInput.trim().length !== 6) {
+          addToast({ type: "danger", title: "Invalid Code", message: "Please enter 6-digit 2FA code." });
+          return;
+        }
+        const res = await authService.verify2FASetup({ otp: twoFAOtpInput.trim() });
+        if (res?.success || !isRealMode("auth")) {
+          if (auth?.updateUser) auth.updateUser({ twoFactorEnabled: true });
+          await updateProfile({ twoFactorEnabled: true });
+          setShow2FAModal(false);
+          addToast({
+            type: "success",
+            title: "2FA Enabled",
+            message: "Two-Factor Authentication is now active on your account.",
+          });
+        } else {
+          throw new Error(res?.message || "Invalid 2FA code");
+        }
+      } else {
+        if (!twoFAPasswordInput) {
+          addToast({ type: "danger", title: "Password Required", message: "Please enter your password to disable 2FA." });
+          return;
+        }
+        const res = await authService.disable2FA({ password: twoFAPasswordInput });
+        if (res?.success || !isRealMode("auth")) {
+          if (auth?.updateUser) auth.updateUser({ twoFactorEnabled: false });
+          await updateProfile({ twoFactorEnabled: false });
+          setShow2FAModal(false);
+          addToast({
+            type: "success",
+            title: "2FA Disabled",
+            message: "Two-Factor Authentication has been turned off.",
+          });
+        } else {
+          throw new Error(res?.message || "Failed to disable 2FA");
+        }
+      }
+    } catch (err) {
+      addToast({
+        type: "danger",
+        title: "2FA Action Failed",
+        message: err.message || "Failed to update 2FA status.",
+      });
+    } finally {
+      setIs2FASubmitting(false);
+    }
   };
 
-  const handleSignOutSession = (sessionId) => {
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-    addToast({
-      type: "info",
-      title: "Session Terminated",
-      message: "The selected device session has been signed out.",
-    });
+  // Handlers: Tab 3 Notification Channels (Spec §38: Email toggle only)
+  const handleToggleEmailNotification = async (checked) => {
+    setNotifEmail(checked);
+    setIsUpdatingNotif(true);
+    try {
+      if (isRealMode("talent")) {
+        await talentService.updateNotificationSettings({ emailNotificationsEnabled: checked });
+      }
+      if (auth?.updateUser) {
+        auth.updateUser({ emailNotificationsEnabled: checked });
+      }
+      addToast({
+        type: "success",
+        title: checked ? "Email Notifications Enabled" : "Email Notifications Disabled",
+        message: checked
+          ? "You will receive audition callback notices and digests via email."
+          : "Email notification digests have been turned off.",
+      });
+    } catch (err) {
+      setNotifEmail(!checked);
+      addToast({
+        type: "danger",
+        title: "Update Failed",
+        message: err.message || "Failed to update notification settings.",
+      });
+    } finally {
+      setIsUpdatingNotif(false);
+    }
   };
 
-  const handleSaveNotifications = () => {
-    addToast({
-      type: "success",
-      title: "Notification Preferences Saved",
-      message: "Channel delivery settings have been updated across all alert pathways.",
-    });
+  // Handlers: Tab 4 Account Deletion (Spec §38: OTP + confirmation)
+  const handleRequestDeleteOtp = async () => {
+    setIsSendingDeleteOtp(true);
+    try {
+      const res = await authService.requestDeleteAccountOtp();
+      if (res?.success || !isRealMode("auth")) {
+        setIsDeleteOtpSent(true);
+        addToast({
+          type: "info",
+          title: "Confirmation Code Sent",
+          message: `A 6-digit confirmation code has been dispatched to ${accountEmail || "your registered email"}.`,
+        });
+      } else {
+        throw new Error(res?.message || "Failed to send deletion code");
+      }
+    } catch (err) {
+      addToast({
+        type: "danger",
+        title: "Request Failed",
+        message: err.message || "Could not dispatch account deletion code.",
+      });
+    } finally {
+      setIsSendingDeleteOtp(false);
+    }
   };
 
-  const handleTogglePrivacy = (checked) => {
-    setProfileSearchable(checked);
-    addToast({
-      type: "success",
-      title: checked ? "Public Profile Enabled" : "Private Profile Mode",
-      message: checked
-        ? "Your verified profile is discoverable by casting directors on Vismaya."
-        : "Your profile is hidden from general casting directories.",
-    });
+  const handleConfirmDelete = async (e) => {
+    if (e) e.preventDefault();
+    if (!deleteOtpInput || deleteOtpInput.trim().length !== 6) {
+      addToast({
+        type: "danger",
+        title: "Code Required",
+        message: "Please enter the 6-digit code sent to your registered email.",
+      });
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    try {
+      const res = await authService.confirmDeleteAccount({ otp: deleteOtpInput.trim() });
+      if (res?.success || !isRealMode("auth")) {
+        setShowDeleteModal(false);
+        addToast({
+          type: "success",
+          title: "Account Deletion Requested",
+          message: "Your profile has been marked for deletion. Signing out...",
+        });
+        setTimeout(() => {
+          if (auth?.clearSession) auth.clearSession();
+          window.location.href = "/login";
+        }, 1500);
+      } else {
+        throw new Error(res?.message || "Invalid confirmation code");
+      }
+    } catch (err) {
+      addToast({
+        type: "danger",
+        title: "Deletion Failed",
+        message: err.message || "Could not confirm account deletion.",
+      });
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
   const menuTabs = [
     { key: "account", label: "Account profile", icon: User },
     { key: "security", label: "Password & security", icon: Lock },
     { key: "notifications", label: "Notification channels", icon: Bell },
-    { key: "privacy", label: "Privacy & data", icon: Shield },
+    { key: "privacy", label: "Privacy & account", icon: Shield },
   ];
 
   return (
@@ -279,7 +631,7 @@ export default function TalentSettingsPage() {
       {/* Breadcrumb, Title & Subtitle */}
       <PageHeader
         title="Settings &amp; Preferences"
-        subtitle="Manage your authentication credentials, multi-channel notification alerts, and artist privacy options."
+        subtitle="Manage your authentication credentials, notification preferences, and account controls."
         breadcrumbs={[
           { label: "Talent Dashboard", href: "/talent/dashboard" },
           { label: "Settings" },
@@ -289,7 +641,7 @@ export default function TalentSettingsPage() {
 
       {/* Main Settings Layout Container */}
       <div className="settings-page-layout">
-        {/* Left Settings Menu (Sticky on Desktop, Scrollable Tab Bar below 1024px) */}
+        {/* Left Settings Menu */}
         <aside className="settings-sidebar-nav" ref={tabNavRef}>
           <div className="settings-nav-list">
             {menuTabs.map((item) => {
@@ -332,13 +684,18 @@ export default function TalentSettingsPage() {
                     <input
                       ref={settingsPhotoInputRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp,image/jpg"
+                      accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/jpg"
                       style={{ display: "none" }}
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
                           try {
                             await updateProfilePhoto(file);
+                            addToast({
+                              type: "success",
+                              title: "Profile Photo Updated",
+                              message: "Your new display photo is live across casting shortlists.",
+                            });
                           } catch (err) {
                             addToast({
                               type: "danger",
@@ -353,7 +710,7 @@ export default function TalentSettingsPage() {
                     <div
                       className="settings-headshot-circle"
                       style={{
-                        backgroundImage: profile.avatar ? `url(${profile.avatar})` : undefined,
+                        backgroundImage: profile.avatar || auth?.user?.profilePhoto || auth?.user?.avatar ? `url(${profile.avatar || auth?.user?.profilePhoto || auth?.user?.avatar})` : undefined,
                         backgroundColor: "#F3EFE6",
                         display: "flex",
                         alignItems: "center",
@@ -363,12 +720,13 @@ export default function TalentSettingsPage() {
                         fontSize: "18px",
                       }}
                     >
-                      {!profile.avatar && (profile.personal?.fullName ? profile.personal.fullName.slice(0, 2).toUpperCase() : "TR")}
+                      {!(profile.avatar || auth?.user?.profilePhoto || auth?.user?.avatar) &&
+                        (accountName ? accountName.slice(0, 2).toUpperCase() : "TR")}
                     </div>
                     <div className="settings-avatar-info">
-                      <span className="settings-avatar-title">Profile display headshot</span>
+                      <span className="settings-avatar-title">Profile display photo</span>
                       <span className="settings-avatar-subtitle">
-                        Used across casting shortlist summaries
+                        Used across comp cards and verified casting shortlist summaries
                       </span>
                     </div>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -377,14 +735,26 @@ export default function TalentSettingsPage() {
                         onClick={() => settingsPhotoInputRef.current?.click()}
                         className="btn-secondary settings-photo-btn"
                       >
-                        {profile.avatar ? "Change photo" : "Upload photo"}
+                        {profile.avatar || auth?.user?.profilePhoto ? "Change photo" : "Upload photo"}
                       </button>
-                      {profile.avatar && (
+                      {(profile.avatar || auth?.user?.profilePhoto) && (
                         <button
                           type="button"
                           onClick={async () => {
-                            if (window.confirm("Remove profile photo?")) {
-                              await removeProfilePhoto();
+                            if (
+                              window.confirm(
+                                "A profile photo is mandatory for talent verification. To replace it, please upload a new photo. Do you still wish to remove your current photo?"
+                              )
+                            ) {
+                              try {
+                                await removeProfilePhoto();
+                              } catch (err) {
+                                addToast({
+                                  type: "danger",
+                                  title: "Removal Failed",
+                                  message: err.message || "Could not remove photo.",
+                                });
+                              }
                             }
                           }}
                           className="btn-secondary settings-photo-btn"
@@ -396,11 +766,12 @@ export default function TalentSettingsPage() {
                     </div>
                   </div>
 
-                  {/* 2-Column Grid Fields */}
+                  {/* Form Grid Fields */}
                   <div className="talent-form-grid" style={{ marginTop: "24px" }}>
                     <div>
                       <label className="settings-field-label">Full name</label>
                       <input
+                        id="settings-name-input"
                         type="text"
                         value={accountName}
                         onChange={(e) => setAccountName(e.target.value)}
@@ -414,20 +785,55 @@ export default function TalentSettingsPage() {
                     <div>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
                         <label className="settings-field-label" style={{ margin: 0 }}>Primary email</label>
-                        <span className="settings-verified-badge">
-                          <CheckCircle2 size={12} />
-                          <span>Verified</span>
-                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          {isEmailVerified ? (
+                            <span className="settings-verified-badge">
+                              <CheckCircle2 size={12} />
+                              <span>Verified</span>
+                            </span>
+                          ) : (
+                            <span
+                              className="settings-verified-badge"
+                              style={{ backgroundColor: "#FEF3F2", color: "#B42318", borderColor: "#FECDCA" }}
+                            >
+                              <AlertCircle size={12} />
+                              <span>Unverified</span>
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewEmailInput("");
+                              setEmailPasswordInput("");
+                              setEmailOtpInput("");
+                              setIsEmailOtpSent(false);
+                              setShowEmailModal(true);
+                            }}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "var(--gold)",
+                              fontSize: "12px",
+                              fontWeight: "700",
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                              padding: 0,
+                            }}
+                          >
+                            Change email
+                          </button>
+                        </div>
                       </div>
                       <input
                         type="email"
                         value={accountEmail}
-                        onChange={(e) => setAccountEmail(e.target.value)}
-                        placeholder="e.g. artist@vismaya.io"
-                        required
+                        readOnly
                         className="settings-input"
+                        style={{ backgroundColor: "#F9FAFB", cursor: "default", opacity: 0.9 }}
                       />
-                      <span className="settings-helper-text">Used for sign-in and formal contract communication</span>
+                      <span className="settings-helper-text">
+                        Used for sign-in and formal contract communication. Change requires email verification.
+                      </span>
                     </div>
 
                     <div>
@@ -437,24 +843,53 @@ export default function TalentSettingsPage() {
                       <input
                         type="tel"
                         value={accountPhone}
-                        onChange={(e) => setAccountPhone(e.target.value)}
-                        placeholder="+91 98765 43210"
-                        required
+                        readOnly
                         className="settings-input"
+                        style={{ backgroundColor: "#F9FAFB", cursor: "not-allowed", opacity: 0.85 }}
                       />
-                      <span className="settings-helper-text">Emergency channel for rapid audition timing notifications</span>
+                      <span className="settings-helper-text">
+                        Mobile number cannot be changed. Contact support for help.
+                      </span>
                     </div>
 
                     <div>
-                      <label className="settings-field-label">City</label>
+                      <label className="settings-field-label">Primary Base City</label>
                       <input
+                        id="settings-city-input"
                         type="text"
                         value={accountCity}
                         onChange={(e) => setAccountCity(e.target.value)}
-                        placeholder="e.g. Mumbai, Maharashtra"
+                        placeholder="e.g. Mumbai, Bengaluru, Delhi"
                         className="settings-input"
                       />
-                      <span className="settings-helper-text">Primary domestic base for audition scheduling</span>
+                      <span className="settings-helper-text">Primary domestic base city for audition scheduling</span>
+                    </div>
+
+                    <div>
+                      <label className="settings-field-label">State / Province</label>
+                      <input
+                        id="settings-state-input"
+                        type="text"
+                        value={accountState}
+                        onChange={(e) => setAccountState(e.target.value)}
+                        placeholder="e.g. Maharashtra, Karnataka"
+                        className="settings-input"
+                      />
+                      <span className="settings-helper-text">Domestic state or union territory</span>
+                    </div>
+
+                    <div className="talent-form-grid-full">
+                      <label className="settings-field-label">Primary profession</label>
+                      <input
+                        type="text"
+                        value={primaryProfession}
+                        readOnly
+                        className="settings-input"
+                        style={{ backgroundColor: "#F9FAFB", cursor: "not-allowed", opacity: 0.85 }}
+                      />
+                      <span className="settings-helper-text">
+                        Primary profession cannot be changed here. Contact support to request profession migration.
+                      </span>
                     </div>
                   </div>
 
@@ -463,16 +898,20 @@ export default function TalentSettingsPage() {
                     <button
                       type="button"
                       onClick={handleCancelAccount}
+                      disabled={!hasAccountChanges || isSavingAccount}
                       className="btn-secondary settings-footer-btn"
+                      style={{ opacity: !hasAccountChanges ? 0.5 : 1 }}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
+                      disabled={!hasAccountChanges || isSavingAccount}
                       className="btn-primary settings-footer-btn"
+                      style={{ opacity: !hasAccountChanges ? 0.6 : 1, cursor: !hasAccountChanges ? "not-allowed" : "pointer" }}
                     >
                       <Save size={16} />
-                      <span>Save changes</span>
+                      <span>{isSavingAccount ? "Saving..." : "Save changes"}</span>
                     </button>
                   </div>
                 </form>
@@ -483,32 +922,95 @@ export default function TalentSettingsPage() {
           {/* TAB 2: Password & Security */}
           {activeTab === "security" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              {/* Card 1: Change Password */}
+              {/* Card 1: Change Password (Spec §38: Current password OR OTP) */}
               <div className="settings-card">
                 <div className="settings-card-header">
                   <div>
                     <h2 className="settings-card-title">Change password</h2>
                     <p className="settings-card-description">
-                      Ensure your account is protected with a strong multi-character credential.
+                      Update your account password using your current password or a verification code sent to your email.
                     </p>
                   </div>
                 </div>
                 <div className="settings-card-divider" />
 
                 <div className="settings-card-body">
+                  {/* Mode Selector */}
+                  <div style={{ display: "flex", gap: "16px", marginBottom: "20px" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13.5px", fontWeight: "600", cursor: "pointer", color: passwordMode === "current" ? "var(--text-primary)" : "var(--text-muted)" }}>
+                      <input
+                        type="radio"
+                        name="passwordMode"
+                        checked={passwordMode === "current"}
+                        onChange={() => {
+                          setPasswordMode("current");
+                          setPasswordOtp("");
+                          setIsPasswordOtpSent(false);
+                        }}
+                      />
+                      <span>Use current password</span>
+                    </label>
+
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13.5px", fontWeight: "600", cursor: "pointer", color: passwordMode === "otp" ? "var(--text-primary)" : "var(--text-muted)" }}>
+                      <input
+                        type="radio"
+                        name="passwordMode"
+                        checked={passwordMode === "otp"}
+                        onChange={() => setPasswordMode("otp")}
+                      />
+                      <span>Verify via Email OTP</span>
+                    </label>
+                  </div>
+
                   <form id="password-settings-form" onSubmit={handleUpdatePassword}>
                     <div className="talent-form-grid">
-                      <div className="talent-form-grid-full">
-                        <label className="settings-field-label">Current password</label>
-                        <PasswordInput
-                          placeholder="Enter current password"
-                          value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
-                          className="settings-input"
-                          required
-                        />
-                        <span className="settings-helper-text">Required to confirm authorization</span>
-                      </div>
+                      {passwordMode === "current" ? (
+                        <div className="talent-form-grid-full">
+                          <label className="settings-field-label">Current password</label>
+                          <PasswordInput
+                            placeholder="Enter current password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            className="settings-input"
+                            required={passwordMode === "current"}
+                          />
+                          <span className="settings-helper-text">Required to confirm authorization</span>
+                        </div>
+                      ) : (
+                        <div className="talent-form-grid-full">
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                            <label className="settings-field-label" style={{ margin: 0 }}>Email verification code (OTP)</label>
+                            <button
+                              type="button"
+                              onClick={handleSendPasswordOtp}
+                              disabled={isSendingPasswordOtp}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: "var(--gold)",
+                                fontSize: "12px",
+                                fontWeight: "700",
+                                cursor: "pointer",
+                                textDecoration: "underline",
+                              }}
+                            >
+                              {isSendingPasswordOtp ? "Sending code..." : (isPasswordOtpSent ? "Resend code" : "Send code to email")}
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            maxLength={6}
+                            placeholder="Enter 6-digit code sent to your email"
+                            value={passwordOtp}
+                            onChange={(e) => setPasswordOtp(e.target.value.replace(/\D/g, ""))}
+                            className="settings-input"
+                            required={passwordMode === "otp"}
+                          />
+                          <span className="settings-helper-text">
+                            A 6-digit security code sent to {accountEmail || "your registered email"}
+                          </span>
+                        </div>
+                      )}
 
                       <div>
                         <label className="settings-field-label">New password</label>
@@ -578,68 +1080,83 @@ export default function TalentSettingsPage() {
                         type="button"
                         onClick={handleCancelPassword}
                         className="btn-secondary settings-footer-btn"
+                        disabled={isUpdatingPassword}
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         className="btn-primary settings-footer-btn"
+                        disabled={isUpdatingPassword}
                       >
                         <Key size={16} />
-                        <span>Update password</span>
+                        <span>{isUpdatingPassword ? "Updating..." : "Update password"}</span>
                       </button>
                     </div>
                   </form>
                 </div>
               </div>
 
-              {/* Card 2: Active Sessions */}
+              {/* Card 2: Two-Factor Authentication (Spec §6 & §38) */}
               <div className="settings-card">
                 <div className="settings-card-header">
                   <div>
-                    <h2 className="settings-card-title">Active sessions</h2>
+                    <h2 className="settings-card-title">Two-factor authentication (2FA)</h2>
                     <p className="settings-card-description">
-                      Devices currently signed into your Vismaya Talent artist account.
+                      Add an additional verification layer to safeguard your artist comp card and audition data.
                     </p>
                   </div>
                 </div>
                 <div className="settings-card-divider" />
 
-                <div className="settings-card-body" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {sessions.map((sess) => (
-                    <div key={sess.id} className="settings-session-row">
-                      <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0 }}>
-                        <div className="settings-session-icon">
-                          <Laptop size={20} />
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                            <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-primary)" }}>
-                              {sess.device}
-                            </span>
-                            {sess.current && (
-                              <span className="settings-current-badge">
-                                Current session
-                              </span>
-                            )}
-                          </div>
-                          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                            {sess.location} &bull; IP {sess.ip} &bull; {sess.lastActive}
-                          </span>
-                        </div>
-                      </div>
-
-                      {!sess.current && (
-                        <button
-                          type="button"
-                          onClick={() => handleSignOutSession(sess.id)}
-                          className="btn-secondary settings-signout-btn"
-                        >
-                          Sign out
-                        </button>
-                      )}
+                <div className="settings-card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                    <div
+                      style={{
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "10px",
+                        backgroundColor: is2FAEnabled ? "rgba(46, 125, 50, 0.1)" : "#F3EFE6",
+                        color: is2FAEnabled ? "var(--success)" : "#8A6B2E",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <ShieldCheck size={22} />
                     </div>
-                  ))}
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "14.5px", fontWeight: "700", color: "var(--text-primary)" }}>
+                          Two-factor authentication
+                        </span>
+                        <span
+                          className="settings-verified-badge"
+                          style={{
+                            backgroundColor: is2FAEnabled ? "rgba(46, 125, 50, 0.1)" : "#F3EFE6",
+                            color: is2FAEnabled ? "var(--success)" : "var(--text-muted)",
+                            borderColor: is2FAEnabled ? "rgba(46, 125, 50, 0.2)" : "#E8E2D4",
+                          }}
+                        >
+                          {is2FAEnabled ? "Enabled" : "Disabled"}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: "12.5px", color: "var(--text-muted)", marginTop: "2px", display: "block" }}>
+                        {is2FAEnabled
+                          ? "Verification codes are required to authorize sign-ins from unrecognized browsers."
+                          : "Optional security layer. When enabled, a 6-digit code is dispatched to your email on sign in."}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpen2FAModal(is2FAEnabled ? "disable" : "enable")}
+                    className={is2FAEnabled ? "btn-secondary" : "btn-primary"}
+                    style={{ minWidth: "120px" }}
+                  >
+                    {is2FAEnabled ? "Disable 2FA" : "Enable 2FA"}
+                  </button>
                 </div>
               </div>
             </div>
@@ -652,7 +1169,7 @@ export default function TalentSettingsPage() {
                 <div>
                   <h2 className="settings-card-title">Notification channels</h2>
                   <p className="settings-card-description">
-                    Configure alert dispatch channels. SMS and WhatsApp are reserved strictly for time-sensitive audition callbacks.
+                    Manage your alert dispatch channels per client specification (Spec §38: Email notification toggle).
                   </p>
                 </div>
               </div>
@@ -660,7 +1177,7 @@ export default function TalentSettingsPage() {
 
               <div className="settings-card-body">
                 <div className="settings-channels-grid">
-                  {/* Channel 1: In-App */}
+                  {/* Channel 1: In-App (Platform controlled) */}
                   <div className="settings-channel-card">
                     <div className="settings-channel-left">
                       <div className="settings-channel-icon">
@@ -669,24 +1186,19 @@ export default function TalentSettingsPage() {
                       <div className="settings-channel-text">
                         <span className="settings-channel-title">In-app notifications</span>
                         <span className="settings-channel-desc">
-                          Real-time alerts delivered in the top bar and notification center
+                          Live alerts delivered directly to your artist dashboard for audition sides, callbacks, and shortlists
                         </span>
                       </div>
                     </div>
-                    <label className="settings-toggle-switch">
-                      <input
-                        type="checkbox"
-                        checked={notifInApp}
-                        onChange={(e) => {
-                          setNotifInApp(e.target.checked);
-                          handleSaveNotifications();
-                        }}
-                      />
-                      <span className="settings-toggle-slider" />
-                    </label>
+                    <span
+                      className="settings-verified-badge"
+                      style={{ backgroundColor: "#F3EFE6", color: "#8A6B2E", borderColor: "#E8E2D4", whiteSpace: "nowrap" }}
+                    >
+                      Platform managed
+                    </span>
                   </div>
 
-                  {/* Channel 2: Email */}
+                  {/* Channel 2: Email (Single Real Toggle per Spec §38) */}
                   <div className="settings-channel-card">
                     <div className="settings-channel-left">
                       <div className="settings-channel-icon">
@@ -695,7 +1207,7 @@ export default function TalentSettingsPage() {
                       <div className="settings-channel-text">
                         <span className="settings-channel-title">Email digests &amp; updates</span>
                         <span className="settings-channel-desc">
-                          Formal casting confirmations, application logs, and project briefs
+                          Formal casting confirmations, application logs, audition schedules, and production project briefs
                         </span>
                       </div>
                     </div>
@@ -703,88 +1215,8 @@ export default function TalentSettingsPage() {
                       <input
                         type="checkbox"
                         checked={notifEmail}
-                        onChange={(e) => {
-                          setNotifEmail(e.target.checked);
-                          handleSaveNotifications();
-                        }}
-                      />
-                      <span className="settings-toggle-slider" />
-                    </label>
-                  </div>
-
-                  {/* Channel 3: SMS */}
-                  <div className="settings-channel-card">
-                    <div className="settings-channel-left">
-                      <div className="settings-channel-icon">
-                        <Smartphone size={20} />
-                      </div>
-                      <div className="settings-channel-text">
-                        <span className="settings-channel-title">SMS emergency alerts</span>
-                        <span className="settings-channel-desc">
-                          Used only for urgent updates such as audition timing changes or studio callback sides
-                        </span>
-                      </div>
-                    </div>
-                    <label className="settings-toggle-switch">
-                      <input
-                        type="checkbox"
-                        checked={notifSms}
-                        onChange={(e) => {
-                          setNotifSms(e.target.checked);
-                          handleSaveNotifications();
-                        }}
-                      />
-                      <span className="settings-toggle-slider" />
-                    </label>
-                  </div>
-
-                  {/* Channel 4: WhatsApp */}
-                  <div className="settings-channel-card">
-                    <div className="settings-channel-left">
-                      <div className="settings-channel-icon" style={{ color: "var(--success)" }}>
-                        <MessageSquare size={20} />
-                      </div>
-                      <div className="settings-channel-text">
-                        <span className="settings-channel-title">WhatsApp audition notifications</span>
-                        <span className="settings-channel-desc">
-                          Used only for urgent updates such as audition timing changes or direct script sides
-                        </span>
-                      </div>
-                    </div>
-                    <label className="settings-toggle-switch">
-                      <input
-                        type="checkbox"
-                        checked={notifWhatsApp}
-                        onChange={(e) => {
-                          setNotifWhatsApp(e.target.checked);
-                          handleSaveNotifications();
-                        }}
-                      />
-                      <span className="settings-toggle-slider" />
-                    </label>
-                  </div>
-
-                  {/* Channel 5: Announcements */}
-                  <div className="settings-channel-card" style={{ gridColumn: "1 / -1" }}>
-                    <div className="settings-channel-left">
-                      <div className="settings-channel-icon">
-                        <Sparkles size={20} />
-                      </div>
-                      <div className="settings-channel-text">
-                        <span className="settings-channel-title">Vismaya announcements</span>
-                        <span className="settings-channel-desc">
-                          Curated platform highlights, spotlight opportunities, and new agency feature briefings
-                        </span>
-                      </div>
-                    </div>
-                    <label className="settings-toggle-switch">
-                      <input
-                        type="checkbox"
-                        checked={notifAnnouncements}
-                        onChange={(e) => {
-                          setNotifAnnouncements(e.target.checked);
-                          handleSaveNotifications();
-                        }}
+                        disabled={isUpdatingNotif}
+                        onChange={(e) => handleToggleEmailNotification(e.target.checked)}
                       />
                       <span className="settings-toggle-slider" />
                     </label>
@@ -794,64 +1226,27 @@ export default function TalentSettingsPage() {
             </div>
           )}
 
-          {/* TAB 4: Privacy & Data */}
+          {/* TAB 4: Privacy & Account */}
           {activeTab === "privacy" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              {/* Privacy Policy Info Card */}
+              {/* Privacy Protocol Info Card */}
               <div className="settings-info-card">
                 <ShieldCheck size={28} className="settings-info-icon" />
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                   <h3 className="settings-info-title">Verified privacy protocol</h3>
                   <p className="settings-info-text">
-                    Your contact details stay hidden and all communication is handled through Vismaya. Recruiters and production houses only receive verified callback access once an audition or shortlist is confirmed.
+                    Per Vismaya Privacy Protocol (Spec §38), visibility controls (Public, Private, or Unlisted) are managed directly per media item in your Portfolio. Your basic comp card, verified credits, and stage name are discoverable by verified casting directors.
                   </p>
                 </div>
               </div>
 
-              {/* Profile Visibility Card */}
-              <div className="settings-card">
-                <div className="settings-card-header">
-                  <div>
-                    <h2 className="settings-card-title">Profile discovery &amp; visibility</h2>
-                    <p className="settings-card-description">
-                      Control whether casting directors can discover your public comp card in role searches.
-                    </p>
-                  </div>
-                </div>
-                <div className="settings-card-divider" />
-
-                <div className="settings-card-body">
-                  <div className="settings-channel-card" style={{ border: "none", padding: "8px 0" }}>
-                    <div className="settings-channel-left">
-                      <div className="settings-channel-icon">
-                        <Globe size={20} />
-                      </div>
-                      <div className="settings-channel-text">
-                        <span className="settings-channel-title">Casting directory visibility</span>
-                        <span className="settings-channel-desc">
-                          Allow verified producers to shortlist your profile for unlisted character briefs
-                        </span>
-                      </div>
-                    </div>
-                    <label className="settings-toggle-switch">
-                      <input
-                        type="checkbox"
-                        checked={profileSearchable}
-                        onChange={(e) => handleTogglePrivacy(e.target.checked)}
-                      />
-                      <span className="settings-toggle-slider" />
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Danger Zone Card */}
+              {/* Danger Zone: Delete Profile */}
               <div className="settings-danger-card">
                 <div className="settings-card-header">
                   <div>
                     <h2 className="settings-danger-title">Danger zone</h2>
                     <p className="settings-card-description">
-                      Permanently erase your artist profile, portfolio media, and audition submission history.
+                      Permanently erase your artist profile, portfolio media, and audition submission history. Temporary deactivation is not supported per client specification (Spec §38).
                     </p>
                   </div>
                 </div>
@@ -863,13 +1258,17 @@ export default function TalentSettingsPage() {
                       Request account deletion
                     </span>
                     <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                      Once submitted, your account will enter a 14-day compliance grace period before permanent purge.
+                      Requires email OTP verification. Once confirmed, your artist profile and active submissions will be permanently removed.
                     </span>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => setShowDeleteModal(true)}
+                    onClick={() => {
+                      setDeleteOtpInput("");
+                      setIsDeleteOtpSent(false);
+                      setShowDeleteModal(true);
+                    }}
                     className="btn-danger settings-danger-btn"
                   >
                     <Trash2 size={16} />
@@ -882,81 +1281,259 @@ export default function TalentSettingsPage() {
         </main>
       </div>
 
-      {/* Mobile Sticky Bottom Action Bar (Only on tabs with editable forms) */}
+      {/* Mobile Sticky Bottom Action Bar */}
       {(activeTab === "account" || activeTab === "security") && (
         <div className="talent-sticky-action-bar">
           <button
             type="button"
             onClick={activeTab === "account" ? handleCancelAccount : handleCancelPassword}
             className="btn-secondary"
+            disabled={activeTab === "account" ? (!hasAccountChanges || isSavingAccount) : isUpdatingPassword}
           >
             Cancel
           </button>
           <button
             type="button"
-            onClick={
-              activeTab === "account"
-                ? () => handleSaveAccount()
-                : () => handleUpdatePassword()
-            }
+            onClick={activeTab === "account" ? handleSaveAccount : handleUpdatePassword}
             className="btn-primary"
+            disabled={activeTab === "account" ? (!hasAccountChanges || isSavingAccount) : isUpdatingPassword}
           >
             <Save size={16} />
-            <span>Save changes</span>
+            <span>{activeTab === "account" ? (isSavingAccount ? "Saving..." : "Save changes") : (isUpdatingPassword ? "Updating..." : "Update password")}</span>
           </button>
         </div>
       )}
 
-      {/* Account Deletion Confirmation Modal */}
+      {/* MODAL 1: Email Change with Re-Verification (Spec §38) */}
+      <Modal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        title="Change Primary Email"
+        subtitle="Verification required before the new address becomes active"
+        maxWidth="480px"
+      >
+        <form onSubmit={isEmailOtpSent ? handleVerifyEmailChange : handleRequestEmailOtp}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "8px" }}>
+            <div>
+              <label className="settings-field-label">Current active email</label>
+              <input
+                type="email"
+                value={accountEmail}
+                readOnly
+                className="settings-input"
+                style={{ backgroundColor: "#F9FAFB", cursor: "default" }}
+              />
+            </div>
+
+            <div>
+              <label className="settings-field-label">New email address *</label>
+              <input
+                type="email"
+                required
+                disabled={isEmailOtpSent}
+                value={newEmailInput}
+                onChange={(e) => setNewEmailInput(e.target.value)}
+                placeholder="e.g. new.artist@vismaya.io"
+                className="settings-input"
+              />
+            </div>
+
+            {!isEmailOtpSent && (
+              <div>
+                <label className="settings-field-label">Current password (to authorize)</label>
+                <PasswordInput
+                  placeholder="Enter current password"
+                  value={emailPasswordInput}
+                  onChange={(e) => setEmailPasswordInput(e.target.value)}
+                  className="settings-input"
+                />
+                <span className="settings-helper-text">Leave blank if signed in via Google OAuth</span>
+              </div>
+            )}
+
+            {isEmailOtpSent && (
+              <div>
+                <label className="settings-field-label">6-digit verification code *</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  required
+                  value={emailOtpInput}
+                  onChange={(e) => setEmailOtpInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Enter code sent to new email"
+                  className="settings-input"
+                />
+                <span className="settings-helper-text">
+                  A verification code was dispatched to {newEmailInput}. Valid for 10 minutes.
+                </span>
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "12px" }}>
+              <button
+                type="button"
+                onClick={() => setShowEmailModal(false)}
+                className="btn-secondary"
+                disabled={isEmailSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={isEmailSubmitting}
+              >
+                {isEmailSubmitting ? "Processing..." : (isEmailOtpSent ? "Verify & Update Email" : "Send Verification Code")}
+              </button>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* MODAL 2: 2FA Setup & Verification (Spec §6 & §38) */}
+      <Modal
+        isOpen={show2FAModal}
+        onClose={() => setShow2FAModal(false)}
+        title={twoFAAction === "enable" ? "Enable Two-Factor Authentication" : "Disable Two-Factor Authentication"}
+        subtitle={twoFAAction === "enable" ? "Enter the 6-digit code sent to your email" : "Confirm with your password"}
+        maxWidth="460px"
+      >
+        <form onSubmit={handleConfirm2FA}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "8px" }}>
+            {twoFAAction === "enable" ? (
+              <div>
+                <label className="settings-field-label">6-digit verification code</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  required
+                  value={twoFAOtpInput}
+                  onChange={(e) => setTwoFAOtpInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Enter code sent to email"
+                  className="settings-input"
+                />
+                <span className="settings-helper-text">Dispatched to {accountEmail || "your registered email"}</span>
+              </div>
+            ) : (
+              <div>
+                <label className="settings-field-label">Account password</label>
+                <PasswordInput
+                  required
+                  placeholder="Enter your account password"
+                  value={twoFAPasswordInput}
+                  onChange={(e) => setTwoFAPasswordInput(e.target.value)}
+                  className="settings-input"
+                />
+                <span className="settings-helper-text">Required to authorize disabling 2FA security</span>
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "12px" }}>
+              <button
+                type="button"
+                onClick={() => setShow2FAModal(false)}
+                className="btn-secondary"
+                disabled={is2FASubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={is2FASubmitting}
+              >
+                {is2FASubmitting ? "Processing..." : (twoFAAction === "enable" ? "Verify & Enable 2FA" : "Disable 2FA")}
+              </button>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* MODAL 3: Account Deletion Confirmation with OTP (Spec §38) */}
       <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         title="Request Account Deletion"
         subtitle="This action is permanent and cannot be reversed."
         maxWidth="480px"
-        footer={
-          <div style={{ display: "flex", gap: "10px", width: "100%", justifyContent: "flex-end" }}>
-            <button
-              type="button"
-              onClick={() => setShowDeleteModal(false)}
-              className="btn-secondary"
-              style={{ padding: "10px 18px" }}
-            >
-              Keep account
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowDeleteModal(false);
-                addToast({
-                  type: "info",
-                  title: "Deletion Request Submitted",
-                  message: "Your account deletion request was registered with Vismaya Compliance.",
-                });
-              }}
-              style={{
-                padding: "10px 20px",
-                borderRadius: "12px",
-                backgroundColor: "var(--danger)",
-                color: "#ffffff",
-                fontWeight: "700",
-                fontSize: "13px",
-                cursor: "pointer",
-                border: "none",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              <Trash2 size={15} />
-              <span>Confirm deletion</span>
-            </button>
-          </div>
-        }
       >
-        <p style={{ color: "var(--text-secondary)", fontSize: "14px", lineHeight: 1.6, margin: 0 }}>
-          Are you sure you want to request deletion of your Vismaya artist account? All verified badges, portfolio showreels, self-tapes, casting submission records, and callback histories will be permanently removed.
-        </p>
+        <form onSubmit={handleConfirmDelete}>
+          <p style={{ color: "var(--text-secondary)", fontSize: "14px", lineHeight: 1.6, margin: "0 0 16px 0" }}>
+            Are you sure you want to request deletion of your Vismaya artist account? All verified badges, portfolio showreels, self-tapes, casting submission records, and callback histories will be permanently removed.
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>
+                Step 1: Security Verification Code
+              </span>
+              <button
+                type="button"
+                onClick={handleRequestDeleteOtp}
+                disabled={isSendingDeleteOtp}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--gold)",
+                  fontSize: "12px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                {isSendingDeleteOtp ? "Sending code..." : (isDeleteOtpSent ? "Resend code" : "Send code to email")}
+              </button>
+            </div>
+
+            {isDeleteOtpSent && (
+              <div>
+                <label className="settings-field-label">Enter 6-digit confirmation code</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  required
+                  value={deleteOtpInput}
+                  onChange={(e) => setDeleteOtpInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Enter 6-digit deletion code"
+                  className="settings-input"
+                />
+                <span className="settings-helper-text">Code sent to {accountEmail || "your registered email"}</span>
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "10px", width: "100%", justifyContent: "flex-end", marginTop: "12px" }}>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="btn-secondary"
+                disabled={isDeletingAccount}
+              >
+                Keep account
+              </button>
+              <button
+                type="submit"
+                disabled={!isDeleteOtpSent || isDeletingAccount}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "12px",
+                  backgroundColor: !isDeleteOtpSent ? "#ccc" : "var(--danger)",
+                  color: "#ffffff",
+                  fontWeight: "700",
+                  fontSize: "13px",
+                  cursor: !isDeleteOtpSent ? "not-allowed" : "pointer",
+                  border: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  opacity: isDeletingAccount ? 0.7 : 1,
+                }}
+              >
+                <Trash2 size={15} />
+                <span>{isDeletingAccount ? "Deleting..." : "Confirm deletion"}</span>
+              </button>
+            </div>
+          </div>
+        </form>
       </Modal>
 
       <style jsx global>{`

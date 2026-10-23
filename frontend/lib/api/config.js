@@ -19,7 +19,28 @@ export const USE_MOCK =
   String(rawUseMock).toLowerCase() !== "false" ||
   API_MODULES.length === 0;
 
-export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/+$/, "");
+export const resolveApiUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && (envUrl.includes("|") || envUrl.includes(","))) {
+    const urls = envUrl.split(/[,|]/).map(u => u.trim().replace(/\/+$/, "")).filter(Boolean);
+    if (typeof window !== "undefined") {
+      const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+      if (isLocal) {
+        const localCandidate = urls.find(u => u.includes("localhost") || u.includes("127.0.0.1"));
+        if (localCandidate) return localCandidate;
+      } else {
+        const remoteCandidate = urls.find(u => !u.includes("localhost") && !u.includes("127.0.0.1"));
+        if (remoteCandidate) return remoteCandidate;
+      }
+    }
+    return (process.env.NODE_ENV === "development"
+      ? urls.find(u => u.includes("localhost") || u.includes("127.0.0.1")) || urls[0]
+      : urls.find(u => !u.includes("localhost") && !u.includes("127.0.0.1")) || urls[0]);
+  }
+  return (envUrl || "https://vismaya-frontend-final.onrender.com").replace(/\/+$/, "");
+};
+
+export const API_URL = resolveApiUrl();
 
 export const SUPPORTED_MODULES = [
   "auth",

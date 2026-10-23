@@ -1,32 +1,46 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import {
-  initialCompanyProfile,
-  initialRequirements,
-  initialShortlistedTalent,
-  initialRecruiterNotifications,
-  initialRecentActivity,
-} from "./mockData";
 import { isRealMode } from "@/lib/api/config";
 import { recruiterService } from "@/lib/api/services/recruiterService";
 import { notificationService } from "@/lib/api/services/notificationService";
 
 const RecruiterContext = createContext(null);
 
+export const emptyCompanyProfile = {
+  id: "",
+  companyName: "",
+  legalName: "",
+  studioName: "",
+  companyType: "Production House",
+  about: "",
+  city: "",
+  credits: 0,
+  creditBalance: 0,
+  phone: "",
+  email: "",
+  website: "",
+  cinNumber: "",
+  gstNumber: "",
+  status: "pending",
+  isVerified: false,
+  logo: "",
+  bannerImage: "",
+};
+
 export function RecruiterProvider({ children }) {
   // 1. Company Profile State
-  const [companyProfile, setCompanyProfile] = useState(initialCompanyProfile);
+  const [companyProfile, setCompanyProfile] = useState(() => isRealMode("recruiter") ? emptyCompanyProfile : (recruiterService.getInitialState().companyProfile || emptyCompanyProfile));
 
   // 2. Requirements State
-  const [requirements, setRequirements] = useState(initialRequirements);
+  const [requirements, setRequirements] = useState(() => isRealMode("recruiter") ? [] : (recruiterService.getInitialState().requirements || []));
 
   // 3. Shortlisted Talent State (keyed by reqId)
-  const [shortlistedTalent, setShortlistedTalent] = useState(initialShortlistedTalent);
+  const [shortlistedTalent, setShortlistedTalent] = useState(() => isRealMode("recruiter") ? {} : (recruiterService.getInitialState().shortlistedTalent || {}));
 
   // 4. Notifications State
-  const [notifications, setNotifications] = useState(initialRecruiterNotifications);
+  const [notifications, setNotifications] = useState(() => isRealMode("recruiter") ? [] : (recruiterService.getInitialState().notifications || []));
 
   // 5. Activity Feed State
-  const [activities, setActivities] = useState(initialRecentActivity);
+  const [activities, setActivities] = useState(() => isRealMode("recruiter") ? [] : (recruiterService.getInitialState().activities || []));
 
   // 6. Toasts State
   const [toasts, setToasts] = useState([]);
@@ -50,7 +64,7 @@ export function RecruiterProvider({ children }) {
 
         if (mounted) {
           if (orgRes.status === "fulfilled" && orgRes.value?.data) {
-            setCompanyProfile((prev) => ({ ...prev, ...orgRes.value.data }));
+            setCompanyProfile(orgRes.value.data);
           }
           if (oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data)) {
             setRequirements(oppsRes.value.data);
@@ -59,7 +73,7 @@ export function RecruiterProvider({ children }) {
             setNotifications(notifRes.value.data);
           }
           if (creditRes.status === "fulfilled" && creditRes.value?.balance !== undefined) {
-            setCompanyProfile((prev) => ({ ...prev, credits: creditRes.value.balance }));
+            setCompanyProfile((prev) => ({ ...prev, credits: creditRes.value.balance, creditBalance: creditRes.value.balance }));
           }
         }
       } catch (err) {
@@ -224,7 +238,7 @@ export function RecruiterProvider({ children }) {
   const deleteRequirement = async (id) => {
     if (isRealMode("recruiter")) {
       try {
-        await recruiterService.requestOpportunityCancellation(id, { reason: "Cancellation requested by recruiter" });
+        await recruiterService.requestOpportunityCancellation(id, { cancellationReason: "Cancellation requested by recruiter" });
       } catch (err) {
         addToast({
           type: "danger",

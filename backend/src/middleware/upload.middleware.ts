@@ -62,6 +62,43 @@ export const uploadDocument = multer({
 });
 
 /**
+ * Accreditation document upload middleware (PDF/JPG/PNG only, max 5MB)
+ */
+export const uploadAccreditationDoc = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    fileFilter: (req: Request, file: Express.Multer.File, cb: FileFilterCallback): void => {
+        const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error("Invalid file type. Only PDF, JPG, and PNG files under 5 MB are accepted."));
+        }
+    }
+});
+
+/**
+ * Middleware handling accreditation document uploads with user-friendly 400 error responses
+ */
+export const handleAccreditationUpload = (req: Request, res: any, next: any) => {
+    uploadAccreditationDoc.single("file")(req, res, (err: any) => {
+        if (err) {
+            if (err.code === "LIMIT_FILE_SIZE") {
+                return res.status(400).json({
+                    success: false,
+                    message: "File size exceeds 5 MB limit. Please upload a file smaller than 5 MB."
+                });
+            }
+            return res.status(400).json({
+                success: false,
+                message: err.message || "File upload failed. Only PDF, JPG, and PNG files under 5 MB are allowed."
+            });
+        }
+        next();
+    });
+};
+
+/**
  * General media upload middleware (images, videos, or documents, max 100MB)
  */
 export const uploadMedia = multer({

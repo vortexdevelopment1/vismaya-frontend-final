@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   FolderKanban,
@@ -23,14 +23,57 @@ import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Modal from "@/components/shared/Modal";
 
+import { isRealMode } from "@/lib/api/config";
+import { adminService } from "@/lib/api/services/adminService";
+
 export default function AdminProjectsPage() {
-  const {
-    projects = [],
-    opportunities = [],
-    organizations = [],
-    applications = [],
-    isHydrated,
-  } = useWorkflow();
+  const workflow = useWorkflow();
+  const [realProjects, setRealProjects] = useState([]);
+  const [realOpportunities, setRealOpportunities] = useState([]);
+  const [realOrganizations, setRealOrganizations] = useState([]);
+  const [realApplications, setRealApplications] = useState([]);
+  const [loading, setLoading] = useState(() => isRealMode("admin"));
+
+  useEffect(() => {
+    if (!isRealMode("admin")) return;
+    let mounted = true;
+    async function loadData() {
+      try {
+        const [projsRes, oppsRes, orgsRes, appsRes] = await Promise.allSettled([
+          adminService.getAllProjects(),
+          adminService.getAllOpportunities(),
+          adminService.getOrganizationDirectory(),
+          adminService.getAllApplications(),
+        ]);
+        if (mounted) {
+          if (projsRes.status === "fulfilled" && Array.isArray(projsRes.value?.data)) {
+            setRealProjects(projsRes.value.data);
+          }
+          if (oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data)) {
+            setRealOpportunities(oppsRes.value.data);
+          }
+          if (orgsRes.status === "fulfilled" && Array.isArray(orgsRes.value?.data)) {
+            setRealOrganizations(orgsRes.value.data);
+          }
+          if (appsRes.status === "fulfilled" && Array.isArray(appsRes.value?.data)) {
+            setRealApplications(appsRes.value.data);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load real admin projects:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    loadData();
+    return () => { mounted = false; };
+  }, []);
+
+  const projects = isRealMode("admin") ? realProjects : (workflow.projects || []);
+  const opportunities = isRealMode("admin") ? realOpportunities : (workflow.opportunities || []);
+  const organizations = isRealMode("admin") ? realOrganizations : (workflow.organizations || []);
+  const applications = isRealMode("admin") ? realApplications : (workflow.applications || []);
+  const isHydrated = isRealMode("admin") ? !loading : workflow.isHydrated;
 
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [orgFilter, setOrgFilter] = useState("ALL");
@@ -69,7 +112,11 @@ export default function AdminProjectsPage() {
   }, [projects, statusFilter, orgFilter, searchQuery, organizations]);
 
   const getOpportunitiesForProject = (projId) => {
-    return opportunities.filter((o) => o.projectId === projId);
+    if (!projId) return [];
+    return opportunities.filter((o) => {
+      const oppProjId = o.projectId?._id || o.projectId?.id || o.projectId;
+      return String(oppProjId) === String(projId);
+    });
   };
 
   const getOrgForProject = (orgId) => {
@@ -269,6 +316,7 @@ export default function AdminProjectsPage() {
                   {filteredProjects.map((proj) => {
                     const org = getOrgForProject(proj.orgId);
                     const opps = getOpportunitiesForProject(proj.id);
+                    const oppCount = proj.opportunityCount ?? proj.opportunitiesCount ?? opps.length;
 
                     return (
                       <tr
@@ -293,7 +341,7 @@ export default function AdminProjectsPage() {
                           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                             <Building2 size={13} style={{ color: "#5A584F" }} />
                             <span style={{ fontWeight: 600, color: "#2B2D2A" }}>
-                              {org?.name || "Zee Films"}
+                              {org?.name || "Organization"}
                             </span>
                           </div>
                           <div style={{ fontSize: "12px", color: "#5A584F", marginTop: "2px" }}>
@@ -310,15 +358,15 @@ export default function AdminProjectsPage() {
                               gap: "6px",
                               padding: "4px 10px",
                               borderRadius: "999px",
-                              backgroundColor: opps.length > 0 ? "rgba(138, 107, 46, 0.12)" : "#F3EFE6",
-                              color: opps.length > 0 ? "#6E5420" : "#5A584F",
-                              border: opps.length > 0 ? "1px solid rgba(138, 107, 46, 0.25)" : "1px solid #E8E2D4",
+                              backgroundColor: oppCount > 0 ? "rgba(138, 107, 46, 0.12)" : "#F3EFE6",
+                              color: oppCount > 0 ? "#6E5420" : "#5A584F",
+                              border: oppCount > 0 ? "1px solid rgba(138, 107, 46, 0.25)" : "1px solid #E8E2D4",
                               fontWeight: 700,
                               fontSize: "12px",
                             }}
                           >
                             <Megaphone size={12} />
-                            <span>{opps.length} {opps.length === 1 ? "Opportunity" : "Opportunities"}</span>
+                            <span>{oppCount} {oppCount === 1 ? "Opportunity" : "Opportunities"}</span>
                           </span>
                         </td>
 
@@ -381,6 +429,7 @@ export default function AdminProjectsPage() {
             {filteredProjects.map((proj) => {
               const org = getOrgForProject(proj.orgId);
               const opps = getOpportunitiesForProject(proj.id);
+              const oppCount = proj.opportunityCount ?? proj.opportunitiesCount ?? opps.length;
 
               return (
                 <div key={proj.id} className="admin-project-mobile-card">
@@ -413,7 +462,7 @@ export default function AdminProjectsPage() {
                   <div className="admin-project-org-row">
                     <Building2 size={13} style={{ color: "#8A6B2E", flexShrink: 0 }} />
                     <span className="admin-project-org-name">
-                      {org?.name || "Zee Films"}
+                      {org?.name || "Organization"}
                     </span>
                     <span className="admin-project-org-type">
                       • {org?.type || "Production House"}
@@ -425,7 +474,7 @@ export default function AdminProjectsPage() {
                       <span className="admin-project-detail-label">Opportunities</span>
                       <span className="admin-project-opps-chip">
                         <Megaphone size={11} />
-                        <span>{opps.length} {opps.length === 1 ? "Role" : "Roles"}</span>
+                        <span>{oppCount} {oppCount === 1 ? "Opportunity" : "Opportunities"}</span>
                       </span>
                     </div>
 
@@ -476,7 +525,7 @@ export default function AdminProjectsPage() {
               <div>
                 <span style={{ fontSize: "12px", color: "#5A584F", display: "block" }}>Organization</span>
                 <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
-                  {getOrgForProject(selectedProject.orgId)?.name || "Zee Films"}
+                  {getOrgForProject(selectedProject.orgId)?.name || "Organization"}
                 </strong>
               </div>
               <div>
@@ -498,18 +547,20 @@ export default function AdminProjectsPage() {
                 Synopsis &amp; Production Scope:
               </strong>
               <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.6 }}>
-                {selectedProject.description || "Comprehensive multi-episode OTT thriller with high-stakes medical emergency and investigative storylines."}
+                {selectedProject.description || "No description provided."}
               </p>
             </div>
 
             <div>
               <strong style={{ fontSize: "14px", color: "#2B2D2A", display: "block", marginBottom: "8px" }}>
-                Opportunities Created Under This Project:
+                Opportunities Created Under This Project ({selectedProject.opportunityCount ?? selectedProject.opportunitiesCount ?? getOpportunitiesForProject(selectedProject.id).length}):
               </strong>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {getOpportunitiesForProject(selectedProject.id).length === 0 ? (
                   <span style={{ fontSize: "13px", color: "#5A584F" }}>
-                    No opportunities posted under this project yet.
+                    {(selectedProject.opportunityCount || selectedProject.opportunitiesCount)
+                      ? `${selectedProject.opportunityCount || selectedProject.opportunitiesCount} opportunities recorded under this project.`
+                      : "No opportunities posted under this project yet."}
                   </span>
                 ) : (
                   getOpportunitiesForProject(selectedProject.id).map((opp) => {

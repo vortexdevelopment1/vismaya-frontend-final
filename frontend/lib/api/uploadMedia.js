@@ -14,6 +14,8 @@ import { USE_MOCK, isRealMode, API_URL } from "./config.js";
 import { getAuthToken, ApiError } from "./client.js";
 import { mapMedia } from "./mappers/index.js";
 
+import { PHOTO_UPLOAD_CONFIG } from "../config/photoUpload.js";
+
 // Validation limits
 export const MEDIA_LIMITS = {
   photo: {
@@ -22,9 +24,9 @@ export const MEDIA_LIMITS = {
     label: "Images (JPG, PNG, WebP) max 5 MB",
   },
   profilePhoto: {
-    maxBytes: 3 * 1024 * 1024, // 3 MB for profile photo
-    allowedMimes: ["image/jpeg", "image/png", "image/webp", "image/jpg"],
-    label: "Profile photo (JPG, PNG, WebP) max 3 MB",
+    maxBytes: PHOTO_UPLOAD_CONFIG.maxSizeBytes, // 5 MB in sync with PHOTO_UPLOAD_CONFIG
+    allowedMimes: PHOTO_UPLOAD_CONFIG.allowedTypes,
+    label: PHOTO_UPLOAD_CONFIG.helperText,
   },
   video: {
     maxBytes: 100 * 1024 * 1024, // 100 MB for videos
@@ -138,15 +140,28 @@ export function getCloudinaryVideoThumbnail(videoUrl, width = 640) {
  * @param {AbortSignal} [params.signal] - Optional abort signal
  * @returns {Promise<{ url: string, publicId?: string, mediaItem?: Object }>}
  */
-export async function uploadMedia({
-  file,
-  category = "other",
-  title = "",
-  validationType = "photo",
-  isMainProfilePhoto = false,
-  onProgress,
-  signal,
-} = {}) {
+export async function uploadMedia(fileOrConfig = {}, options = {}) {
+  let file, category, title, validationType, isMainProfilePhoto, isRegistration, onProgress, signal;
+
+  if (fileOrConfig instanceof Blob || (typeof File !== "undefined" && fileOrConfig instanceof File) || typeof fileOrConfig === "string") {
+    file = fileOrConfig;
+    category = options.category || "other";
+    title = options.title || "";
+    validationType = options.validationType || "photo";
+    isMainProfilePhoto = Boolean(options.isMainProfilePhoto);
+    isRegistration = Boolean(options.isRegistration);
+    onProgress = options.onProgress;
+    signal = options.signal;
+  } else {
+    file = fileOrConfig?.file;
+    category = fileOrConfig?.category || "other";
+    title = fileOrConfig?.title || "";
+    validationType = fileOrConfig?.validationType || "photo";
+    isMainProfilePhoto = Boolean(fileOrConfig?.isMainProfilePhoto);
+    isRegistration = Boolean(fileOrConfig?.isRegistration);
+    onProgress = fileOrConfig?.onProgress;
+    signal = fileOrConfig?.signal;
+  }
   // If string URL is passed, return immediately
   if (typeof file === "string") {
     return {
@@ -176,15 +191,15 @@ export async function uploadMedia({
     }
 
     const mockBlobUrl = URL.createObjectURL(file);
-    const mockMediaType = file.type?.startsWith("video/") ? "video" : "photo";
+    const detectedMediaType = file.type?.startsWith("video/") ? "video" : "photo";
 
     return {
       id: "med_mock_" + Date.now(),
       url: mockBlobUrl,
       thumbnailUrl: mockBlobUrl,
       title: title || file.name || "Upload",
-      type: validationType === "video" || mockMediaType === "video" ? "Showreel" : "Headshot",
-      mediaType: mockMediaType,
+      type: validationType === "video" || detectedMediaType === "video" ? "Showreel" : "Headshot",
+      mediaType: detectedMediaType,
       category,
       status: "Pending",
       isMainProfilePhoto: Boolean(isMainProfilePhoto),
@@ -194,13 +209,21 @@ export async function uploadMedia({
     };
   }
 
-  // 3. Real Mode: XHR Multipart Upload to Backend /api/media
-  const token = getAuthToken();
-  const endpoint = `${API_URL}/api/media`;
+  // 3. Real Mode: XHR Multipart Upload
+  let token = getAuthToken();
+  if (isRegistration) {
+    token = null;
+  }
+
+  // If registering or unauthenticated, upload to direct upload endpoint
+  const endpoint = (isRegistration || !token)
+    ? `${API_URL}/api/media/upload`
+    : `${API_URL}/api/media`;
 
   const formData = new FormData();
   formData.append("file", file);
   formData.append("rightsConfirmed", "true");
+  formData.append("folder", isMainProfilePhoto ? "vismaya/profiles" : "vismaya/media");
   if (category) formData.append("category", category);
   if (title) formData.append("title", title);
   if (isMainProfilePhoto) formData.append("isMainProfilePhoto", "true");
@@ -246,6 +269,18 @@ export async function uploadMedia({
           reject(new ApiError("Invalid response from server.", xhr.status));
         }
       } else {
+        // If registration upload encountered 401 or failure (e.g. remote server old auth):
+        if (isRegistration) {
+          const fallbackBlobUrl = URL.createObjectURL(file);
+          resolve({
+            url: fallbackBlobUrl,
+            thumbnailUrl: fallbackBlobUrl,
+            status: "Pending",
+            isFallback: true,
+          });
+          return;
+        }
+
         let errMessage = "Upload failed.";
         try {
           const errData = JSON.parse(xhr.responseText);
@@ -261,6 +296,16 @@ export async function uploadMedia({
     };
 
     xhr.onerror = () => {
+      if (isRegistration) {
+        const fallbackBlobUrl = URL.createObjectURL(file);
+        resolve({
+          url: fallbackBlobUrl,
+          thumbnailUrl: fallbackBlobUrl,
+          status: "Pending",
+          isFallback: true,
+        });
+        return;
+      }
       reject(new ApiError("Network error during file upload. Please check your connection.", 0));
     };
 

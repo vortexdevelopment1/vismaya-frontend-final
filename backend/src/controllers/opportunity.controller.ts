@@ -6,6 +6,8 @@ import Organization from "../models/organization.model.js";
 import Application from "../models/application.model.js";
 import TalentProfile from "../models/talentProfile.model.js";
 import Report from "../models/report.model.js";
+import User from "../models/user.model.js";
+import { notifyUser } from "../services/notification.service.js";
 import { escapeRegex } from "../utils/sanitize.util.js";
 import { validateOpportunityCreate, validateOpportunityUpdate } from "../validators/opportunity.validator.js";
 
@@ -30,6 +32,9 @@ const resolveOpportunityProject = async (
         if (!project) return { error: { status: 404, message: "Project not found" } };
         if (String(project.organizationId) !== String(organizationId)) {
             return { error: { status: 403, message: "You can only use projects from your own organization" } };
+        }
+        if (["completed", "cancelled", "suspended"].includes(String(project.status || "").toLowerCase())) {
+            return { error: { status: 400, message: `Cannot add opportunities to a ${project.status} project` } };
         }
         return { project };
     }
@@ -157,9 +162,8 @@ const formatOpportunityForUser = (opportunity: any, userRole?: string, isOwner?:
         opp.eligibilityMatch = computeEligibilityMatch(opp, talentProfile);
     }
 
-    // If talent / general user (not owner or admin), hide organization private identity, remuneration, and project org id (§10, §21)
+    // If talent / general user (not owner or admin), hide moderation notes and project org id (§10, §21)
     if (!isOwner && userRole !== "admin") {
-        delete opp.remuneration;
         delete opp.rejectionReason;
         delete opp.correctionNotes;
         if (opp.projectId && typeof opp.projectId === "object") {
@@ -218,15 +222,43 @@ export const createOpportunity = async (req: Request, res: Response): Promise<an
             });
         }
 
+        const rawRoles = Array.isArray(req.body.roles) ? req.body.roles : [];
+        const normalizedRoles = rawRoles.map((r: any) => {
+            const skillsArr = Array.isArray(r.skills)
+                ? r.skills
+                : (typeof r.skills === "string" ? r.skills.split(",").map((s: string) => s.trim()).filter(Boolean) : []);
+            const languagesArr = Array.isArray(r.languages)
+                ? r.languages
+                : (typeof r.language === "string" ? r.language.split(",").map((s: string) => s.trim()).filter(Boolean) : (Array.isArray(r.language) ? r.language : []));
+            return {
+                roleName: String(r.roleName || r.name || r.role || "").trim(),
+                count: Number(r.count || r.positionsCount) || 1,
+                positionsCount: Number(r.positionsCount || r.count) || 1,
+                ageRange: r.ageRange ? String(r.ageRange).trim() : undefined,
+                ageMin: r.ageMin !== undefined && r.ageMin !== null ? Number(r.ageMin) : undefined,
+                ageMax: r.ageMax !== undefined && r.ageMax !== null ? Number(r.ageMax) : undefined,
+                gender: r.gender ? String(r.gender).trim() : undefined,
+                description: r.description ? String(r.description).trim() : undefined,
+                skills: skillsArr,
+                languages: languagesArr
+            };
+        }).filter((r: any) => Boolean(r.roleName));
+
+        const effectiveRole = String(role || normalizedRoles[0]?.roleName || title).trim();
+        const effectivePositionsCount = positionsCount
+            ? parseInt(positionsCount, 10)
+            : (normalizedRoles.length > 0 ? normalizedRoles.reduce((acc: number, r: any) => acc + (Number(r.count) || 1), 0) : 1);
+
         const opportunity = await Opportunity.create({
             projectId: project._id,
             title: String(title).trim(),
             summary: String(summary).trim(),
-            role: String(role).trim(),
+            role: effectiveRole,
+            roles: normalizedRoles.length > 0 ? normalizedRoles : undefined,
             location: String(location).trim(),
             deadline: new Date(deadline),
             remuneration: remuneration ? String(remuneration).trim() : undefined,
-            positionsCount: positionsCount ? parseInt(positionsCount, 10) : undefined,
+            positionsCount: effectivePositionsCount,
             eligibility: eligibility || {},
             customQuestions: Array.isArray(customQuestions) ? customQuestions : [],
             status: "pending",
@@ -284,10 +316,10 @@ export const updateOpportunity = async (req: Request, res: Response): Promise<an
             });
         }
 
-        if (["cancelled", "closed", "completed"].includes(opportunity.status)) {
+        if (opportunity.status !== "rejected" && opportunity.status !== "corrections_requested") {
             return res.status(400).json({
                 success: false,
-                message: `Cannot edit opportunity in '${opportunity.status}' state.`
+                message: `Cannot edit opportunity in '${opportunity.status}' state. Only rejected or corrections-requested opportunities can be edited and resubmitted.`
             });
         }
 
@@ -298,36 +330,81 @@ export const updateOpportunity = async (req: Request, res: Response): Promise<an
         }
 
         const allowedFields = [
-            "title", "summary", "role", "location", "deadline", "remuneration",
+            "title", "summary", "role", "roles", "location", "deadline", "remuneration",
             "positionsCount", "eligibility", "customQuestions"
         ];
-
-        let isPublishedEdit = opportunity.status === "published";
 
         for (const field of allowedFields) {
             if (req.body[field] !== undefined) {
                 if (field === "deadline") {
                     opportunity.deadline = new Date(req.body.deadline);
+                } else if (field === "roles" && Array.isArray(req.body.roles)) {
+                    const normRoles = req.body.roles.map((r: any) => ({
+                        roleName: String(r.roleName || r.name || r.role || "").trim(),
+                        count: Number(r.count || r.positionsCount) || 1,
+                        positionsCount: Number(r.positionsCount || r.count) || 1,
+                        ageRange: r.ageRange ? String(r.ageRange).trim() : undefined,
+                        ageMin: r.ageMin !== undefined && r.ageMin !== null ? Number(r.ageMin) : undefined,
+                        ageMax: r.ageMax !== undefined && r.ageMax !== null ? Number(r.ageMax) : undefined,
+                        gender: r.gender ? String(r.gender).trim() : undefined,
+                        description: r.description ? String(r.description).trim() : undefined,
+                        skills: Array.isArray(r.skills) ? r.skills : (typeof r.skills === "string" ? r.skills.split(",").map((s: string) => s.trim()).filter(Boolean) : []),
+                        languages: Array.isArray(r.languages) ? r.languages : (typeof r.language === "string" ? r.language.split(",").map((s: string) => s.trim()).filter(Boolean) : [])
+                    })).filter((r: any) => Boolean(r.roleName));
+                    opportunity.roles = normRoles as any;
+                    if (normRoles.length > 0) {
+                        if (!req.body.role) opportunity.role = normRoles[0].roleName;
+                        if (!req.body.positionsCount) {
+                            opportunity.positionsCount = normRoles.reduce((acc: number, r: any) => acc + (Number(r.count) || 1), 0);
+                        }
+                    }
                 } else {
                     (opportunity as any)[field] = req.body[field];
                 }
             }
         }
 
-        // O2: Editing a published opportunity moves it back to under_vismaya_review
-        if (isPublishedEdit || opportunity.status === "corrections_requested" || req.body.resubmit) {
-            opportunity.status = "under_vismaya_review";
-            opportunity.resubmittedAt = new Date();
+        // Resubmit: append previous rejection to rejectionHistory, reset to pending
+        if (opportunity.rejectionReason) {
+            if (!opportunity.rejectionHistory) {
+                opportunity.rejectionHistory = [];
+            }
+            opportunity.rejectionHistory.push({
+                reason: opportunity.rejectionReason,
+                rejectedBy: opportunity.rejectedBy,
+                rejectedAt: opportunity.rejectedAt || new Date()
+            });
         }
+
+        opportunity.status = "pending";
+        opportunity.submittedAt = new Date();
+        opportunity.resubmittedAt = new Date();
+        opportunity.resubmissionCount = (opportunity.resubmissionCount || 0) + 1;
 
         await opportunity.save();
         await opportunity.populate("projectId", "projectName");
 
+        // Notify admin side
+        try {
+            const adminUsers = await User.find({ role: "admin", status: "active" }).select("_id");
+            for (const admin of adminUsers) {
+                await notifyUser({
+                    recipientId: admin._id,
+                    type: "opportunity_resubmitted",
+                    title: "Opportunity Resubmitted",
+                    message: `Opportunity "${opportunity.title}" has been resubmitted for Vismaya review.`,
+                    referenceId: opportunity._id,
+                    referenceType: "Opportunity",
+                    sendEmailAlert: false
+                });
+            }
+        } catch (notifErr: any) {
+            console.warn("[UpdateOpportunity] Admin notification warning:", notifErr.message);
+        }
+
         res.status(200).json({
             success: true,
-            message: opportunity.status === "under_vismaya_review"
-                ? "Opportunity resubmitted for Vismaya review"
-                : "Opportunity updated successfully",
+            message: "Opportunity resubmitted for Vismaya review",
             opportunity: formatOpportunityForUser(opportunity, req.user?.role, true)
         });
 
@@ -452,9 +529,10 @@ export const getPublishedOpportunities = async (req: Request, res: Response): Pr
         }
 
         // Get applicant count for each opportunity
-        const oppIds = opportunities.map(o => o._id);
+        const oppObjectIds = opportunities.map(o => new mongoose.Types.ObjectId(o._id));
+        const oppIdStrings = opportunities.map(o => o._id.toString());
         const appCounts = await Application.aggregate([
-            { $match: { opportunityId: { $in: oppIds } } },
+            { $match: { opportunityId: { $in: [...oppObjectIds, ...oppIdStrings] } } },
             { $group: { _id: "$opportunityId", count: { $sum: 1 } } }
         ]);
 
@@ -596,6 +674,12 @@ export const requestOpportunityCancellation = async (req: Request, res: Response
         opportunity.status = "cancellation_requested";
         opportunity.cancellationReason = cancellationReason;
         opportunity.cancellationRequestedAt = new Date();
+        opportunity.cancellationRequest = {
+            requestedBy: userId as any,
+            reason: cancellationReason,
+            requestedAt: new Date(),
+            decision: "pending"
+        };
 
         await opportunity.save();
 
@@ -648,8 +732,9 @@ export const getOrganizationOpportunities = async (req: Request, res: Response):
             .sort({ createdAt: -1 });
 
         const oppIds = opportunities.map(o => o._id.toString());
+        const oppObjectIds = opportunities.map(o => new mongoose.Types.ObjectId(o._id));
         const appCounts = await Application.aggregate([
-            { $match: { opportunityId: { $in: oppIds } } },
+            { $match: { opportunityId: { $in: [...oppObjectIds, ...oppIds] } } },
             { $group: { _id: { oppId: "$opportunityId", status: "$status" }, count: { $sum: 1 } } }
         ]);
 
@@ -658,15 +743,16 @@ export const getOrganizationOpportunities = async (req: Request, res: Response):
             statsMap[id] = { applied: 0, under_review: 0, shortlisted: 0, selected: 0, not_selected: 0, total: 0 };
         }
         for (const row of appCounts) {
-            const oppId = row._id.oppId;
-            const status = row._id.status;
+            const oppId = String(row._id.oppId);
+            const rawStatus = String(row._id.status || "").toLowerCase().trim();
+            const normalizedStatus = rawStatus.replace(/[\s-]+/g, "_");
             if (statsMap[oppId]) {
                 statsMap[oppId].total += row.count;
-                if (status === "applied") statsMap[oppId].applied += row.count;
-                else if (status === "under_review") statsMap[oppId].under_review += row.count;
-                else if (status === "shortlisted") statsMap[oppId].shortlisted += row.count;
-                else if (status === "selected") statsMap[oppId].selected += row.count;
-                else if (status === "not_selected") statsMap[oppId].not_selected += row.count;
+                if (normalizedStatus === "applied") statsMap[oppId].applied += row.count;
+                else if (normalizedStatus === "under_review") statsMap[oppId].under_review += row.count;
+                else if (normalizedStatus === "shortlisted") statsMap[oppId].shortlisted += row.count;
+                else if (normalizedStatus === "selected") statsMap[oppId].selected += row.count;
+                else if (normalizedStatus === "not_selected" || normalizedStatus === "rejected") statsMap[oppId].not_selected += row.count;
             }
         }
 
@@ -708,31 +794,38 @@ export const reportOpportunity = async (req: Request, res: Response): Promise<an
             });
         }
 
-        const validReasons = [
-            "misleading_information",
-            "scam_or_fraud",
-            "offensive_content",
-            "copyright_infringement",
-            "impersonation",
-            "other"
-        ];
+        // Map reason string to schema enum
+        const rLower = String(reason).toLowerCase().trim();
+        let mappedReason: any = "other";
+        if (rLower.includes("inappropriate") || rLower.includes("offensive")) {
+            mappedReason = "offensive_content";
+        } else if (rLower.includes("copyright")) {
+            mappedReason = "copyright_infringement";
+        } else if (rLower.includes("fake") || rLower.includes("misleading")) {
+            mappedReason = "misleading_information";
+        } else if (rLower.includes("spam") || rLower.includes("fraud") || rLower.includes("scam")) {
+            mappedReason = "scam_or_fraud";
+        } else if (rLower.includes("impersonat")) {
+            mappedReason = "impersonation";
+        } else if (["misleading_information", "scam_or_fraud", "offensive_content", "copyright_infringement", "impersonation", "other"].includes(rLower)) {
+            mappedReason = rLower;
+        }
 
-        if (!validReasons.includes(reason)) {
-            return res.status(400).json({
+        const opportunity = await Opportunity.findById(String(opportunityId)).populate("projectId");
+        if (!opportunity) {
+            return res.status(404).json({
                 success: false,
-                message: "Invalid reporting reason"
+                message: "Opportunity not found"
             });
         }
 
-        const hasApplied = await Application.findOne({
-            opportunityId: String(opportunityId),
-            talentId
-        });
-
-        if (!hasApplied) {
-            return res.status(403).json({
+        const project: any = opportunity.projectId;
+        const ownerOrgId = project?.organizationId?._id || project?.organizationId;
+        const userOrgId = (req.user as any)?.organizationId;
+        if (ownerOrgId && (ownerOrgId.toString() === talentId?.toString() || (userOrgId && ownerOrgId.toString() === userOrgId.toString()))) {
+            return res.status(400).json({
                 success: false,
-                message: "Only verified applicants may report an opportunity."
+                message: "You cannot report your own opportunity."
             });
         }
 
@@ -753,14 +846,14 @@ export const reportOpportunity = async (req: Request, res: Response): Promise<an
             reporterId: talentId,
             targetId: String(opportunityId),
             targetType: "Opportunity",
-            reason,
+            reason: mappedReason,
             details: details ? String(details).trim() : "",
             status: "pending"
         });
 
         res.status(201).json({
             success: true,
-            message: "Report submitted successfully. Vismaya moderation team will review this listing.",
+            message: "Thanks, Vismaya will review this.",
             report,
             reportId: report._id
         });

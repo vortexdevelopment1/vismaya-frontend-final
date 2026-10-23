@@ -8,6 +8,7 @@ import healthRoutes from "./routes/health.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import testRoutes from "./routes/test.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import adminAuthRoutes from "./routes/adminAuth.routes.js";
 import organizationRoutes from "./routes/organization.routes.js";
 import projectRoutes from "./routes/project.routes.js";
 import opportunityRoutes from "./routes/opportunity.routes.js";
@@ -52,15 +53,34 @@ app.use(helmet({
 app.disable("x-powered-by");
 
 // 2. CORS Configuration (Configurable & Restricted)
-const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(",").map(o => o.trim())
-    : ["http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "http://127.0.0.1:3000", "http://127.0.0.1:5173"];
+const defaultLocalOrigins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:8080",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173"
+];
+
+const parseOrigins = (val: string = "") => {
+    if (!val) return [];
+    return val
+        .split(/[,|]/)
+        .map(o => o.trim().replace(/\/+$/, ""))
+        .filter(Boolean);
+};
+
+const allowedOrigins = Array.from(new Set([
+    ...defaultLocalOrigins,
+    ...parseOrigins(process.env.CORS_ORIGIN),
+    ...parseOrigins(process.env.CLIENT_URL)
+]));
 
 app.use(cors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
         // Allow requests with no origin (like mobile apps, curl, server-to-server)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+        const normalizedOrigin = origin.replace(/\/+$/, "");
+        if (allowedOrigins.includes(normalizedOrigin) || allowedOrigins.includes("*")) {
             return callback(null, true);
         }
         return callback(new Error("CORS policy violation: Origin not allowed"), false);
@@ -82,6 +102,7 @@ app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use("/api", apiLimiter);
 
 // 6. API Routes
+app.use("/health", healthRoutes);
 app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
 
@@ -90,6 +111,7 @@ if (process.env.NODE_ENV !== "production") {
     app.use("/api/test", testRoutes);
 }
 
+app.use("/api/admin/auth", adminAuthRoutes);
 app.use("/api/admin", adminLimiter, adminRoutes);
 app.use("/api/organization", organizationRoutes);
 app.use("/api/company", organizationRoutes);
@@ -103,6 +125,7 @@ app.use("/api/talent-profiles", talentProfileRoutes);
 app.use("/api/talent", talentProfileRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/verifications", verificationRoutes);
+app.use("/api/verification", verificationRoutes);
 app.use("/api/credits", creditRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/taxonomy", taxonomyRoutes);

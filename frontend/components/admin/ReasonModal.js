@@ -8,14 +8,28 @@ export default function ReasonModal({
   isOpen,
   onClose,
   title = "Provide Action Reason",
-  description = "A specific reason is required for platform record and compliance logging.",
-  confirmLabel = "Confirm Action",
-  confirmVariant = "danger", // "danger" | "warning" | "primary"
+  description,
+  subtitle,
+  confirmLabel,
+  submitText,
+  confirmVariant = "danger",
+  isDestructive = false,
   quickReasons = [],
+  inputLabel,
+  inputPlaceholder,
   onConfirm,
+  onSubmit,
+  isLoading = false,
+  errorMessage = "",
 }) {
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
+
+  const effectiveDescription = description || subtitle || "A specific reason is required for platform record and compliance logging.";
+  const effectiveConfirmLabel = submitText || confirmLabel || "Confirm Action";
+  const effectiveVariant = isDestructive ? "danger" : confirmVariant;
+  const effectiveInputLabel = inputLabel || "Reason / Moderation Notes";
+  const effectivePlaceholder = inputPlaceholder || "Type reason or clarification notes...";
 
   useEffect(() => {
     if (isOpen) {
@@ -26,12 +40,15 @@ export default function ReasonModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!reason.trim()) {
+    const trimmed = reason.trim();
+    if (!trimmed) {
       setError("Please provide a reason before submitting.");
       return;
     }
-    onConfirm(reason.trim());
-    onClose();
+    const handler = onSubmit || onConfirm;
+    if (handler) {
+      handler(trimmed);
+    }
   };
 
   return (
@@ -39,7 +56,7 @@ export default function ReasonModal({
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      description={description}
+      description={effectiveDescription}
       maxWidth="480px"
     >
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px", paddingTop: "6px" }}>
@@ -80,19 +97,20 @@ export default function ReasonModal({
         {/* Reason Text Area */}
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary, #292C29)" }}>
-            Reason / Moderation Notes <span style={{ color: "var(--status-red, #B84A39)" }}>*</span>
+            {effectiveInputLabel} <span style={{ color: "var(--status-red, #B84A39)" }}>*</span>
           </label>
           <textarea
             rows={3}
-            placeholder="Type reason or clarification notes..."
+            placeholder={effectivePlaceholder}
             value={reason}
             onChange={(e) => {
               setReason(e.target.value);
               if (error) setError("");
             }}
+            disabled={isLoading}
             style={{
               backgroundColor: "var(--bg-surface, #FFFFFF)",
-              border: `1px solid ${error ? "var(--status-red, #B84A39)" : "var(--border-color, #E4E1D9)"}`,
+              border: `1px solid ${(error || errorMessage) ? "var(--status-red, #B84A39)" : "var(--border-color, #E4E1D9)"}`,
               borderRadius: "4px",
               padding: "10px 12px",
               color: "var(--text-primary, #292C29)",
@@ -101,8 +119,8 @@ export default function ReasonModal({
               resize: "vertical",
             }}
           />
-          {error && (
-            <span style={{ fontSize: "0.725rem", color: "var(--status-red, #B84A39)" }}>{error}</span>
+          {(error || errorMessage) && (
+            <span style={{ fontSize: "0.725rem", color: "var(--status-red, #B84A39)" }}>{error || errorMessage}</span>
           )}
         </div>
 
@@ -111,27 +129,33 @@ export default function ReasonModal({
           <button
             type="button"
             onClick={onClose}
+            disabled={isLoading}
             className="btn-secondary"
-            style={{ padding: "8px 16px", fontSize: "0.825rem", borderRadius: "4px" }}
+            style={{ padding: "8px 16px", fontSize: "0.825rem", borderRadius: "4px", cursor: isLoading ? "not-allowed" : "pointer" }}
           >
             Cancel
           </button>
           <button
             type="submit"
+            disabled={!reason.trim() || isLoading}
             style={{
               padding: "8px 18px",
               fontSize: "0.825rem",
-              backgroundColor: confirmVariant === "danger"
+              backgroundColor: effectiveVariant === "danger"
                 ? "var(--status-red, #B84A39)"
                 : "var(--gold, #9B7A3F)",
               color: "#FAF9F6",
               borderRadius: "4px",
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: (!reason.trim() || isLoading) ? "not-allowed" : "pointer",
+              opacity: (!reason.trim() || isLoading) ? 0.6 : 1,
               border: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
             }}
           >
-            {confirmLabel}
+            {isLoading ? "Submitting..." : effectiveConfirmLabel}
           </button>
         </div>
       </form>

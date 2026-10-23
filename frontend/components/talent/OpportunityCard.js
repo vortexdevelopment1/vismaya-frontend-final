@@ -13,20 +13,31 @@ import {
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { formatDate } from "@/lib/shared/dateUtils";
+import { useAuth } from "@/context/AuthContext";
+import { useTalent } from "@/lib/talent/TalentContext";
+import { isRealMode } from "@/lib/api/config";
 
 export default function OpportunityCard({ opportunity, project, onApply }) {
+  const { user } = useAuth();
+  const { profile } = useTalent();
   const { applications } = useWorkflow();
 
-  const currentTalentId = "tal-904";
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
   const isApplied = applications.some(
-    (app) => app.opportunityId === opportunity.id && app.talentId === currentTalentId
+    (app) => (app.opportunityId === opportunity.id || app.opportunityId === opportunity._id) && (
+      app.talentId === currentTalentId ||
+      app.talentId?._id === currentTalentId ||
+      app.talentId?.id === currentTalentId ||
+      app.userId === currentTalentId
+    )
   );
 
   const now = new Date().getTime();
-  const deadlineTime = new Date(opportunity.deadline).getTime();
-  const diffDays = Math.ceil((deadlineTime - now) / (1000 * 60 * 60 * 24));
-  const isExpired = diffDays < 0;
-  const isUrgent = diffDays >= 0 && diffDays <= 3;
+  const deadlineTime = opportunity.deadline ? new Date(opportunity.deadline).getTime() : NaN;
+  const hasValidDeadline = !isNaN(deadlineTime);
+  const diffDays = hasValidDeadline ? Math.ceil((deadlineTime - now) / (1000 * 60 * 60 * 24)) : null;
+  const isExpired = diffDays !== null && diffDays < 0;
+  const isUrgent = diffDays !== null && diffDays >= 0 && diffDays <= 3;
 
   const rolesCount = opportunity.roles ? opportunity.roles.length : 1;
 
@@ -146,7 +157,7 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
           </span>
           <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
             <Calendar size={13} style={{ color: "#8A6B2E" }} />
-            {formatDate(opportunity.deadline)}
+            {hasValidDeadline ? formatDate(opportunity.deadline) : "—"}
           </span>
         </div>
       </div>
@@ -241,7 +252,7 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <Banknote size={15} style={{ color: "#8A6B2E" }} />
             <span style={{ color: "#8A6B2E", fontWeight: "700" }}>
-              {opportunity.remuneration || "Negotiable"}
+              {opportunity.remuneration || "Not disclosed"}
             </span>
           </div>
 

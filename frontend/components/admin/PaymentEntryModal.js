@@ -242,7 +242,7 @@ export default function PaymentEntryModal({
               <input
                 type="text"
                 required
-                placeholder="e.g. Zee Films (Vikram Malhotra)"
+                placeholder="e.g. Acme Productions (Studio Lead)"
                 value={formData.payerName}
                 onChange={(e) => setFormData({ ...formData, payerName: e.target.value })}
                 className="payment-modal-input"

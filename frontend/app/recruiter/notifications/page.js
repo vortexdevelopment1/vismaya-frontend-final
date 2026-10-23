@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -22,26 +22,74 @@ import {
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
 import EmptyState from "@/components/shared/EmptyState";
+import { isRealMode } from "@/lib/api/config";
+import { notificationService } from "@/lib/api/services/notificationService";
 
 export default function OrganizationNotificationsPage() {
   const router = useRouter();
-  const {
-    notifications,
-    markNotificationRead,
-    markAllNotificationsRead,
-    isHydrated,
-  } = useWorkflow();
+  const workflow = useWorkflow();
+  const [realNotifications, setRealNotifications] = useState([]);
+  const [loadingReal, setLoadingReal] = useState(() => isRealMode("notifications") || isRealMode("recruiter"));
+
+  const loadNotifications = async () => {
+    if (!isRealMode("notifications") && !isRealMode("recruiter")) return;
+    try {
+      const res = await notificationService.getMyNotifications();
+      if (res && Array.isArray(res.data)) {
+        setRealNotifications(res.data);
+      }
+    } catch (err) {
+      console.warn("Could not load real notifications:", err);
+    } finally {
+      setLoadingReal(false);
+    }
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  const isReal = isRealMode("notifications") || isRealMode("recruiter");
+  const notifications = isReal ? realNotifications : (workflow.notifications || []);
+  const isHydrated = isReal ? !loadingReal : workflow.isHydrated;
+
+  const markNotificationRead = async (id) => {
+    if (isReal) {
+      try {
+        await notificationService.markAsRead(id);
+        setRealNotifications((prev) => prev.map((n) => n.id === id ? { ...n, isRead: true, read: true } : n));
+      } catch (err) {
+        console.warn("Could not mark notification read:", err);
+      }
+    } else {
+      workflow.markNotificationRead(id);
+    }
+  };
+
+  const markAllNotificationsRead = async () => {
+    if (isReal) {
+      try {
+        await notificationService.markAllAsRead();
+        setRealNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
+      } catch (err) {
+        console.warn("Could not mark all notifications read:", err);
+      }
+    } else {
+      workflow.markAllNotificationsRead("organization");
+    }
+  };
 
   const [activeTab, setActiveTab] = useState("ALL"); // ALL | OPPORTUNITY | APPLICANTS | AUDITIONS | VISMAYA
 
   // Filter org notifications
   const orgNotifications = useMemo(() => {
+    if (isReal) return realNotifications;
     return notifications.filter((n) => n.toRole === "organization" || !n.toRole);
-  }, [notifications]);
+  }, [notifications, realNotifications, isReal]);
 
   // Unread count
   const unreadCount = useMemo(() => {
-    return orgNotifications.filter((n) => !n.read).length;
+    return orgNotifications.filter((n) => !n.read && !n.isRead).length;
   }, [orgNotifications]);
 
   // Tab counts

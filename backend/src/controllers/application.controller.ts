@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import Application from "../models/application.model.js";
 import Opportunity from "../models/opportunity.model.js";
 import Project from "../models/project.model.js";
@@ -8,7 +9,10 @@ import CreditViewHistory from "../models/creditViewHistory.model.js";
 import ProjectShortlist from "../models/projectShortlist.model.js";
 import MediaItem from "../models/mediaItem.model.js";
 import Verification from "../models/verification.model.js";
+import User from "../models/user.model.js";
+import Notification from "../models/notification.model.js";
 import { notifyUser } from "../services/notification.service.js";
+import { calculateAge } from "../validators/talentProfile.validator.js";
 
 export const applyForOpportunity = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -26,7 +30,15 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             });
         }
 
-        // 2. Validate paid membership gate (A7)
+        // 2. Cancelled opportunities check (Part A D6b)
+        if (opportunity.status === "cancelled") {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot apply to a cancelled opportunity"
+            });
+        }
+
+        // 3. Validate paid membership gate (A7)
         const profile = await TalentProfile.findOne({ userId: talentId });
         if (!profile || (!profile.isPaid && !req.user?.isPaid)) {
             return res.status(403).json({
@@ -35,7 +47,16 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             });
         }
 
-        // 3. O6: Require explicit consentGiven === true
+        // 3b. Validate profile approval gate (only talent with approved profile can apply)
+        const isApproved = Boolean(profile.isProfileApproved || profile.status === "approved" || profile.status === "active");
+        if (!isApproved) {
+            return res.status(403).json({
+                success: false,
+                message: "Profile approval required. Only talent with an approved profile can apply for opportunities."
+            });
+        }
+
+        // 4. O6: Require explicit consentGiven === true
         if (consentGiven !== true) {
             return res.status(400).json({
                 success: false,
@@ -43,7 +64,7 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             });
         }
 
-        // 4. Only published opportunities can receive applications
+        // 5. Only published opportunities can receive applications
         if (opportunity.status !== "published") {
             return res.status(400).json({
                 success: false,
@@ -238,14 +259,6 @@ export const withdrawApplication = async (req: Request, res: Response): Promise<
         const { confirm } = req.body;
         const withdrawalReason = req.body.withdrawalReason || req.body.reason;
 
-        // O6: Require reason AND confirm: true
-        if (!withdrawalReason || !withdrawalReason.trim() || confirm !== true) {
-            return res.status(400).json({
-                success: false,
-                message: "Withdrawal reason and explicit confirmation (confirm: true) are required."
-            });
-        }
-
         const application = await Application.findById(String(applicationId));
         if (!application) {
             return res.status(404).json({
@@ -258,6 +271,23 @@ export const withdrawApplication = async (req: Request, res: Response): Promise<
             return res.status(403).json({
                 success: false,
                 message: "You can only withdraw your own application"
+            });
+        }
+
+        const opportunity = await Opportunity.findById(application.opportunityId);
+
+        if (opportunity?.status === "cancelled" || application.status === "opportunity_cancelled") {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot withdraw an application for a cancelled opportunity"
+            });
+        }
+
+        // O6: Require reason AND confirm: true
+        if (!withdrawalReason || !withdrawalReason.trim() || confirm !== true) {
+            return res.status(400).json({
+                success: false,
+                message: "Withdrawal reason and explicit confirmation (confirm: true) are required."
             });
         }
 
@@ -280,6 +310,35 @@ export const withdrawApplication = async (req: Request, res: Response): Promise<
         application.withdrawnAt = new Date();
 
         await application.save();
+
+        // Notify organization user (Part C)
+        try {
+            const project = await Project.findById(opportunity?.projectId);
+            const orgId = (opportunity as any)?.organizationId || project?.organizationId;
+            const org = await Organization.findById(orgId);
+            const talentUser = await User.findById(talentId);
+
+            if (org && org.userId) {
+                const existingNotif = await Notification.findOne({
+                    recipient: org.userId,
+                    referenceId: application._id,
+                    type: "application_withdrawn"
+                });
+                if (!existingNotif) {
+                    await notifyUser({
+                        recipientId: org.userId,
+                        type: "application_withdrawn",
+                        title: "Application Withdrawn",
+                        message: `${talentUser?.name || "An applicant"} has withdrawn their application for "${opportunity?.title || "Opportunity"}". Reason: ${application.withdrawalReason}`,
+                        referenceId: application._id,
+                        referenceType: "Application",
+                        sendEmailAlert: true
+                    });
+                }
+            }
+        } catch (notifErr: any) {
+            console.error("Failed to notify org about application withdrawal:", notifErr.message);
+        }
 
         res.status(200).json({
             success: true,
@@ -383,9 +442,18 @@ export const getOpportunityApplications = async (req: Request, res: Response): P
             });
         }
 
-        const filter: any = { opportunityId: String(opportunityId) };
+        const oppObjectId = mongoose.Types.ObjectId.isValid(String(opportunityId))
+            ? new mongoose.Types.ObjectId(String(opportunityId))
+            : opportunityId;
+        const filter: any = {
+            $or: [
+                { opportunityId: oppObjectId },
+                { opportunityId: String(opportunityId) }
+            ]
+        };
         if (status) {
-            filter.status = status;
+            const normalizedStatus = String(status).toLowerCase().trim().replace(/[\s-]+/g, "_");
+            filter.status = { $regex: new RegExp(`^${normalizedStatus}$`, "i") };
         }
 
         const applications = await Application.find(filter)
@@ -509,7 +577,18 @@ export const getApplicantPortfolio = async (req: Request, res: Response): Promis
         const documents = mediaItems.filter(m => m.mediaType === "document");
         const externalLinks = mediaItems.filter(m => m.mediaType === "external_link");
 
-        // Section 39 Clean Portfolio (no email, mobile, guardian, physical, remuneration)
+        // Section 39 Clean Portfolio (no email, mobile, guardian, physical, remuneration, exact DOB)
+        const rawApplicantDob = profile.dob || (profile as any).dateOfBirth;
+        const applicantAge = rawApplicantDob ? calculateAge(rawApplicantDob) : (typeof (profile as any).age === "number" ? (profile as any).age : null);
+        let applicantAgeRange: string | undefined = undefined;
+        if (applicantAge !== null) {
+            if (applicantAge < 18) applicantAgeRange = "Under 18";
+            else if (applicantAge <= 25) applicantAgeRange = "18-25";
+            else if (applicantAge <= 35) applicantAgeRange = "26-35";
+            else if (applicantAge <= 50) applicantAgeRange = "36-50";
+            else applicantAgeRange = "50+";
+        }
+
         const safePortfolio = {
             vismayaId: profile.vismayaId,
             name: `${profile.firstName || ""} ${profile.lastName || ""}`.trim() || profile.stageName || "Talent Candidate",
@@ -526,6 +605,8 @@ export const getApplicantPortfolio = async (req: Request, res: Response): Promis
             primaryDesignation: profile.primaryDesignation,
             specializations: profile.specializations || [],
             careerStage: profile.careerStage,
+            age: applicantAge,
+            ageRange: applicantAgeRange,
             currentCity: profile.currentCity,
             currentState: profile.currentState,
             country: profile.country,
@@ -621,12 +702,22 @@ export const markApplicationUnderReview = async (req: Request, res: Response): P
         application.status = "under_review";
         await application.save();
 
-        await notifyUser({
-            recipientId: application.talentId,
-            type: "application_status_changed",
-            title: "Application Under Review",
-            message: `Your application for '${opportunity?.title}' is now under review.`
+        const existingUnderReview = await Notification.findOne({
+            recipient: application.talentId,
+            referenceId: application._id,
+            type: "application_status_changed"
         });
+        if (!existingUnderReview) {
+            await notifyUser({
+                recipientId: application.talentId,
+                type: "application_status_changed",
+                title: "Application Under Review",
+                message: `Your application for '${opportunity?.title}' is now under review.`,
+                referenceId: application._id,
+                referenceType: "Application",
+                sendEmailAlert: true
+            });
+        }
 
         res.status(200).json({
             success: true,
@@ -694,12 +785,23 @@ export const shortlistApplication = async (req: Request, res: Response): Promise
             );
         }
 
-        await notifyUser({
-            recipientId: application.talentId,
-            type: "application_status_changed",
-            title: "Application Shortlisted",
-            message: `Congratulations! Your application for '${opportunity?.title}' has been shortlisted.`
+        // Deduplicated notification for talent on shortlist
+        const existingShortlistNotif = await Notification.findOne({
+            recipient: application.talentId,
+            referenceId: application._id,
+            type: "shortlisted"
         });
+        if (!existingShortlistNotif) {
+            await notifyUser({
+                recipientId: application.talentId,
+                type: "shortlisted",
+                title: "Application Shortlisted",
+                message: `You have been shortlisted for ${opportunity?.role || 'the role'} in ${opportunity?.title}`,
+                referenceId: application._id,
+                referenceType: "Application",
+                sendEmailAlert: true
+            });
+        }
 
         res.status(200).json({
             success: true,
@@ -764,12 +866,22 @@ export const selectApplication = async (req: Request, res: Response): Promise<an
             { $set: { status: "selected" } }
         );
 
-        await notifyUser({
-            recipientId: application.talentId,
-            type: "selected",
-            title: "Application Selected",
-            message: `Congratulations! You have been selected for '${opportunity?.title}'.`
+        const existingSelectNotif = await Notification.findOne({
+            recipient: application.talentId,
+            referenceId: application._id,
+            type: "selected"
         });
+        if (!existingSelectNotif) {
+            await notifyUser({
+                recipientId: application.talentId,
+                type: "selected",
+                title: "Application Selected",
+                message: `Congratulations! You have been selected for '${opportunity?.role || 'the role'}' in '${opportunity?.title}'.`,
+                referenceId: application._id,
+                referenceType: "Application",
+                sendEmailAlert: true
+            });
+        }
 
         res.status(200).json({
             success: true,
@@ -786,7 +898,7 @@ export const rejectApplication = async (req: Request, res: Response): Promise<an
     try {
         const userId = req.user?.userId;
         const { applicationId } = req.params;
-        const { reason } = req.body;
+        const reason = req.body?.reason;
 
         const application = await Application.findById(String(applicationId));
         if (!application) {
@@ -829,12 +941,22 @@ export const rejectApplication = async (req: Request, res: Response): Promise<an
         application.notSelectedReason = reason || "Not selected";
         await application.save();
 
-        await notifyUser({
-            recipientId: application.talentId,
-            type: "not_selected",
-            title: "Application Update",
-            message: `Your application for '${opportunity?.title}' was not selected.`
+        const existingRejectNotif = await Notification.findOne({
+            recipient: application.talentId,
+            referenceId: application._id,
+            type: "not_selected"
         });
+        if (!existingRejectNotif) {
+            await notifyUser({
+                recipientId: application.talentId,
+                type: "not_selected",
+                title: "Application Update",
+                message: `Your application for '${opportunity?.role || 'the role'}' in '${opportunity?.title}' was not selected.`,
+                referenceId: application._id,
+                referenceType: "Application",
+                sendEmailAlert: true
+            });
+        }
 
         res.status(200).json({
             success: true,

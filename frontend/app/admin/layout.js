@@ -203,10 +203,12 @@ function VerifiedAdminGuard({ children }) {
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
 
-  // Public admin authentication page is rendered directly without admin frame or route guard
+  // Public admin authentication and recovery pages are rendered directly without admin frame or route guard
   const isAuthPage =
     pathname === "/admin/login" ||
-    pathname?.startsWith("/admin/login");
+    pathname?.startsWith("/admin/login") ||
+    pathname === "/admin/forgot-password" ||
+    pathname?.startsWith("/admin/forgot-password");
 
   if (isAuthPage) {
     return <>{children}</>;

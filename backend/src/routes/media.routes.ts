@@ -1,7 +1,8 @@
 import express, { Router, Request, Response, NextFunction } from "express";
 
 import { 
-    authenticateUser
+    authenticateUser,
+    optionalAuth
  } from "../middleware/auth.middleware.js";
 
 import { 
@@ -21,7 +22,8 @@ import {
     reorderMedia,
     disputeMedia,
     nominateFeatured,
-    featureMediaItem
+    featureMediaItem,
+    reportMediaItem
  } from "../controllers/media.controller.js";
 
 import {  authorizeRoles  } from "../middleware/role.middleware.js";
@@ -35,7 +37,7 @@ router.param("mediaId", validateObjectIdParam);
 // 1. Direct Cloudinary Upload Endpoints
 router.post(
     "/upload",
-    authenticateUser,
+    optionalAuth,
     uploadMedia.single("file"),
     verifyUploadMagicBytes,
     uploadMediaFile
@@ -111,6 +113,12 @@ router.delete(
     "/:mediaId",
     authenticateUser,
     deleteMediaItem
+);
+
+router.post(
+    "/:mediaId/report",
+    authenticateUser,
+    reportMediaItem
 );
 
 export default router;

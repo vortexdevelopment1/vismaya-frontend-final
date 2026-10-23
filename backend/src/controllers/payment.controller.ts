@@ -110,15 +110,36 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<a
             });
         }
 
-        if (pkg.allowedRole !== role) {
-            return res.status(403).json({
-                success: false,
-                message: `Package '${packageType}' is only available for role '${pkg.allowedRole}'`
-            });
+        const isRegistrationOrder = packageType === "talent_annual_999" || packageType === "industry_annual_4999";
+        const emailInput = req.body.email || req.body.userEmail || req.user?.email;
+        let normalizedEmail: string | undefined = undefined;
+
+        if (!userId) {
+            if (!isRegistrationOrder) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Authentication is required to purchase credit packs"
+                });
+            }
+            if (!emailInput || typeof emailInput !== "string" || !emailInput.includes("@")) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Valid email address is required for registration payment order"
+                });
+            }
+            normalizedEmail = emailInput.trim().toLowerCase();
+        } else {
+            if (pkg.allowedRole !== role) {
+                return res.status(403).json({
+                    success: false,
+                    message: `Package '${packageType}' is only available for role '${pkg.allowedRole}'`
+                });
+            }
+            if (emailInput) normalizedEmail = String(emailInput).trim().toLowerCase();
         }
 
         let organizationId = null;
-        if (role === "organization") {
+        if (role === "organization" && userId) {
             const org = await Organization.findOne({ userId });
             if (!org) {
                 return res.status(404).json({
@@ -179,7 +200,9 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<a
             }
 
             const transaction: any = await PaymentTransaction.create({
-                userId,
+                userId: userId || undefined,
+                email: normalizedEmail,
+                customerEmail: normalizedEmail,
                 organizationId: organizationId || undefined,
                 packageType,
                 amount: finalAmount,
@@ -225,7 +248,9 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<a
         const orderId = `order_vis_${uniqueSuffix}`;
 
         const transaction: any = await PaymentTransaction.create({
-            userId,
+            userId: userId || undefined,
+            email: normalizedEmail,
+            customerEmail: normalizedEmail,
             organizationId: organizationId || undefined,
             packageType,
             amount: finalAmount,
@@ -309,7 +334,7 @@ export const verifyPayment = async (req: Request, res: Response): Promise<any> =
         }
 
         // Authorization check
-        if (transaction.userId.toString() !== userId && req.user?.role !== "admin") {
+        if (transaction.userId && transaction.userId.toString() !== userId && req.user?.role !== "admin") {
             return res.status(403).json({
                 success: false,
                 message: "Access denied. You can only verify your own payment transactions."

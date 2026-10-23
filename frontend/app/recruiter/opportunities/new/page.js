@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { isRealMode } from "@/lib/api/config";
+import { recruiterService } from "@/lib/api/services/recruiterService";
 
 const OPPORTUNITY_TYPES = [
   "Acting",
@@ -39,7 +40,8 @@ function SubmitOpportunityForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedProjectId = searchParams.get("projectId") || "";
-  const editId = searchParams.get("edit") || "";
+  const editId = searchParams.get("edit") || searchParams.get("editId") || "";
+  const duplicateFromId = searchParams.get("duplicateFrom") || "";
 
   const { opportunities, projects, createProject, submitOpportunity, refreshProjects } = useWorkflow();
 
@@ -60,6 +62,9 @@ function SubmitOpportunityForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formErrors, setFormErrors] = useState({});
   const [submittedStatus, setSubmittedStatus] = useState(null); // null | 'submitted' | 'draft'
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [projectBlockedMessage, setProjectBlockedMessage] = useState(null);
 
   // Inline Project Creation Toggle
   const [isInlineProject, setIsInlineProject] = useState(orgProjects.length === 0);
@@ -97,35 +102,85 @@ function SubmitOpportunityForm() {
     experience: "1+ years acting experience",
     eligibilityLocation: "Mumbai",
     deadline: "",
+    customQuestions: [],
     fullBrief: "",
   });
 
-  // Prefill if edit query param is given
+  // Prefill if edit or duplicateFrom query param is given
   useEffect(() => {
-    if (editId) {
-      const opp = opportunities.find((o) => o.id === editId);
-      if (opp) {
+    let isMounted = true;
+    async function loadPrefill() {
+      const targetId = editId || duplicateFromId;
+      if (!targetId) return;
+
+      let opp = null;
+      if (isRealMode("opportunities") || isRealMode("recruiter")) {
+        try {
+          const res = await recruiterService.getOpportunityById(targetId);
+          if (res?.data) {
+            opp = res.data;
+          }
+        } catch (err) {
+          console.warn("Failed to fetch opportunity for prefill:", err);
+          if (isMounted) {
+            setSubmitError(
+              err?.response?.data?.message ||
+              err?.message ||
+              "Access denied or opportunity not found. Only the owner organization can access this opportunity."
+            );
+          }
+          return;
+        }
+      }
+
+      if (!opp) {
+        opp = opportunities.find((o) => (o.id || o._id) === targetId);
+      }
+
+      if (opp && isMounted) {
+        if (duplicateFromId) {
+          const parentProj = opp.project || projects.find((p) => (p.id || p._id) === opp.projectId);
+          const pStatus = (parentProj?.rawStatus || parentProj?.status || "").toLowerCase().trim();
+          if (pStatus === "completed" || pStatus === "cancelled" || pStatus === "canceled" || pStatus === "suspended") {
+            setProjectBlockedMessage(
+              `Cannot duplicate opportunity: The parent project "${parentProj?.title || parentProj?.projectName || 'Project'}" is ${parentProj?.status || pStatus}. Opportunities cannot be created under completed, cancelled, or suspended projects.`
+            );
+          }
+        }
+
+        const normRoles = Array.isArray(opp.roles) && opp.roles.length > 0
+          ? opp.roles.map((r, i) => ({
+              id: r.id || `r-${Date.now()}-${i}`,
+              roleName: r.roleName || r.name || "",
+              count: Number(r.count || r.positionsCount) || 1,
+              positionsCount: Number(r.positionsCount || r.count) || 1,
+              ageRange: r.ageRange || (r.ageMin && r.ageMax ? `${r.ageMin} - ${r.ageMax} years` : "20 - 30 years"),
+              gender: r.gender || "Any",
+              description: r.description || "",
+              skills: Array.isArray(r.skills) ? r.skills.join(", ") : (r.skills || ""),
+              language: Array.isArray(r.languages) ? r.languages.join(", ") : (r.language || ""),
+            }))
+          : [
+              {
+                id: `r-${Date.now()}`,
+                roleName: opp.role || "Lead Character",
+                count: Number(opp.positionsCount) || 1,
+                positionsCount: Number(opp.positionsCount) || 1,
+                ageRange: "20 - 28 years",
+                gender: "Any",
+                description: "",
+                skills: "Screen Acting",
+                language: "Hindi",
+              },
+            ];
+
         setFormData({
-          id: opp.id,
+          id: editId ? (opp.id || opp._id) : "",
           projectId: opp.projectId || "",
           title: opp.title || "",
           summary: opp.summary || "",
           opportunityType: opp.opportunityType || "Acting",
-          roles:
-            opp.roles && opp.roles.length > 0
-              ? opp.roles
-              : [
-                  {
-                    id: `r-${Date.now()}`,
-                    roleName: "Lead Character",
-                    count: 1,
-                    ageRange: "20 - 28 years",
-                    gender: "Any",
-                    description: "",
-                    skills: "Screen Acting",
-                    language: "Hindi",
-                  },
-                ],
+          roles: normRoles,
           location: opp.location || "Mumbai",
           remunerationType:
             opp.remuneration && opp.remuneration.includes("₹")
@@ -135,16 +190,36 @@ function SubmitOpportunityForm() {
           ageMin: opp.eligibility?.ageMin || 20,
           ageMax: opp.eligibility?.ageMax || 30,
           gender: opp.eligibility?.gender || "Any",
-          languages: (opp.eligibility?.languages || ["Hindi", "English"]).join(", "),
-          skills: (opp.eligibility?.skills || ["Screen Acting"]).join(", "),
-          experience: opp.eligibility?.experience || "1+ years",
-          eligibilityLocation: opp.eligibility?.location || "Mumbai",
-          deadline: opp.deadline ? opp.deadline.split("T")[0] : "",
-          fullBrief: opp.fullBrief || "",
+          languages: Array.isArray(opp.eligibility?.languages)
+            ? opp.eligibility.languages.join(", ")
+            : (opp.eligibility?.languages || "Hindi, English"),
+          skills: Array.isArray(opp.eligibility?.skills)
+            ? opp.eligibility.skills.join(", ")
+            : (opp.eligibility?.skills || "Screen Acting"),
+          experience: opp.eligibility?.experience || (opp.eligibility?.minExperienceYears ? `${opp.eligibility.minExperienceYears}+ years` : "1+ years"),
+          eligibilityLocation: opp.eligibility?.location || opp.location || "Mumbai",
+          deadline: duplicateFromId ? "" : (opp.deadline ? opp.deadline.split("T")[0] : ""),
+          customQuestions: Array.isArray(opp.customQuestions) ? opp.customQuestions : [],
+          fullBrief: opp.fullBrief || opp.summary || "",
         });
       }
     }
-  }, [editId, opportunities]);
+
+    loadPrefill();
+    return () => {
+      isMounted = false;
+    };
+  }, [editId, duplicateFromId, opportunities, projects]);
+
+  // Auto-sync projectId when real projects load if currently empty or set to mock id
+  useEffect(() => {
+    if (!preselectedProjectId && (!formData.projectId || formData.projectId.startsWith("proj-"))) {
+      const realProj = orgProjects.find((p) => p && p.id && !p.id.startsWith("proj-"));
+      if (realProj) {
+        setFormData((prev) => ({ ...prev, projectId: realProj.id }));
+      }
+    }
+  }, [orgProjects, preselectedProjectId, formData.projectId]);
 
   const minDeadlineDate = useMemo(() => {
     const d = new Date();
@@ -242,6 +317,10 @@ function SubmitOpportunityForm() {
   };
 
   const handleNext = async () => {
+    if (projectBlockedMessage) {
+      alert(projectBlockedMessage);
+      return;
+    }
     if (currentStep === 1 && validateStep1()) {
       if (isInlineProject && !formData.projectId) {
         const newProj = {
@@ -271,6 +350,11 @@ function SubmitOpportunityForm() {
   };
 
   const handleFormSubmit = async (isDraft = false) => {
+    if (projectBlockedMessage) {
+      setSubmitError(projectBlockedMessage);
+      return;
+    }
+
     let resolvedProjectId = formData.projectId;
     if (isInlineProject && (!resolvedProjectId || resolvedProjectId === "")) {
       const newProj = {
@@ -313,17 +397,31 @@ function SubmitOpportunityForm() {
         ageMin: Number(formData.ageMin) || 18,
         ageMax: Number(formData.ageMax) || 60,
         gender: formData.gender,
-        languages: formData.languages.split(",").map((s) => s.trim()).filter(Boolean),
-        skills: formData.skills.split(",").map((s) => s.trim()).filter(Boolean),
+        languages: typeof formData.languages === "string" ? formData.languages.split(",").map((s) => s.trim()).filter(Boolean) : (Array.isArray(formData.languages) ? formData.languages : []),
+        skills: typeof formData.skills === "string" ? formData.skills.split(",").map((s) => s.trim()).filter(Boolean) : (Array.isArray(formData.skills) ? formData.skills : []),
         experience: formData.experience,
         location: formData.eligibilityLocation,
       },
+      customQuestions: Array.isArray(formData.customQuestions) ? formData.customQuestions : [],
       fullBrief: formData.fullBrief.trim(),
       isDraft,
     };
 
-    submitOpportunity(payload);
-    setSubmittedStatus(isDraft ? "draft" : "submitted");
+    setSubmitError(null);
+    setIsSubmitting(true);
+    try {
+      await submitOpportunity(payload);
+      setSubmittedStatus(isDraft ? "draft" : "submitted");
+    } catch (err) {
+      console.error("Opportunity creation failed:", err);
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to submit opportunity. Please verify the information and try again.";
+      setSubmitError(errMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const steps = [
@@ -541,7 +639,9 @@ function SubmitOpportunityForm() {
             Opportunities
           </Link>
           <span style={{ color: "#E8E2D4" }}>/</span>
-          <span style={{ color: "#2B2D2A", fontWeight: 600 }}>Create Opportunity</span>
+          <span style={{ color: "#2B2D2A", fontWeight: 600 }}>
+            {editId ? "Edit & Resubmit Opportunity" : duplicateFromId ? "Duplicate Opportunity" : "Create Opportunity"}
+          </span>
         </nav>
 
         <h1
@@ -556,7 +656,7 @@ function SubmitOpportunityForm() {
             letterSpacing: "-0.015em",
           }}
         >
-          Create Opportunity
+          {editId ? "Edit & Resubmit Opportunity" : duplicateFromId ? "Duplicate Opportunity as New" : "Create Opportunity"}
         </h1>
         <p
           className="new-opp-desc"
@@ -569,9 +669,63 @@ function SubmitOpportunityForm() {
             maxWidth: "780px",
           }}
         >
-          Create verified character requirements, define eligibility parameters, and submit to Vismaya team for publishing.
+          {editId
+            ? "Update all opportunity fields, role specifications, and eligibility, then resubmit for Vismaya admin review."
+            : duplicateFromId
+            ? "Duplicating role specifications from a cancelled opportunity. Please set a new application deadline before submitting."
+            : "Create verified character requirements, define eligibility parameters, and submit to Vismaya team for publishing."}
         </p>
       </div>
+
+      {/* Blocked Project Warning Banner */}
+      {projectBlockedMessage && (
+        <div
+          style={{
+            padding: "16px 20px",
+            borderRadius: "12px",
+            backgroundColor: "rgba(180, 35, 24, 0.08)",
+            border: "1px solid rgba(180, 35, 24, 0.28)",
+            color: "#B42318",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "12px",
+            fontSize: "14px",
+            lineHeight: "1.5",
+          }}
+        >
+          <AlertCircle size={20} style={{ flexShrink: 0, marginTop: "2px", color: "#B42318" }} />
+          <div>
+            <strong style={{ display: "block", fontSize: "15px", marginBottom: "4px" }}>
+              Parent Project Inactive
+            </strong>
+            <span>{projectBlockedMessage}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Backend / Submission Error Banner */}
+      {submitError && (
+        <div
+          style={{
+            padding: "14px 18px",
+            borderRadius: "12px",
+            backgroundColor: "rgba(180, 35, 24, 0.08)",
+            border: "1px solid rgba(180, 35, 24, 0.28)",
+            color: "#B42318",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "10px",
+            fontSize: "14px",
+            lineHeight: "1.5",
+          }}
+        >
+          <AlertCircle size={18} style={{ flexShrink: 0, marginTop: "2px", color: "#B42318" }} />
+          <div>
+            <strong style={{ display: "block", marginBottom: "2px" }}>Submission Error</strong>
+            <span>{submitError}</span>
+          </div>
+        </div>
+      )}
 
       {/* STEP INDICATOR CARD (Full Width on Top) */}
       <div
@@ -733,6 +887,31 @@ function SubmitOpportunityForm() {
             boxSizing: "border-box",
           }}
         >
+          {submitError && (
+            <div
+              style={{
+                marginBottom: "24px",
+                padding: "16px 18px",
+                borderRadius: "12px",
+                backgroundColor: "#FEF2F2",
+                border: "1px solid #FCA5A5",
+                color: "#991B1B",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "12px",
+                fontSize: "14px",
+                lineHeight: 1.5,
+              }}
+            >
+              <AlertCircle size={20} style={{ flexShrink: 0, marginTop: "2px", color: "#DC2626" }} />
+              <div>
+                <strong style={{ display: "block", marginBottom: "2px", fontWeight: 600 }}>
+                  Submission Failed
+                </strong>
+                <span>{submitError}</span>
+              </div>
+            </div>
+          )}
           {/* STEP 1: PROJECT LINK */}
           {currentStep === 1 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
@@ -1614,6 +1793,7 @@ function SubmitOpportunityForm() {
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               <button
                 type="button"
+                disabled={isSubmitting}
                 onClick={() => handleFormSubmit(true)}
                 style={{
                   padding: "0 20px",
@@ -1625,7 +1805,8 @@ function SubmitOpportunityForm() {
                   backgroundColor: "#FFFFFF",
                   border: "1px solid #8A6B2E",
                   color: "#8A6B2E",
-                  cursor: "pointer",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  opacity: isSubmitting ? 0.7 : 1,
                   display: "inline-flex",
                   alignItems: "center",
                   transition: "all 0.18s ease",
@@ -1633,7 +1814,7 @@ function SubmitOpportunityForm() {
                 className="v-btn-outline-gold"
               >
                 <Save size={16} />
-                <span>Save Draft</span>
+                <span>{isSubmitting ? "Saving..." : "Save Draft"}</span>
               </button>
 
               {currentStep < 4 ? (
@@ -1664,6 +1845,7 @@ function SubmitOpportunityForm() {
               ) : (
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => handleFormSubmit(false)}
                   style={{
                     padding: "0 28px",
@@ -1675,7 +1857,8 @@ function SubmitOpportunityForm() {
                     backgroundColor: "#8A6B2E",
                     border: "none",
                     color: "#FFFFFF",
-                    cursor: "pointer",
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
+                    opacity: isSubmitting ? 0.7 : 1,
                     display: "inline-flex",
                     alignItems: "center",
                     boxShadow: "0 2px 8px rgba(138, 107, 46, 0.22)",
@@ -1684,7 +1867,7 @@ function SubmitOpportunityForm() {
                   className="v-btn-primary"
                 >
                   <Check size={17} strokeWidth={2.5} />
-                  <span>Submit to Vismaya</span>
+                  <span>{isSubmitting ? "Submitting..." : "Submit to Vismaya"}</span>
                 </button>
               )}
             </div>
@@ -1939,6 +2122,7 @@ function SubmitOpportunityForm() {
 
         <button
           type="button"
+          disabled={isSubmitting}
           onClick={() => handleFormSubmit(true)}
           className="new-opp-mobile-save-btn"
           style={{
@@ -1951,6 +2135,8 @@ function SubmitOpportunityForm() {
             border: "1px solid #8A6B2E",
             borderRadius: "10px",
             color: "#8A6B2E",
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+            opacity: isSubmitting ? 0.7 : 1,
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1958,7 +2144,7 @@ function SubmitOpportunityForm() {
           }}
         >
           <Save size={16} />
-          <span>Save draft</span>
+          <span>{isSubmitting ? "Saving..." : "Save draft"}</span>
         </button>
 
         {currentStep < 4 ? (
@@ -1988,6 +2174,7 @@ function SubmitOpportunityForm() {
         ) : (
           <button
             type="button"
+            disabled={isSubmitting}
             onClick={() => handleFormSubmit(false)}
             className="new-opp-mobile-primary-btn"
             style={{
@@ -2000,6 +2187,8 @@ function SubmitOpportunityForm() {
               border: "none",
               borderRadius: "10px",
               color: "#FFFFFF",
+              cursor: isSubmitting ? "not-allowed" : "pointer",
+              opacity: isSubmitting ? 0.7 : 1,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
@@ -2007,7 +2196,7 @@ function SubmitOpportunityForm() {
             }}
           >
             <Check size={16} strokeWidth={2.5} />
-            <span>Submit</span>
+            <span>{isSubmitting ? "Submitting..." : "Submit"}</span>
           </button>
         )}
       </div>

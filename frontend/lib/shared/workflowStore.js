@@ -1005,6 +1005,17 @@ export const initialNotifications = [
   },
 ];
 
+export const emptyWorkflowState = {
+  organizations: [],
+  projects: [],
+  opportunities: [],
+  applications: [],
+  auditions: [],
+  cancellationRequests: [],
+  notifications: [],
+  broadcasts: [],
+};
+
 export const defaultWorkflowState = {
   organizations: initialOrganizations,
   projects: initialProjects,
@@ -2180,7 +2191,9 @@ function workflowReducer(state, action) {
 const WorkflowContext = createContext(null);
 
 export function WorkflowProvider({ children }) {
-  const [state, dispatch] = useReducer(workflowReducer, defaultWorkflowState);
+  const isRealAny = isRealMode("opportunities") || isRealMode("projects") || isRealMode("talent") || isRealMode("recruiter") || isRealMode("admin");
+  const initialReducerState = isRealAny ? emptyWorkflowState : defaultWorkflowState;
+  const [state, dispatch] = useReducer(workflowReducer, initialReducerState);
   const [isHydrated, setIsHydrated] = useState(false);
 
   // SSR-safe hydration from localStorage on mount (and live API sync when real mode is active)
@@ -2198,19 +2211,19 @@ export function WorkflowProvider({ children }) {
               : Promise.resolve({ data: [] }),
           ]);
 
-          const liveOpps = oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data) && oppsRes.value.data.length > 0
+          const liveOpps = oppsRes.status === "fulfilled" && Array.isArray(oppsRes.value?.data)
             ? oppsRes.value.data
-            : defaultWorkflowState.opportunities;
+            : [];
 
-          const liveProjs = projsRes.status === "fulfilled" && Array.isArray(projsRes.value?.data) && projsRes.value.data.length > 0
+          const liveProjs = projsRes.status === "fulfilled" && Array.isArray(projsRes.value?.data)
             ? projsRes.value.data
-            : defaultWorkflowState.projects;
+            : [];
 
           if (mounted) {
             dispatch({
               type: "HYDRATE_STATE",
               payload: {
-                ...defaultWorkflowState,
+                ...emptyWorkflowState,
                 opportunities: liveOpps,
                 projects: liveProjs,
               },
@@ -2226,6 +2239,11 @@ export function WorkflowProvider({ children }) {
       }
 
       // 2. Mock mode / fallback local storage hydration
+      if (isRealMode("admin") || isRealMode("opportunities") || isRealMode("talent") || isRealMode("recruiter")) {
+        if (mounted) setIsHydrated(true);
+        return;
+      }
+
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -2303,7 +2321,7 @@ export function WorkflowProvider({ children }) {
     if (getAuthToken() && (isRealMode("projects") || isRealMode("recruiter"))) {
       try {
         const res = await recruiterService.getProjects();
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        if (res?.data && Array.isArray(res.data)) {
           dispatch({
             type: "SET_PROJECTS",
             payload: res.data,
@@ -2343,7 +2361,12 @@ export function WorkflowProvider({ children }) {
   const submitOpportunity = async (opportunityData) => {
     if (isRealMode("recruiter")) {
       try {
-        const res = await recruiterService.createOpportunity(opportunityData);
+        let res;
+        if (opportunityData.id) {
+          res = await recruiterService.updateOpportunity(opportunityData.id, opportunityData);
+        } else {
+          res = await recruiterService.createOpportunity(opportunityData);
+        }
         if (res?.data) {
           dispatch({ type: "SUBMIT_OPPORTUNITY", payload: res.data });
           return res.data;
@@ -2390,11 +2413,12 @@ export function WorkflowProvider({ children }) {
   };
 
   const requestCancellation = async (opportunityId, reason) => {
-    if (isRealMode("recruiter")) {
+    if (isRealMode("recruiter") || isRealMode("opportunities")) {
       try {
-        await recruiterService.requestOpportunityCancellation(opportunityId, { reason });
+        await recruiterService.requestOpportunityCancellation(opportunityId, { cancellationReason: reason });
       } catch (err) {
         console.warn("Real requestCancellation failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "REQUEST_CANCELLATION", payload: { opportunityId, reason } });
@@ -2403,9 +2427,11 @@ export function WorkflowProvider({ children }) {
   const adminResolveCancellation = async (requestId, decision, adminNote) => {
     if (isRealMode("admin")) {
       try {
-        await adminService.reviewOpportunityCancellation(requestId, { decision, adminNote });
+        const action = String(decision || "").toLowerCase().includes("approv") ? "approve" : "reject";
+        await adminService.reviewOpportunityCancellation(requestId, { action, adminNote, reason: adminNote });
       } catch (err) {
         console.warn("Real adminResolveCancellation failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "ADMIN_RESOLVE_CANCELLATION", payload: { requestId, decision, adminNote } });
@@ -2472,16 +2498,30 @@ export function WorkflowProvider({ children }) {
     dispatch({ type: "OPEN_APPLICATION", payload: { applicationId } });
   };
 
-  const requestAudition = async ({ applicationId, type, note }) => {
+  const requestAudition = async ({ applicationId, type, note, preferredDate, scheduledAt, meetingLink, location, instructions }) => {
     if (isRealMode("recruiter")) {
       try {
-        await recruiterService.requestAudition(applicationId, { type: type === "Audition" ? "self_tape" : type, instructions: note });
+        const normType = (type === "Audition" || type === "self_tape")
+          ? "self_tape"
+          : (type === "Virtual Interview" || type === "video_interview" || type === "online")
+            ? "video_interview"
+            : "in_person_audition";
+
+        await recruiterService.requestAudition(applicationId, {
+          type: normType,
+          instructions: instructions || note,
+          sceneBrief: note,
+          preferredDate,
+          scheduledAt: scheduledAt || (preferredDate ? new Date(preferredDate) : undefined),
+          meetingLink: meetingLink || (normType === "video_interview" ? "https://meet.google.com/vsm-audition-session" : undefined),
+          location: location || (normType === "in_person_audition" ? "Vismaya Studio, Mumbai" : undefined),
+        });
       } catch (err) {
         console.warn("Real requestAudition failed:", err);
         throw err;
       }
     }
-    dispatch({ type: "REQUEST_AUDITION", payload: { applicationId, type, note } });
+    dispatch({ type: "REQUEST_AUDITION", payload: { applicationId, type, note, preferredDate, meetingLink, location } });
   };
 
   const adminRelayAudition = async (auditionId, note) => {
@@ -2659,7 +2699,7 @@ export function WorkflowProvider({ children }) {
       auditions: state.auditions,
       cancellationRequests: state.cancellationRequests,
       notifications: state.notifications,
-      broadcasts: state.broadcasts || initialBroadcasts,
+      broadcasts: state.broadcasts || (isRealMode("admin") ? [] : initialBroadcasts),
       isHydrated,
 
       // Actions

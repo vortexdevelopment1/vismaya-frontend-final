@@ -1,21 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import {
-  initialTalents,
-  initialRecruiters,
-  initialMediaQueue,
-  initialRequirementRequests,
-  initialCastingCalls,
-  initialAdminNotifications,
-  initialRecentAdminActivity,
-  initialApplications,
-  initialShortlists,
-  initialBookings,
-  initialPayments,
-  initialSubscriptions,
-  initialBroadcasts,
-} from "./mockData";
 import { isRealMode } from "@/lib/api/config";
 import { adminService } from "@/lib/api/services/adminService";
 import { notificationService } from "@/lib/api/services/notificationService";
@@ -24,46 +9,55 @@ const AdminContext = createContext(null);
 
 export function AdminProvider({ children }) {
   // 1. Talents State
-  const [talents, setTalents] = useState(initialTalents);
+  const [talents, setTalents] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().talents || []));
 
   // 2. Recruiters State
-  const [recruiters, setRecruiters] = useState(initialRecruiters);
+  const [recruiters, setRecruiters] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().recruiters || []));
 
   // 3. Media Moderation Queue State
-  const [mediaQueue, setMediaQueue] = useState(initialMediaQueue);
+  const [mediaQueue, setMediaQueue] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().mediaQueue || []));
 
   // 4. Requirement Requests State
-  const [requirementRequests, setRequirementRequests] = useState(initialRequirementRequests);
+  const [requirementRequests, setRequirementRequests] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().requirementRequests || []));
 
   // 5. Casting Calls State
-  const [castingCalls, setCastingCalls] = useState(initialCastingCalls);
+  const [castingCalls, setCastingCalls] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().castingCalls || []));
 
   // 6. Applications State
-  const [applications, setApplications] = useState(initialApplications);
+  const [applications, setApplications] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().applications || []));
 
   // 7. Shortlists State
-  const [shortlists, setShortlists] = useState(initialShortlists);
+  const [shortlists, setShortlists] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().shortlists || []));
 
   // 8. Bookings State
-  const [bookings, setBookings] = useState(initialBookings);
+  const [bookings, setBookings] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().bookings || []));
 
   // 9. Payments State
-  const [payments, setPayments] = useState(initialPayments);
+  const [payments, setPayments] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().payments || []));
 
   // 10. Subscriptions State
-  const [subscriptions, setSubscriptions] = useState(initialSubscriptions);
+  const [subscriptions, setSubscriptions] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().subscriptions || []));
 
   // 11. Broadcasts State
-  const [broadcasts, setBroadcasts] = useState(initialBroadcasts);
+  const [broadcasts, setBroadcasts] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().broadcasts || []));
 
   // 12. Admin Notifications State
-  const [notifications, setNotifications] = useState(initialAdminNotifications);
+  const [notifications, setNotifications] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().notifications || []));
 
   // 13. Recent Activity Feed State
-  const [activities, setActivities] = useState(initialRecentAdminActivity);
+  const [activities, setActivities] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().activities || []));
 
   // 14. Toasts State
   const [toasts, setToasts] = useState([]);
+
+  // 15. Verifications State
+  const [verifications, setVerifications] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().verifications || []));
+
+  // 16. Cancellation Requests State
+  const [cancellationRequests, setCancellationRequests] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().cancellationRequests || []));
+
+  // 17. Moderation Reports State (Spec §40)
+  const [reports, setReports] = useState(() => isRealMode("admin") ? [] : []);
 
   // Fetch real data on mount when in real API mode
   useEffect(() => {
@@ -72,9 +66,9 @@ export function AdminProvider({ children }) {
     let mounted = true;
     async function loadAdminData() {
       try {
-        const [talentsRes, orgsRes, mediaRes, notifRes, oppsRes, cancRes, audRes, payRes, metricsRes, verRes, logsRes] = await Promise.allSettled([
-          adminService.getAllUsers({ role: "talent" }),
-          adminService.getAllUsers({ role: "organization" }),
+        const [talentsRes, orgsRes, mediaRes, notifRes, oppsRes, cancRes, audRes, payRes, metricsRes, verRes, logsRes, reportsRes] = await Promise.allSettled([
+          adminService.getTalentDirectory(),
+          adminService.getOrganizationDirectory(),
           adminService.getPendingMedia(),
           notificationService.getMyNotifications(),
           adminService.getPendingOpportunities(),
@@ -84,6 +78,7 @@ export function AdminProvider({ children }) {
           adminService.getDashboardMetrics(),
           adminService.getPendingVerifications(),
           adminService.getAuditLogs(),
+          adminService.getReports({ status: "open" }),
         ]);
 
         if (mounted) {
@@ -107,6 +102,15 @@ export function AdminProvider({ children }) {
           }
           if (logsRes.status === "fulfilled" && Array.isArray(logsRes.value?.data)) {
             setActivities(logsRes.value.data);
+          }
+          if (verRes.status === "fulfilled" && Array.isArray(verRes.value?.data)) {
+            setVerifications(verRes.value.data);
+          }
+          if (cancRes.status === "fulfilled" && Array.isArray(cancRes.value?.data)) {
+            setCancellationRequests(cancRes.value.data);
+          }
+          if (reportsRes.status === "fulfilled" && Array.isArray(reportsRes.value?.data)) {
+            setReports(reportsRes.value.data);
           }
         }
       } catch (err) {
@@ -154,9 +158,9 @@ export function AdminProvider({ children }) {
       }
     }
 
-    const target = talents.find((t) => t.id === id);
+    const target = talents.find((t) => t.id === id || t._id === id || t.userId === id);
     setTalents((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "Approved", statusReason: null } : t))
+      prev.map((t) => (t.id === id || t._id === id || t.userId === id ? { ...t, status: "Approved", isProfileApproved: true, statusReason: null } : t))
     );
 
     setActivities((prev) => [
@@ -191,9 +195,9 @@ export function AdminProvider({ children }) {
       }
     }
 
-    const target = talents.find((t) => t.id === id);
+    const target = talents.find((t) => t.id === id || t._id === id || t.userId === id);
     setTalents((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "Rejected", statusReason: reason } : t))
+      prev.map((t) => (t.id === id || t._id === id || t.userId === id ? { ...t, status: "Rejected", statusReason: reason } : t))
     );
 
     setActivities((prev) => [
@@ -1193,13 +1197,65 @@ export function AdminProvider({ children }) {
   // ----------------------------------------------------
   const pendingTalentsCount = talents.filter((t) => t.status === "Pending").length;
   const pendingRecruitersCount = recruiters.filter((r) => r.status === "Pending").length;
-  const pendingMediaCount = mediaQueue.filter((m) => m.status === "Pending").length;
+  const pendingMediaReviewCount = mediaQueue.filter((m) => {
+    const st = (m.status || m.moderationState || "").toLowerCase();
+    return st === "pending" || st === "admin_review" || st === "uploaded";
+  }).length;
+  const openReportsCount = reports.filter((r) => (r.status || "").toLowerCase() === "open").length;
+  const pendingMediaCount = pendingMediaReviewCount + openReportsCount;
+
   const pendingRequirementsCount = requirementRequests.filter(
     (r) => r.status === "New" || r.status === "Needs Clarification" || r.status === "Ready to Publish"
   ).length;
+  const pendingVerificationsCount = verifications.filter(
+    (v) => (v.status || "").toLowerCase() === "pending" || (v.rawStatus || "").toLowerCase() === "pending"
+  ).length;
   const totalPendingApprovals =
-    pendingTalentsCount + pendingRecruitersCount + pendingMediaCount + pendingRequirementsCount;
+    pendingTalentsCount + pendingRecruitersCount + pendingMediaCount + pendingRequirementsCount + pendingVerificationsCount;
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
+
+  const refreshVerifications = async () => {
+    if (isRealMode("admin")) {
+      try {
+        const res = await adminService.getPendingVerifications();
+        if (Array.isArray(res?.data)) {
+          setVerifications(res.data);
+        }
+      } catch (err) {
+        console.warn("Failed to refresh verifications in context:", err);
+      }
+    }
+  };
+
+  const refreshReports = async () => {
+    if (isRealMode("admin")) {
+      try {
+        const res = await adminService.getReports({ status: "open" });
+        if (Array.isArray(res?.data)) {
+          setReports(res.data);
+        }
+      } catch (err) {
+        console.warn("Failed to refresh reports in context:", err);
+      }
+    }
+  };
+
+  const pendingCancellationsCount = cancellationRequests.filter(
+    (c) => (c.status || "").toLowerCase() === "pending" || (c.decision || "").toLowerCase() === "pending"
+  ).length;
+
+  const refreshCancellations = async () => {
+    if (isRealMode("admin")) {
+      try {
+        const res = await adminService.getCancellationRequests();
+        if (Array.isArray(res?.data)) {
+          setCancellationRequests(res.data);
+        }
+      } catch (err) {
+        console.warn("Failed to refresh cancellations in context:", err);
+      }
+    }
+  };
 
   return (
     <AdminContext.Provider
@@ -1264,6 +1320,18 @@ export function AdminProvider({ children }) {
         pendingRecruitersCount,
         pendingMediaCount,
         pendingRequirementsCount,
+        pendingVerificationsCount,
+        pendingCancellationsCount,
+        cancellationRequests,
+        setCancellationRequests,
+        refreshCancellations,
+        verifications,
+        setVerifications,
+        refreshVerifications,
+        reports,
+        setReports,
+        refreshReports,
+        openReportsCount,
         totalPendingApprovals,
         unreadNotificationsCount,
       }}

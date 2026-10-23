@@ -18,16 +18,10 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
   const searchParams = useSearchParams();
   const fromParam = searchParams?.get("from");
   const { unreadNotificationsCount: oldUnread, companyProfile } = useRecruiter();
+  const { unreadNotificationsCount: wfUnread, applications = [] } = useWorkflow() || {};
 
-  let unreadNotificationsCount = oldUnread;
-  let shortlistsReadyCount = 0;
-  try {
-    const { unreadNotificationsCount: wfUnread, applications } = useWorkflow();
-    unreadNotificationsCount = wfUnread("organization");
-    shortlistsReadyCount = applications.filter((a) => a.status === "Shortlisted").length;
-  } catch (e) {
-    // fallback
-  }
+  const unreadNotificationsCount = typeof wfUnread === "function" ? wfUnread("organization") : oldUnread;
+  const shortlistsReadyCount = applications.filter((a) => a.status === "Shortlisted").length;
 
   // Active item determined by "most specific / longest match wins" and origin context
   const activeHref = getActiveRecruiterNavItem(pathname, fromParam);
@@ -320,7 +314,7 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {companyProfile.name || "Zee Films Studio"}
+                  {companyProfile?.companyName || companyProfile?.name || companyProfile?.studioName || ""}
                 </span>
                 <span
                   style={{

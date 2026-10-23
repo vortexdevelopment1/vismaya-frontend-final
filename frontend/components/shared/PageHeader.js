@@ -10,9 +10,11 @@ export default function PageHeader({
   badge,
   breadcrumbs = [],
   action,
+  actions,
   children,
   style = {},
 }) {
+  const resolvedAction = action || actions;
   return (
     <div
       style={{
@@ -144,7 +146,7 @@ export default function PageHeader({
         </div>
 
         {/* Action Controls */}
-        {(action || children) && (
+        {(resolvedAction || children) && (
           <div
             style={{
               display: "flex",
@@ -155,7 +157,7 @@ export default function PageHeader({
             }}
             className="page-header-actions"
           >
-            {action}
+            {resolvedAction}
             {children}
           </div>
         )}

@@ -45,7 +45,16 @@ export const getMyCreditBalance = async (req: Request, res: Response): Promise<a
 
         let ledger: any = await CreditLedger.findOne({ organizationId: organization._id });
         if (!ledger) {
-            ledger = await initializeOrganizationCredits(organization._id);
+            return res.status(200).json({
+                success: true,
+                balance: 0,
+                includedCredits: 0,
+                purchasedCredits: 0,
+                consumedCredits: 0,
+                lowBalanceWarning: true,
+                buyMoreViews: true,
+                warningMessage: "You have not activated your subscription yet."
+            });
         }
 
         const isLowBalance = ledger.balance < 10;

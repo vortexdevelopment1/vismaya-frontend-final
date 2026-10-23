@@ -10,6 +10,7 @@ import PaymentTransaction from "../models/paymentTransaction.model.js";
 import AdminAuditLog from "../models/adminAuditLog.model.js";
 import Verification from "../models/verification.model.js";
 import Application from "../models/application.model.js";
+import Notification from "../models/notification.model.js";
 import MediaItem from "../models/mediaItem.model.js";
 import Coupon from "../models/coupon.model.js";
 import CreditLedger from "../models/creditLedger.model.js";
@@ -611,6 +612,7 @@ export const getPendingTalentProfiles = async (req: Request, res: Response): Pro
         const skip = (pageNum - 1) * limitNum;
 
         const filter = {
+            isInformational: { $ne: true },
             $or: [
                 { status: "pending" },
                 { isProfileApproved: false },
@@ -627,14 +629,36 @@ export const getPendingTalentProfiles = async (req: Request, res: Response): Pro
             TalentProfile.countDocuments(filter as any)
         ]);
 
+        const mappedProfiles = profiles.map(p => {
+            const pObj = (p && (p as any).toObject) ? (p as any).toObject() : { ...p };
+            const u = pObj.userId;
+            const userMobile = (typeof u === "object" ? u?.mobile : null) || pObj.mobile || pObj.phone || "";
+            const userEmail = (typeof u === "object" ? u?.email : null) || pObj.email || "";
+            const userName = (typeof u === "object" ? u?.name : null) || pObj.name || pObj.stageName || "";
+            return {
+                ...pObj,
+                mobile: userMobile,
+                phone: userMobile,
+                email: userEmail,
+                name: userName,
+                contactDetails: {
+                    ...(pObj.contactDetails || {}),
+                    mobile: userMobile,
+                    phone: userMobile,
+                    email: userEmail,
+                    name: userName,
+                }
+            };
+        });
+
         res.status(200).json({
             success: true,
-            count: profiles.length,
+            count: mappedProfiles.length,
             total,
             page: pageNum,
             totalPages: Math.ceil(total / limitNum),
-            profiles,
-            data: profiles
+            profiles: mappedProfiles,
+            data: mappedProfiles
         });
     } catch (error: any) {
         console.error("Get pending talent profiles error:", error);
@@ -659,6 +683,7 @@ export const getTalentProfileById = async (req: Request, res: Response): Promise
                 userId: user,
                 vismayaId: `VIS-${user._id.toString().slice(-6).toUpperCase()}`,
                 stageName: user.name || "Artist",
+                name: user.name || "Artist",
                 category: "open_talent",
                 currentCity: "Mumbai",
                 currentState: "Maharashtra",
@@ -668,14 +693,38 @@ export const getTalentProfileById = async (req: Request, res: Response): Promise
                 isVerified: false,
                 profileCompletionPercentage: 35,
                 createdAt: user.createdAt,
-                updatedAt: user.updatedAt
+                updatedAt: user.updatedAt,
+                mobile: user.mobile || "",
+                phone: user.mobile || "",
+                email: user.email || ""
             };
         }
 
+        const profileObj = (profile && (profile as any).toObject) ? (profile as any).toObject() : { ...profile };
+        const u = profileObj.userId;
+        const userMobile = (typeof u === "object" ? u?.mobile : null) || profileObj.mobile || profileObj.phone || "";
+        const userEmail = (typeof u === "object" ? u?.email : null) || profileObj.email || "";
+        const userName = (typeof u === "object" ? u?.name : null) || profileObj.name || profileObj.stageName || "";
+
+        const fullProfile = {
+            ...profileObj,
+            mobile: userMobile,
+            phone: userMobile,
+            email: userEmail,
+            name: userName,
+            contactDetails: {
+                ...(profileObj.contactDetails || {}),
+                mobile: userMobile,
+                phone: userMobile,
+                email: userEmail,
+                name: userName,
+            }
+        };
+
         res.status(200).json({
             success: true,
-            profile,
-            data: profile
+            profile: fullProfile,
+            data: fullProfile
         });
     } catch (error: any) {
         console.error("Get talent profile by ID error:", error);
@@ -716,7 +765,20 @@ export const approveUser = async (req: Request, res: Response): Promise<any> => 
             {
                 $set: {
                     status: "active",
+                    verificationState: "verified",
+                    "verificationStatus.businessVerified": true,
                     isVerified: true
+                }
+            }
+        );
+
+        await Verification.updateMany(
+            { userId: user._id, status: "pending" },
+            {
+                $set: {
+                    status: "verified",
+                    reviewedAt: new Date(),
+                    reviewedBy: req.user?.userId
                 }
             }
         );
@@ -785,7 +847,19 @@ export const rejectUser = async (req: Request, res: Response): Promise<any> => {
 
         await Organization.updateMany(
             { userId: user._id },
-            { $set: { status: "rejected", isVerified: false } }
+            { $set: { status: "rejected", verificationState: "rejected", isVerified: false } }
+        );
+
+        await Verification.updateMany(
+            { userId: user._id, status: "pending" },
+            {
+                $set: {
+                    status: "rejected",
+                    reviewedAt: new Date(),
+                    reviewedBy: req.user?.userId,
+                    rejectionReason: reason || "Rejected by admin"
+                }
+            }
         );
 
         await logAdminAction({
@@ -1052,7 +1126,7 @@ export const getAllUsers = async (req: Request, res: Response): Promise<any> => 
 export const getTalentDirectory = async (req: Request, res: Response): Promise<any> => {
     try {
         const { profession, city, status, search, page = 1, limit = 50 } = req.query;
-        const filter: any = {};
+        const filter: any = { isInformational: { $ne: true } };
         if (profession) filter.primaryProfession = new RegExp(escapeRegex(profession), "i");
         if (city) filter.currentCity = new RegExp(escapeRegex(city), "i");
 
@@ -1157,15 +1231,36 @@ export const getTalentDirectory = async (req: Request, res: Response): Promise<a
         }
 
         const allProfiles = [...profiles, ...syntheticProfiles];
+        const mappedProfiles = allProfiles.map((p: any) => {
+            const pObj = p?.toObject ? p.toObject() : { ...p };
+            const u = pObj.userId;
+            const userMobile = (typeof u === "object" ? u?.mobile : null) || pObj.mobile || pObj.phone || "";
+            const userEmail = (typeof u === "object" ? u?.email : null) || pObj.email || "";
+            const userName = (typeof u === "object" ? u?.name : null) || pObj.name || pObj.stageName || "";
+            return {
+                ...pObj,
+                mobile: userMobile,
+                phone: userMobile,
+                email: userEmail,
+                name: userName,
+                contactDetails: {
+                    ...(pObj.contactDetails || {}),
+                    mobile: userMobile,
+                    phone: userMobile,
+                    email: userEmail,
+                    name: userName,
+                }
+            };
+        });
 
         res.status(200).json({
             success: true,
-            count: allProfiles.length,
+            count: mappedProfiles.length,
             total: total + syntheticProfiles.length,
             page: pageNum,
             totalPages: Math.ceil((total + syntheticProfiles.length) / limitNum) || 1,
-            profiles: allProfiles,
-            data: allProfiles
+            profiles: mappedProfiles,
+            data: mappedProfiles
         });
     } catch (error: any) {
         console.error("Get talent directory error:", error);
@@ -1192,6 +1287,17 @@ export const getOrganizationDirectory = async (req: Request, res: Response): Pro
             Organization.countDocuments(filter)
         ]);
 
+        const orgIds = organizations.map(o => o._id);
+        const ledgers = await CreditLedger.find({ organizationId: { $in: orgIds } });
+        const ledgerMap = new Map(ledgers.map(l => [l.organizationId.toString(), l.balance]));
+
+        const enrichedOrgs = organizations.map((o: any) => {
+            const orgObj = o.toObject ? o.toObject() : { ...o };
+            orgObj.credits = ledgerMap.get(orgObj._id.toString()) ?? 100;
+            orgObj.status = orgObj.status || (orgObj.userId as any)?.status || orgObj.verificationState || "pending";
+            return orgObj;
+        });
+
         const orgUserIds = organizations.map(o => o.userId?._id?.toString()).filter(Boolean);
         const unprofiledUsers = await User.find({
             role: "organization",
@@ -1206,11 +1312,12 @@ export const getOrganizationDirectory = async (req: Request, res: Response): Pro
             contactEmail: u.email,
             contactNumber: u.mobile,
             organizationType: "Production House",
-            status: u.status,
+            status: u.status || "pending",
+            credits: 100,
             createdAt: u.createdAt
         }));
 
-        const allOrgs = [...organizations, ...syntheticOrgs];
+        const allOrgs = [...enrichedOrgs, ...syntheticOrgs];
 
         res.status(200).json({
             success: true,
@@ -1259,7 +1366,7 @@ export const getAllOpportunitiesAdmin = async (req: Request, res: Response): Pro
             Opportunity.find(filter)
                 .populate({
                     path: "projectId",
-                    select: "projectName organizationId projectType title type",
+                    select: "projectName organizationId projectType title type description status",
                     populate: {
                         path: "organizationId",
                         select: "organizationName contactPerson contactEmail contactNumber"
@@ -1271,13 +1378,49 @@ export const getAllOpportunitiesAdmin = async (req: Request, res: Response): Pro
             Opportunity.countDocuments(filter)
         ]);
 
+        const rawProjectIds = opportunities
+            .map((o: any) => o.projectId?._id || o.projectId)
+            .filter(Boolean);
+        const projectObjectIds = rawProjectIds
+            .filter((id: any) => mongoose.Types.ObjectId.isValid(id.toString()))
+            .map((id: any) => new mongoose.Types.ObjectId(id.toString()));
+        const projectIdStrings = rawProjectIds.map((id: any) => id.toString());
+        const allProjectIds = [...projectObjectIds, ...projectIdStrings];
+
+        const oppCounts = allProjectIds.length > 0 ? await Opportunity.aggregate([
+            {
+                $match: {
+                    projectId: { $in: allProjectIds },
+                    status: { $ne: "deleted" },
+                    isDeleted: { $ne: true }
+                }
+            },
+            { $group: { _id: "$projectId", count: { $sum: 1 } } }
+        ]) : [];
+
+        const countMap = new Map<string, number>();
+        for (const c of oppCounts) {
+            const key = c._id.toString();
+            countMap.set(key, (countMap.get(key) || 0) + c.count);
+        }
+
+        const enrichedOpportunities = opportunities.map((opp: any) => {
+            const oppObj = opp.toObject ? opp.toObject() : { ...opp };
+            if (oppObj.projectId && typeof oppObj.projectId === "object") {
+                const pId = oppObj.projectId._id?.toString() || oppObj.projectId.id?.toString() || "";
+                oppObj.projectId.opportunityCount = countMap.get(pId) || 0;
+                oppObj.projectId.opportunitiesCount = oppObj.projectId.opportunityCount;
+            }
+            return oppObj;
+        });
+
         res.status(200).json({
             success: true,
-            count: opportunities.length,
+            count: enrichedOpportunities.length,
             total,
             page: pageNum,
             totalPages: Math.ceil(total / limitNum),
-            opportunities
+            opportunities: enrichedOpportunities
         });
     } catch (error: any) {
         console.error("Get all admin opportunities error:", error);
@@ -1367,13 +1510,44 @@ export const getAllProjectsAdmin = async (req: Request, res: Response): Promise<
             Project.countDocuments(filter)
         ]);
 
+        const rawProjectIds = projects.map(p => p._id).filter(Boolean);
+        const projectObjectIds = rawProjectIds
+            .filter((id: any) => mongoose.Types.ObjectId.isValid(id.toString()))
+            .map((id: any) => new mongoose.Types.ObjectId(id.toString()));
+        const projectIdStrings = rawProjectIds.map((id: any) => id.toString());
+        const allProjectIds = [...projectObjectIds, ...projectIdStrings];
+
+        const opportunityCounts = allProjectIds.length > 0 ? await Opportunity.aggregate([
+            {
+                $match: {
+                    projectId: { $in: allProjectIds },
+                    status: { $ne: "deleted" },
+                    isDeleted: { $ne: true }
+                }
+            },
+            { $group: { _id: "$projectId", count: { $sum: 1 } } }
+        ]) : [];
+
+        const oppCountMap: Record<string, number> = {};
+        for (const item of opportunityCounts) {
+            const key = item._id.toString();
+            oppCountMap[key] = (oppCountMap[key] || 0) + item.count;
+        }
+
+        const projectsWithStats = projects.map((p: any) => {
+            const pObj = p.toObject ? p.toObject() : { ...p };
+            pObj.opportunityCount = oppCountMap[p._id.toString()] || 0;
+            pObj.opportunitiesCount = pObj.opportunityCount;
+            return pObj;
+        });
+
         res.status(200).json({
             success: true,
-            count: projects.length,
+            count: projectsWithStats.length,
             total,
             page: pageNum,
             totalPages: Math.ceil(total / limitNum),
-            projects
+            projects: projectsWithStats
         });
     } catch (error: any) {
         console.error("Get all admin projects error:", error);
@@ -1387,14 +1561,50 @@ export const getPendingOpportunities = async (req: Request, res: Response): Prom
             status: { $in: ["pending", "under_vismaya_review"] }
         }).populate({
             path: "projectId",
-            select: "projectName organizationId projectType",
+            select: "projectName organizationId projectType title type description status",
             populate: {
                 path: "organizationId",
                 select: "organizationName contactPerson contactEmail contactNumber"
             }
         }).sort({ createdAt: -1 });
 
-        res.status(200).json({ success: true, count: opportunities.length, opportunities });
+        const rawProjectIds = opportunities
+            .map((o: any) => o.projectId?._id || o.projectId)
+            .filter(Boolean);
+        const projectObjectIds = rawProjectIds
+            .filter((id: any) => mongoose.Types.ObjectId.isValid(id.toString()))
+            .map((id: any) => new mongoose.Types.ObjectId(id.toString()));
+        const projectIdStrings = rawProjectIds.map((id: any) => id.toString());
+        const allProjectIds = [...projectObjectIds, ...projectIdStrings];
+
+        const oppCounts = allProjectIds.length > 0 ? await Opportunity.aggregate([
+            {
+                $match: {
+                    projectId: { $in: allProjectIds },
+                    status: { $ne: "deleted" },
+                    isDeleted: { $ne: true }
+                }
+            },
+            { $group: { _id: "$projectId", count: { $sum: 1 } } }
+        ]) : [];
+
+        const countMap = new Map<string, number>();
+        for (const c of oppCounts) {
+            const key = c._id.toString();
+            countMap.set(key, (countMap.get(key) || 0) + c.count);
+        }
+
+        const enrichedOpportunities = opportunities.map((opp: any) => {
+            const oppObj = opp.toObject ? opp.toObject() : { ...opp };
+            if (oppObj.projectId && typeof oppObj.projectId === "object") {
+                const pId = oppObj.projectId._id?.toString() || oppObj.projectId.id?.toString() || "";
+                oppObj.projectId.opportunityCount = countMap.get(pId) || 0;
+                oppObj.projectId.opportunitiesCount = oppObj.projectId.opportunityCount;
+            }
+            return oppObj;
+        });
+
+        res.status(200).json({ success: true, count: enrichedOpportunities.length, opportunities: enrichedOpportunities });
     } catch (error: any) {
         console.error("Get pending opportunities error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while fetching pending opportunities" });
@@ -1408,6 +1618,14 @@ export const approveOpportunity = async (req: Request, res: Response): Promise<a
 
         if (!opportunity) {
             return res.status(404).json({ success: false, message: "Opportunity not found" });
+        }
+
+        const project = await Project.findById(opportunity.projectId);
+        if (project && project.status === "suspended") {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot approve opportunity: The parent project is suspended."
+            });
         }
 
         opportunity.status = "published";
@@ -1424,6 +1642,27 @@ export const approveOpportunity = async (req: Request, res: Response): Promise<a
             details: `Approved opportunity: ${opportunity.title}`
         });
 
+        // Notify the organization (in-app notification + email respecting user email toggle)
+        try {
+            const project = await Project.findById(opportunity.projectId);
+            const organization = project ? await Organization.findById(project.organizationId) : null;
+            const recipientId = organization?.userId;
+            if (recipientId) {
+                await notifyUser({
+                    recipientId,
+                    type: "opportunity_approved",
+                    title: "Opportunity Approved",
+                    message: `Your casting opportunity "${opportunity.title}" has been approved and published on Vismaya.`,
+                    referenceId: opportunity._id,
+                    referenceType: "Opportunity",
+                    sendEmailAlert: true,
+                    emailSubject: `Opportunity Approved: ${opportunity.title}`
+                });
+            }
+        } catch (notifErr: any) {
+            console.warn("[ApproveOpportunity] Notification warning:", notifErr.message);
+        }
+
         res.status(200).json({ success: true, message: "Opportunity approved and published successfully", opportunity });
     } catch (error: any) {
         console.error("Approve opportunity error:", error);
@@ -1434,7 +1673,15 @@ export const approveOpportunity = async (req: Request, res: Response): Promise<a
 export const rejectOpportunity = async (req: Request, res: Response): Promise<any> => {
     try {
         const oppId = req.params.opportunityId || req.params.id || req.body?.opportunityId || req.body?.id;
-        const { rejectionReason } = req.body || {};
+        const { rejectionReason, reason } = req.body || {};
+        const finalReason = (rejectionReason || reason || "").trim();
+
+        if (!finalReason || finalReason.length < 10) {
+            return res.status(400).json({
+                success: false,
+                message: "Rejection reason is required and must be at least 10 characters"
+            });
+        }
 
         const opportunity = await Opportunity.findById(oppId);
         if (!opportunity) {
@@ -1442,7 +1689,11 @@ export const rejectOpportunity = async (req: Request, res: Response): Promise<an
         }
 
         opportunity.status = "rejected";
-        opportunity.rejectionReason = rejectionReason || "Does not meet Vismaya standards";
+        opportunity.rejectionReason = finalReason;
+        opportunity.rejectedAt = new Date();
+        if (req.user?.userId) {
+            opportunity.rejectedBy = req.user.userId as any;
+        }
         await opportunity.save();
 
         await logAdminAction({
@@ -1453,7 +1704,28 @@ export const rejectOpportunity = async (req: Request, res: Response): Promise<an
             details: `Rejected opportunity. Reason: ${opportunity.rejectionReason}`
         });
 
-        res.status(200).json({ success: true, message: "Opportunity rejected", opportunity });
+        // Notify the organization (in-app notification + email respecting user email toggle)
+        try {
+            const project = await Project.findById(opportunity.projectId);
+            const organization = project ? await Organization.findById(project.organizationId) : null;
+            const recipientId = organization?.userId;
+            if (recipientId) {
+                await notifyUser({
+                    recipientId,
+                    type: "opportunity_rejected",
+                    title: "Opportunity Rejected",
+                    message: `Your casting opportunity "${opportunity.title}" was rejected. Reason: ${finalReason}`,
+                    referenceId: opportunity._id,
+                    referenceType: "Opportunity",
+                    sendEmailAlert: true,
+                    emailSubject: `Opportunity Rejected: ${opportunity.title}`
+                });
+            }
+        } catch (notifErr: any) {
+            console.warn("[RejectOpportunity] Notification warning:", notifErr.message);
+        }
+
+        res.status(200).json({ success: true, message: "Opportunity rejected successfully", opportunity });
     } catch (error: any) {
         console.error("Reject opportunity error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while rejecting opportunity" });
@@ -1488,6 +1760,27 @@ export const requestOpportunityCorrections = async (req: Request, res: Response)
             details: `Corrections requested: ${correctionNotes}`
         });
 
+        // Notify the organization (in-app notification + email respecting user email toggle)
+        try {
+            const project = await Project.findById(opportunity.projectId);
+            const organization = project ? await Organization.findById(project.organizationId) : null;
+            const recipientId = organization?.userId;
+            if (recipientId) {
+                await notifyUser({
+                    recipientId,
+                    type: "opportunity_corrections_requested",
+                    title: "Opportunity Corrections Requested",
+                    message: `Corrections requested for your casting opportunity "${opportunity.title}": ${correctionNotes}`,
+                    referenceId: opportunity._id,
+                    referenceType: "Opportunity",
+                    sendEmailAlert: true,
+                    emailSubject: `Corrections Requested: ${opportunity.title}`
+                });
+            }
+        } catch (notifErr: any) {
+            console.warn("[RequestCorrections] Notification warning:", notifErr.message);
+        }
+
         res.status(200).json({ success: true, message: "Corrections requested from organization", opportunity });
     } catch (error: any) {
         console.error("Request corrections error:", error);
@@ -1497,18 +1790,75 @@ export const requestOpportunityCorrections = async (req: Request, res: Response)
 
 export const getCancellationRequests = async (req: Request, res: Response): Promise<any> => {
     try {
-        const opportunities = await Opportunity.find({ status: "cancellation_requested" })
+        const opportunities = await Opportunity.find({
+            $or: [
+                { "cancellationRequest.decision": { $in: ["pending", "approved", "declined"] } },
+                { status: "cancellation_requested" },
+                { status: "cancelled", cancellationReason: { $exists: true, $ne: "" } }
+            ]
+        })
             .populate({
                 path: "projectId",
                 select: "projectName organizationId projectType",
                 populate: {
                     path: "organizationId",
-                    select: "organizationName contactPerson contactEmail contactNumber"
+                    select: "organizationName contactPerson contactEmail contactNumber name"
                 }
             })
-            .sort({ cancellationRequestedAt: -1 });
+            .sort({ "cancellationRequest.requestedAt": -1, cancellationRequestedAt: -1, updatedAt: -1 });
 
-        res.status(200).json({ success: true, count: opportunities.length, opportunities });
+        const formattedRequests = opportunities.map((opp: any) => {
+            const oppObj = opp.toObject ? opp.toObject() : opp;
+            let reqRecord = oppObj.cancellationRequest;
+
+            if (!reqRecord) {
+                let decision: "pending" | "approved" | "declined" = "pending";
+                if (oppObj.status === "cancelled") {
+                    decision = "approved";
+                } else if (oppObj.status === "cancellation_requested") {
+                    decision = "pending";
+                } else {
+                    decision = "declined";
+                }
+
+                reqRecord = {
+                    reason: oppObj.cancellationReason || "No reason provided",
+                    requestedAt: oppObj.cancellationRequestedAt || oppObj.updatedAt || oppObj.createdAt,
+                    decision,
+                    decidedAt: oppObj.cancellationReviewedAt || null,
+                    decidedBy: oppObj.cancellationReviewedBy || null,
+                    adminNote: oppObj.correctionNotes || "",
+                    declineReason: decision === "declined" ? (oppObj.rejectionReason || "Request declined") : ""
+                };
+            }
+
+            const proj = oppObj.projectId || {};
+            const org = oppObj.organizationId || proj.organizationId || {};
+            const orgName = org.organizationName || org.name || "Unknown Organization";
+            const projectName = proj.projectName || oppObj.projectName || "Unknown Project";
+
+            return {
+                ...oppObj,
+                cancellationRequest: reqRecord,
+                decision: reqRecord.decision,
+                reason: reqRecord.reason,
+                requestedAt: reqRecord.requestedAt,
+                decidedAt: reqRecord.decidedAt,
+                adminNote: reqRecord.adminNote,
+                declineReason: reqRecord.declineReason,
+                opportunityTitle: oppObj.title,
+                projectName,
+                organizationName: orgName
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            count: formattedRequests.length,
+            opportunities: formattedRequests,
+            requests: formattedRequests,
+            data: formattedRequests
+        });
     } catch (error: any) {
         console.error("Get cancellation requests error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while fetching cancellation requests" });
@@ -1518,33 +1868,168 @@ export const getCancellationRequests = async (req: Request, res: Response): Prom
 export const reviewOpportunityCancellation = async (req: Request, res: Response): Promise<any> => {
     try {
         const { opportunityId } = req.params;
-        const { action } = req.body; // "approve" or "reject"
+        const { action, reason, adminNote, declineReason } = req.body; // "approve" or "reject"
+        const normalizedAction = (action || "").toLowerCase() === "approve" ? "approve" : "reject";
+        const note = adminNote || reason || "";
+        const declineNote = declineReason || adminNote || reason || "Cancellation request was not approved";
 
         const opportunity = await Opportunity.findById(opportunityId);
         if (!opportunity) {
             return res.status(404).json({ success: false, message: "Opportunity not found" });
         }
 
-        if (action === "approve") {
+        const alreadyProcessed = (normalizedAction === "approve" && opportunity.status === "cancelled" && opportunity.cancellationRequest?.decision === "approved") ||
+            (normalizedAction === "reject" && opportunity.cancellationRequest?.decision === "declined");
+        let affectedCount = 0;
+
+        if (normalizedAction === "approve") {
             opportunity.status = "cancelled";
+            opportunity.cancellationReviewedAt = new Date();
+            opportunity.cancellationReviewedBy = req.user?.userId as any;
+
+            if (!opportunity.cancellationRequest) {
+                opportunity.cancellationRequest = {
+                    reason: opportunity.cancellationReason || "Cancellation requested",
+                    requestedAt: opportunity.cancellationRequestedAt || opportunity.updatedAt || new Date(),
+                    decision: "approved"
+                };
+            }
+            opportunity.cancellationRequest.decision = "approved";
+            opportunity.cancellationRequest.decidedBy = req.user?.userId as any;
+            opportunity.cancellationRequest.decidedAt = new Date();
+            opportunity.cancellationRequest.adminNote = note;
+
+            if (!alreadyProcessed) {
+                // Find all active applications (applied, under_review, shortlisted, selected)
+                const activeApplications = await Application.find({
+                    opportunityId: opportunity._id,
+                    status: { $in: ["applied", "under_review", "shortlisted", "selected"] }
+                });
+                affectedCount = activeApplications.length;
+
+                if (affectedCount > 0) {
+                    await Application.updateMany(
+                        {
+                            opportunityId: opportunity._id,
+                            status: { $in: ["applied", "under_review", "shortlisted", "selected"] }
+                        },
+                        {
+                            $set: { status: "opportunity_cancelled" }
+                        }
+                    );
+                }
+
+                // Notify each affected talent exactly once
+                for (const app of activeApplications) {
+                    const existingNotif = await Notification.findOne({
+                        recipient: app.talentId,
+                        referenceId: opportunity._id,
+                        type: "opportunity_cancelled"
+                    });
+                    if (!existingNotif) {
+                        await notifyUser({
+                            recipientId: app.talentId,
+                            type: "opportunity_cancelled",
+                            title: "Opportunity Cancelled",
+                            message: `The opportunity "${opportunity.title}" has been cancelled by the organization.`,
+                            referenceId: opportunity._id,
+                            referenceType: "Opportunity",
+                            sendEmailAlert: true
+                        });
+                    }
+                }
+
+                // Resolve org
+                let org = (opportunity as any).organizationId ? await Organization.findById((opportunity as any).organizationId) : null;
+                if (!org && opportunity.projectId) {
+                    const project = await Project.findById(opportunity.projectId);
+                    if (project?.organizationId) {
+                        org = await Organization.findById(project.organizationId);
+                    }
+                }
+
+                // Notify organization user exactly once
+                if (org && org.userId) {
+                    const existingOrgNotif = await Notification.findOne({
+                        recipient: org.userId,
+                        referenceId: opportunity._id,
+                        type: "opportunity_cancelled"
+                    });
+                    if (!existingOrgNotif) {
+                        await notifyUser({
+                            recipientId: org.userId,
+                            type: "opportunity_cancelled",
+                            title: "Opportunity Cancellation Approved",
+                            message: `Your cancellation request for opportunity "${opportunity.title}" has been approved.${note ? ` Note: ${note}` : ""}`,
+                            referenceId: opportunity._id,
+                            referenceType: "Opportunity",
+                            sendEmailAlert: true
+                        });
+                    }
+                }
+            }
         } else {
             const isExpired = (opportunity as any).applicationDeadline && new Date((opportunity as any).applicationDeadline) < new Date();
             opportunity.status = (isExpired ? "closed" : (opportunity.statusBeforeCancellationRequest || "published")) as any;
+            opportunity.cancellationReviewedAt = new Date();
+            opportunity.cancellationReviewedBy = req.user?.userId as any;
+
+            if (!opportunity.cancellationRequest) {
+                opportunity.cancellationRequest = {
+                    reason: opportunity.cancellationReason || "Cancellation requested",
+                    requestedAt: opportunity.cancellationRequestedAt || opportunity.updatedAt || new Date(),
+                    decision: "declined"
+                };
+            }
+            opportunity.cancellationRequest.decision = "declined";
+            opportunity.cancellationRequest.decidedBy = req.user?.userId as any;
+            opportunity.cancellationRequest.decidedAt = new Date();
+            opportunity.cancellationRequest.declineReason = declineNote;
+            opportunity.cancellationRequest.adminNote = declineNote;
+
+            if (!alreadyProcessed) {
+                // Resolve org
+                let org = (opportunity as any).organizationId ? await Organization.findById((opportunity as any).organizationId) : null;
+                if (!org && opportunity.projectId) {
+                    const project = await Project.findById(opportunity.projectId);
+                    if (project?.organizationId) {
+                        org = await Organization.findById(project.organizationId);
+                    }
+                }
+
+                // Notify organization of rejection with decline reason
+                if (org && org.userId) {
+                    await notifyUser({
+                        recipientId: org.userId,
+                        type: "opportunity_cancellation_reviewed",
+                        title: "Opportunity Cancellation Request Rejected",
+                        message: `Your cancellation request for opportunity "${opportunity.title}" was not approved by administration. Reason: ${declineNote}. The opportunity remains active.`,
+                        referenceId: opportunity._id,
+                        referenceType: "Opportunity",
+                        sendEmailAlert: true
+                    });
+                }
+            }
         }
 
-        opportunity.cancellationReviewedAt = new Date();
-        opportunity.cancellationReviewedBy = req.user?.userId as any;
-        await opportunity.save();
+        if (!alreadyProcessed) {
+            await opportunity.save();
 
-        await logAdminAction({
-            adminId: (req.user?.userId as any),
-            action: `CANCELLATION_${action.toUpperCase()}`,
-            targetType: "Opportunity",
-            targetId: opportunity._id,
-            details: `Cancellation request ${action}d`
+            await logAdminAction({
+                adminId: (req.user?.userId as any),
+                action: `CANCELLATION_${normalizedAction.toUpperCase()}`,
+                targetType: "Opportunity",
+                targetId: opportunity._id,
+                details: `Cancellation request ${normalizedAction}d. Reason: ${note || declineNote}. Applications affected: ${affectedCount}`
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Cancellation request ${normalizedAction}d successfully`,
+            opportunity,
+            applicationsAffected: affectedCount
         });
-
-        res.status(200).json({ success: true, message: `Cancellation request ${action}d successfully`, opportunity });
     } catch (error: any) {
         console.error("Review cancellation error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while reviewing cancellation" });
@@ -1601,13 +2086,13 @@ export const completeOpportunity = async (req: Request, res: Response): Promise<
 
 export const getReports = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { status, targetType, page = 1, limit = 20 } = req.query;
+        const { status, targetType, page = 1, limit = 50 } = req.query;
         const filter: any = {};
-        if (status) filter.status = status;
+        if (status && status !== "ALL") filter.status = status;
         if (targetType) filter.targetType = targetType;
 
         const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
-        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 20, 1), 100);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 50, 1), 100);
         const skip = (pageNum - 1) * limitNum;
 
         const [reports, total] = await Promise.all([
@@ -1615,17 +2100,61 @@ export const getReports = async (req: Request, res: Response): Promise<any> => {
                 .populate("reporterId", "name email role")
                 .sort({ createdAt: -1 })
                 .skip(skip)
-                .limit(limitNum),
+                .limit(limitNum)
+                .lean(),
             Report.countDocuments(filter)
         ]);
 
+        const mediaTargetIds = reports.filter(r => r.targetType === "MediaItem").map(r => r.targetId);
+        const oppTargetIds = reports.filter(r => r.targetType === "Opportunity").map(r => r.targetId);
+
+        const [mediaItems, oppItems] = await Promise.all([
+            mediaTargetIds.length > 0 ? MediaItem.find({ _id: { $in: mediaTargetIds } }).populate("owner", "name email").lean() : [],
+            oppTargetIds.length > 0 ? Opportunity.find({ _id: { $in: oppTargetIds } }).select("title role location status").lean() : []
+        ]);
+
+        const mediaMap = new Map((mediaItems as any[]).map(m => [m._id.toString(), m]));
+        const oppMap = new Map((oppItems as any[]).map(o => [o._id.toString(), o]));
+
+        const enrichedReports = reports.map((r: any) => {
+            let targetPreview = null;
+            if (r.targetType === "MediaItem") {
+                const m = mediaMap.get(r.targetId.toString());
+                if (m) {
+                    targetPreview = {
+                        url: m.url,
+                        thumbnailUrl: m.thumbnailUrl || m.url,
+                        type: m.mediaType || m.category || "Media",
+                        title: m.title || "Media Item",
+                        moderationState: m.moderationState,
+                        ownerName: (m.owner as any)?.name || "Talent"
+                    };
+                }
+            } else if (r.targetType === "Opportunity") {
+                const o = oppMap.get(r.targetId.toString());
+                if (o) {
+                    targetPreview = {
+                        title: o.title,
+                        role: o.role,
+                        location: o.location,
+                        status: o.status
+                    };
+                }
+            }
+            return {
+                ...r,
+                targetPreview
+            };
+        });
+
         res.status(200).json({
             success: true,
-            count: reports.length,
+            count: enrichedReports.length,
             total,
             page: pageNum,
             totalPages: Math.ceil(total / limitNum),
-            reports
+            reports: enrichedReports,
+            data: enrichedReports
         });
     } catch (error: any) {
         console.error("Get reports error:", error);
@@ -1635,8 +2164,8 @@ export const getReports = async (req: Request, res: Response): Promise<any> => {
 
 export const reviewReport = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { reportId } = req.params;
-        const { action, resolutionNotes } = req.body; // "resolve" or "dismiss"
+        const reportId = req.params.reportId || req.params.id;
+        const { action, resolutionNotes, mediaAction } = req.body; // "resolve" or "dismiss", mediaAction: "remove" | "restrict"
 
         if (!["resolve", "dismiss", "resolved", "dismissed"].includes(action)) {
             return res.status(400).json({ success: false, message: "Action must be resolve or dismiss" });
@@ -1653,6 +2182,53 @@ export const reviewReport = async (req: Request, res: Response): Promise<any> =>
         report.resolvedAt = new Date();
         report.resolvedBy = req.user?.userId as any;
         await report.save();
+
+        // If resolving a media report with an action (remove or restrict)
+        if (statusMapped === "resolved" && report.targetType === "MediaItem") {
+            const effectiveMediaAction = mediaAction || (action === "resolve" ? "remove" : null);
+            if (effectiveMediaAction === "remove" || effectiveMediaAction === "restrict") {
+                const media = await MediaItem.findById(report.targetId);
+                if (media) {
+                    media.moderationState = effectiveMediaAction === "remove" ? "removed" : "restricted";
+                    media.moderatedAt = new Date();
+                    media.moderatedBy = req.user?.userId as any;
+                    media.moderationNotes = resolutionNotes || `Report ${report._id} resolved with ${effectiveMediaAction}`;
+                    await media.save();
+
+                    // Notify content owner if removed
+                    if (effectiveMediaAction === "remove") {
+                        try {
+                            await Notification.create({
+                                recipient: media.owner,
+                                type: "account_status",
+                                title: "Content Removed Following User Report",
+                                message: `Your media item "${media.title || 'Portfolio Item'}" was removed following a community report review. Reason: ${resolutionNotes || "Violated community guidelines"}`,
+                                referenceId: media._id,
+                                referenceType: "System",
+                                isRead: false
+                            });
+                        } catch (notifErr: any) {
+                            console.warn("Owner notification warning:", notifErr?.message);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Notify reporter that report was reviewed (no outcome details beyond "reviewed")
+        try {
+            await Notification.create({
+                recipient: report.reporterId,
+                type: "system",
+                title: "Report Reviewed",
+                message: "Thank you for helping keep Vismaya safe. Your report has been reviewed by our moderation team.",
+                referenceId: report._id,
+                referenceType: "System",
+                isRead: false
+            });
+        } catch (notifErr: any) {
+            console.warn("Reporter notification warning:", notifErr?.message);
+        }
 
         await logAdminAction({
             adminId: (req.user?.userId as any),
@@ -1683,19 +2259,24 @@ export const getPendingAuditions = async (req: Request, res: Response): Promise<
             // No approval filter, return all
         } else if (status && status !== "ALL") {
             const s = String(status).toLowerCase().replace(/\s+/g, "_");
-            if (s === "requested") {
+            if (s === "requested" || s === "needs_relay" || s.includes("relay_request")) {
                 filter.status = "requested";
-            } else if (s.includes("relay")) {
-                filter.status = "relayed_to_talent";
+                filter.vismayaApproval = "pending";
+            } else if (s === "relayed_to_talent" || s === "relayed") {
+                filter.status = "requested";
+                filter.vismayaApproval = "approved";
             } else if (s.includes("self_tape") || s.includes("submitted")) {
                 filter.status = { $in: ["submitted", "self_tape_received", "self_tape_submitted"] };
             } else if (s.includes("forward")) {
                 filter.status = "forwarded_to_org";
+            } else if (s.includes("reject")) {
+                filter.status = "rejected";
             } else {
                 filter.status = s;
             }
         } else {
-            filter.vismayaApproval = "pending";
+            // Default pending queue: auditions where vismayaApproval is pending OR status is submitted
+            filter.$or = [{ vismayaApproval: "pending" }, { status: "submitted" }];
         }
 
         const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
@@ -1738,6 +2319,8 @@ export const reviewAudition = async (req: Request, res: Response): Promise<any> 
             return res.status(404).json({ success: false, message: "Audition not found" });
         }
 
+        const isSelfTapeReview = audition.status === "submitted" || !!audition.selfTapeSubmission?.submittedAt;
+
         if (action === "approve") {
             audition.vismayaApproval = "approved";
             audition.vismayaReviewedBy = req.user?.userId as any;
@@ -1745,72 +2328,283 @@ export const reviewAudition = async (req: Request, res: Response): Promise<any> 
             if (scriptUrl) {
                 audition.scriptUrl = scriptUrl;
             }
-            await audition.save();
 
-            await logAdminAction({
-                adminId: (req.user?.userId as any),
-                action: "AUDITION_APPROVE",
-                targetType: "Audition",
-                targetId: audition._id,
-                details: `Audition approved for application ${audition.applicationId}`
-            });
+            if (isSelfTapeReview) {
+                audition.status = "forwarded_to_org";
+                await audition.save();
 
-            // Notify talent via email + in-app per U1
-            const opp = await Opportunity.findById(audition.opportunityId);
-            await notifyUser({
-                recipientId: audition.talentId,
-                type: "audition_invitation",
-                title: `Audition Invitation: ${audition.type.replace(/_/g, " ")}`,
-                message: `You have received an audition request for "${opp?.title || 'Opportunity'}".`,
-                referenceId: audition._id,
-                referenceType: "Audition",
-                sendEmailAlert: true,
-                emailSubject: `Audition Invitation: ${opp?.title || 'Opportunity'}`
-            });
+                await logAdminAction({
+                    adminId: (req.user?.userId as any),
+                    action: "AUDITION_SELF_TAPE_APPROVE",
+                    targetType: "Audition",
+                    targetId: audition._id,
+                    details: `Self-tape approved and forwarded to organization for audition ${audition._id}`,
+                    req
+                });
 
-            res.status(200).json({
-                success: true,
-                message: "Audition approved and invitation sent to talent",
-                audition
-            });
-        } else {
-            audition.vismayaApproval = "rejected";
-            audition.vismayaReviewedBy = req.user?.userId as any;
-            audition.vismayaReviewedAt = new Date();
-            audition.vismayaRejectionReason = rejectionReason || "Does not meet guidelines";
-            audition.status = "cancelled";
-            await audition.save();
+                const opp = await Opportunity.findById(audition.opportunityId);
+                const roleStr = audition.role || opp?.role || "Role";
+                const titleStr = opp?.title || "Opportunity";
 
-            await logAdminAction({
-                adminId: (req.user?.userId as any),
-                action: "AUDITION_REJECT",
-                targetType: "Audition",
-                targetId: audition._id,
-                details: `Audition rejected. Reason: ${audition.vismayaRejectionReason}`
-            });
-
-            // Notify organization
-            const org = await Organization.findById(audition.organizationId);
-            if (org) {
+                // Notify Talent
                 await notifyUser({
-                    recipientId: org.userId,
-                    type: "audition_rejected",
-                    title: "Audition Request Rejected",
-                    message: `Your audition request was rejected by Vismaya moderation. Reason: ${audition.vismayaRejectionReason}`,
+                    recipientId: audition.talentId,
+                    type: "audition_selftape_approved",
+                    title: "Self-Tape Approved",
+                    message: `Your self-tape for ${roleStr} in "${titleStr}" has been approved by Vismaya and relayed to the casting team.`,
                     referenceId: audition._id,
-                    referenceType: "Audition"
+                    referenceType: "Audition",
+                    sendEmailAlert: true
+                });
+
+                // Notify Organization
+                const org = await Organization.findById(audition.organizationId);
+                if (org) {
+                    await notifyUser({
+                        recipientId: org.userId,
+                        type: "audition_selftape_relayed",
+                        title: "Self-Tape Ready for Review",
+                        message: `A self-tape submission for ${roleStr} in "${titleStr}" has been approved and is ready for your review.`,
+                        referenceId: audition._id,
+                        referenceType: "Audition",
+                        sendEmailAlert: true
+                    });
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Self-tape approved and forwarded to organization",
+                    audition
+                });
+            } else {
+                await audition.save();
+
+                await logAdminAction({
+                    adminId: (req.user?.userId as any),
+                    action: "AUDITION_APPROVE",
+                    targetType: "Audition",
+                    targetId: audition._id,
+                    details: `Audition approved for application ${audition.applicationId}`,
+                    req
+                });
+
+                // Notify talent via email + in-app per U1
+                const opp = await Opportunity.findById(audition.opportunityId);
+                await notifyUser({
+                    recipientId: audition.talentId,
+                    type: "audition_invitation",
+                    title: `Audition Invitation: ${audition.type.replace(/_/g, " ")}`,
+                    message: `You have received an audition request for "${opp?.title || 'Opportunity'}".`,
+                    referenceId: audition._id,
+                    referenceType: "Audition",
+                    sendEmailAlert: true,
+                    emailSubject: `Audition Invitation: ${opp?.title || 'Opportunity'}`
+                });
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Audition approved and invitation sent to talent",
+                    audition
                 });
             }
+        } else {
+            if (isSelfTapeReview) {
+                const finalReason = (rejectionReason || req.body?.reason || req.body?.adminNote || "").trim();
+                if (!finalReason || finalReason.length < 10) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Rejection reason is required and must be at least 10 characters"
+                    });
+                }
 
-            res.status(200).json({
-                success: true,
-                message: "Audition request rejected",
-                audition
-            });
+                audition.status = "rejected";
+                audition.vismayaApproval = "rejected";
+                audition.vismayaReviewedBy = req.user?.userId as any;
+                audition.vismayaReviewedAt = new Date();
+                audition.vismayaRejectionReason = finalReason;
+                await audition.save();
+
+                await logAdminAction({
+                    adminId: (req.user?.userId as any),
+                    action: "AUDITION_SELF_TAPE_REJECT",
+                    targetType: "Audition",
+                    targetId: audition._id,
+                    details: `Self-tape rejected. Reason: ${finalReason}`,
+                    req
+                });
+
+                const opp = await Opportunity.findById(audition.opportunityId);
+                const roleStr = audition.role || opp?.role || "Role";
+                const titleStr = opp?.title || "Opportunity";
+
+                // Notify Talent
+                await notifyUser({
+                    recipientId: audition.talentId,
+                    type: "audition_selftape_rejected",
+                    title: "Self-Tape Rejected",
+                    message: `Your self-tape submission for ${roleStr} in "${titleStr}" was rejected by Vismaya moderation. Reason: ${finalReason}`,
+                    referenceId: audition._id,
+                    referenceType: "Audition",
+                    sendEmailAlert: true
+                });
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Self-tape rejected. Talent notified.",
+                    audition
+                });
+            } else {
+                audition.vismayaApproval = "rejected";
+                audition.vismayaReviewedBy = req.user?.userId as any;
+                audition.vismayaReviewedAt = new Date();
+                audition.vismayaRejectionReason = rejectionReason || "Does not meet guidelines";
+                audition.status = "cancelled";
+                await audition.save();
+
+                await logAdminAction({
+                    adminId: (req.user?.userId as any),
+                    action: "AUDITION_REJECT",
+                    targetType: "Audition",
+                    targetId: audition._id,
+                    details: `Audition rejected. Reason: ${audition.vismayaRejectionReason}`,
+                    req
+                });
+
+                // Notify organization
+                const org = await Organization.findById(audition.organizationId);
+                if (org) {
+                    await notifyUser({
+                        recipientId: org.userId,
+                        type: "audition_rejected",
+                        title: "Audition Request Rejected",
+                        message: `Your audition request was rejected by Vismaya moderation. Reason: ${audition.vismayaRejectionReason}`,
+                        referenceId: audition._id,
+                        referenceType: "Audition"
+                    });
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Audition request rejected",
+                    audition
+                });
+            }
         }
     } catch (error: any) {
         console.error("Review audition error:", error);
         res.status(500).json({ success: false, message: "Failed to review audition" });
+    }
+};
+
+export const relayAuditionRequest = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const auditionId = req.params.auditionId || req.params.id;
+        const audition = await Audition.findById(auditionId);
+        if (!audition) {
+            return res.status(404).json({ success: false, message: "Audition not found" });
+        }
+
+        audition.vismayaApproval = "approved";
+        audition.vismayaReviewedBy = req.user?.userId as any;
+        audition.vismayaReviewedAt = new Date();
+        await audition.save();
+
+        await logAdminAction({
+            adminId: req.user?.userId as any,
+            action: "AUDITION_REQUEST_RELAY",
+            targetType: "Audition",
+            targetId: audition._id,
+            details: `Audition request approved and relayed to talent for audition ${audition._id}`,
+            req
+        });
+
+        const opp = await Opportunity.findById(audition.opportunityId);
+        const dateStr = audition.deadline
+            ? new Date(audition.deadline).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })
+            : "TBD";
+
+        const notifTitle = audition.type === "self_tape" ? "Self-Tape Requested" : "Audition Scheduled";
+        const notifMessage = audition.type === "self_tape"
+            ? `Self-tape requested for ${audition.role || opp?.role || 'Role'} in "${opp?.title || 'Opportunity'}". Submit by ${dateStr}.${audition.scriptUrl ? ` Script Sides: ${audition.scriptUrl}.` : ""}${audition.instructions ? ` Instructions: ${audition.instructions}` : ""}`
+            : `Audition scheduled for ${audition.role || opp?.role || 'Role'} in "${opp?.title || 'Opportunity'}".`;
+
+        await notifyUser({
+            recipientId: audition.talentId,
+            type: "audition_invitation",
+            title: notifTitle,
+            message: notifMessage,
+            referenceId: audition._id,
+            referenceType: "Audition",
+            sendEmailAlert: true,
+            emailSubject: notifTitle
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Audition request relayed to talent successfully",
+            audition
+        });
+    } catch (error: any) {
+        console.error("Relay audition request error:", error);
+        res.status(500).json({ success: false, message: "Failed to relay audition request" });
+    }
+};
+
+export const rejectAuditionRequest = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const auditionId = req.params.auditionId || req.params.id;
+        const { reason, rejectionReason } = req.body;
+        const finalReason = (reason || rejectionReason || "").trim();
+
+        if (!finalReason) {
+            return res.status(400).json({
+                success: false,
+                message: "Rejection reason is required"
+            });
+        }
+
+        const audition = await Audition.findById(auditionId);
+        if (!audition) {
+            return res.status(404).json({ success: false, message: "Audition not found" });
+        }
+
+        audition.vismayaApproval = "rejected";
+        audition.status = "rejected";
+        audition.vismayaReviewedBy = req.user?.userId as any;
+        audition.vismayaReviewedAt = new Date();
+        audition.vismayaRejectionReason = finalReason;
+        await audition.save();
+
+        await logAdminAction({
+            adminId: req.user?.userId as any,
+            action: "AUDITION_REQUEST_REJECT",
+            targetType: "Audition",
+            targetId: audition._id,
+            details: `Audition request rejected. Reason: ${finalReason}`,
+            req
+        });
+
+        const org = await Organization.findById(audition.organizationId);
+        if (org) {
+            await notifyUser({
+                recipientId: org.userId,
+                type: "audition_rejected",
+                title: "Audition Request Rejected",
+                message: `Your audition request was rejected by Vismaya moderation. Reason: ${finalReason}`,
+                referenceId: audition._id,
+                referenceType: "Audition",
+                sendEmailAlert: true
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Audition request rejected",
+            audition
+        });
+    } catch (error: any) {
+        console.error("Reject audition request error:", error);
+        res.status(500).json({ success: false, message: "Failed to reject audition request" });
     }
 };
 
@@ -1901,12 +2695,63 @@ export const getPendingVerifications = async (req: Request, res: Response): Prom
 export const reviewVerification = async (req: Request, res: Response): Promise<any> => {
     try {
         const { verificationId } = req.params;
-        const { action, notes, rejectionReason } = req.body; // "approve", "reject", "request_more_info"
+        const { action: inputAction, status: inputStatus, decision, notes, rejectionReason } = req.body;
+
+        // Normalize action from various client payloads
+        let action = inputAction || decision;
+        if (!action && inputStatus) {
+            if (inputStatus === "verified" || inputStatus === "approved") {
+                action = "approve";
+            } else if (inputStatus === "rejected") {
+                action = "reject";
+            } else if (inputStatus === "request_more_info" || inputStatus === "more_info_needed") {
+                action = "request_more_info";
+            }
+        }
+
+        if (!action || !["approve", "reject", "request_more_info"].includes(action)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid action. Must be 'approve', 'reject', or 'request_more_info'."
+            });
+        }
 
         const verification = await Verification.findById(verificationId);
         if (!verification) {
             return res.status(404).json({ success: false, message: "Verification record not found" });
         }
+
+        // Rule for rejected items: Cannot approve a rejected verification directly
+        if (verification.status === "rejected" && action === "approve") {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot approve a rejected verification. A new verification request must be submitted."
+            });
+        }
+
+        if (verification.status === "verified" && action === "approve") {
+            return res.status(400).json({
+                success: false,
+                message: "Verification is already approved."
+            });
+        }
+
+        if (!verification.userId) {
+            return res.status(400).json({
+                success: false,
+                message: "User account not found for this verification record."
+            });
+        }
+
+        const user = await User.findById(verification.userId);
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: "User account no longer exists for this verification record."
+            });
+        }
+
+        const adminUserId = req.user?.userId || (req.user as any)?._id;
 
         if (action === "approve") {
             // T9: Professional verification requirements check
@@ -1930,11 +2775,32 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
                 }
             }
 
+            if (verification.verificationType === "organization_business") {
+                const org = await Organization.findOne({
+                    $or: [{ userId: verification.userId }, { _id: verification.userId }]
+                });
+                if (!org) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Organization record not found for this verification."
+                    });
+                }
+
+                await Organization.findByIdAndUpdate(org._id, {
+                    verificationState: "verified",
+                    status: "active",
+                    "verificationStatus.businessVerified": true,
+                    isVerified: true
+                });
+                await User.findByIdAndUpdate(verification.userId, { status: "active", isVerified: true });
+            }
+
             verification.status = "verified";
             (verification as any).verifiedAt = new Date();
-            (verification as any).verifiedBy = req.user?.userId;
+            (verification as any).verifiedBy = adminUserId;
             (verification as any).reviewNotes = notes || "";
             verification.rejectionReason = undefined;
+            verification.moreInfoRequested = false;
 
             await TalentProfile.findOneAndUpdate(
                 { userId: verification.userId },
@@ -1952,7 +2818,10 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
                 message: `Your ${verification.verificationType || "account"} verification has been approved by Vismaya Admin.`
             });
         } else if (action === "request_more_info") {
-            verification.status = "more_info_needed" as any;
+            // Keep status within schema enum ["pending", "verified", "rejected", "suspended"]
+            verification.status = "pending";
+            verification.moreInfoRequested = true;
+            verification.moreInfoNotes = notes || "Additional documentation required.";
             (verification as any).reviewNotes = notes || "Additional documentation required.";
 
             await notifyUser({
@@ -1964,22 +2833,34 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
         } else {
             verification.status = "rejected";
             (verification as any).verifiedAt = undefined;
-            (verification as any).verifiedBy = req.user?.userId;
+            (verification as any).verifiedBy = adminUserId;
             (verification as any).reviewNotes = notes || "";
-            verification.rejectionReason = rejectionReason || "Documents insufficient";
+            verification.rejectionReason = rejectionReason || notes || "Documents insufficient";
+            verification.moreInfoRequested = false;
+
+            if (verification.verificationType === "organization_business") {
+                await Organization.findOneAndUpdate(
+                    { $or: [{ userId: verification.userId }, { _id: verification.userId }] },
+                    {
+                        verificationState: "rejected",
+                        status: "rejected",
+                        isVerified: false
+                    }
+                );
+            }
 
             await notifyUser({
                 recipientId: verification.userId,
                 type: "verification_update",
                 title: "Verification Not Approved",
-                message: `Your verification request was not approved. Reason: ${rejectionReason || "Documents provided were insufficient."}`
+                message: `Your verification request was not approved. Reason: ${rejectionReason || notes || "Documents provided were insufficient."}`
             });
         }
 
         await verification.save();
 
         await logAdminAction({
-            adminId: (req.user?.userId as any),
+            adminId: adminUserId,
             action: `VERIFICATION_${action.toUpperCase()}`,
             targetType: "Verification",
             targetId: verification._id,
@@ -1988,35 +2869,160 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
 
         res.status(200).json({ success: true, message: `Verification ${action}d successfully`, verification });
     } catch (error: any) {
-        console.error("Review verification error:", error);
+        console.error("Review verification error:", error?.message, error?.stack);
+        if (error?.name === "ValidationError") {
+            return res.status(400).json({
+                success: false,
+                message: `Validation failed: ${Object.keys(error.errors || {}).join(", ")}`
+            });
+        }
+        if (error?.name === "CastError") {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid identifier format: ${error.path}`
+            });
+        }
         res.status(500).json({ success: false, message: "Something went wrong while reviewing verification" });
     }
 };
 
 // --- CONTENT MODERATION ---
 
+/**
+ * Reverted to return ONLY items needing review per Spec
+ * GET /api/admin/media/pending
+ */
 export const getPendingMedia = async (req: Request, res: Response): Promise<any> => {
     try {
         const media = await MediaItem.find({
             moderationState: { $in: ["admin_review", "uploaded", "restricted"] }
         })
             .populate("owner", "name email role")
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
 
-        res.status(200).json({ success: true, count: media.length, media });
+        // Enrich with owner stageName / vismayaId
+        const ownerIds = media.map((m: any) => m.owner?._id || m.owner).filter(Boolean);
+        const profiles = await TalentProfile.find({ userId: { $in: ownerIds } })
+            .select("userId stageName vismayaId")
+            .lean();
+        const profileMap = new Map(profiles.map(p => [p.userId.toString(), p]));
+
+        const enrichedMedia = media.map((m: any) => {
+            const ownerIdStr = (m.owner?._id || m.owner || "").toString();
+            const prof = profileMap.get(ownerIdStr);
+            const ownerName = prof?.stageName || m.owner?.name || "Talent";
+            return {
+                ...m,
+                ownerName,
+                ownerVismayaId: prof?.vismayaId || "",
+                talentName: ownerName
+            };
+        });
+
+        res.status(200).json({ success: true, count: enrichedMedia.length, media: enrichedMedia, data: enrichedMedia });
     } catch (error: any) {
         console.error("Get pending media error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while fetching media moderation queue" });
     }
 };
 
+/**
+ * Serves all moderation tabs (Pending, Approved, Rejected, All) with accurate per-state counts
+ * GET /api/admin/media
+ */
+export const getAdminMedia = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { state, page = 1, limit = 50 } = req.query;
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 50, 1), 100);
+        const skip = (pageNum - 1) * limitNum;
+
+        let filter: any = {};
+        const stateStr = String(state || "").toLowerCase().trim();
+
+        if (stateStr === "live" || stateStr === "approved") {
+            filter.moderationState = "live";
+        } else if (stateStr === "pending" || stateStr === "admin_review") {
+            filter.moderationState = { $in: ["admin_review", "uploaded", "restricted"] };
+        } else if (stateStr === "restricted") {
+            filter.moderationState = "restricted";
+        } else if (stateStr === "removed" || stateStr === "rejected") {
+            filter.moderationState = { $in: ["removed", "restricted"] };
+        } else if (stateStr === "all" || !stateStr) {
+            filter = {};
+        }
+
+        const [items, totalFiltered, pendingCount, approvedCount, rejectedCount, allCount] = await Promise.all([
+            MediaItem.find(filter)
+                .populate("owner", "name email role")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum)
+                .lean(),
+            MediaItem.countDocuments(filter),
+            MediaItem.countDocuments({ moderationState: { $in: ["admin_review", "uploaded", "restricted"] } }),
+            MediaItem.countDocuments({ moderationState: "live" }),
+            MediaItem.countDocuments({ moderationState: { $in: ["removed", "restricted"] } }),
+            MediaItem.countDocuments({})
+        ]);
+
+        const ownerIds = items.map((m: any) => m.owner?._id || m.owner).filter(Boolean);
+        const profiles = await TalentProfile.find({ userId: { $in: ownerIds } })
+            .select("userId stageName vismayaId currentCity")
+            .lean();
+        const profileMap = new Map(profiles.map(p => [p.userId.toString(), p]));
+
+        const enrichedItems = items.map((m: any) => {
+            const ownerIdStr = (m.owner?._id || m.owner || "").toString();
+            const prof = profileMap.get(ownerIdStr);
+            const ownerName = prof?.stageName || m.owner?.name || "Talent";
+            return {
+                ...m,
+                ownerName,
+                ownerVismayaId: prof?.vismayaId || "",
+                talentName: ownerName
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            media: enrichedItems,
+            data: enrichedItems,
+            count: enrichedItems.length,
+            total: totalFiltered,
+            page: pageNum,
+            totalPages: Math.ceil(totalFiltered / limitNum),
+            counts: {
+                pending: pendingCount,
+                approved: approvedCount,
+                rejected: rejectedCount,
+                all: allCount
+            },
+            pendingCount,
+            approvedCount,
+            rejectedCount,
+            allCount
+        });
+    } catch (error: any) {
+        console.error("Get admin media error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching admin media" });
+    }
+};
+
 export const reviewMediaItem = async (req: Request, res: Response): Promise<any> => {
     try {
         const { mediaId } = req.params;
-        const { action, moderationReason } = req.body; // "approve", "reject", "restrict"
+        const rawAction = String(req.body.action || "").toLowerCase().trim();
+        const action = rawAction === "remove" ? "reject" : rawAction; // Normalize "remove" -> "reject"
+        const moderationReason = String(req.body.moderationReason ?? req.body.notes ?? req.body.reason ?? "").trim();
 
         if (!["approve", "reject", "restrict"].includes(action)) {
-            return res.status(400).json({ success: false, message: "Action must be approve, reject, or restrict" });
+            return res.status(400).json({ success: false, message: "Action must be approve, reject, remove, or restrict" });
+        }
+
+        if (action === "reject" && !moderationReason) {
+            return res.status(400).json({ success: false, message: "Moderation reason is required to reject or remove content" });
         }
 
         const media = await MediaItem.findById(mediaId);
@@ -2024,13 +3030,13 @@ export const reviewMediaItem = async (req: Request, res: Response): Promise<any>
             return res.status(404).json({ success: false, message: "Media item not found" });
         }
 
-        const stateMap = {
+        const stateMap: any = {
             approve: "live",
             reject: "removed",
             restrict: "restricted"
         };
 
-        media.moderationState = (stateMap as any)[action];
+        media.moderationState = stateMap[action];
         media.moderatedAt = new Date();
         media.moderatedBy = req.user?.userId as any;
         media.moderationNotes = moderationReason || "";
@@ -2044,7 +3050,24 @@ export const reviewMediaItem = async (req: Request, res: Response): Promise<any>
             details: `Media ${action}d. Reason: ${moderationReason || "None"}`
         });
 
-        res.status(200).json({ success: true, message: `Media item ${action}d successfully`, media });
+        // Notify content owner if removed
+        if (action === "reject") {
+            try {
+                await Notification.create({
+                    recipient: media.owner,
+                    type: "account_status",
+                    title: "Content Removed by Moderation",
+                    message: `Your media item "${media.title || 'Portfolio Item'}" was removed during moderation. Reason: ${moderationReason}`,
+                    referenceId: media._id,
+                    referenceType: "System",
+                    isRead: false
+                });
+            } catch (notifErr: any) {
+                console.warn("[reviewMediaItem] Notification warning:", notifErr?.message);
+            }
+        }
+
+        res.status(200).json({ success: true, message: `Media item ${action === "reject" ? "removed" : action + "d"} successfully`, media });
     } catch (error: any) {
         console.error("Review media error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while reviewing media" });
@@ -2057,7 +3080,15 @@ export const reviewMediaItem = async (req: Request, res: Response): Promise<any>
 export const setMediaFeaturedWork = async (req: Request, res: Response): Promise<any> => {
     try {
         const { mediaId } = req.params;
-        const { isFeatured } = req.body;
+        const rawFeatured = req.body.isFeatured !== undefined ? req.body.isFeatured : req.body.isFeaturedWork;
+
+        if (rawFeatured === undefined || typeof rawFeatured !== "boolean") {
+            return res.status(400).json({
+                success: false,
+                message: "isFeatured (boolean) is required"
+            });
+        }
+        const isFeatured = Boolean(rawFeatured);
 
         const media = await MediaItem.findById(mediaId);
         if (!media) {
@@ -2284,7 +3315,15 @@ export const createInformationalProfile = async (req: Request, res: Response): P
 
 export const getInformationalProfiles = async (req: Request, res: Response): Promise<any> => {
     try {
-        const profiles = await TalentProfile.find({ isInformational: true })
+        const { status = "active", archived } = req.query;
+        const filter: any = { isInformational: true };
+        if (status === "archived" || String(archived) === "true") {
+            filter.isArchived = true;
+        } else {
+            filter.isArchived = { $ne: true };
+        }
+
+        const profiles = await TalentProfile.find(filter)
             .sort({ createdAt: -1 })
             .lean();
 
@@ -2296,6 +3335,167 @@ export const getInformationalProfiles = async (req: Request, res: Response): Pro
     } catch (error: any) {
         console.error("Get informational profiles error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while fetching informational profiles" });
+    }
+};
+
+export const updateInformationalProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const {
+            firstName,
+            lastName,
+            stageName,
+            primaryProfession,
+            category,
+            headline,
+            bio,
+            currentCity,
+            currentState,
+            country,
+            notableCredits,
+            profilePhoto,
+            isClaimable,
+            isArchived
+        } = req.body;
+
+        const profile = await TalentProfile.findOne({ _id: id, isInformational: true });
+        if (!profile) {
+            return res.status(404).json({ success: false, message: "Informational profile not found" });
+        }
+
+        if (stageName !== undefined) profile.stageName = String(stageName).trim();
+        if (firstName !== undefined) profile.firstName = String(firstName).trim();
+        if (lastName !== undefined) profile.lastName = String(lastName).trim();
+
+        if (!profile.stageName && !profile.firstName) {
+            return res.status(400).json({ success: false, message: "First name or stage name is required" });
+        }
+
+        if (primaryProfession !== undefined) {
+            const trimmedProfession = String(primaryProfession).trim();
+            if (!trimmedProfession) {
+                return res.status(400).json({ success: false, message: "Primary profession is required" });
+            }
+            profile.primaryProfession = trimmedProfession;
+        }
+
+        if (category !== undefined) {
+            const allowedCategories = ["open_talent", "film_and_tv", "voice_over", "dance_and_performing_arts", "crew_and_production"];
+            if (allowedCategories.includes(category)) {
+                profile.category = category as any;
+            } else if (category === "screen" || category === "film" || category === "television") {
+                profile.category = "film_and_tv";
+            } else if (category === "voice" || category === "voiceover") {
+                profile.category = "voice_over";
+            } else if (category === "dance" || category === "theatre") {
+                profile.category = "dance_and_performing_arts";
+            } else if (category === "crew" || category === "technical") {
+                profile.category = "crew_and_production";
+            }
+        }
+
+        if (headline !== undefined) profile.headline = String(headline).trim();
+        if (bio !== undefined) profile.bio = String(bio).trim();
+        if (currentCity !== undefined) profile.currentCity = String(currentCity).trim();
+        if (currentState !== undefined) profile.currentState = String(currentState).trim();
+        if (country !== undefined) profile.country = String(country).trim();
+        if (profilePhoto !== undefined) profile.profilePhoto = String(profilePhoto).trim();
+        if (isClaimable !== undefined) profile.isClaimable = Boolean(isClaimable);
+        if (isArchived !== undefined) {
+            profile.isArchived = Boolean(isArchived);
+            profile.archivedAt = profile.isArchived ? new Date() : undefined;
+        }
+
+        if (Array.isArray(notableCredits)) {
+            profile.credits = notableCredits.map((c: any) => ({
+                projectTitle: c.projectTitle || c.title || "Project",
+                roleOrDesignation: c.role || c.roleOrDesignation || profile.primaryProfession,
+                year: c.year || new Date().getFullYear(),
+                projectStatus: "released",
+                isVerifiedCredit: true
+            })) as any;
+        }
+
+        await profile.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "UPDATE_INFORMATIONAL_PROFILE",
+            targetType: "TalentProfile",
+            targetId: profile._id,
+            details: `Updated informational profile for '${profile.stageName || profile.firstName}' (${profile.vismayaId})`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Informational profile updated successfully",
+            profile
+        });
+    } catch (error: any) {
+        console.error("Update informational profile error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while updating informational profile" });
+    }
+};
+
+export const archiveInformationalProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const profile = await TalentProfile.findOne({ _id: id, isInformational: true });
+        if (!profile) {
+            return res.status(404).json({ success: false, message: "Informational profile not found" });
+        }
+
+        profile.isArchived = true;
+        profile.archivedAt = new Date();
+        await profile.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "ARCHIVE_INFORMATIONAL_PROFILE",
+            targetType: "TalentProfile",
+            targetId: profile._id,
+            details: `Archived informational profile '${profile.stageName || profile.firstName}' (${profile.vismayaId})`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Informational profile archived successfully",
+            profile
+        });
+    } catch (error: any) {
+        console.error("Archive informational profile error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while archiving informational profile" });
+    }
+};
+
+export const restoreInformationalProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const profile = await TalentProfile.findOne({ _id: id, isInformational: true });
+        if (!profile) {
+            return res.status(404).json({ success: false, message: "Informational profile not found" });
+        }
+
+        profile.isArchived = false;
+        profile.archivedAt = undefined;
+        await profile.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "RESTORE_INFORMATIONAL_PROFILE",
+            targetType: "TalentProfile",
+            targetId: profile._id,
+            details: `Restored informational profile '${profile.stageName || profile.firstName}' (${profile.vismayaId})`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Informational profile restored successfully",
+            profile
+        });
+    } catch (error: any) {
+        console.error("Restore informational profile error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while restoring informational profile" });
     }
 };
 
@@ -2381,8 +3581,15 @@ export const getAdminCreditLedger = async (req: Request, res: Response): Promise
             CreditTransaction.countDocuments(filter)
         ]);
 
+        // Helper to extract clean hex ObjectId string regardless of whether populated
+        const getOrgIdStr = (org: any): string | null => {
+            if (!org) return null;
+            if (typeof org === "object" && org._id) return String(org._id);
+            return String(org);
+        };
+
         // Build per-org balance summary from CreditLedger for orgs visible in this page
-        const orgIds = [...new Set(rows.map(r => String(r.organizationId)))];
+        const orgIds = [...new Set(rows.map(r => getOrgIdStr(r.organizationId)).filter(Boolean))];
         const ledgers = orgIds.length > 0
             ? await CreditLedger.find({ organizationId: { $in: orgIds } })
                 .select("organizationId includedCredits purchasedCredits consumedCredits balance")
@@ -2390,7 +3597,8 @@ export const getAdminCreditLedger = async (req: Request, res: Response): Promise
 
         const ledgerMap: Record<string, any> = {};
         for (const l of ledgers) {
-            ledgerMap[String(l.organizationId)] = {
+            const idKey = getOrgIdStr(l.organizationId) || String(l.organizationId);
+            ledgerMap[idKey] = {
                 includedCredits: l.includedCredits,
                 purchasedCredits: l.purchasedCredits,
                 consumedCredits: l.consumedCredits,
@@ -2399,7 +3607,7 @@ export const getAdminCreditLedger = async (req: Request, res: Response): Promise
         }
 
         const ledgerRows = rows.map(r => {
-            const orgIdStr = String(r.organizationId);
+            const orgIdStr = getOrgIdStr(r.organizationId) || "";
             return {
                 _id: r._id,
                 organization: r.organizationId,   // populated: { _id, organizationName }
@@ -2578,6 +3786,9 @@ export const deleteCoupon = async (req: Request, res: Response): Promise<any> =>
 
 export const getDashboardMetrics = async (req: Request, res: Response): Promise<any> => {
     try {
+        const infoProfiles = await TalentProfile.find({ isInformational: true }).select("userId");
+        const infoUserIds = infoProfiles.map(p => p.userId).filter(Boolean);
+
         const [
             totalUsers,
             talentCount,
@@ -2595,7 +3806,8 @@ export const getDashboardMetrics = async (req: Request, res: Response): Promise<
             selfTapesToForward,
             totalRevenueAgg,
             pendingVerifications,
-            pendingMediaCount,
+            itemsNeedingReviewCount,
+            openReportsCount,
             categoryAgg,
             cityAgg,
             underReviewApps,
@@ -2604,16 +3816,21 @@ export const getDashboardMetrics = async (req: Request, res: Response): Promise<
             appMonthlyAgg,
             userMonthlyAgg
         ] = await Promise.all([
-            User.countDocuments(),
-            User.countDocuments({ role: "talent" } as any),
+            User.countDocuments({ _id: { $nin: infoUserIds } }),
+            User.countDocuments({ role: "talent", _id: { $nin: infoUserIds } } as any),
             User.countDocuments({ role: "organization" } as any),
-            User.countDocuments({ status: "pending" }),
-            User.countDocuments({ role: "talent", status: { $in: ["active", "approved", "verified"] } } as any),
+            User.countDocuments({ status: "pending", _id: { $nin: infoUserIds } }),
+            User.countDocuments({ role: "talent", status: { $in: ["active", "approved", "verified"] }, _id: { $nin: infoUserIds } } as any),
             User.countDocuments({ role: "organization", status: { $in: ["active", "approved", "verified"] } } as any),
             Opportunity.countDocuments(),
             Opportunity.countDocuments({ status: "published" } as any),
             Opportunity.countDocuments({ status: { $in: ["pending", "under_vismaya_review"] } } as any),
-            Opportunity.countDocuments({ status: "cancellation_requested" }),
+            Opportunity.countDocuments({
+                $or: [
+                    { "cancellationRequest.decision": "pending" },
+                    { status: "cancellation_requested" }
+                ]
+            } as any),
             Application.countDocuments(),
             Audition.countDocuments(),
             Audition.countDocuments({ status: "requested" }),
@@ -2623,14 +3840,15 @@ export const getDashboardMetrics = async (req: Request, res: Response): Promise<
                 { $group: { _id: null, total: { $sum: "$amount" } } }
             ]),
             Verification.countDocuments({ status: "pending" }),
-            MediaItem.countDocuments({ status: "pending" }),
+            MediaItem.countDocuments({ moderationState: { $in: ["admin_review", "uploaded", "restricted"] } }),
+            Report.countDocuments({ status: { $in: ["pending", "investigating"] } }),
             Project.aggregate([
                 { $match: { projectType: { $exists: true, $ne: "" } } },
                 { $group: { _id: "$projectType", count: { $sum: 1 } } },
                 { $sort: { count: -1 } }
             ]),
             TalentProfile.aggregate([
-                { $match: { currentCity: { $exists: true, $ne: "" } } },
+                { $match: { currentCity: { $exists: true, $ne: "" }, isInformational: { $ne: true } } },
                 { $group: { _id: "$currentCity", count: { $sum: 1 } } },
                 { $sort: { count: -1 } },
                 { $limit: 5 }
@@ -2664,6 +3882,7 @@ export const getDashboardMetrics = async (req: Request, res: Response): Promise<
         ]);
 
         const totalRevenue = totalRevenueAgg[0]?.total || 0;
+        const pendingMediaCount = (itemsNeedingReviewCount || 0) + (openReportsCount || 0);
 
         // Formulate 6-month timeline labels
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -2823,7 +4042,7 @@ export const globalAdminSearch = async (req: Request, res: Response): Promise<an
             Organization.find({ $or: [{ organizationName: regex }, { organizationType: regex }] }).populate("userId", "name email status").limit(10).lean(),
             Opportunity.find({ $or: [{ title: regex }, { role: regex }, { summary: regex }] }).populate("projectId", "projectName").limit(10).lean(),
             PaymentTransaction.find({ $or: [{ orderId: regex }, { paymentId: regex }, { invoiceNumber: regex }] }).populate("userId", "name email").limit(10).lean(),
-            TalentProfile.find({ $or: [{ vismayaId: regex }, { stageName: regex }, { firstName: regex }, { lastName: regex }, { primaryProfession: regex }] }).select("vismayaId stageName firstName lastName primaryProfession").limit(10).lean()
+            TalentProfile.find({ isInformational: { $ne: true }, $or: [{ vismayaId: regex }, { stageName: regex }, { firstName: regex }, { lastName: regex }, { primaryProfession: regex }] }).select("vismayaId stageName firstName lastName primaryProfession").limit(10).lean()
         ]);
 
         res.status(200).json({

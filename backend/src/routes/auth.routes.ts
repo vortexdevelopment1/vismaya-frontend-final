@@ -1,9 +1,11 @@
 import express, { Router, Request, Response, NextFunction } from "express";
-import {  authLimiter, otpLimiter, draftLimiter, adminLoginLimiter  } from "../middleware/rateLimit.middleware.js";
+import {  authLimiter, otpLimiter, draftLimiter, adminLoginLimiter, adminForgotPasswordLimiter, adminResetPasswordLimiter  } from "../middleware/rateLimit.middleware.js";
 import {  authenticateUser  } from "../middleware/auth.middleware.js";
 import {
     adminLogin,
-    adminVerify2FA
+    adminVerify2FA,
+    adminForgotPassword,
+    adminResetPassword
 } from "../controllers/adminAuth.controller.js";
 
 import { 
@@ -17,7 +19,9 @@ import {
     disable2FA,
     verify2FALogin,
     changePassword,
+    requestChangePasswordOtp,
     requestAccountDeletion,
+    requestAccountDeletionOtp,
     requestEmailChange,
     verifyEmailChange,
     changeMobile,
@@ -30,17 +34,34 @@ import {
     deleteRegistrationDraft,
     forgotPassword,
     verifyOtp,
-    resetPassword
+    resetPassword,
+    checkAvailability,
+    uploadAccreditationDocument,
+    getOtpConfig
  } from "../controllers/auth.controller.js";
+import { handleAccreditationUpload, verifyUploadMagicBytes } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
+
+// Public OTP Configuration
+router.get("/otp-config", getOtpConfig);
 
 // Dedicated Admin Authentication
 router.post("/admin/login", adminLoginLimiter, adminLogin);
 router.post("/admin/verify-2fa", otpLimiter, adminVerify2FA);
+router.post("/admin/forgot-password", adminForgotPasswordLimiter, adminForgotPassword);
+router.post("/admin/reset-password", adminResetPasswordLimiter, adminResetPassword);
 
 // Registration & Verification
+router.post("/check-availability", draftLimiter, checkAvailability);
 router.post("/register", authLimiter, registerUser);
+router.post(
+    "/upload-accreditation-document",
+    draftLimiter,
+    handleAccreditationUpload,
+    verifyUploadMagicBytes,
+    uploadAccreditationDocument
+);
 router.post("/verify-registration", otpLimiter, verifyRegistration);
 router.post("/resend-registration-otp", otpLimiter, resendRegistrationOtp);
 
@@ -56,7 +77,9 @@ router.post("/2fa/disable", authenticateUser, disable2FA);
 router.post("/2fa/challenge", otpLimiter, verify2FALogin);
 router.post("/verify-2fa", otpLimiter, verify2FALogin);
 
-// Account Lifecycle
+// Account Lifecycle (Spec §38)
+router.post("/delete-account/request-otp", authenticateUser, otpLimiter, requestAccountDeletionOtp);
+router.post("/delete-account/confirm", authenticateUser, otpLimiter, requestAccountDeletion);
 router.delete("/account", authenticateUser, requestAccountDeletion);
 
 // Email & Mobile Updates
@@ -76,7 +99,8 @@ router.post("/forgot-password", otpLimiter, forgotPassword);
 router.post("/verify-otp", otpLimiter, verifyOtp);
 router.post("/reset-password", otpLimiter, resetPassword);
 
-// Authenticated Password Change
+// Authenticated Password Change (Spec §38: Current password OR OTP)
+router.post("/change-password/request-otp", authenticateUser, otpLimiter, requestChangePasswordOtp);
 router.post("/change-password", authenticateUser, changePassword);
 
 // Active Server-Side Session Management & Logout

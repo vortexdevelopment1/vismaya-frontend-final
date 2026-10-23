@@ -113,7 +113,7 @@ export default function RecruiterTopbar({ onOpenMobile }) {
             }}
             className="topbar-subtitle"
           >
-            {companyProfile.name || "Zee Films Studio"}
+            {companyProfile?.companyName || companyProfile?.name || companyProfile?.studioName || ""}
           </span>
         </div>
       </div>

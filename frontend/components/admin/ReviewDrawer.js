@@ -148,11 +148,13 @@ export default function ReviewDrawer({
               </div>
 
               <span style={{ fontSize: "13px", color: "#5A584F" }}>
-                {isTalent ? `${data.category} • ${data.city}` : `${data.companyType} • ${data.city}`}
+                {isTalent
+                  ? `${data.category || data.profession || "Performer"} • ${data.currentCity || data.city || data.personal?.city || "Mumbai"}, ${data.currentState || data.state || data.personal?.state || "Maharashtra"}`
+                  : `${data.companyType || "Agency"} • ${data.city || "Mumbai"}`}
               </span>
 
               <span style={{ fontSize: "12px", color: "#5A584F" }}>
-                Joined: {data.joinedDate} &bull; ID: {data.id}
+                Joined: {data.joinedDate || (data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "Active")} &bull; ID: {data.vismayaId || data.id || data._id}
               </span>
             </div>
           </div>
@@ -216,234 +218,375 @@ export default function ReviewDrawer({
           )}
 
           {/* TALENT PROFILE DETAILS */}
-          {isTalent && (
-            <>
-              {/* Child Artist Consent Box (if age < 18) */}
-              {(data.isChildArtist || data.guardianConsent || (data.age && data.age < 18)) && (data.parentConsent || data.guardianConsent) && (
-                <div
-                  style={{
-                    backgroundColor: "rgba(138, 107, 46, 0.10)",
-                    border: "1px solid rgba(138, 107, 46, 0.25)",
-                    borderRadius: "14px",
-                    padding: "14px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <ShieldCheck size={16} style={{ color: "#8A6B2E" }} />
-                    <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
-                      Minor Artist Compliance Verified
-                    </strong>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "13px" }}>
-                    <div>
-                      <span style={{ color: "#5A584F" }}>Legal Guardian: </span>
-                      <strong style={{ color: "#2B2D2A" }}>
-                        {data.parentConsent?.parentName || data.guardianConsent?.guardianName || "Verified Guardian"}
+          {isTalent && (() => {
+            const isMinor = Boolean(data.isUnder18 || (data.age !== undefined && data.age !== null && Number(data.age) < 18) || (data.personal?.age !== undefined && data.personal?.age !== null && Number(data.personal.age) < 18));
+            const primaryProf = data.primaryProfession || data.profession || data.personal?.primaryRole || "Not provided";
+            const secProfs = Array.isArray(data.secondaryProfessions) && data.secondaryProfessions.length > 0
+              ? data.secondaryProfessions.join(", ")
+              : "Not provided";
+            const currentCityVal = data.currentCity || data.city || data.personal?.city || "Not provided";
+            const currentStateVal = data.currentState || data.state || data.personal?.state || "Not provided";
+            const workingCitiesVal = Array.isArray(data.workingCities) && data.workingCities.length > 0
+              ? data.workingCities.join(", ")
+              : (currentCityVal !== "Not provided" ? currentCityVal : "Not provided");
+            const dobVal = data.dob || data.personal?.dob || "Not provided";
+            const ageVal = data.age || data.personal?.age ? `${data.age || data.personal?.age} yrs` : "Not provided";
+            const genderVal = data.gender || data.personal?.gender || "Not provided";
+            const stageNameVal = data.stageName || data.personal?.stageName || "Not provided";
+            const headlineVal = data.headline || data.personal?.headline || "Not provided";
+            const bioVal = data.bio || data.personal?.bio || "Not provided";
+
+            return (
+              <>
+                {/* Minor Artist Compliance Box (rendered ONLY for minors) */}
+                {isMinor && (
+                  <div
+                    style={{
+                      backgroundColor: "rgba(138, 107, 46, 0.10)",
+                      border: "1px solid rgba(138, 107, 46, 0.25)",
+                      borderRadius: "14px",
+                      padding: "14px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <ShieldCheck size={16} style={{ color: "#8A6B2E" }} />
+                      <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
+                        Minor Artist Compliance (Private Admin View)
                       </strong>
                     </div>
-                    <div>
-                      <span style={{ color: "#5A584F" }}>Relationship: </span>
-                      <span style={{ color: "#2B2D2A" }}>
-                        {data.parentConsent?.relationship || "Guardian"}
-                      </span>
-                    </div>
-                    <div>
-                      <span style={{ color: "#5A584F" }}>Guardian Phone: </span>
-                      <span style={{ color: "#2B2D2A" }}>
-                        {data.parentConsent?.contact || data.guardianConsent?.guardianPhone || "N/A"}
-                      </span>
-                    </div>
-                    <div>
-                      <span style={{ color: "#5A584F" }}>Aadhaar Check: </span>
-                      <span style={{ color: "#2B2D2A", fontWeight: "700" }}>Verified ✓</span>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "13px" }}>
+                      <div>
+                        <span style={{ color: "#5A584F" }}>Legal Guardian: </span>
+                        <strong style={{ color: "#2B2D2A" }}>
+                          {data.guardianDetails?.guardianName || data.guardianConsent?.guardianName || data.parentConsent?.parentName || "Not provided"}
+                        </strong>
+                      </div>
+                      <div>
+                        <span style={{ color: "#5A584F" }}>Relationship: </span>
+                        <span style={{ color: "#2B2D2A" }}>
+                          {data.guardianDetails?.relationship || data.guardianConsent?.relationship || data.guardianConsent?.relation || data.parentConsent?.relationship || "Not provided"}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ color: "#5A584F" }}>Guardian Mobile: </span>
+                        <span style={{ color: "#2B2D2A" }}>
+                          {data.guardianDetails?.contactNumber || data.guardianDetails?.phone || data.guardianConsent?.guardianPhone || data.guardianConsent?.phone || data.parentConsent?.contact || "Not provided"}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ color: "#5A584F" }}>Guardian Email: </span>
+                        <span style={{ color: "#2B2D2A" }}>
+                          {data.guardianDetails?.guardianEmail || data.guardianConsent?.guardianEmail || data.parentConsent?.email || "Not provided"}
+                        </span>
+                      </div>
+                      <div style={{ gridColumn: "span 2" }}>
+                        <span style={{ color: "#5A584F" }}>Legal Consent: </span>
+                        <span style={{ color: (data.guardianDetails?.consentGiven || data.guardianConsent?.consentGiven || data.parentConsent?.consentGiven) ? "#027A48" : "#B42318", fontWeight: "600" }}>
+                          {(data.guardianDetails?.consentGiven || data.guardianConsent?.consentGiven || data.parentConsent?.consentGiven) ? "Verified Consent On File ✓" : "Consent Pending"}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Bio */}
-              {data.bio && (
+                {/* Artist Headline */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    Headline
+                  </span>
+                  <div style={{ fontSize: "14px", color: "#2B2D2A", backgroundColor: "#FFFFFF", padding: "10px 14px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                    {headlineVal}
+                  </div>
+                </div>
+
+                {/* Artist Bio */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                   <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                     Artist Bio
                   </span>
                   <p style={{ fontSize: "14px", color: "#2B2D2A", margin: 0, lineHeight: 1.6, backgroundColor: "#FFFFFF", padding: "14px 16px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
-                    {data.bio}
+                    {bioVal}
                   </p>
                 </div>
-              )}
 
-              {/* Physical Specs Grid */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Physical Attributes
-                </span>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
-                  <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
-                    <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Height</span>
-                    <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.physical?.height || data.height || "N/A"}</strong>
-                  </div>
-                  <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
-                    <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Weight</span>
-                    <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.physical?.weight || data.weight || "N/A"}</strong>
-                  </div>
-                  <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
-                    <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Age</span>
-                    <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.age ? `${data.age} yrs` : "N/A"}</strong>
-                  </div>
-                  <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
-                    <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Skin Tone</span>
-                    <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.physical?.skinTone || data.skinTone || "N/A"}</strong>
+                {/* Key Personal Details & Demographics Grid */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    Profile Details &amp; Location
+                  </span>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Stage Name</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{stageNameVal}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Category</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.category || "Not provided"}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Primary Profession</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{primaryProf}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Secondary Professions</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{secProfs}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Date of Birth</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{dobVal}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Age &amp; Gender</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{ageVal} &bull; {genderVal}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>City &amp; State</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{currentCityVal}, {currentStateVal}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Working Cities</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{workingCitiesVal}</strong>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Screen Experience */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Experience &amp; Screen Credits
-                </span>
-                {Array.isArray(data.experience) && data.experience.length > 0 ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    {data.experience.map((item, idx) => (
-                      <div
-                        key={item?.id || idx}
-                        style={{
-                          backgroundColor: "#FFFFFF",
-                          padding: "12px 14px",
-                          borderRadius: "12px",
-                          border: "1px solid #E8E2D4",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "4px",
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "6px" }}>
-                          <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
-                            {item?.role || "Role"}
-                          </strong>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            {item?.type && (
-                              <span style={{ fontSize: "11px", color: "#6E5420", backgroundColor: "rgba(138, 107, 46, 0.12)", padding: "2px 8px", borderRadius: "999px", fontWeight: "600" }}>
-                                {item.type}
-                              </span>
-                            )}
-                            {item?.year && (
-                              <span style={{ fontSize: "12px", color: "#5A584F" }}>
-                                {item.year}
-                              </span>
+                {/* Physical Specs Grid */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    Physical Attributes
+                  </span>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Height</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.physical?.height || data.height || (data.physicalAttributes?.heightCm ? `${data.physicalAttributes.heightCm} cm` : "Not provided")}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Weight</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.physical?.weight || data.weight || (data.physicalAttributes?.weightKg ? `${data.physicalAttributes.weightKg} kg` : "Not provided")}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Skin Tone</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.physical?.skinTone || data.skinTone || data.physicalAttributes?.skinTone || "Not provided"}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Hair Color</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.physical?.hairColor || data.hairColor || data.physicalAttributes?.hairColor || "Not provided"}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Eye Color</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.physical?.eyeColor || data.eyeColor || data.physicalAttributes?.eyeColor || "Not provided"}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Body Type</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.physical?.bodyType || data.bodyType || data.physicalAttributes?.bodyType || "Not provided"}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Skills & Languages */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div>
+                    <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Languages Spoken
+                    </span>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                      {Array.isArray(data.languages) && data.languages.length > 0 ? (
+                        data.languages.map((lang, idx) => (
+                          <span key={idx} style={{ fontSize: "12px", padding: "4px 10px", borderRadius: "999px", backgroundColor: "#FFFFFF", border: "1px solid #E8E2D4", color: "#2B2D2A", fontWeight: "600" }}>
+                            {lang}
+                          </span>
+                        ))
+                      ) : (
+                        <span style={{ fontSize: "13px", color: "#5A584F", fontStyle: "italic" }}>Not provided</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Key Acting Skills
+                    </span>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                      {Array.isArray(data.skills) && data.skills.length > 0 ? (
+                        data.skills.map((skill, idx) => (
+                          <span key={idx} style={{ fontSize: "12px", padding: "4px 10px", borderRadius: "999px", backgroundColor: "rgba(138, 107, 46, 0.12)", border: "1px solid rgba(138, 107, 46, 0.25)", color: "#6E5420", fontWeight: "700" }}>
+                            {skill}
+                          </span>
+                        ))
+                      ) : (
+                        <span style={{ fontSize: "13px", color: "#5A584F", fontStyle: "italic" }}>Not provided</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Availability & Travel */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    Availability &amp; Travel Preferences
+                  </span>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Notice Period</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.availability?.noticePeriod || "Immediate"}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Willing to Travel</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.willingToTravel !== undefined ? (data.willingToTravel ? "Yes" : "No") : (data.availability?.willingToTravel !== undefined ? (data.availability.willingToTravel ? "Yes" : "No") : "Yes")}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Passport Available</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.passportAvailable !== undefined ? (data.passportAvailable ? "Yes" : "No") : (data.availability?.hasPassport !== undefined ? (data.availability.hasPassport ? "Yes" : "No") : "No")}</strong>
+                    </div>
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
+                      <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Availability Status</span>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{data.availability?.status || "Available"}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Portfolio Media Items */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    Portfolio Media
+                  </span>
+                  <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "12px", border: "1px solid #E8E2D4", display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap", fontSize: "13px" }}>
+                    <div>
+                      <span style={{ color: "#5A584F" }}>Photos: </span>
+                      <strong style={{ color: "#2B2D2A" }}>
+                        {Array.isArray(data.portfolio?.photos) && data.portfolio.photos.length > 0
+                          ? `${data.portfolio.photos.length} photos uploaded`
+                          : (Array.isArray(data.photos) && data.photos.length > 0 ? `${data.photos.length} photos uploaded` : "Not provided")}
+                      </strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#5A584F" }}>Videos: </span>
+                      <strong style={{ color: "#2B2D2A" }}>
+                        {Array.isArray(data.portfolio?.videos) && data.portfolio.videos.length > 0
+                          ? `${data.portfolio.videos.length} videos linked`
+                          : (Array.isArray(data.videos) && data.videos.length > 0 ? `${data.videos.length} videos linked` : "Not provided")}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Screen Experience */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    Experience &amp; Screen Credits
+                  </span>
+                  {Array.isArray(data.credits) && data.credits.length > 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {data.credits.map((item, idx) => (
+                        <div
+                          key={item?.id || idx}
+                          style={{
+                            backgroundColor: "#FFFFFF",
+                            padding: "12px 14px",
+                            borderRadius: "12px",
+                            border: "1px solid #E8E2D4",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "4px",
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "6px" }}>
+                            <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
+                              {item?.roleOrDesignation || item?.role || "Role"}
+                            </strong>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                              {item?.projectType && (
+                                <span style={{ fontSize: "11px", color: "#6E5420", backgroundColor: "rgba(138, 107, 46, 0.12)", padding: "2px 8px", borderRadius: "999px", fontWeight: "600" }}>
+                                  {item.projectType}
+                                </span>
+                              )}
+                              {item?.year && (
+                                <span style={{ fontSize: "12px", color: "#5A584F" }}>
+                                  {item.year}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ fontSize: "13px", color: "#5A584F", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                            <span>{item?.projectTitle || item?.project || "Project"}</span>
+                            {(item?.directorOrProduction || item?.production) && (
+                              <>
+                                <span>&bull;</span>
+                                <span>{item.directorOrProduction || item.production}</span>
+                              </>
                             )}
                           </div>
                         </div>
-                        <div style={{ fontSize: "13px", color: "#5A584F", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                          {item?.project && <span>{item.project}</span>}
-                          {item?.project && item?.production && <span>&bull;</span>}
-                          {item?.production && <span>{item.production}</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : Array.isArray(data.credits) && data.credits.length > 0 ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    {data.credits.map((item, idx) => (
-                      <div
-                        key={item?.id || idx}
-                        style={{
-                          backgroundColor: "#FFFFFF",
-                          padding: "12px 14px",
-                          borderRadius: "12px",
-                          border: "1px solid #E8E2D4",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "4px",
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "6px" }}>
-                          <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
-                            {item?.role || "Role"}
-                          </strong>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            {item?.type && (
-                              <span style={{ fontSize: "11px", color: "#6E5420", backgroundColor: "rgba(138, 107, 46, 0.12)", padding: "2px 8px", borderRadius: "999px", fontWeight: "600" }}>
-                                {item.type}
-                              </span>
-                            )}
-                            {item?.year && (
-                              <span style={{ fontSize: "12px", color: "#5A584F" }}>
-                                {item.year}
-                              </span>
+                      ))}
+                    </div>
+                  ) : Array.isArray(data.experience) && data.experience.length > 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {data.experience.map((item, idx) => (
+                        <div
+                          key={item?.id || idx}
+                          style={{
+                            backgroundColor: "#FFFFFF",
+                            padding: "12px 14px",
+                            borderRadius: "12px",
+                            border: "1px solid #E8E2D4",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "4px",
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "6px" }}>
+                            <strong style={{ fontSize: "14px", color: "#2B2D2A" }}>
+                              {item?.role || "Role"}
+                            </strong>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                              {item?.year && (
+                                <span style={{ fontSize: "12px", color: "#5A584F" }}>
+                                  {item.year}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ fontSize: "13px", color: "#5A584F", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                            <span>{item?.project || "Project"}</span>
+                            {item?.production && (
+                              <>
+                                <span>&bull;</span>
+                                <span>{item.production}</span>
+                              </>
                             )}
                           </div>
                         </div>
-                        <div style={{ fontSize: "13px", color: "#5A584F", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                          {item?.project && <span>{item.project}</span>}
-                          {item?.project && item?.production && <span>&bull;</span>}
-                          {item?.production && <span>{item.production}</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : typeof data.experience === "string" && data.experience.trim() ? (
-                  <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4", fontSize: "13px", color: "#2B2D2A", lineHeight: 1.5 }}>
-                    {data.experience}
-                  </div>
-                ) : (
-                  <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4", fontSize: "13px", color: "#5A584F", fontStyle: "italic" }}>
-                    No credits added
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4", fontSize: "13px", color: "#5A584F", fontStyle: "italic" }}>
+                      Not provided
+                    </div>
+                  )}
+                </div>
 
-              {/* Skills & Languages */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                <div>
-                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                    Languages Spoken
+                {/* Contact Information */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase" }}>
+                    Direct Contact (Admin Internal View Only)
                   </span>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                    {(data.languages || []).map((lang, idx) => (
-                      <span key={idx} style={{ fontSize: "12px", padding: "4px 10px", borderRadius: "999px", backgroundColor: "#FFFFFF", border: "1px solid #E8E2D4", color: "#2B2D2A", fontWeight: "600" }}>
-                        {lang}
-                      </span>
-                    ))}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "13px", backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <Phone size={14} style={{ color: "#8A6B2E" }} />
+                      <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.phone || data.mobile || data.contactDetails?.phone || data.contactDetails?.mobile || data.personal?.phone || data.userId?.mobile || data.userId?.phone || "Not provided"}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <Mail size={14} style={{ color: "#8A6B2E" }} />
+                      <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.email || data.contactDetails?.email || data.personal?.email || data.userId?.email || "Not provided"}</span>
+                    </div>
                   </div>
                 </div>
-
-                <div>
-                  <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                    Key Acting Skills
-                  </span>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                    {(data.skills || []).map((skill, idx) => (
-                      <span key={idx} style={{ fontSize: "12px", padding: "4px 10px", borderRadius: "999px", backgroundColor: "rgba(138, 107, 46, 0.12)", border: "1px solid rgba(138, 107, 46, 0.25)", color: "#6E5420", fontWeight: "700" }}>
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <span style={{ fontSize: "12px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase" }}>
-                  Direct Contact (Admin Internal View Only)
-                </span>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "13px", backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Phone size={14} style={{ color: "#8A6B2E" }} />
-                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.phone}</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Mail size={14} style={{ color: "#8A6B2E" }} />
-                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.email}</span>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
+              </>
+            );
+          })()}
 
           {/* RECRUITER COMPANY DETAILS */}
           {!isTalent && (
@@ -456,11 +599,34 @@ export default function ReviewDrawer({
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "13px" }}>
                   <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
                     <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Corporate Registration (CIN)</span>
-                    <strong style={{ color: "#2B2D2A" }}>{data.registrationNumber || "N/A"}</strong>
+                    <strong style={{ color: "#2B2D2A" }}>{data.registrationNumber || data.cinNumber || "Not provided"}</strong>
                   </div>
                   <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
                     <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>GSTIN</span>
-                    <strong style={{ color: "#2B2D2A" }}>{data.gstNumber || "N/A"}</strong>
+                    <strong style={{ color: "#2B2D2A" }}>{data.gstNumber || "Not provided"}</strong>
+                  </div>
+                  <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
+                    <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>City</span>
+                    <strong style={{ color: "#2B2D2A" }}>{data.city || data.location?.city || data.location || "Not provided"}</strong>
+                  </div>
+                  <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
+                    <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Status</span>
+                    <strong style={{ color: "#2B2D2A" }}>{data.status || "Not provided"}</strong>
+                  </div>
+                  <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
+                    <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Credits</span>
+                    <strong style={{ color: "#8A6B2E" }}>{data.credits !== undefined && data.credits !== null ? String(data.credits) : (data.walletCredits !== undefined && data.walletCredits !== null ? String(data.walletCredits) : "Not provided")}</strong>
+                  </div>
+                  <div style={{ backgroundColor: "#FFFFFF", padding: "12px 14px", borderRadius: "14px", border: "1px solid #E8E2D4" }}>
+                    <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Website</span>
+                    {data.website ? (
+                      <a href={data.website.startsWith("http") ? data.website : `https://${data.website}`} target="_blank" rel="noopener noreferrer" style={{ color: "#8A6B2E", display: "flex", alignItems: "center", gap: "4px", fontWeight: "700" }}>
+                        <span>{data.website}</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    ) : (
+                      <span style={{ color: "#5A584F", fontStyle: "italic" }}>Not provided</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -473,22 +639,26 @@ export default function ReviewDrawer({
                 <div style={{ backgroundColor: "#FFFFFF", padding: "14px", borderRadius: "14px", border: "1px solid #E8E2D4", display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Executive Name:</span>
-                    <strong style={{ color: "#2B2D2A" }}>{data.contactPerson}</strong>
+                    <strong style={{ color: "#2B2D2A" }}>{data.contactPerson || data.name || "Not provided"}</strong>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Phone:</span>
-                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.phone}</span>
+                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.phone || data.mobile || data.contactNumber || data.contactDetails?.phone || data.contactDetails?.mobile || "Not provided"}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Email:</span>
-                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.email}</span>
+                    <span style={{ color: "#2B2D2A", fontWeight: "600" }}>{data.email || data.contactEmail || data.contactDetails?.email || "Not provided"}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Website:</span>
-                    <a href={data.website} target="_blank" rel="noopener noreferrer" style={{ color: "#8A6B2E", display: "flex", alignItems: "center", gap: "4px", fontWeight: "700" }}>
-                      <span>{data.website}</span>
-                      <ExternalLink size={12} />
-                    </a>
+                    {data.website ? (
+                      <a href={data.website.startsWith("http") ? data.website : `https://${data.website}`} target="_blank" rel="noopener noreferrer" style={{ color: "#8A6B2E", display: "flex", alignItems: "center", gap: "4px", fontWeight: "700" }}>
+                        <span>{data.website}</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    ) : (
+                      <span style={{ color: "#5A584F", fontStyle: "italic" }}>Not provided</span>
+                    )}
                   </div>
                 </div>
               </div>

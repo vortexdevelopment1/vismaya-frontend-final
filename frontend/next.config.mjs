@@ -14,6 +14,20 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/admin/cancellations",
+        destination: "/admin/cancellation-requests",
+        permanent: true,
+      },
+      {
+        source: "/admin/verification",
+        destination: "/admin/verifications",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

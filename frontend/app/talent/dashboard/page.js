@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   FileText,
@@ -29,8 +29,13 @@ import { paymentService } from "@/lib/api/services/paymentService";
 import { PRICING_CONFIG } from "@/lib/config/pricing";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
+import { isRealMode } from "@/lib/api/config";
+import { talentService } from "@/lib/api/services/talentService";
+import SuccessStorySection from "@/components/talent/SuccessStorySection";
+import { useAuth } from "@/context/AuthContext";
 
 export default function TalentDashboardPage() {
+  const { user } = useAuth();
   const {
     applications,
     auditions,
@@ -41,38 +46,74 @@ export default function TalentDashboardPage() {
 
   const {
     profile,
+    applications: talentCtxApplications = [],
+    notifications: talentCtxNotifications = [],
     profileCompletionScore,
     profileChecklist,
   } = useTalent();
 
-  const [isPaid, setIsPaid] = useState(() => paymentService.isTalentPaid());
+  const [realApplications, setRealApplications] = useState([]);
+  const [realAuditions, setRealAuditions] = useState([]);
+
+  useEffect(() => {
+    if (!isRealMode("talent") && !isRealMode("applications")) return;
+    let mounted = true;
+    Promise.allSettled([
+      talentService.getMyApplications(),
+      talentService.getMyAuditions(),
+    ]).then(([appsRes, audsRes]) => {
+      if (mounted) {
+        if (appsRes.status === "fulfilled" && Array.isArray(appsRes.value?.data)) {
+          setRealApplications(appsRes.value.data);
+        }
+        if (audsRes.status === "fulfilled" && Array.isArray(audsRes.value?.data)) {
+          setRealAuditions(audsRes.value.data);
+        }
+      }
+    }).catch((err) => console.warn(err));
+    return () => { mounted = false; };
+  }, []);
+
+  const [isPaid, setIsPaid] = useState(() => {
+    if (isRealMode("payments") && user?.isPaid) return true;
+    return paymentService.isTalentPaid();
+  });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const isUnder60 = (profileCompletionScore || 0) < PRICING_CONFIG.MIN_PROFILE_COMPLETION;
 
-  const currentTalentId = "tal-904";
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
 
   // Filter entities for current talent
-  const myApplications = useMemo(
-    () => applications.filter((a) => a.talentId === currentTalentId),
-    [applications]
-  );
+  const myApplications = useMemo(() => {
+    if (isRealMode("applications") || isRealMode("talent")) {
+      return realApplications;
+    }
+    return applications.filter((a) => a.talentId === currentTalentId);
+  }, [applications, realApplications, currentTalentId]);
 
-  const myAuditions = useMemo(
-    () => auditions.filter((aud) => aud.talentId === currentTalentId),
-    [auditions]
-  );
+  const myAuditions = useMemo(() => {
+    if (isRealMode("talent")) {
+      return realAuditions;
+    }
+    return auditions.filter((aud) => aud.talentId === currentTalentId);
+  }, [auditions, realAuditions, currentTalentId]);
 
-  const talentNotifications = useMemo(
-    () => getNotificationsForRole("talent", currentTalentId),
-    [getNotificationsForRole]
-  );
+  const talentNotifications = useMemo(() => {
+    if (isRealMode("notifications") || isRealMode("talent")) {
+      return Array.isArray(talentCtxNotifications) ? talentCtxNotifications : [];
+    }
+    return getNotificationsForRole("talent", currentTalentId);
+  }, [talentCtxNotifications, getNotificationsForRole, currentTalentId]);
 
   // Derived dashboard stats
   const totalAppsCount = myApplications.length;
-  const shortlistedCount = myApplications.filter((a) => a.status === "Shortlisted").length;
-  const selectedCount = myApplications.filter((a) => a.status === "Selected").length;
+  const shortlistedCount = myApplications.filter((a) => (a.status || "").toLowerCase() === "shortlisted").length;
+  const selectedCount = myApplications.filter((a) => (a.status || "").toLowerCase() === "selected").length;
   const pendingAuditionsCount = myAuditions.filter(
-    (aud) => aud.status === "Relayed to Talent"
+    (aud) => {
+      const s = (aud.status || "").toLowerCase();
+      return s === "relayed to talent" || s === "relayed" || s === "requested";
+    }
   ).length;
 
   const recentApplications = myApplications.slice(0, 4);
@@ -275,11 +316,17 @@ export default function TalentDashboardPage() {
 
           <div className="talent-welcome-user-info">
             <div className="talent-welcome-title-row">
-              <h1 className="talent-welcome-title">
-                Welcome back, {profile.personal.fullName.split(" ")[0]}!
-              </h1>
+              {(() => {
+                const welcomeName = profile?.personal?.fullName?.trim() || profile?.name?.trim() || profile?.stageName?.trim() || user?.name?.trim() || "Artist";
+                const firstName = welcomeName.split(" ")[0];
+                return (
+                  <h1 className="talent-welcome-title">
+                    Welcome back, {firstName}!
+                  </h1>
+                );
+              })()}
               <div className="talent-welcome-badge">
-                <StatusBadge status={profile.status} size="md" />
+                <StatusBadge status={profile?.status || "pending"} size="md" />
               </div>
             </div>
             <p className="talent-welcome-desc">
@@ -556,6 +603,9 @@ export default function TalentDashboardPage() {
         </div>
       </div>
 
+      {/* Success Story Submission & Review Status Card */}
+      <SuccessStorySection profile={profile} user={user} />
+
       {/* Main Split: Recent Applications (Left) & Recent Notifications (Right) */}
       <div className="talent-split-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "24px" }}>
         {/* Recent Applications Card */}
@@ -610,8 +660,9 @@ export default function TalentDashboardPage() {
               recentApplications.map((app) => {
                 const opp = getOpportunity(app.opportunityId);
                 return (
-                  <div
-                    key={app.id}
+                  <Link
+                    key={app.id || app._id}
+                    href={`/talent/applications?id=${app.id || app._id}`}
                     className="recent-app-item"
                     style={{
                       backgroundColor: "#F3EFE6",
@@ -622,6 +673,9 @@ export default function TalentDashboardPage() {
                       alignItems: "center",
                       justifyContent: "space-between",
                       gap: "12px",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      transition: "border-color 0.16s ease, transform 0.16s ease",
                     }}
                   >
                     <div className="recent-app-info" style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0, flex: 1 }}>
@@ -637,17 +691,17 @@ export default function TalentDashboardPage() {
                           fontFamily: "var(--font-body), 'Inter', sans-serif",
                         }}
                       >
-                        {opp?.title || app.roleApplied}
+                        {opp?.title || app.opportunityTitle || "Opportunity"}
                       </span>
                       <span className="recent-app-meta" style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
-                        Role: <strong style={{ color: "#6E5420" }}>{app.roleApplied}</strong> &bull; {new Date(app.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
+                        Role: <strong style={{ color: "#6E5420" }}>{app.roleApplied || app.roleName || app.role || opp?.role || "Lead Role"}</strong> &bull; {new Date(app.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
                       </span>
                     </div>
 
                     <div className="recent-app-badge" style={{ flexShrink: 0 }}>
                       <StatusBadge status={app.status} size="sm" />
                     </div>
-                  </div>
+                  </Link>
                 );
               })
             )}

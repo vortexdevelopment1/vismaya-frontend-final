@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import Project from "../models/project.model.js";
 import Organization from "../models/organization.model.js";
 import Opportunity from "../models/opportunity.model.js";
@@ -87,31 +88,46 @@ export const getMyProjects = async (req: Request, res: Response): Promise<any> =
         const projects = await Project.find(filter).sort({ createdAt: -1 }).lean();
 
         // Attach counts for opportunities and shortlists for each project
-        const projectIds = projects.map(p => p._id);
+        const rawProjectIds = projects.map(p => p._id).filter(Boolean);
+        const projectObjectIds = rawProjectIds
+            .filter((id: any) => mongoose.Types.ObjectId.isValid(id.toString()))
+            .map((id: any) => new mongoose.Types.ObjectId(id.toString()));
+        const projectIdStrings = rawProjectIds.map((id: any) => id.toString());
+        const allProjectIds = [...projectObjectIds, ...projectIdStrings];
+
         const [opportunityCounts, shortlistCounts] = await Promise.all([
-            Opportunity.aggregate([
-                { $match: { projectId: { $in: projectIds } } },
+            allProjectIds.length > 0 ? Opportunity.aggregate([
+                {
+                    $match: {
+                        projectId: { $in: allProjectIds },
+                        status: { $ne: "deleted" },
+                        isDeleted: { $ne: true }
+                    }
+                },
                 { $group: { _id: "$projectId", count: { $sum: 1 } } }
-            ]),
-            ProjectShortlist.aggregate([
-                { $match: { projectId: { $in: projectIds } } },
+            ]) : [],
+            allProjectIds.length > 0 ? ProjectShortlist.aggregate([
+                { $match: { projectId: { $in: allProjectIds } } },
                 { $group: { _id: "$projectId", count: { $sum: 1 } } }
-            ])
+            ]) : []
         ]);
 
         const oppCountMap: Record<string, number> = {};
         for (const item of opportunityCounts) {
-            oppCountMap[item._id.toString()] = item.count;
+            const key = item._id.toString();
+            oppCountMap[key] = (oppCountMap[key] || 0) + item.count;
         }
 
         const shortlistCountMap: Record<string, number> = {};
         for (const item of shortlistCounts) {
-            shortlistCountMap[item._id.toString()] = item.count;
+            const key = item._id.toString();
+            shortlistCountMap[key] = (shortlistCountMap[key] || 0) + item.count;
         }
 
         const projectsWithStats = projects.map(p => ({
             ...p,
             opportunityCount: oppCountMap[p._id.toString()] || 0,
+            opportunitiesCount: oppCountMap[p._id.toString()] || 0,
             shortlistCount: shortlistCountMap[p._id.toString()] || 0
         }));
 
@@ -159,9 +175,19 @@ export const getProjectDetails = async (req: Request, res: Response): Promise<an
             });
         }
 
+        const validObjId = mongoose.Types.ObjectId.isValid(String(projectId)) ? new mongoose.Types.ObjectId(String(projectId)) : null;
+        const projectMatch = validObjId ? { $in: [validObjId, String(projectId)] } : String(projectId);
+
+        const oppFilter: any = {
+            projectId: projectMatch,
+            status: { $ne: "deleted" },
+            isDeleted: { $ne: true }
+        };
+        const shortlistFilter: any = { projectId: projectMatch };
+
         const [opportunities, shortlists] = await Promise.all([
-            Opportunity.find({ projectId: String(projectId) }).sort({ createdAt: -1 }),
-            ProjectShortlist.find({ projectId: String(projectId) })
+            Opportunity.find(oppFilter).sort({ createdAt: -1 }),
+            ProjectShortlist.find(shortlistFilter)
                 .populate({
                     path: "talentProfileId",
                     select: "vismayaId stageName firstName lastName headline profilePhoto category primaryProfession primaryDepartment primaryDesignation skills"

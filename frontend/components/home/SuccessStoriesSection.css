@@ -1,0 +1,224 @@
+/* Success Stories Homepage Carousel Styles */
+.success-stories-section {
+  background-color: var(--bg-alt);
+  padding: 80px 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.success-stories-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.success-stories-header {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 40px auto;
+}
+
+.success-stories-heading {
+  font-family: var(--font-heading), Georgia, "Times New Roman", serif;
+  font-size: clamp(28px, 3.5vw, 38px);
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 10px 0;
+}
+
+.success-stories-subtext {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.success-carousel-wrapper {
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(41, 44, 41, 0.05);
+  padding: 44px 36px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.success-carousel-wrapper:focus-visible {
+  border-color: var(--gold);
+}
+
+.success-story-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .success-story-card {
+    flex-direction: row;
+    text-align: left;
+    align-items: center;
+    gap: 40px;
+  }
+}
+
+.success-story-avatar-wrap {
+  flex-shrink: 0;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--gold-border);
+  box-shadow: var(--gold-glow);
+  background: var(--bg-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.success-story-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.success-story-avatar-initials {
+  font-size: 40px;
+  font-family: var(--font-heading), Georgia, serif;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.success-story-content {
+  flex: 1;
+}
+
+.success-story-quote-icon {
+  color: var(--gold);
+  opacity: 0.35;
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 8px;
+  font-family: Georgia, serif;
+}
+
+.success-story-quote {
+  font-family: var(--font-heading), Georgia, serif;
+  font-size: clamp(18px, 2.2vw, 22px);
+  line-height: 1.5;
+  color: var(--text-primary);
+  font-style: italic;
+  margin: 0 0 18px 0;
+}
+
+.success-story-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.success-story-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+.success-story-details {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.success-carousel-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.success-carousel-arrows {
+  display: flex;
+  gap: 10px;
+}
+
+.success-carousel-arrow-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.success-carousel-arrow-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--bg-alt);
+}
+
+.success-carousel-arrow-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.success-carousel-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.success-carousel-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: none;
+  background: var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.success-carousel-dot.active {
+  width: 24px;
+  border-radius: 5px;
+  background: var(--gold);
+}
+
+.success-stories-view-all-wrap {
+  text-align: center;
+  margin-top: 32px;
+}
+
+.success-stories-view-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gold);
+  text-decoration: none;
+  padding: 10px 20px;
+  border: 1px solid var(--gold-border);
+  border-radius: 30px;
+  background: var(--bg-surface);
+  transition: all 0.2s ease;
+}
+
+.success-stories-view-all-btn:hover {
+  background: var(--gold);
+  color: #FFFFFF;
+}

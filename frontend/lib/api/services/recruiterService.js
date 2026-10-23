@@ -23,6 +23,8 @@ import {
   initialCompanyProfile,
   initialRequirements,
   initialShortlistedTalent,
+  initialRecruiterNotifications,
+  initialRecentActivity,
 } from "../../recruiter/mockData.js";
 import {
   mockProjects,
@@ -33,6 +35,24 @@ import {
 const isMongoId = (id) => typeof id === "string" && /^[0-9a-fA-F]{24}$/.test(id);
 
 export const recruiterService = {
+  getInitialState() {
+    if (isRealMode("recruiter")) {
+      return {
+        companyProfile: null,
+        requirements: [],
+        shortlistedTalent: {},
+        notifications: [],
+        activities: [],
+      };
+    }
+    return {
+      companyProfile: initialCompanyProfile,
+      requirements: initialRequirements,
+      shortlistedTalent: initialShortlistedTalent,
+      notifications: initialRecruiterNotifications,
+      activities: initialRecentActivity,
+    };
+  },
   /**
    * Fetch recruiter's organization profile
    */
@@ -253,6 +273,27 @@ export const recruiterService = {
   },
 
   /**
+   * Get an opportunity by ID
+   * @param {string} opportunityId
+   */
+  async getOpportunityById(opportunityId) {
+    if (!isRealMode("opportunities")) {
+      const mock = initialRequirements.find((o) => o.id === opportunityId);
+      return {
+        success: true,
+        data: mock ? mapOpportunity(mock) : null,
+      };
+    }
+
+    const res = await apiClient.get(`/api/opportunities/${opportunityId}`);
+    const doc = res?.opportunity || res?.data || res;
+    return {
+      success: true,
+      data: doc ? mapOpportunity(doc) : null,
+    };
+  },
+
+  /**
    * Create a new casting brief (opportunity)
    * @param {Object} payload Casting brief details
    */
@@ -307,21 +348,33 @@ export const recruiterService = {
   /**
    * Request cancellation for an opportunity
    * @param {string} opportunityId
-   * @param {Object} payload { cancellationReason }
+   * @param {Object} payload
    */
-  async requestOpportunityCancellation(opportunityId, payload) {
-    if (!isRealMode("opportunities")) {
+  async requestOpportunityCancellation(opportunityId, payload = {}) {
+    if (!isRealMode("opportunities") && !isRealMode("recruiter")) {
       return {
         success: true,
         message: "Cancellation requested (Mock)",
       };
     }
 
-    const res = await apiClient.post(`/api/opportunities/${opportunityId}/cancel-request`, payload);
+    const cancellationReason =
+      typeof payload === "string"
+        ? payload.trim()
+        : (payload?.cancellationReason || payload?.reason || "").trim();
+
+    if (!cancellationReason) {
+      throw new Error("Cancellation reason is required");
+    }
+
+    const res = await apiClient.post(`/api/opportunities/${opportunityId}/cancel-request`, {
+      cancellationReason,
+      ...payload,
+    });
     return {
       success: true,
-      data: res?.data || res,
-      message: res?.message,
+      data: res?.data || res?.opportunity || res,
+      message: res?.message || "Cancellation request submitted for Vismaya review",
     };
   },
 
@@ -728,6 +781,7 @@ export const recruiterService = {
   async updateOrganization(payload) { return this.saveOrganizationProfile(payload); },
   async getOpportunities() { return this.getMyOpportunities(); },
   async getProjects() { return this.getMyProjects(); },
+  async getMyApplications() { return { success: true, data: [] }; },
   async requestCancellation(opportunityId, payload) { return this.requestOpportunityCancellation(opportunityId, payload); },
   async deleteOpportunity(opportunityId, payload) { return this.requestOpportunityCancellation(opportunityId, payload); },
 };

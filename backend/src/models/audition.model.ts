@@ -1,12 +1,31 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
+export interface ISelfTapeVideo {
+    videoUrl: string;
+    thumbnailUrl?: string;
+    durationSeconds?: number;
+    fileSizeBytes?: number;
+    fileName?: string;
+    takeNumber?: number;
+}
+
 export interface ISelfTapeSubmission {
     videoUrl?: string;
+    videoUrls?: string[];
+    videos?: ISelfTapeVideo[];
     thumbnailUrl?: string;
     durationSeconds?: number;
     fileSizeBytes?: number;
     notes?: string;
     submittedAt?: Date;
+}
+
+export interface IAuditionRejection {
+    videoUrl?: string;
+    mediaId?: string;
+    reason: string;
+    rejectedBy?: Types.ObjectId;
+    rejectedAt: Date;
 }
 
 export interface IAudition extends Document {
@@ -24,7 +43,7 @@ export interface IAudition extends Document {
     location?: string;
     scheduledAt?: Date;
     deadline?: Date;
-    status: "requested" | "scheduled" | "submitted" | "reviewed" | "completed" | "cancelled";
+    status: "requested" | "scheduled" | "submitted" | "forwarded_to_org" | "resubmission_requested" | "reviewed" | "completed" | "cancelled" | "rejected";
     selfTapeSubmission?: ISelfTapeSubmission;
     organizationFeedback?: string;
     organizationRating?: number;
@@ -34,6 +53,8 @@ export interface IAudition extends Document {
     vismayaReviewedBy?: Types.ObjectId;
     vismayaReviewedAt?: Date;
     vismayaRejectionReason?: string;
+    resubmissionCount?: number;
+    rejectionHistory?: IAuditionRejection[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -124,9 +145,12 @@ const auditionSchema = new Schema<IAudition>(
                 "requested",
                 "scheduled",
                 "submitted",
+                "forwarded_to_org",
+                "resubmission_requested",
                 "reviewed",
                 "completed",
-                "cancelled"
+                "cancelled",
+                "rejected"
             ],
             default: "requested"
         },
@@ -136,6 +160,18 @@ const auditionSchema = new Schema<IAudition>(
                 type: String,
                 trim: true
             },
+            videoUrls: [{
+                type: String,
+                trim: true
+            }],
+            videos: [{
+                videoUrl: { type: String, trim: true },
+                thumbnailUrl: { type: String, trim: true },
+                durationSeconds: { type: Number },
+                fileSizeBytes: { type: Number },
+                fileName: { type: String, trim: true },
+                takeNumber: { type: Number }
+            }],
             thumbnailUrl: {
                 type: String,
                 trim: true
@@ -191,7 +227,20 @@ const auditionSchema = new Schema<IAudition>(
         vismayaRejectionReason: {
             type: String,
             trim: true
-        }
+        },
+        resubmissionCount: {
+            type: Number,
+            default: 0
+        },
+        rejectionHistory: [
+            {
+                videoUrl: { type: String, trim: true },
+                mediaId: { type: String, trim: true },
+                reason: { type: String, required: true, trim: true },
+                rejectedBy: { type: Schema.Types.ObjectId, ref: "User" },
+                rejectedAt: { type: Date, default: Date.now }
+            }
+        ]
     },
     {
         timestamps: true

@@ -20,6 +20,16 @@ import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";
 import ReviewDrawer from "@/components/admin/ReviewDrawer";
 import ReasonModal from "@/components/admin/ReasonModal";
+import { adminService } from "@/lib/api/services/adminService";
+
+const getInitials = (name) => {
+  if (!name) return "T";
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return parts[0] ? parts[0].slice(0, 2).toUpperCase() : "T";
+};
 
 export default function TalentManagementPage() {
   const {
@@ -35,11 +45,12 @@ export default function TalentManagementPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [reasonModalConfig, setReasonModalConfig] = useState(null);
 
-  // Status Tabs calculation
+  // Status Tabs calculation: every profile appears in exactly one status tab
   const pendingCount = talents.filter((t) => t.status === "Pending").length;
   const approvedCount = talents.filter((t) => t.status === "Approved").length;
   const rejectedCount = talents.filter((t) => t.status === "Rejected").length;
   const suspendedCount = talents.filter((t) => t.status === "Suspended").length;
+  const draftCount = talents.filter((t) => t.status === "Incomplete / Draft" || t.status === "Draft" || t.status === "Incomplete").length;
 
   const tabs = [
     { key: "all", label: "All Artists", count: talents.length },
@@ -47,16 +58,36 @@ export default function TalentManagementPage() {
     { key: "Approved", label: "Approved", count: approvedCount },
     { key: "Rejected", label: "Rejected", count: rejectedCount },
     { key: "Suspended", label: "Suspended", count: suspendedCount },
+    { key: "Incomplete / Draft", label: "Incomplete / Draft", count: draftCount },
   ];
 
   const filteredTalents = talents.filter((t) => {
     if (activeTab === "all") return true;
+    if (activeTab === "Incomplete / Draft") {
+      return t.status === "Incomplete / Draft" || t.status === "Draft" || t.status === "Incomplete";
+    }
     return t.status === activeTab;
   });
 
-  const handleOpenReview = (talent) => {
+  const handleOpenReview = async (talent) => {
     setSelectedTalent(talent);
     setIsDrawerOpen(true);
+    const targetId = talent._id || talent.id || talent.userId;
+    if (targetId) {
+      try {
+        const res = await adminService.getTalentById(targetId);
+        if (res?.success && res.data) {
+          setSelectedTalent((prev) => ({
+            ...prev,
+            ...res.data,
+            id: prev?.id || res.data.id,
+            status: prev?.status || res.data.status,
+          }));
+        }
+      } catch (err) {
+        console.warn("Failed to fetch detailed talent profile:", err);
+      }
+    }
   };
 
   const handleCloseReview = () => {
@@ -66,7 +97,7 @@ export default function TalentManagementPage() {
 
   // Re-sync selected talent from context if updated while drawer is open
   const currentSelectedTalent = selectedTalent
-    ? talents.find((t) => t.id === selectedTalent.id) || selectedTalent
+    ? { ...(talents.find((t) => t.id === selectedTalent.id || t._id === selectedTalent._id) || {}), ...selectedTalent }
     : null;
 
   const columns = [
@@ -76,18 +107,39 @@ export default function TalentManagementPage() {
       minWidth: "260px",
       render: (val, row) => (
         <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, maxWidth: "260px" }}>
-          <img
-            src={row.avatar}
-            alt={row.name}
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              objectFit: "cover",
-              border: "1px solid #E8E2D4",
-              flexShrink: 0,
-            }}
-          />
+          {row.avatar ? (
+            <img
+              src={row.avatar}
+              alt={row.name}
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                objectFit: "cover",
+                border: "1px solid #E8E2D4",
+                flexShrink: 0,
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                backgroundColor: "#F3EFE6",
+                color: "#8A6B2E",
+                border: "1px solid #E8E2D4",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 700,
+                fontSize: "13px",
+                flexShrink: 0,
+              }}
+            >
+              {getInitials(row.name)}
+            </div>
+          )}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div
               style={{
@@ -155,7 +207,7 @@ export default function TalentManagementPage() {
       minWidth: "120px",
       render: (val, row) => (
         <div style={{ fontSize: "13px", color: "#5A584F", whiteSpace: "nowrap" }}>
-          {row.age} yrs &bull; {row.gender}
+          {row.age ? `${row.age} yrs • ` : ""}{row.gender || "Unspecified"}
         </div>
       ),
     },
@@ -187,9 +239,9 @@ export default function TalentManagementPage() {
       key: "joinedDate",
       label: "Joined Date",
       minWidth: "120px",
-      render: (val) => (
+      render: (val, row) => (
         <span style={{ fontSize: "13px", color: "#5A584F", whiteSpace: "nowrap" }}>
-          {val}
+          {val || (row.createdAt ? new Date(row.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "—")}
         </span>
       ),
     },
@@ -250,18 +302,39 @@ export default function TalentManagementPage() {
         {/* Card Header: Avatar, Name, Minor, ID & Status */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-            <img
-              src={row.avatar}
-              alt={row.name}
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                objectFit: "cover",
-                border: "1px solid #E8E2D4",
-                flexShrink: 0,
-              }}
-            />
+            {row.avatar ? (
+              <img
+                src={row.avatar}
+                alt={row.name}
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "1px solid #E8E2D4",
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  backgroundColor: "#F3EFE6",
+                  color: "#8A6B2E",
+                  border: "1px solid #E8E2D4",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  flexShrink: 0,
+                }}
+              >
+                {getInitials(row.name)}
+              </div>
+            )}
             <div style={{ minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span
@@ -329,7 +402,7 @@ export default function TalentManagementPage() {
               Age / Gender
             </span>
             <span style={{ color: "#2B2D2A" }}>
-              {row.age} yrs &bull; {row.gender}
+              {row.age ? `${row.age} yrs • ` : ""}{row.gender || "Unspecified"}
             </span>
           </div>
 
@@ -361,7 +434,7 @@ export default function TalentManagementPage() {
               Joined Date
             </span>
             <span style={{ color: "#5A584F" }}>
-              {row.joinedDate}
+              {row.joinedDate || (row.createdAt ? new Date(row.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "—")}
             </span>
           </div>
         </div>

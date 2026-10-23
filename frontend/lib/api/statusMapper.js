@@ -37,9 +37,36 @@ export const OPPORTUNITY_BACKEND_STATUS_MAP = {
   cancelled: "cancelled",
   canceled: "cancelled",
   closed: "closed",
-  completed: "completed",
   draft: "pending",
 };
+
+// Cancellation Request Decision / Tab Mapping
+export const CANCELLATION_TAB_STATUS_MAP = {
+  pending: "Pending",
+  cancellation_requested: "Pending",
+  "cancellation requested": "Pending",
+  approved: "Approved",
+  cancelled: "Approved",
+  canceled: "Approved",
+  declined: "Declined",
+  rejected: "Declined",
+};
+
+export function toCancellationTabStatus(val, decision) {
+  // If decision is provided ("approved" | "declined" | "pending"), it takes precedence
+  if (decision) {
+    const d = String(decision).trim().toLowerCase().replace(/[\s_-]+/g, "");
+    if (d === "approved" || d === "cancelled" || d === "canceled") return "Approved";
+    if (d === "declined" || d === "rejected") return "Declined";
+    if (d === "pending") return "Pending";
+  }
+
+  if (!val) return "Pending";
+  const cleaned = String(val).trim().toLowerCase().replace(/[\s_-]+/g, "");
+  if (cleaned === "approved" || cleaned === "cancelled" || cleaned === "canceled") return "Approved";
+  if (cleaned === "declined" || cleaned === "rejected") return "Declined";
+  return "Pending";
+}
 
 // 2. Application Statuses
 export const APPLICATION_STATUS_MAP = {
@@ -49,6 +76,7 @@ export const APPLICATION_STATUS_MAP = {
   selected: "Selected",
   not_selected: "Not Selected",
   withdrawn: "Withdrawn",
+  opportunity_cancelled: "Opportunity Cancelled",
 };
 
 export const APPLICATION_BACKEND_STATUS_MAP = {
@@ -61,6 +89,8 @@ export const APPLICATION_BACKEND_STATUS_MAP = {
   not_selected: "not_selected",
   rejected: "not_selected",
   withdrawn: "withdrawn",
+  opportunity_cancelled: "opportunity_cancelled",
+  "opportunity cancelled": "opportunity_cancelled",
 };
 
 // 3. Audition Statuses (includes Target relay contracts)
@@ -75,6 +105,7 @@ export const AUDITION_STATUS_MAP = {
   relayed_to_talent: "Relayed to Talent",
   self_tape_received: "Self-Tape Received",
   forwarded_to_org: "Forwarded to Org",
+  resubmission_requested: "Revision Requested",
 };
 
 export const AUDITION_BACKEND_STATUS_MAP = {
@@ -83,13 +114,15 @@ export const AUDITION_BACKEND_STATUS_MAP = {
   scheduled: "scheduled",
   "audition scheduled": "scheduled",
   submitted: "submitted",
-  "self tape received": "self_tape_received",
-  self_tape_received: "self_tape_received",
+  "self tape received": "submitted",
+  self_tape_received: "submitted",
   reviewed: "reviewed",
   "forwarded to org": "forwarded_to_org",
   forwarded_to_org: "forwarded_to_org",
   "relayed to talent": "relayed_to_talent",
   relayed_to_talent: "relayed_to_talent",
+  "revision requested": "resubmission_requested",
+  resubmission_requested: "resubmission_requested",
   completed: "completed",
   cancelled: "cancelled",
   canceled: "cancelled",
@@ -101,6 +134,8 @@ export const VERIFICATION_STATUS_MAP = {
   verified: "Verified",
   rejected: "Rejected",
   suspended: "Suspended",
+  more_info_requested: "More Information Requested",
+  more_info_needed: "More Information Requested",
 };
 
 export const VERIFICATION_BACKEND_STATUS_MAP = {
@@ -109,6 +144,10 @@ export const VERIFICATION_BACKEND_STATUS_MAP = {
   approved: "verified", // normalize "Approved" in UI to backend "verified"
   rejected: "rejected",
   suspended: "suspended",
+  "more information requested": "more_info_requested",
+  "more info requested": "more_info_requested",
+  more_info_requested: "more_info_requested",
+  more_info_needed: "more_info_requested",
 };
 
 // 5. Media Moderation Statuses
@@ -156,6 +195,10 @@ export const PAYMENT_BACKEND_STATUS_MAP = {
 export const USER_STATUS_MAP = {
   pending: "Pending",
   active: "Active",
+  approved: "Approved",
+  draft: "Draft",
+  incomplete: "Incomplete",
+  "incomplete / draft": "Incomplete / Draft",
   restricted: "Restricted",
   suspended: "Suspended",
   rejected: "Rejected",
@@ -167,7 +210,10 @@ export const USER_STATUS_MAP = {
 export const USER_BACKEND_STATUS_MAP = {
   pending: "pending",
   active: "active",
-  approved: "active",
+  approved: "approved",
+  draft: "draft",
+  incomplete: "incomplete",
+  "incomplete / draft": "draft",
   restricted: "restricted",
   suspended: "suspended",
   rejected: "rejected",
@@ -182,6 +228,7 @@ export const PROJECT_STATUS_MAP = {
   active: "Active",
   completed: "Completed",
   cancelled: "Cancelled",
+  suspended: "Suspended",
 };
 
 export const PROJECT_BACKEND_STATUS_MAP = {
@@ -189,6 +236,7 @@ export const PROJECT_BACKEND_STATUS_MAP = {
   completed: "completed",
   cancelled: "cancelled",
   canceled: "cancelled",
+  suspended: "suspended",
 };
 
 // 9. Broadcast Statuses
@@ -288,3 +336,46 @@ export function toBackendStatus(entityType, frontendStatus) {
   }
   return key.replace(/\s+/g, "_");
 }
+
+/**
+ * Case and format tolerant check if an opportunity is in a pending/awaiting review state.
+ * Handles backend enums ("pending", "under_vismaya_review"), frontend labels
+ * ("Pending Review", "Under Review", "Submitted"), and common variants.
+ *
+ * @param {string} status
+ * @returns {boolean}
+ */
+export function isOpportunityPending(status) {
+  if (!status) return false;
+  const s = String(status).toLowerCase().trim().replace(/[-_]/g, " ");
+  return (
+    s === "pending" ||
+    s === "pending review" ||
+    s === "under review" ||
+    s === "under vismaya review" ||
+    s === "submitted" ||
+    s === "awaiting review"
+  );
+}
+
+/**
+ * Check if an opportunity is already in a terminal/finalized state
+ * (published, rejected, cancelled, closed, completed) where Approve/Reject should not be shown.
+ *
+ * @param {string} status
+ * @returns {boolean}
+ */
+export function isOpportunityFinalized(status) {
+  if (!status) return false;
+  const s = String(status).toLowerCase().trim().replace(/[-_]/g, " ");
+  return (
+    s === "published" ||
+    s === "active" ||
+    s === "rejected" ||
+    s === "cancelled" ||
+    s === "canceled" ||
+    s === "closed" ||
+    s === "completed"
+  );
+}
+

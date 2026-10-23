@@ -6,11 +6,26 @@ export interface ICustomQuestion {
     isRequired: boolean;
 }
 
+export interface IOpportunityRole {
+    _id?: Types.ObjectId;
+    roleName: string;
+    count?: number;
+    positionsCount?: number;
+    ageRange?: string;
+    ageMin?: number;
+    ageMax?: number;
+    gender?: string;
+    description?: string;
+    skills?: string[];
+    languages?: string[];
+}
+
 export interface IOpportunity extends Document {
     projectId: Types.ObjectId;
     title: string;
     summary: string;
     role: string;
+    roles?: IOpportunityRole[];
     location: string;
     deadline: Date;
     remuneration?: string;
@@ -28,6 +43,14 @@ export interface IOpportunity extends Document {
     completionRequested: boolean;
     completionRequestedAt?: Date;
     rejectionReason?: string;
+    rejectedAt?: Date;
+    rejectedBy?: Types.ObjectId;
+    rejectionHistory?: {
+        reason: string;
+        rejectedBy?: Types.ObjectId;
+        rejectedAt?: Date;
+    }[];
+    resubmissionCount?: number;
     correctionNotes?: string;
     correctionRequestedAt?: Date;
     correctionRequestedBy?: Types.ObjectId;
@@ -39,6 +62,16 @@ export interface IOpportunity extends Document {
     cancellationRequestedAt?: Date;
     cancellationReviewedAt?: Date;
     cancellationReviewedBy?: Types.ObjectId;
+    cancellationRequest?: {
+        requestedBy?: Types.ObjectId;
+        reason: string;
+        requestedAt: Date;
+        decision: "pending" | "approved" | "declined";
+        decidedBy?: Types.ObjectId;
+        decidedAt?: Date;
+        adminNote?: string;
+        declineReason?: string;
+    };
     publishedAt?: Date;
     closedAt?: Date;
     autoClosedAt?: Date;
@@ -58,6 +91,50 @@ const customQuestionSchema = new Schema<ICustomQuestion>({
         type: Boolean,
         default: false
     }
+}, { _id: true });
+
+const opportunityRoleSchema = new Schema<IOpportunityRole>({
+    roleName: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    count: {
+        type: Number,
+        default: 1,
+        min: 1
+    },
+    positionsCount: {
+        type: Number,
+        default: 1,
+        min: 1
+    },
+    ageRange: {
+        type: String,
+        trim: true
+    },
+    ageMin: {
+        type: Number
+    },
+    ageMax: {
+        type: Number
+    },
+    gender: {
+        type: String,
+        trim: true
+    },
+    description: {
+        type: String,
+        trim: true
+    },
+    skills: [{
+        type: String,
+        trim: true
+    }],
+    languages: [{
+        type: String,
+        trim: true
+    }]
 }, { _id: true });
 
 const opportunitySchema = new Schema<IOpportunity>(
@@ -85,6 +162,8 @@ const opportunitySchema = new Schema<IOpportunity>(
             required: true,
             trim: true
         },
+
+        roles: [opportunityRoleSchema],
 
         location: {
             type: String,
@@ -149,6 +228,24 @@ const opportunitySchema = new Schema<IOpportunity>(
             type: String,
             trim: true
         },
+        rejectedAt: {
+            type: Date
+        },
+        rejectedBy: {
+            type: Schema.Types.ObjectId,
+            ref: "User"
+        },
+        rejectionHistory: [
+            {
+                reason: { type: String, trim: true, required: true },
+                rejectedBy: { type: Schema.Types.ObjectId, ref: "User" },
+                rejectedAt: { type: Date, default: Date.now }
+            }
+        ],
+        resubmissionCount: {
+            type: Number,
+            default: 0
+        },
 
         correctionNotes: {
             type: String,
@@ -190,6 +287,16 @@ const opportunitySchema = new Schema<IOpportunity>(
         cancellationReviewedBy: {
             type: Schema.Types.ObjectId,
             ref: "User"
+        },
+        cancellationRequest: {
+            requestedBy: { type: Schema.Types.ObjectId, ref: "User" },
+            reason: { type: String, trim: true },
+            requestedAt: { type: Date },
+            decision: { type: String, enum: ["pending", "approved", "declined"] },
+            decidedBy: { type: Schema.Types.ObjectId, ref: "User" },
+            decidedAt: { type: Date },
+            adminNote: { type: String, trim: true },
+            declineReason: { type: String, trim: true }
         },
 
         publishedAt: {

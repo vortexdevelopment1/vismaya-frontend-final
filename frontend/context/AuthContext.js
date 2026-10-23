@@ -44,6 +44,22 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+const DOMAIN_STORAGE_KEYS = [
+  STORAGE_USER_KEY,
+  "vismaya_user_data",
+  "vismaya_auth_token",
+  "vismaya_talent_profile",
+  "vismaya_talent_portfolio",
+  "vismaya_workflow_store_v2",
+  "vismaya_payment_talent_status",
+  "vismaya_credits",
+  "vismaya_recruiter_profile",
+  "vismaya_admin_analytics",
+  "vismaya_registration_draft",
+  "vismaya_draft_token",
+  "vismaya_reg_session_active"
+];
+
   const saveSession = useCallback((newUser, newToken) => {
     setUser(newUser);
     if (newToken) {
@@ -52,6 +68,15 @@ export function AuthProvider({ children }) {
     }
     if (typeof window !== "undefined" && newUser) {
       try {
+        const oldUser = localStorage.getItem(STORAGE_USER_KEY);
+        if (oldUser) {
+          try {
+            const parsed = JSON.parse(oldUser);
+            if (parsed?.id && newUser?.id && parsed.id !== newUser.id) {
+              ["vismaya_talent_profile", "vismaya_talent_portfolio", "vismaya_workflow_store_v2", "vismaya_credits", "vismaya_recruiter_profile"].forEach(k => localStorage.removeItem(k));
+            }
+          } catch {}
+        }
         localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(newUser));
       } catch {}
     }
@@ -75,7 +100,10 @@ export function AuthProvider({ children }) {
     removeAuthToken();
     if (typeof window !== "undefined") {
       try {
-        localStorage.removeItem(STORAGE_USER_KEY);
+        DOMAIN_STORAGE_KEYS.forEach(k => {
+          localStorage.removeItem(k);
+          sessionStorage.removeItem(k);
+        });
       } catch {}
     }
   }, []);
@@ -108,7 +136,9 @@ export function AuthProvider({ children }) {
     try {
       const res = await authService.register(payload);
       if (res.success && res.user) {
-        saveSession(res.user, res.token);
+        if (res.token && res.user.status === "active") {
+          saveSession(res.user, res.token);
+        }
         return { success: true, user: res.user, token: res.token };
       } else {
         const msg = res.message || "Registration failed. Please check your details.";

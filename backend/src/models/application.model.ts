@@ -13,7 +13,7 @@ export interface IApplication extends Document {
     customAnswers: ICustomAnswer[];
     consentGiven: boolean;
     eligibilityWarnings: string[];
-    status: "applied" | "under_review" | "shortlisted" | "selected" | "not_selected" | "withdrawn";
+    status: "applied" | "under_review" | "shortlisted" | "selected" | "not_selected" | "withdrawn" | "opportunity_cancelled";
     withdrawalReason?: string;
     withdrawnAt?: Date;
     reapplicationRequested: boolean;
@@ -84,7 +84,8 @@ const applicationSchema = new Schema<IApplication>(
                 "shortlisted",
                 "selected",
                 "not_selected",
-                "withdrawn"
+                "withdrawn",
+                "opportunity_cancelled"
             ],
             default: "applied"
         },

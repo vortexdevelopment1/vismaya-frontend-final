@@ -26,6 +26,9 @@ import PasswordInput from "@/components/PasswordInput";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { authService } from "@/lib/api/services/authService";
 import { isRealMode } from "@/lib/api/config";
+import { recruiterService } from "@/lib/api/services/recruiterService";
+import ContactVismayaButton from "@/components/shared/ContactVismayaButton";
+import { PHOTO_UPLOAD_CONFIG } from "@/lib/config/photoUpload";
 
 const SETTINGS_MENU_ITEMS = [
   { key: "profile", label: "Organization profile", icon: Building2 },
@@ -36,23 +39,53 @@ const SETTINGS_MENU_ITEMS = [
 
 export default function OrganizationSettingsPage() {
   const { organizations, isHydrated } = useWorkflow();
+  const [realProfile, setRealProfile] = useState(null);
+
+  useEffect(() => {
+    if (!isRealMode("recruiter")) return;
+    let mounted = true;
+    recruiterService.getOrganizationProfile().then((res) => {
+      if (mounted && res?.data) {
+        setRealProfile(res.data);
+      }
+    }).catch((err) => console.warn(err));
+    return () => { mounted = false; };
+  }, []);
 
   const currentOrg = useMemo(() => {
+    if (isRealMode("recruiter")) {
+      return realProfile || {
+        name: "",
+        type: "Production House",
+        status: "Pending",
+        registrationNumber: "",
+        gstNumber: "",
+        contactPerson: "",
+        contactEmail: "",
+        contactPhone: "",
+        address: "",
+      };
+    }
     return (
       organizations.find((o) => o.id === "org-1") ||
       organizations[0] || {
-        name: "Zee Films",
+        name: "Studio Productions",
         type: "Production House",
         status: "Verified",
-        registrationNumber: "CIN: U92100MH1992PLC068301",
-        gstNumber: "27AAACZ1234F1Z8",
-        contactPerson: "Vikram Malhotra",
-        contactEmail: "vikram.malhotra@zeefilms.com",
-        contactPhone: "+91 98201 54321",
-        address: "Plot 19, Film City Complex, Goregaon East, Mumbai, Maharashtra 400065",
+        registrationNumber: "",
+        gstNumber: "",
+        contactPerson: "",
+        contactEmail: "",
+        contactPhone: "",
+        address: "",
       }
     );
-  }, [organizations]);
+  }, [organizations, realProfile]);
+
+  const isOrgRejected = useMemo(() => {
+    const s = String(currentOrg?.status || currentOrg?.verificationState || "").toLowerCase();
+    return s === "rejected";
+  }, [currentOrg]);
 
   const [activeTab, setActiveTab] = useState("profile");
   const [toastMessage, setToastMessage] = useState(null);
@@ -65,16 +98,16 @@ export default function OrganizationSettingsPage() {
 
   // 1. Company Profile Form State & Initial Baseline
   const initialProfileState = useMemo(() => ({
-    companyName: currentOrg.name || "Zee Films",
+    companyName: currentOrg.name || "",
     companyType: currentOrg.type || "Production House",
-    registrationNumber: currentOrg.registrationNumber || "CIN: U92100MH1992PLC068301",
-    gstNumber: currentOrg.gstNumber || "27AAACZ1234F1Z8",
-    website: "https://zeefilms.com",
-    address: currentOrg.address || "Plot 19, Film City Complex, Goregaon East, Mumbai, Maharashtra 400065",
-    contactPerson: currentOrg.contactPerson || "Vikram Malhotra",
+    registrationNumber: currentOrg.registrationNumber || "",
+    gstNumber: currentOrg.gstNumber || "",
+    website: "",
+    address: currentOrg.address || "",
+    contactPerson: currentOrg.contactPerson || "",
     contactDesignation: "Head of Casting & Production",
-    contactEmail: currentOrg.contactEmail || "vikram.malhotra@zeefilms.com",
-    contactPhone: currentOrg.contactPhone || "+91 98201 54321",
+    contactEmail: currentOrg.contactEmail || "",
+    contactPhone: currentOrg.contactPhone || "",
     logoUrl: "",
   }), [currentOrg]);
 
@@ -620,7 +653,7 @@ export default function OrganizationSettingsPage() {
                           ...inputStyle,
                           borderColor: profileErrors.companyName ? "#B42318" : "#D9D2C0",
                         }}
-                        placeholder="e.g. Zee Films Studios"
+                        placeholder="e.g. Acme Studios"
                       />
                       {profileErrors.companyName && (
                         <span className="form-error">{profileErrors.companyName}</span>
@@ -894,7 +927,7 @@ export default function OrganizationSettingsPage() {
                         Corporate watermark preview
                       </span>
                       <span className="form-hint branding-hint" style={{ marginTop: 0 }}>
-                        Recommended: Square PNG, WebP or SVG format. Minimum resolution 400x400px (Max file size 2MB).
+                        Format: {PHOTO_UPLOAD_CONFIG.helperText}.
                       </span>
                       <div className="branding-btn-wrap" style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
                         <button
@@ -937,8 +970,32 @@ export default function OrganizationSettingsPage() {
           {/* TAB 2: VERIFICATION STATUS */}
           {activeTab === "verification" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-              {/* Status Banner Card */}
-              <div className="settings-card">
+              {isOrgRejected ? (
+                <div className="settings-card" style={{ borderLeft: "4px solid #B42318" }}>
+                  <div className="settings-card-body" style={{ padding: "32px" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
+                      <AlertCircle size={28} color="#B42318" style={{ flexShrink: 0, marginTop: "2px" }} />
+                      <div>
+                        <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#B42318", margin: "0 0 8px 0" }}>
+                          Verification Rejected
+                        </h3>
+                        <p style={{ fontSize: "15px", color: "#2B2D2A", margin: "0 0 16px 0", lineHeight: "24px" }}>
+                          Your verification was rejected. Please contact Vismaya support.
+                        </p>
+                        <div style={{ marginTop: "8px" }}>
+                          <ContactVismayaButton
+                            context="Rejected verification"
+                            reference={currentOrg?.id || currentOrg?._id || currentOrg?.registrationNumber || ""}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Status Banner Card */}
+                  <div className="settings-card">
                 <div className="settings-card-body" style={{ padding: "32px" }}>
                   <div
                     className="verif-banner-row"
@@ -1111,8 +1168,10 @@ export default function OrganizationSettingsPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </>
           )}
+        </div>
+      )}
 
           {/* TAB 3: SECURITY & PASSWORD */}
           {activeTab === "security" && (

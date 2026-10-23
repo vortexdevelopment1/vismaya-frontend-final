@@ -25,11 +25,14 @@ import {
     reviewReport,
     getPendingAuditions,
     reviewAudition,
+    relayAuditionRequest,
+    rejectAuditionRequest,
     getReapplicationRequests,
     reviewReapplication,
     getPendingVerifications,
     reviewVerification,
     getPendingMedia,
+    getAdminMedia,
     reviewMediaItem,
     getPendingProfileChanges,
     reviewProfileChange,
@@ -57,12 +60,18 @@ import {
     setMediaFeaturedWork,
     handleCopyrightDispute,
     createInformationalProfile,
-    getInformationalProfiles
+    getInformationalProfiles,
+    updateInformationalProfile,
+    archiveInformationalProfile,
+    restoreInformationalProfile
  } from "../controllers/admin.controller.js";
 
 import {
     getPendingStories,
-    reviewSuccessStory
+    getAdminSuccessStories,
+    reviewSuccessStory,
+    unpublishSuccessStory,
+    republishSuccessStory
  } from "../controllers/successStory.controller.js";
 
 import { 
@@ -86,6 +95,7 @@ router.param("couponId", validateObjectIdParam);
 router.param("profileId", validateObjectIdParam);
 router.param("reportId", validateObjectIdParam);
 router.param("auditionId", validateObjectIdParam);
+router.param("id", validateObjectIdParam);
 router.param("broadcastId", validateObjectIdParam);
 
 // Universal Mounting-Level Security Barrier:
@@ -189,7 +199,12 @@ router.patch("/reports/:reportId/review", authenticateUser, authorizeRoles("admi
 // Auditions Queue & Review
 router.get("/auditions", authenticateUser, authorizeRoles("admin"), getPendingAuditions);
 router.get("/auditions/pending", authenticateUser, authorizeRoles("admin"), getPendingAuditions);
+router.post("/auditions/:id/relay", authenticateUser, authorizeRoles("admin"), relayAuditionRequest);
+router.post("/auditions/:auditionId/relay", authenticateUser, authorizeRoles("admin"), relayAuditionRequest);
+router.post("/auditions/:id/reject-request", authenticateUser, authorizeRoles("admin"), rejectAuditionRequest);
+router.post("/auditions/:auditionId/reject-request", authenticateUser, authorizeRoles("admin"), rejectAuditionRequest);
 router.patch("/auditions/:auditionId/review", authenticateUser, authorizeRoles("admin"), reviewAudition);
+router.post("/auditions/:auditionId/review", authenticateUser, authorizeRoles("admin"), reviewAudition);
 router.patch("/auditions/:auditionId/approve", authenticateUser, authorizeRoles("admin"), (req: Request, res: Response, next: NextFunction) => {
     req.body.action = "approve";
     return (reviewAudition as any)(req, res, next);
@@ -208,7 +223,7 @@ router.get("/verifications/pending", authenticateUser, authorizeRoles("admin"), 
 router.patch("/verifications/:verificationId/review", authenticateUser, authorizeRoles("admin"), reviewVerification);
 
 // Media / Content Moderation Queue & Decisions
-router.get("/media", authenticateUser, authorizeRoles("admin"), getPendingMedia);
+router.get("/media", authenticateUser, authorizeRoles("admin"), getAdminMedia);
 router.get("/media/pending", authenticateUser, authorizeRoles("admin"), getPendingMedia);
 router.patch("/media/:mediaId/review", authenticateUser, authorizeRoles("admin"), reviewMediaItem);
 router.patch("/media/:mediaId/feature", authenticateUser, authorizeRoles("admin"), setMediaFeaturedWork);
@@ -217,14 +232,20 @@ router.patch("/media/:mediaId/dispute", authenticateUser, authorizeRoles("admin"
 // Informational Profiles (Spec Section 41 & 44)
 router.post("/informational-profiles", authenticateUser, authorizeRoles("admin"), createInformationalProfile);
 router.get("/informational-profiles", authenticateUser, authorizeRoles("admin"), getInformationalProfiles);
+router.patch("/informational-profiles/:id", authenticateUser, authorizeRoles("admin"), updateInformationalProfile);
+router.post("/informational-profiles/:id/archive", authenticateUser, authorizeRoles("admin"), archiveInformationalProfile);
+router.post("/informational-profiles/:id/restore", authenticateUser, authorizeRoles("admin"), restoreInformationalProfile);
 
-// Success Stories Review Queue (Spec Section 42 & 44)
-router.get("/success-stories", authenticateUser, authorizeRoles("admin"), getPendingStories);
+// Success Stories Review & Publishing Management (Spec Section 42 & 44)
+router.get("/success-stories", authenticateUser, authorizeRoles("admin"), getAdminSuccessStories);
 router.get("/success-stories/pending", authenticateUser, authorizeRoles("admin"), getPendingStories);
 router.patch("/success-stories/:storyId/review", authenticateUser, authorizeRoles("admin"), reviewSuccessStory);
+router.patch("/success-stories/:storyId/unpublish", authenticateUser, authorizeRoles("admin"), unpublishSuccessStory);
+router.patch("/success-stories/:storyId/republish", authenticateUser, authorizeRoles("admin"), republishSuccessStory);
 
 // Transactions & Credit Balances
 router.get("/transactions", authenticateUser, authorizeRoles("admin"), getPaymentTransactions);
+router.get("/payments/transactions", authenticateUser, authorizeRoles("admin"), getPaymentTransactions);
 router.get("/credits/ledger", authenticateUser, authorizeRoles("admin"), getAdminCreditLedger);
 router.post("/credits/adjust", requireSuperAdmin, adjustCreditBalance);
 

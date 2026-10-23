@@ -42,6 +42,22 @@ export const authService = {
   },
 
   /**
+   * Check whether an email or mobile number is already in use
+   * @param {Object} payload { email, mobile }
+   */
+  async checkAvailability({ email, mobile }) {
+    if (!isRealMode("auth")) {
+      return { available: true };
+    }
+    try {
+      const res = await apiClient.post("/api/auth/check-availability", { email, mobile });
+      return res?.data || res;
+    } catch {
+      return { available: true };
+    }
+  },
+
+  /**
    * Verify email OTP for account activation
    * @param {Object} payload { email, otp }
    */
@@ -189,14 +205,99 @@ export const authService = {
   },
 
   /**
-   * Authenticated password change
-   * @param {Object} payload { currentPassword, newPassword }
+   * Authenticated password change (Spec §38: current password OR OTP)
+   * @param {Object} payload { currentPassword, otp, newPassword }
    */
-  async changePassword({ currentPassword, newPassword }) {
+  async changePassword({ currentPassword, otp, newPassword }) {
     if (!isRealMode("auth")) {
       return { success: true, message: "Password updated successfully (Mock)" };
     }
-    return apiClient.post("/api/auth/change-password", { currentPassword, newPassword });
+    return apiClient.post("/api/auth/change-password", { currentPassword, otp, newPassword });
+  },
+
+  /**
+   * Request OTP for authenticated password change
+   */
+  async requestChangePasswordOtp() {
+    if (!isRealMode("auth")) {
+      return { success: true, message: "Password change verification code sent (Mock)" };
+    }
+    return apiClient.post("/api/auth/change-password/request-otp");
+  },
+
+  /**
+   * Request email change with verification OTP sent to new address
+   * @param {Object} payload { newEmail, password }
+   */
+  async requestEmailChange({ newEmail, password }) {
+    if (!isRealMode("auth")) {
+      return { success: true, message: "Verification code sent to new email address (Mock)" };
+    }
+    return apiClient.post("/api/auth/change-email", { newEmail, password });
+  },
+
+  /**
+   * Verify OTP and complete email address change
+   * @param {Object} payload { newEmail, otp }
+   */
+  async verifyEmailChange({ newEmail, otp }) {
+    if (!isRealMode("auth")) {
+      return { success: true, message: "Email changed successfully (Mock)" };
+    }
+    return apiClient.post("/api/auth/verify-email-change", { newEmail, otp });
+  },
+
+  /**
+   * Request 2FA setup verification code
+   */
+  async setup2FA() {
+    if (!isRealMode("auth")) {
+      return { success: true, message: "2FA setup code sent (Mock)" };
+    }
+    return apiClient.post("/api/auth/2fa/setup");
+  },
+
+  /**
+   * Verify 2FA setup code and enable two-factor authentication
+   * @param {Object} payload { otp }
+   */
+  async verify2FASetup({ otp }) {
+    if (!isRealMode("auth")) {
+      return { success: true, message: "Two-factor authentication enabled successfully (Mock)" };
+    }
+    return apiClient.post("/api/auth/2fa/verify", { otp });
+  },
+
+  /**
+   * Disable two-factor authentication
+   * @param {Object} payload { password }
+   */
+  async disable2FA({ password }) {
+    if (!isRealMode("auth")) {
+      return { success: true, message: "Two-factor authentication disabled successfully (Mock)" };
+    }
+    return apiClient.post("/api/auth/2fa/disable", { password });
+  },
+
+  /**
+   * Request account deletion OTP sent to registered email
+   */
+  async requestDeleteAccountOtp() {
+    if (!isRealMode("auth")) {
+      return { success: true, message: "Account deletion confirmation code sent (Mock)" };
+    }
+    return apiClient.post("/api/auth/delete-account/request-otp");
+  },
+
+  /**
+   * Confirm account deletion with OTP (Spec §38)
+   * @param {Object} payload { otp }
+   */
+  async confirmDeleteAccount({ otp }) {
+    if (!isRealMode("auth")) {
+      return { success: true, message: "Account deletion requested successfully (Mock)" };
+    }
+    return apiClient.post("/api/auth/delete-account/confirm", { otp });
   },
 
   /**
@@ -288,5 +389,38 @@ export const authService = {
       return { success: true, message: "Logged out (Mock)" };
     }
     return apiClient.post("/api/auth/logout");
+  },
+
+  /**
+   * Upload accreditation document for organization registration (PDF/JPG/PNG max 5MB)
+   * @param {File} file
+   */
+  async uploadAccreditationDocument(file) {
+    if (!isRealMode("auth")) {
+      return {
+        success: true,
+        url: URL.createObjectURL(file),
+        originalFilename: file.name,
+      };
+    }
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiClient.post("/api/auth/upload-accreditation-document", formData);
+  },
+
+  /**
+   * Fetch OTP configuration (e.g. demo mode and fixed demo code)
+   */
+  async getOtpConfig() {
+    try {
+      const res = await apiClient.get("/api/auth/otp-config");
+      return res?.data || res;
+    } catch {
+      return {
+        success: true,
+        demoMode: process.env.NEXT_PUBLIC_OTP_DEMO_MODE === "true",
+        demoCode: process.env.NEXT_PUBLIC_OTP_DEMO_MODE === "true" ? "123456" : null,
+      };
+    }
   },
 };

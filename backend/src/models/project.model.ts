@@ -7,7 +7,7 @@ export interface IProject extends Document {
     projectType?: string;
     /** Internal fallback project used when an organization has not supplied one. */
     isSystemDefault?: boolean;
-    status: "active" | "completed" | "cancelled";
+    status: "active" | "completed" | "cancelled" | "suspended";
     completedAt?: Date;
     completedBy?: Types.ObjectId;
     createdAt: Date;
@@ -45,7 +45,7 @@ const projectSchema = new Schema<IProject>(
 
         status: {
             type: String,
-            enum: ["active", "completed", "cancelled"],
+            enum: ["active", "completed", "cancelled", "suspended"],
             default: "active"
         },
 

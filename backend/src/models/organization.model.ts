@@ -45,6 +45,12 @@ export interface IOrganization extends Document {
     legalBusinessName?: string;
     slug?: string;
     verificationState: "pending" | "verified" | "rejected" | "more_info_needed";
+    status?: "pending" | "active" | "suspended" | "rejected";
+    cinNumber?: string;
+    registrationNumber?: string;
+    gstNumber?: string;
+    isGstExempt?: boolean;
+    gstExemptionReason?: string;
     organizationType?: string;
     description?: string;
     website?: string;
@@ -153,6 +159,37 @@ const organizationSchema = new Schema<IOrganization>(
             type: String,
             enum: ["pending", "verified", "rejected", "more_info_needed"],
             default: "pending"
+        },
+
+        status: {
+            type: String,
+            enum: ["pending", "active", "suspended", "rejected"],
+            default: "pending"
+        },
+
+        cinNumber: {
+            type: String,
+            trim: true
+        },
+
+        registrationNumber: {
+            type: String,
+            trim: true
+        },
+
+        gstNumber: {
+            type: String,
+            trim: true
+        },
+
+        isGstExempt: {
+            type: Boolean,
+            default: false
+        },
+
+        gstExemptionReason: {
+            type: String,
+            trim: true
         },
 
         organizationType: {

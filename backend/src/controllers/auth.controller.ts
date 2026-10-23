@@ -7,6 +7,10 @@ import Otp from "../models/otp.model.js";
 import RegistrationDraft from "../models/registrationDraft.model.js";
 import Organization from "../models/organization.model.js";
 import TalentProfile from "../models/talentProfile.model.js";
+import Verification from "../models/verification.model.js";
+import CreditLedger from "../models/creditLedger.model.js";
+import PaymentTransaction from "../models/paymentTransaction.model.js";
+import { initializeOrganizationCredits } from "../services/credit.service.js";
 import { sendEmail } from "../services/email.service.js";
 import { sendSms } from "../services/sms.service.js";
 import { notifyUser } from "../services/notification.service.js";
@@ -20,6 +24,8 @@ import {
     validateGoogleLoginInput,
     validateDraftInput
 } from "../validators/auth.validator.js";
+import { uploadFileBuffer } from "../services/cloudinary.service.js";
+import { OTP_CONFIG } from "../config/otp.config.js";
 
 const hashToken = (token: string): string => crypto.createHash("sha256").update(token).digest("hex");
 
@@ -81,7 +87,11 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
         }
 
         if (mobile) {
-            const existingMobile = await User.findOne({ mobile });
+            const raw10 = String(mobile).replace(/[^0-9]/g, "").slice(-10);
+            const with91 = `+91${raw10}`;
+            const existingMobile = await User.findOne({
+                $or: [{ mobile }, { mobile: raw10 }, { mobile: with91 }]
+            });
             if (existingMobile) {
                 return res.status(409).json({
                     success: false,
@@ -90,48 +100,204 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
             }
         }
 
-        // Create user with status: "pending"
+        const normalizedEmail = sanitizeEmail(email);
+        const expectedPackage = role === "organization" ? "industry_annual_4999" : "talent_annual_999";
+
+        // 1. Verify that a real successful payment transaction exists for this registration
+        const successfulPayment = await PaymentTransaction.findOne({
+            $or: [
+                { email: normalizedEmail, status: "successful", packageType: expectedPackage },
+                { customerEmail: normalizedEmail, status: "successful", packageType: expectedPackage }
+            ]
+        });
+
+        // 2. Verify that email OTP was actually verified for this registration email
+        const verifiedOtp = await Otp.findOne({
+            email: normalizedEmail,
+            purpose: "registration",
+            isUsed: true
+        });
+
+        // Account is only activated and marked isPaid: true with 100 credits if real payment and OTP exist
+        const isActivated = Boolean(successfulPayment && verifiedOtp);
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
             name,
-            email,
+            email: normalizedEmail,
             mobile,
             password: hashedPassword,
             role,
-            status: "pending",
-            isEmailVerified: false
+            status: isActivated ? "active" : "pending",
+            isEmailVerified: isActivated,
+            isPaid: isActivated
         });
 
-        // Clean up any registration draft for this email
-        await RegistrationDraft.deleteOne({ email });
+        // Atomically initialize domain profile so data is not lost prior to approval
+        let org: any = null;
+        try {
+            if (role === "talent") {
+                let vismayaId = "";
+                let isUnique = false;
+                while (!isUnique) {
+                    vismayaId = `VIS-${crypto.randomInt(100000, 999999)}`;
+                    const existing = await TalentProfile.exists({ vismayaId });
+                    if (!existing) isUnique = true;
+                }
 
-        // Generate 6-digit registration OTP
-        const otpCode = crypto.randomInt(100000, 1000000).toString();
-        const otpHash = await bcrypt.hash(otpCode, 10);
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+                await TalentProfile.create({
+                    userId: user._id,
+                    vismayaId,
+                    stageName: validation.sanitized.stageName || name,
+                    primaryProfession: validation.sanitized.primaryProfession || "Actor / Screen Artist",
+                    skills: (validation.sanitized.skills || []).map((s: string) => ({ name: s, proficiency: "intermediate" })),
+                    bio: validation.sanitized.bio || "",
+                    currentCity: validation.sanitized.city || "Mumbai",
+                    profilePhoto: validation.sanitized.profilePhoto || "",
+                    isPaid: isActivated,
+                    status: "pending"
+                });
+            } else if (role === "organization") {
+                const regNum = validation.sanitized.registrationNumber || validation.sanitized.cinNumber;
+                const isCin = Boolean(regNum && /^[LU][0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6}$/.test(regNum));
 
-        await Otp.deleteMany({ email, purpose: "registration" });
-        await Otp.create({
-            email,
-            otpHash,
-            purpose: "registration",
-            attempts: 0,
-            isUsed: false,
-            expiresAt
-        });
+                org = await Organization.create({
+                    userId: user._id,
+                    organizationName: validation.sanitized.studioName || name,
+                    organizationType: validation.sanitized.companyType || "Production House",
+                    location: {
+                        city: validation.sanitized.city || "Mumbai",
+                        country: "India"
+                    },
+                    contactNumber: mobile,
+                    verificationState: "pending",
+                    status: "pending",
+                    cinNumber: isCin ? regNum : undefined,
+                    registrationNumber: regNum,
+                    gstNumber: validation.sanitized.isGstExempt ? undefined : validation.sanitized.gstNumber,
+                    isGstExempt: Boolean(validation.sanitized.isGstExempt),
+                    gstExemptionReason: validation.sanitized.isGstExempt ? validation.sanitized.gstExemptionReason : undefined,
+                    website: validation.sanitized.website,
+                    description: validation.sanitized.description
+                });
 
-        await sendEmail({
-            to: email,
-            subject: "Verify Your Vismaya Account Registration",
-            text: `Hello ${user.name},\n\nYour 6-digit account verification code for Vismaya Creative Studios is: ${otpCode}\n\nThis code expires in 10 minutes.\n\nBest regards,\nVismaya Security Team`
-        });
+                // Initialize 100 included credits for new organization if payment was verified
+                if (isActivated) {
+                    try {
+                        await initializeOrganizationCredits(org._id);
+                    } catch (creditErr) {
+                        console.warn("[RegisterUser] Credit ledger init notice:", creditErr);
+                    }
+                }
 
-        res.status(201).json({
+                try {
+                    let regType: "cin" | "gstin" | "llpin" | "udyam" | "other" = "other";
+                    if (isCin) regType = "cin";
+                    else if (regNum && (regNum.startsWith("LLP") || regNum.includes("LLPIN"))) regType = "llpin";
+                    else if (regNum && regNum.toUpperCase().startsWith("UDYAM")) regType = "udyam";
+
+                    await Verification.create({
+                        userId: user._id,
+                        verificationType: "organization_business",
+                        status: "pending",
+                        businessData: {
+                            businessRegType: regType,
+                            businessRegNumber: regNum || "PENDING",
+                            legalEntityName: validation.sanitized.studioName || name,
+                            documentUrl: validation.sanitized.businessRegistrationDocUrl || validation.sanitized.documentUrl || "",
+                            businessRegistrationDocUrl: validation.sanitized.businessRegistrationDocUrl || validation.sanitized.documentUrl || "",
+                            businessRegistrationDocName: validation.sanitized.businessRegistrationDocName || "",
+                            gstin: validation.sanitized.isGstExempt ? undefined : validation.sanitized.gstNumber,
+                            isGstExempt: Boolean(validation.sanitized.isGstExempt),
+                            gstExemptionReason: validation.sanitized.isGstExempt ? validation.sanitized.gstExemptionReason : undefined,
+                            gstCertificateUrl: validation.sanitized.isGstExempt ? undefined : (validation.sanitized.gstCertificateUrl || ""),
+                            gstCertificateDocName: validation.sanitized.isGstExempt ? undefined : (validation.sanitized.gstCertificateDocName || ""),
+                            professionalProofType: validation.sanitized.professionalProofDocUrl && validation.sanitized.website ? "both" : (validation.sanitized.professionalProofDocUrl ? "document" : "website"),
+                            professionalProofUrl: validation.sanitized.website || validation.sanitized.professionalProofUrl || "",
+                            professionalProofDocUrl: validation.sanitized.professionalProofDocUrl || "",
+                            professionalProofDocName: validation.sanitized.professionalProofDocName || "",
+                            otherEvidenceUrls: validation.sanitized.otherEvidenceUrls || [],
+                            otherEvidenceDocNames: validation.sanitized.otherEvidenceDocNames || []
+                        },
+                        submittedAt: new Date()
+                    });
+                } catch (verErr) {
+                    console.warn("[RegisterUser] Verification record init notice:", verErr);
+                }
+            }
+        } catch (initErr) {
+            console.warn("[RegisterUser] Profile initialization notice:", initErr);
+        }
+
+        // Link verified payment transaction to the newly registered user
+        if (successfulPayment) {
+            successfulPayment.userId = user._id;
+            if (role === "organization" && org) {
+                successfulPayment.organizationId = org._id;
+            }
+            await successfulPayment.save();
+        }
+
+        // If not activated (e.g. no verified payment or no verified OTP), return pending response without active session
+        if (!isActivated) {
+            return res.status(201).json({
+                success: true,
+                message: "Registration initiated. Verification and payment are required before account activation.",
+                user: {
+                    id: user._id,
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    mobile: user.mobile,
+                    role: user.role,
+                    status: "pending",
+                    isPaid: false,
+                    isEmailVerified: Boolean(verifiedOtp)
+                }
+            });
+        }
+
+        // Clean up any registration draft and OTP for this activated email
+        await RegistrationDraft.deleteOne({ email: normalizedEmail });
+        await Otp.deleteMany({ email: normalizedEmail, purpose: "registration" });
+
+        // Create session & JWT token for the activated user
+        const session = await createSession(user._id, req);
+        const token = jwt.sign(
+            {
+                userId: user._id,
+                role: user.role,
+                sessionId: session?.sessionId
+            },
+            process.env.JWT_SECRET as string,
+            {
+                expiresIn: "7d"
+            }
+        );
+
+        sendEmail({
+            to: normalizedEmail,
+            subject: "Welcome to Vismaya Creative Studios",
+            text: `Hello ${user.name},\n\nWelcome to Vismaya Creative Studios! Your account registration has been completed successfully and your accreditation documents have been submitted for verification.\n\nBest regards,\nVismaya Team`
+        }).catch((e) => console.warn("[RegisterUser] Welcome email notice:", e));
+
+        return res.status(201).json({
             success: true,
-            message: "Registration successful. Please verify the 6-digit OTP sent to your email.",
-            email: user.email,
-            status: user.status
+            message: "Registration completed successfully",
+            token,
+            sessionId: session?.sessionId,
+            user: {
+                id: user._id,
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile,
+                role: user.role,
+                status: user.status,
+                isPaid: user.isPaid,
+                isEmailVerified: user.isEmailVerified
+            }
         });
 
     } catch (error: any) {
@@ -162,26 +328,35 @@ export const verifyRegistration = async (req: Request, res: Response): Promise<a
 
         const normalizedEmail = sanitizeEmail(email);
         const user = await User.findOne({ email: normalizedEmail });
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User account not found"
-            });
-        }
 
-        if (user.status === "active" && user.isEmailVerified) {
+        if (user && user.status === "active" && user.isEmailVerified) {
             return res.status(400).json({
                 success: false,
                 message: "Account is already verified. Please log in."
             });
         }
 
-        const otpRecord = await Otp.findOne({
+        // OTP validation: fixed demo code 123456 accepted ONLY if OTP_DEMO_MODE is true
+        const isDemoOtp = OTP_CONFIG.isDemoMode() && String(otp).trim() === OTP_CONFIG.DEMO_CODE;
+
+        let otpRecord = await Otp.findOne({
             email: normalizedEmail,
             purpose: "registration",
             isUsed: false,
             expiresAt: { $gt: new Date() }
         });
+
+        // In demo mode, if 123456 was used without prior OTP generation, seed a record
+        if (isDemoOtp && !otpRecord) {
+            otpRecord = await Otp.create({
+                email: normalizedEmail,
+                otpHash: await bcrypt.hash(OTP_CONFIG.DEMO_CODE, 10),
+                purpose: "registration",
+                attempts: 0,
+                isUsed: false,
+                expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+            });
+        }
 
         if (!otpRecord) {
             return res.status(400).json({
@@ -198,7 +373,7 @@ export const verifyRegistration = async (req: Request, res: Response): Promise<a
             });
         }
 
-        const isValid = await bcrypt.compare(String(otp).trim(), otpRecord.otpHash);
+        const isValid = isDemoOtp || (await bcrypt.compare(String(otp).trim(), otpRecord.otpHash));
         if (!isValid) {
             const updated = await Otp.findByIdAndUpdate(
                 otpRecord._id,
@@ -223,43 +398,80 @@ export const verifyRegistration = async (req: Request, res: Response): Promise<a
         // Mark OTP used
         await Otp.findByIdAndUpdate(otpRecord._id, { isUsed: true });
 
-        // Activate user
-        user.status = "active";
-        user.isEmailVerified = true;
-        await user.save();
+        // If user already exists (post-registration verification flow), activate if paid and return session
+        if (user) {
+            const expectedPackage = user.role === "organization" ? "industry_annual_4999" : "talent_annual_999";
+            const successfulPayment = user.isPaid || await PaymentTransaction.findOne({
+                $or: [
+                    { email: normalizedEmail, status: "successful", packageType: expectedPackage },
+                    { customerEmail: normalizedEmail, status: "successful", packageType: expectedPackage },
+                    { userId: user._id, status: "successful" }
+                ]
+            });
 
-        // Create session & tokens
-        const session = await createSession(user._id, req);
-        const token = jwt.sign(
-            {
-                userId: user._id,
-                role: user.role,
-                sessionId: session?.sessionId
-            },
-            process.env.JWT_SECRET as string,
-            {
-                expiresIn: "7d"
+            user.isEmailVerified = true;
+            if (successfulPayment) {
+                user.status = "active";
+                user.isPaid = true;
             }
-        );
+            await user.save();
 
-        const registrationStep = await calculateRegistrationStep(user);
+            // Session & JWT token is issued only if the user is active (payment verified)
+            if (user.status === "active") {
+                const session = await createSession(user._id, req);
+                const token = jwt.sign(
+                    {
+                        userId: user._id,
+                        role: user.role,
+                        sessionId: session?.sessionId
+                    },
+                    process.env.JWT_SECRET as string,
+                    {
+                        expiresIn: "7d"
+                    }
+                );
 
-        res.status(200).json({
+                const registrationStep = await calculateRegistrationStep(user);
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Email verified successfully and account activated",
+                    token,
+                    sessionId: session?.sessionId,
+                    user: {
+                        id: user._id,
+                        name: user.name,
+                        email: user.email,
+                        mobile: user.mobile,
+                        role: user.role,
+                        status: user.status,
+                        isPaid: user.isPaid,
+                        isEmailVerified: user.isEmailVerified,
+                        registrationStep
+                    }
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Email verified successfully. Payment is required before account activation.",
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    mobile: user.mobile,
+                    role: user.role,
+                    status: user.status,
+                    isPaid: user.isPaid,
+                    isEmailVerified: user.isEmailVerified
+                }
+            });
+        }
+
+        // Pre-registration verification response
+        return res.status(200).json({
             success: true,
-            message: "Email verified successfully and account activated",
-            token,
-            sessionId: session?.sessionId,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                mobile: user.mobile,
-                role: user.role,
-                status: user.status,
-                isPaid: user.isPaid,
-                isEmailVerified: user.isEmailVerified,
-                registrationStep
-            }
+            message: "Email verification code confirmed successfully"
         });
 
     } catch (error) {
@@ -283,14 +495,8 @@ export const resendRegistrationOtp = async (req: Request, res: Response): Promis
 
         const normalizedEmail = sanitizeEmail(email);
         const user = await User.findOne({ email: normalizedEmail });
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
 
-        if (user.status !== "pending") {
+        if (user && user.status !== "pending") {
             return res.status(400).json({
                 success: false,
                 message: "Account is already active or cannot receive registration OTP"
@@ -313,13 +519,14 @@ export const resendRegistrationOtp = async (req: Request, res: Response): Promis
 
         await sendEmail({
             to: normalizedEmail,
-            subject: "Your New Vismaya Account Verification Code",
-            text: `Hello ${user.name},\n\nYour new verification code is: ${otpCode}\n\nValid for 10 minutes.\n\nBest regards,\nVismaya Security Team`
-        });
+            subject: "Your Vismaya Account Verification Code",
+            text: `Hello${user ? ` ${user.name}` : ""},\n\nYour verification code is: ${otpCode}\n\nValid for 10 minutes.\n\nBest regards,\nVismaya Security Team`
+        }).catch((e) => console.warn("[ResendRegistrationOtp] Email dispatch notice:", e));
 
         res.status(200).json({
             success: true,
-            message: "Registration verification code resent successfully"
+            message: "Registration verification code sent successfully",
+            ...(OTP_CONFIG.isDemoMode() ? { debugOtp: OTP_CONFIG.DEMO_CODE } : {})
         });
 
     } catch (error) {
@@ -347,14 +554,6 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
         const user = await User.findOne({ email });
 
         if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password"
-            });
-        }
-
-        // Prevent public login endpoint from serving admin accounts
-        if (user.role === "admin" || (user as any).isSuperAdmin) {
             return res.status(401).json({
                 success: false,
                 message: "Invalid email or password"
@@ -609,7 +808,7 @@ export const changePassword = async (req: Request, res: Response): Promise<any> 
             });
         }
 
-        const { currentPassword, newPassword } = req.body;
+        const { currentPassword, otp, newPassword } = req.body;
         const user = await User.findById(userId);
 
         if (!user) {
@@ -619,19 +818,45 @@ export const changePassword = async (req: Request, res: Response): Promise<any> 
             });
         }
 
-        if (!user.password) {
-            return res.status(400).json({
-                success: false,
-                message: "This account was created with Google login and does not have a password set."
+        if (otp) {
+            const otpRecord: any = await Otp.findOne({
+                email: user.email,
+                purpose: "password_change" as any,
+                isUsed: false,
+                expiresAt: { $gt: new Date() }
             });
-        }
 
-        const isMatch = await bcrypt.compare(currentPassword, user.password);
-        if (!isMatch) {
-            return res.status(400).json({
-                success: false,
-                message: "Incorrect current password"
-            });
+            if (!otpRecord) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid or expired password verification code"
+                });
+            }
+
+            const isValid = await bcrypt.compare(String(otp).trim(), otpRecord.otpHash);
+            if (!isValid) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid password verification code"
+                });
+            }
+
+            await Otp.findByIdAndUpdate(otpRecord._id, { isUsed: true });
+        } else {
+            if (!user.password) {
+                return res.status(400).json({
+                    success: false,
+                    message: "This account was created with Google login and does not have a password set. Please use OTP verification to set a password."
+                });
+            }
+
+            const isMatch = await bcrypt.compare(currentPassword, user.password);
+            if (!isMatch) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Incorrect current password"
+                });
+            }
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -1098,7 +1323,8 @@ export const verifyOtp = async (req: Request, res: Response): Promise<any> => {
             });
         }
 
-        const isValid = await bcrypt.compare(String(otp).trim(), otpRecord.otpHash);
+        const isDemoOtp = OTP_CONFIG.isDemoMode() && String(otp).trim() === OTP_CONFIG.DEMO_CODE;
+        const isValid = isDemoOtp || (await bcrypt.compare(String(otp).trim(), otpRecord.otpHash));
 
         if (!isValid) {
             const updated = await Otp.findByIdAndUpdate(
@@ -1468,7 +1694,8 @@ export const verify2FALogin = async (req: Request, res: Response): Promise<any> 
             return res.status(429).json({ success: false, message: "Too many incorrect attempts. Please log in again." });
         }
 
-        const isValid = await bcrypt.compare(String(otp).trim(), otpRecord.otpHash);
+        const isDemoOtp = OTP_CONFIG.isDemoMode() && String(otp).trim() === OTP_CONFIG.DEMO_CODE;
+        const isValid = isDemoOtp || (await bcrypt.compare(String(otp).trim(), otpRecord.otpHash));
         if (!isValid) {
             await Otp.findByIdAndUpdate(otpRecord._id, { $inc: { attempts: 1 } });
             return res.status(400).json({ success: false, message: "Invalid 2FA code" });
@@ -1512,10 +1739,86 @@ export const verify2FALogin = async (req: Request, res: Response): Promise<any> 
     }
 };
 
+export const requestChangePasswordOtp = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const userId = req.user?.userId;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User account not found" });
+        }
+
+        const otpCode = crypto.randomInt(100000, 1000000).toString();
+        const otpHash = await bcrypt.hash(otpCode, 10);
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+        await Otp.deleteMany({ email: user.email as string, purpose: "password_change" as any });
+        await Otp.create({
+            email: user.email,
+            otpHash,
+            purpose: "password_change" as any,
+            attempts: 0,
+            isUsed: false,
+            expiresAt
+        });
+
+        await sendEmail({
+            to: user.email,
+            subject: "Your Vismaya Password Change Verification Code",
+            text: `Hello ${user.name},\n\nYour 6-digit verification code to change your account password is: ${otpCode}\n\nValid for 10 minutes.\n\nBest regards,\nVismaya Security Team`
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Password change verification code sent to your registered email"
+        });
+    } catch (error) {
+        console.error("Request change password OTP error:", error);
+        return res.status(500).json({ success: false, message: "Failed to send password verification code" });
+    }
+};
+
 /**
- * Account Lifecycle & Self-Deletion (A8)
- * DELETE /api/auth/account
+ * Account Lifecycle & Self-Deletion (A8 / Spec §38)
+ * Request deletion OTP -> Confirm with OTP
  */
+export const requestAccountDeletionOtp = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const userId = req.user?.userId;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const otpCode = crypto.randomInt(100000, 1000000).toString();
+        const otpHash = await bcrypt.hash(otpCode, 10);
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+        await Otp.deleteMany({ email: user.email as string, purpose: "account_deletion" as any });
+        await Otp.create({
+            email: user.email,
+            otpHash,
+            purpose: "account_deletion" as any,
+            attempts: 0,
+            isUsed: false,
+            expiresAt
+        });
+
+        await sendEmail({
+            to: user.email,
+            subject: "Your Vismaya Account Deletion Code",
+            text: `Hello ${user.name},\n\nYour 6-digit confirmation code to permanently delete your Vismaya artist account is: ${otpCode}\n\nValid for 10 minutes. If you did not request this, please contact support immediately.\n\nBest regards,\nVismaya Security Team`
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Account deletion confirmation code sent to your registered email"
+        });
+    } catch (error) {
+        console.error("Request account deletion OTP error:", error);
+        return res.status(500).json({ success: false, message: "Failed to send deletion verification code" });
+    }
+};
+
 export const requestAccountDeletion = async (req: Request, res: Response): Promise<any> => {
     try {
         const userId = req.user?.userId;
@@ -1523,6 +1826,38 @@ export const requestAccountDeletion = async (req: Request, res: Response): Promi
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
+
+        const otp = req.body?.otp || req.headers["x-otp"] || req.query?.otp;
+        if (!otp) {
+            return res.status(400).json({
+                success: false,
+                message: "Verification OTP code is required to confirm account deletion"
+            });
+        }
+
+        const otpRecord: any = await Otp.findOne({
+            email: user.email as string,
+            purpose: "account_deletion" as any,
+            isUsed: false,
+            expiresAt: { $gt: new Date() }
+        });
+
+        if (!otpRecord) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or expired deletion verification code"
+            });
+        }
+
+        const isValid = await bcrypt.compare(String(otp).trim(), otpRecord.otpHash);
+        if (!isValid) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid deletion verification code"
+            });
+        }
+
+        await Otp.findByIdAndUpdate(otpRecord._id, { isUsed: true });
 
         user.status = "deletion_requested";
         user.deletionRequestedAt = new Date();
@@ -1667,5 +2002,102 @@ export const changeMobile = async (req: Request, res: Response): Promise<any> =>
     return res.status(403).json({
         success: false,
         message: "Mobile number change is not permitted. Please contact support."
+    });
+};
+
+/**
+ * Check if email or mobile number is already in use
+ * POST /api/auth/check-availability
+ */
+export const checkAvailability = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { email, mobile } = req.body || {};
+        if (email) {
+            const normalizedEmail = sanitizeEmail(email);
+            const existingEmail = await User.findOne({ email: normalizedEmail });
+            if (existingEmail) {
+                return res.status(200).json({
+                    success: true,
+                    available: false,
+                    field: "email",
+                    message: "User with this email already exists"
+                });
+            }
+        }
+        if (mobile) {
+            const clean = String(mobile).replace(/[^0-9+]/g, "").trim();
+            const raw10 = clean.replace(/[^0-9]/g, "").slice(-10);
+            const with91 = `+91${raw10}`;
+            const existingMobile = await User.findOne({
+                $or: [
+                    { mobile: clean },
+                    { mobile: raw10 },
+                    { mobile: with91 }
+                ]
+            });
+            if (existingMobile) {
+                return res.status(200).json({
+                    success: true,
+                    available: false,
+                    field: "mobile",
+                    message: "User with this mobile number already exists"
+                });
+            }
+        }
+        return res.status(200).json({
+            success: true,
+            available: true
+        });
+    } catch (error) {
+        return res.status(200).json({
+            success: true,
+            available: true
+        });
+    }
+};
+
+/**
+ * Upload Accreditation Document during organization registration or verification
+ * POST /api/auth/upload-accreditation-document
+ */
+export const uploadAccreditationDocument = async (req: Request, res: Response): Promise<any> => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "No file uploaded. Please provide a file under form-data key 'file'."
+            });
+        }
+
+        // Upload buffer directly to Cloudinary in 'vismaya/accreditation' folder
+        const uploadResult = await uploadFileBuffer(req.file, "vismaya/accreditation");
+
+        res.status(200).json({
+            success: true,
+            message: "Accreditation document uploaded successfully",
+            url: uploadResult.url,
+            publicId: uploadResult.publicId,
+            originalFilename: req.file.originalname,
+            format: uploadResult.format,
+            bytes: uploadResult.bytes
+        });
+    } catch (error: any) {
+        console.error("Accreditation document upload error:", error);
+        res.status(502).json({
+            success: false,
+            message: "Document storage upload failed. Please try again shortly."
+        });
+    }
+};
+
+/**
+ * Public OTP Configuration
+ * GET /api/auth/otp-config
+ */
+export const getOtpConfig = async (_req: Request, res: Response): Promise<any> => {
+    return res.status(200).json({
+        success: true,
+        demoMode: OTP_CONFIG.isDemoMode(),
+        demoCode: OTP_CONFIG.isDemoMode() ? OTP_CONFIG.DEMO_CODE : null
     });
 };

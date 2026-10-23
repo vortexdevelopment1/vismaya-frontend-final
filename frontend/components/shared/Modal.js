@@ -12,17 +12,18 @@ export default function Modal({
   footer,
   maxWidth = "560px",
   style = {},
+  preventClose = false,
 }) {
   // Listen for Escape key
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape" && isOpen) {
+      if (e.key === "Escape" && isOpen && !preventClose && typeof onClose === "function") {
         onClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, preventClose]);
 
   // Lock body scroll when open
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function Modal({
     >
       {/* Backdrop */}
       <div
-        onClick={onClose}
+        onClick={preventClose ? undefined : onClose}
         style={{
           position: "fixed",
           inset: 0,
@@ -61,6 +62,7 @@ export default function Modal({
           backdropFilter: "blur(4px)",
           WebkitBackdropFilter: "blur(4px)",
           animation: "fadeIn 0.2s ease-out",
+          cursor: preventClose ? "not-allowed" : "default",
         }}
       />
 
@@ -138,7 +140,8 @@ export default function Modal({
 
             {onClose && (
               <button
-                onClick={onClose}
+                onClick={preventClose ? undefined : onClose}
+                disabled={preventClose}
                 aria-label="Close dialog"
                 style={{
                   color: "#FAF9F6",
@@ -150,7 +153,8 @@ export default function Modal({
                   justifyContent: "center",
                   backgroundColor: "rgba(255, 255, 255, 0.15)",
                   border: "1px solid rgba(255, 255, 255, 0.25)",
-                  cursor: "pointer",
+                  cursor: preventClose ? "not-allowed" : "pointer",
+                  opacity: preventClose ? 0.5 : 1,
                   transition: "all var(--transition)",
                   flexShrink: 0,
                 }}

@@ -83,15 +83,15 @@ export default function CastingCallForm({
         title: initialData.title || initialData.projectTitle || "",
         projectTitle: initialData.projectTitle || initialData.title || "",
         category: initialData.category || initialData.projectType || initialData.type || "OTT Series",
-        recruiterName: initialData.recruiterName || initialData.company || "Zee Films",
-        city: initialData.city || initialData.locations || "Mumbai",
-        shootLocation: initialData.shootLocation || initialData.locations || "Mumbai Film City",
+        recruiterName: initialData.recruiterName || initialData.company || "",
+        city: initialData.city || initialData.locations || "",
+        shootLocation: initialData.shootLocation || initialData.locations || "",
         shootStartDate: initialData.shootStartDate || "",
         shootEndDate: initialData.shootEndDate || "",
         deadline: initialData.deadline || "",
         budgetType: initialData.budgetType || "Paid",
-        budgetAmount: initialData.budgetAmount || initialData.budget || initialData.budgetRange || "₹50,000 / day",
-        budgetLabel: initialData.budgetLabel || initialData.budget || initialData.budgetRange || "₹50,000 / day",
+        budgetAmount: initialData.budgetAmount || initialData.budget || initialData.budgetRange || "",
+        budgetLabel: initialData.budgetLabel || initialData.budget || initialData.budgetRange || "",
         description: initialData.description || "",
         eligibility: initialData.eligibility || "Open to verified Vismaya artists matching age & language specs.",
         requiredMaterials: initialData.requiredMaterials && initialData.requiredMaterials.length > 0
@@ -361,7 +361,7 @@ export default function CastingCallForm({
                   type="text"
                   value={formData.recruiterName}
                   onChange={(e) => handleChange("recruiterName", e.target.value)}
-                  placeholder="e.g. Zee Films"
+                  placeholder="e.g. Acme Productions"
                   style={{
                     width: "100%",
                     padding: "10px 14px",

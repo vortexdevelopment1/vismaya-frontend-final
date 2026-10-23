@@ -9,8 +9,11 @@ import RecentBroadcasts from "@/components/admin/broadcasts/RecentBroadcasts";
 import SystemFeed from "@/components/admin/broadcasts/SystemFeed";
 import HistoryTable from "@/components/admin/broadcasts/HistoryTable";
 import SendConfirmModal from "@/components/admin/broadcasts/SendConfirmModal";
+import { useAdmin } from "@/lib/admin/AdminContext";
+import { isRealMode } from "@/lib/api/config";
 
 export default function AdminNotificationsPage() {
+  const adminCtx = useAdmin();
   const { notifications = [], broadcasts = [], sendBroadcast, saveBroadcastDraft, cancelScheduledBroadcast, markNotificationRead, markAllNotificationsRead, isHydrated } = useWorkflow();
   const [activeTab, setActiveTab] = useState("broadcasts");
   const [audience, setAudience] = useState("All users");
@@ -29,8 +32,26 @@ export default function AdminNotificationsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState("");
 
-  const reachMap = { "All users": "1,298 users", "All talent": "1,284 talent", "All organizations": "14 organizations", "Talent by city": "About 210 talent", "Organizations by type": "About 6 organizations" };
-  const estimatedReach = reachMap[audience] || "1,298 users";
+  const totalTalents = adminCtx?.talents?.length ?? 0;
+  const totalOrgs = adminCtx?.recruiters?.length ?? 0;
+  const totalUsers = totalTalents + totalOrgs;
+
+  const reachMap = isRealMode("admin")
+    ? {
+        "All users": `${totalUsers} users`,
+        "All talent": `${totalTalents} talent`,
+        "All organizations": `${totalOrgs} organizations`,
+        "Talent by city": `${totalTalents > 0 ? Math.round(totalTalents * 0.3) : 0} talent`,
+        "Organizations by type": `${totalOrgs > 0 ? Math.round(totalOrgs * 0.5) : 0} organizations`,
+      }
+    : {
+        "All users": "1,298 users",
+        "All talent": "1,284 talent",
+        "All organizations": "14 organizations",
+        "Talent by city": "About 210 talent",
+        "Organizations by type": "About 6 organizations",
+      };
+  const estimatedReach = reachMap[audience] || `${totalUsers} users`;
   const audienceLabel = audience === "Talent by city" ? `Talent in ${targetCity}` : audience === "Organizations by type" ? `Organizations (${targetOrgType})` : audience;
 
   const channelsSummary = useMemo(() => {
@@ -104,7 +125,7 @@ export default function AdminNotificationsPage() {
       {toastMessage && <div className={styles.toast}><span>{toastMessage}</span></div>}
       <div className={styles.tabs} role="tablist">
         <button type="button" className={`${styles.tabBtn} ${activeTab === "broadcasts" ? styles.on : ""}`} onClick={() => setActiveTab("broadcasts")}>Broadcasts</button>
-        <button type="button" className={`${styles.tabBtn} ${activeTab === "feed" ? styles.on : ""}`} onClick={() => setActiveTab("feed")}>System feed <i>{unreadCount || 3}</i></button>
+        <button type="button" className={`${styles.tabBtn} ${activeTab === "feed" ? styles.on : ""}`} onClick={() => setActiveTab("feed")}>System feed <i>{unreadCount}</i></button>
         <button type="button" className={`${styles.tabBtn} ${activeTab === "history" ? styles.on : ""}`} onClick={() => setActiveTab("history")}>History</button>
       </div>
       {activeTab === "broadcasts" && (

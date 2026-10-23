@@ -20,9 +20,11 @@ export function fromApi(notif) {
   if (notif.referenceType === "Opportunity") {
     link = `/talent/opportunities/${notif.referenceId || ""}`;
   } else if (notif.referenceType === "Application") {
-    link = "/talent/applications";
+    link = notif.referenceId ? `/talent/applications?id=${notif.referenceId}` : "/talent/applications";
   } else if (notif.referenceType === "Audition") {
-    link = "/talent/auditions";
+    link = notif.referenceId ? `/talent/applications?id=${notif.referenceId}` : "/talent/auditions";
+  } else if (notif.type && (notif.type.includes("shortlist") || notif.type.includes("audition") || notif.type.includes("select") || notif.type.includes("app"))) {
+    link = notif.referenceId ? `/talent/applications?id=${notif.referenceId}` : "/talent/applications";
   }
 
   return {

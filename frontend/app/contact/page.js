@@ -52,7 +52,11 @@ export default function ContactPage() {
               Get in Touch with Vismaya
             </h1>
             <p className="contact-header-subtext" style={{ fontSize: "16px", lineHeight: "28px", color: "var(--text-secondary, #777970)", margin: 0 }}>
-              Have questions about talent verification, enterprise studio onboarding, or need audition assistance? Our operations desk is available.
+              Have questions about talent verification, enterprise studio onboarding, or need audition assistance? Our operations desk is available. Looking for topic guides and FAQs? Visit our{" "}
+              <Link href="/support" style={{ color: "#8A6B2E", textDecoration: "underline", fontWeight: 600 }}>
+                Support Center
+              </Link>
+              .
             </p>
           </div>
         </div>

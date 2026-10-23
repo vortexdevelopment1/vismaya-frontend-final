@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Bell,
   CheckCheck,
@@ -18,20 +18,50 @@ import EmptyState from "@/components/shared/EmptyState";
 import NotificationItem from "@/components/talent/NotificationItem";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
+import { useAuth } from "@/context/AuthContext";
+import { isRealMode } from "@/lib/api/config";
+import { notificationService } from "@/lib/api/services/notificationService";
 
 export default function TalentNotificationsPage() {
+  const { user } = useAuth();
+  const { profile, notifications: ctxNotifications = [], addToast } = useTalent();
   const { getNotificationsForRole, markAllNotificationsRead, unreadNotificationsCount, isHydrated } = useWorkflow();
-  const { addToast } = useTalent();
 
-  const currentTalentId = "tal-904";
+  const [realNotifications, setRealNotifications] = useState([]);
+  const [loadingReal, setLoadingReal] = useState(false);
+
+  const fetchRealNotifications = async () => {
+    if (!isRealMode("notifications") && !isRealMode("talent")) return;
+    try {
+      setLoadingReal(true);
+      const res = await notificationService.getMyNotifications();
+      if (res && Array.isArray(res.data)) {
+        setRealNotifications(res.data);
+      }
+    } catch (err) {
+      console.warn("Could not load real notifications:", err);
+    } finally {
+      setLoadingReal(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRealNotifications();
+  }, [user?.id, user?._id]);
+
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
   const [activeTab, setActiveTab] = useState("all");
 
-  const notifications = useMemo(
-    () => getNotificationsForRole("talent", currentTalentId),
-    [getNotificationsForRole]
-  );
+  const notifications = useMemo(() => {
+    if (isRealMode("notifications") || isRealMode("talent")) {
+      return realNotifications.length > 0 ? realNotifications : (Array.isArray(ctxNotifications) ? ctxNotifications : []);
+    }
+    return getNotificationsForRole("talent", currentTalentId);
+  }, [realNotifications, ctxNotifications, getNotificationsForRole, currentTalentId]);
 
-  const unreadCount = unreadNotificationsCount("talent", currentTalentId);
+  const unreadCount = isRealMode("notifications") || isRealMode("talent")
+    ? (Array.isArray(notifications) ? notifications.filter(n => !n.isRead && !n.read).length : 0)
+    : unreadNotificationsCount("talent", currentTalentId);
 
   // Categorization helpers
   const categorize = (type) => {
@@ -57,20 +87,41 @@ export default function TalentNotificationsPage() {
   ];
 
   const filteredNotifications = useMemo(() => {
-    return notifications.filter((n) => {
+    const list = notifications.filter((n) => {
       if (activeTab === "all") return true;
-      if (activeTab === "unread") return !n.read;
+      if (activeTab === "unread") return !n.read && !n.isRead;
       return categorize(n.type) === activeTab;
+    });
+
+    // Newest first
+    return [...list].sort((a, b) => {
+      const timeA = new Date(a.createdAt || a.time || 0).getTime();
+      const timeB = new Date(b.createdAt || b.time || 0).getTime();
+      return timeB - timeA;
     });
   }, [notifications, activeTab]);
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
+    if (isRealMode("notifications") || isRealMode("talent")) {
+      try {
+        await notificationService.markAllAsRead();
+      } catch (err) {
+        console.warn("Failed to mark all read in real mode:", err);
+      }
+      setRealNotifications((prev) => prev.map((n) => ({ ...n, read: true, isRead: true })));
+    }
     markAllNotificationsRead("talent", currentTalentId);
     addToast({
       type: "success",
       title: "All Notifications Read",
       message: "All talent notifications have been marked as read.",
     });
+  };
+
+  const handleSingleMarkRead = (id) => {
+    setRealNotifications((prev) =>
+      prev.map((n) => ((n.id === id || n._id === id) ? { ...n, read: true, isRead: true } : n))
+    );
   };
 
   return (
@@ -119,7 +170,11 @@ export default function TalentNotificationsPage() {
       ) : (
         <div className="notif-list-container" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {filteredNotifications.map((notif) => (
-            <NotificationItem key={notif.id} notification={notif} />
+            <NotificationItem
+              key={notif.id || notif._id}
+              notification={notif}
+              onMarkRead={handleSingleMarkRead}
+            />
           ))}
         </div>
       )}

@@ -1,6 +1,11 @@
 import "./StatsStudioStrip.css";
 
+// set to true when real data is available
+export const SHOW_HOME_STATS = false;
+
 export default function StatsStudioStrip() {
+  if (!SHOW_HOME_STATS) return null;
+
   return (
     <section className="stats-studio-section">
       <div className="public-container">

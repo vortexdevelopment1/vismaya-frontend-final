@@ -22,15 +22,18 @@ import {
   Award,
   FileText,
   File,
-  Check,
   AlertCircle,
   Loader2,
+  Flag,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { recruiterService } from "@/lib/api/services/recruiterService";
 import { isRealMode } from "@/lib/api/config";
 import Modal from "@/components/shared/Modal";
+import ReportModal from "@/components/shared/ReportModal";
 import VideoPlayer from "@/components/shared/VideoPlayer";
+import { AUDITION_CONFIG } from "@/lib/config/audition";
+import { toFrontendStatus } from "@/lib/api/statusMapper";
 
 function formatPostedDate(dateStr) {
   if (!dateStr) return "recently";
@@ -53,7 +56,7 @@ export default function ShortlistAuditionsPage() {
   const {
     opportunities,
     applications,
-    auditions,
+    auditions: mockAuditions,
     projects,
     setApplicationStatus,
     requestAudition,
@@ -66,30 +69,35 @@ export default function ShortlistAuditionsPage() {
   const [realOpportunities, setRealOpportunities] = useState([]);
   const [realProjects, setRealProjects] = useState([]);
   const [realApplications, setRealApplications] = useState([]);
+  const [realAuditions, setRealAuditions] = useState([]);
   const [isLoadingReal, setIsLoadingReal] = useState(false);
 
   // Review Portfolio Modal State
   const [reviewPortfolioModalApp, setReviewPortfolioModalApp] = useState(null);
   const [portfolioData, setPortfolioData] = useState(null);
   const [loadingPortfolio, setLoadingPortfolio] = useState(false);
+  const [reportingMedia, setReportingMedia] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
     async function loadInitial() {
-      if (isRealMode("opportunities") || isRealMode("recruiter")) {
+      if (isRealMode("opportunities") || isRealMode("recruiter") || isRealMode("auditions")) {
         try {
           setIsLoadingReal(true);
-          const [oppsRes, projsRes] = await Promise.all([
+          const [oppsRes, projsRes, audsRes] = await Promise.all([
             recruiterService.getMyOpportunities(),
             recruiterService.getMyProjects(),
+            recruiterService.getOrganizationAuditions(),
           ]);
           if (!isMounted) return;
           if (oppsRes?.data) setRealOpportunities(oppsRes.data);
           if (projsRes?.data) setRealProjects(projsRes.data);
+          if (audsRes?.data) setRealAuditions(audsRes.data);
         } catch (err) {
-          console.error("Error loading recruiter opps/projects:", err);
+          console.error("Error loading recruiter opps/projects/auditions:", err);
         } finally {
-          if (isMounted) setIsLoadingReal(false);
+          if (!isMounted) return;
+          setIsLoadingReal(false);
         }
       }
     }
@@ -97,14 +105,16 @@ export default function ShortlistAuditionsPage() {
     return () => { isMounted = false; };
   }, []);
 
-  const effectiveOpportunities = realOpportunities.length > 0 ? realOpportunities : opportunities;
-  const effectiveProjects = realProjects.length > 0 ? realProjects : projects;
+  const isReal = isRealMode("recruiter") || isRealMode("opportunities") || isRealMode("applications") || isRealMode("auditions");
+  const auditions = isReal ? (realAuditions.length > 0 ? realAuditions : (mockAuditions || [])) : (mockAuditions || []);
+  const effectiveOpportunities = isReal ? realOpportunities : (realOpportunities.length > 0 ? realOpportunities : opportunities);
+  const effectiveProjects = isReal ? realProjects : (realProjects.length > 0 ? realProjects : projects);
 
   // Filter org opportunities
   const orgOpportunities = useMemo(() => {
-    if (realOpportunities.length > 0) return realOpportunities;
+    if (isReal) return realOpportunities;
     return opportunities.filter((o) => o.orgId === orgId || !o.orgId);
-  }, [opportunities, realOpportunities, orgId]);
+  }, [opportunities, realOpportunities, orgId, isReal]);
 
   // Read opportunity from URL query parameter (?opportunity=id or ?opp=id)
   const oppParam = searchParams?.get("opportunity") || searchParams?.get("opp") || null;
@@ -221,6 +231,11 @@ export default function ShortlistAuditionsPage() {
   const [auditionType, setAuditionType] = useState("Audition");
   const [auditionNote, setAuditionNote] = useState("");
   const [auditionDate, setAuditionDate] = useState("");
+  const [auditionVenue, setAuditionVenue] = useState("");
+  const [auditionMeetingLink, setAuditionMeetingLink] = useState("");
+  const [auditionScriptUrl, setAuditionScriptUrl] = useState("");
+  const [isSubmittingAudition, setIsSubmittingAudition] = useState(false);
+  const [selectedTakeIndex, setSelectedTakeIndex] = useState(0);
 
   const [selectedModalApp, setSelectedModalApp] = useState(null);
   const [selectedNote, setSelectedNote] = useState("");
@@ -230,46 +245,62 @@ export default function ShortlistAuditionsPage() {
 
   // Helpers for opportunity statistics (Level 1)
   const getOpportunityStats = (opp) => {
-    if (opp?.applicantStats) {
+    const oppObj = typeof opp === "object" && opp !== null
+      ? opp
+      : (orgOpportunities.find((o) => o.id === opp || String(o._id) === String(opp)) || null);
+
+    if (oppObj?.applicantStats) {
+      const stats = oppObj.applicantStats;
+      const applied = stats.applied || 0;
+      const under_review = stats.under_review || 0;
+      const shortlist = stats.shortlisted || 0;
+      const selected = stats.selected || 0;
+      const not_selected = stats.not_selected || 0;
+      const total = stats.total !== undefined ? stats.total : (applied + under_review + shortlist + selected + not_selected);
       return {
-        applied: opp.applicantStats.applied || 0,
-        under_review: opp.applicantStats.under_review || 0,
-        shortlist: opp.applicantStats.shortlisted || 0,
-        selected: opp.applicantStats.selected || 0,
+        applied,
+        under_review,
+        shortlist,
+        selected,
+        not_selected,
         audition: 0,
-        total: opp.applicantStats.total || 0,
+        total,
       };
     }
-    const oppId = opp?.id || opp?._id || opp;
-    const sourceApps = realApplications.length > 0 ? realApplications : applications;
+    const oppId = oppObj?.id || oppObj?._id || opp;
+    const sourceApps = isReal ? realApplications : (realApplications.length > 0 ? realApplications : applications);
     const apps = sourceApps.filter((a) => {
       const aOppId = a.opportunityId?._id || a.opportunityId?.id || a.opportunityId;
       return String(aOppId) === String(oppId);
     });
     const auds = auditions.filter(
-      (aud) => aud.opportunityId === oppId || apps.some((a) => a.id === aud.applicationId)
+      (aud) => String(aud.opportunityId) === String(oppId) || apps.some((a) => String(a.id || a._id) === String(aud.applicationId))
     );
     const applied = apps.filter((a) => {
-      const st = (a.status || "").toLowerCase().replace(/[\s-]/g, "_");
+      const st = (a.status || a.rawStatus || "").toLowerCase().replace(/[\s-]/g, "_");
       return st === "applied" || !st;
     }).length;
-    const under_review = apps.filter((a) => (a.status || "").toLowerCase().replace(/[\s-]/g, "_") === "under_review").length;
-    const shortlist = apps.filter((a) => (a.status || "").toLowerCase().replace(/[\s-]/g, "_") === "shortlisted").length;
-    const selected = apps.filter((a) => (a.status || "").toLowerCase().replace(/[\s-]/g, "_") === "selected").length;
+    const under_review = apps.filter((a) => (a.status || a.rawStatus || "").toLowerCase().replace(/[\s-]/g, "_") === "under_review").length;
+    const shortlist = apps.filter((a) => (a.status || a.rawStatus || "").toLowerCase().replace(/[\s-]/g, "_") === "shortlisted").length;
+    const selected = apps.filter((a) => (a.status || a.rawStatus || "").toLowerCase().replace(/[\s-]/g, "_") === "selected").length;
+    const not_selected = apps.filter((a) => {
+      const st = (a.status || a.rawStatus || "").toLowerCase().replace(/[\s-]/g, "_");
+      return st === "not_selected" || st === "rejected";
+    }).length;
     const audition = auds.length;
-    return { applied, under_review, shortlist, selected, audition, total: apps.length };
+    return { applied, under_review, shortlist, selected, not_selected, audition, total: apps.length };
   };
 
   // Applications belonging to selected opportunity (Level 2)
   const oppApplications = useMemo(() => {
     if (!selectedOpp) return [];
-    const sourceApps = realApplications.length > 0 ? realApplications : applications;
+    const sourceApps = isReal ? realApplications : (realApplications.length > 0 ? realApplications : applications);
     const targetId = selectedOpp.id || selectedOpp._id;
     return sourceApps.filter((app) => {
       const oppId = app.opportunityId?._id || app.opportunityId?.id || app.opportunityId;
       return String(oppId) === String(targetId) || String(oppId) === String(selectedOpp.id) || String(oppId) === String(selectedOpp._id);
     });
-  }, [applications, realApplications, selectedOpp]);
+  }, [applications, realApplications, selectedOpp, isReal]);
 
   // Auditions for selected opportunity (Level 2)
   const oppAuditions = useMemo(() => {
@@ -280,17 +311,27 @@ export default function ShortlistAuditionsPage() {
     );
   }, [auditions, selectedOpp, oppApplications]);
 
-  // Map application to stage key: 'rev' | 'short' | 'req' | 'tal' | 'sel' | 'no' | 'under_review' | 'applied'
+  // Map application to stage key: 'rev' | 'short' | 'req' | 'tal' | 'sel' | 'no' | 'under_review' | 'applied' | 'pending_approval' | 'aud_rejected'
   const getAppStage = (app) => {
     const st = (app.status || "").toLowerCase().replace(/[\s-]/g, "_");
+    if (st === "opportunity_cancelled") return "opportunity_cancelled";
+    if (st === "withdrawn") return "withdrawn";
     if (st === "selected") return "sel";
     if (st === "not_selected" || st === "rejected") return "no";
-    const aud = auditions.find((a) => a.applicationId === (app.id || app._id));
+    const aud = getAuditionForApp(app.id || app._id);
     if (aud) {
-      if (aud.status === "Forwarded to Organization" || aud.status === "Self-tape Received") {
+      const s = (aud.rawStatus || aud.status || "").toLowerCase().replace(/[\s-_]+/g, "");
+      const v = typeof aud.vismayaApproval === "string" ? aud.vismayaApproval.toLowerCase() : (aud.vismayaApproval?.status || "").toLowerCase();
+      if (s === "forwardedtoorg" || s.includes("forward") || s === "reviewed") {
         return "rev";
       }
-      if (aud.status === "Relayed to Talent") {
+      if (v === "rejected" || s === "rejected") {
+        return "aud_rejected";
+      }
+      if (v === "pending" || s === "needsrelay" || (s === "requested" && v !== "approved")) {
+        return "pending_approval";
+      }
+      if (v === "approved" || s === "relayedtotalent") {
         return "tal";
       }
       return "req";
@@ -302,7 +343,14 @@ export default function ShortlistAuditionsPage() {
 
   const STAGE_PRIORITY = ["rev", "under_review", "short", "req", "tal", "applied", "sel", "no"];
 
-  const getAuditionForApp = (appId) => auditions.find((a) => a.applicationId === appId);
+  const getAuditionForApp = (appId) => {
+    if (!appId) return null;
+    const strId = String(appId);
+    return auditions.find((a) => {
+      const aAppId = a.applicationId && typeof a.applicationId === "object" ? (a.applicationId._id || a.applicationId.id) : a.applicationId;
+      return String(aAppId) === strId;
+    });
+  };
   const getProjectForOpp = (opp) => (opp ? (projects.find((p) => p.id === opp.projectId) || realProjects.find((p) => p.id === opp.projectId || p._id === opp.projectId)) : null);
 
   const getProjectRoleSubtitle = (proj, opp) => {
@@ -323,19 +371,35 @@ export default function ShortlistAuditionsPage() {
   const TABS = useMemo(
     () => [
       { key: "all", label: "All", filter: () => true },
-      { key: "applied", label: "Applied", filter: (app) => getAppStage(app) === "applied" },
-      { key: "under_review", label: "Under Review", filter: (app) => getAppStage(app) === "under_review" },
-      { key: "short", label: "Shortlisted", filter: (app) => getAppStage(app) === "short" },
+      { key: "applied", label: "Applied", filter: (app) => {
+        const st = (app.status || app.rawStatus || "").toLowerCase().replace(/[\s-]/g, "_");
+        return st === "applied" || getAppStage(app) === "applied";
+      }},
+      { key: "under_review", label: "Under Review", filter: (app) => {
+        const st = (app.status || app.rawStatus || "").toLowerCase().replace(/[\s-]/g, "_");
+        return st === "under_review" || getAppStage(app) === "under_review";
+      }},
+      { key: "short", label: "Shortlisted", filter: (app) => {
+        const st = (app.status || app.rawStatus || "").toLowerCase().replace(/[\s-]/g, "_");
+        return st === "shortlisted" || getAppStage(app) === "short";
+      }},
       {
         key: "aud",
         label: "Audition",
         filter: (app) => {
           const s = getAppStage(app);
-          return s === "rev" || s === "req" || s === "tal";
+          const hasAud = !!getAuditionForApp(app.id || app._id);
+          return hasAud || s === "rev" || s === "req" || s === "tal" || s === "pending_approval" || s === "aud_rejected";
         },
       },
-      { key: "sel", label: "Selected", filter: (app) => getAppStage(app) === "sel" },
-      { key: "no", label: "Not selected", filter: (app) => getAppStage(app) === "no" },
+      { key: "sel", label: "Selected", filter: (app) => {
+        const st = (app.status || app.rawStatus || "").toLowerCase().replace(/[\s-]/g, "_");
+        return st === "selected" || getAppStage(app) === "sel";
+      }},
+      { key: "no", label: "Not selected", filter: (app) => {
+        const st = (app.status || app.rawStatus || "").toLowerCase().replace(/[\s-]/g, "_");
+        return st === "not_selected" || st === "rejected" || getAppStage(app) === "no";
+      }},
     ],
     [auditions]
   );
@@ -376,7 +440,7 @@ export default function ShortlistAuditionsPage() {
       const pA = STAGE_PRIORITY.indexOf(getAppStage(a));
       const pB = STAGE_PRIORITY.indexOf(getAppStage(b));
       if (pA !== pB) return pA - pB;
-      const dateA = new Date(app.appliedDate || app.appliedAt || app.createdAt || 0).getTime();
+      const dateA = new Date(a.appliedDate || a.appliedAt || a.createdAt || 0).getTime();
       const dateB = new Date(b.appliedDate || b.appliedAt || b.createdAt || 0).getTime();
       return dateB - dateA;
     });
@@ -421,7 +485,7 @@ export default function ShortlistAuditionsPage() {
         setRealApplications((prev) =>
           prev.map((a) => ((a.id === appId || a._id === appId) ? { ...a, status: "Under Review" } : a))
         );
-        setApplicationStatus(appId, "Under Review", "Application moved to under review", "Zee Films");
+        setApplicationStatus(appId, "Under Review", "Application moved to under review", "Organization");
         if (reviewPortfolioModalApp && (reviewPortfolioModalApp.id === appId || reviewPortfolioModalApp._id === appId)) {
           setReviewPortfolioModalApp(prev => ({ ...prev, status: "Under Review" }));
         }
@@ -447,7 +511,7 @@ export default function ShortlistAuditionsPage() {
           appId,
           "Shortlisted",
           "Shortlisted for casting callback / audition.",
-          "Zee Films"
+          "Organization"
         );
         if (reviewPortfolioModalApp && (reviewPortfolioModalApp.id === appId || reviewPortfolioModalApp._id === appId)) {
           setReviewPortfolioModalApp(prev => ({ ...prev, status: "Shortlisted" }));
@@ -467,6 +531,9 @@ export default function ShortlistAuditionsPage() {
     setAuditionModalApp(app);
     setAuditionType("Audition");
     setAuditionDate("");
+    setAuditionVenue("");
+    setAuditionMeetingLink("");
+    setAuditionScriptUrl("");
     setAuditionNote(
       opp
         ? `Please record a self-tape for '${app.roleApplied || app.role || "this role"}' focusing on natural dialogue delivery and camera presence.`
@@ -474,17 +541,62 @@ export default function ShortlistAuditionsPage() {
     );
   };
 
-  const handleSubmitAudition = (e) => {
+  const handleSubmitAudition = async (e) => {
     e.preventDefault();
     if (!auditionModalApp) return;
-    requestAudition({
-      applicationId: auditionModalApp.id || auditionModalApp._id,
-      type: auditionType,
+
+    if (!auditionDate) {
+      showToast("Please specify a required submit-by deadline date and time.");
+      return;
+    }
+
+    const appId = auditionModalApp.id || auditionModalApp._id;
+    const isLiveEnabled = !!AUDITION_CONFIG.ENABLE_LIVE_AUDITION;
+    const finalType = !isLiveEnabled
+      ? "self_tape"
+      : auditionType === "Virtual Interview"
+      ? "video_interview"
+      : auditionType === "Screen Test"
+      ? "in_person_audition"
+      : "self_tape";
+
+    const payload = {
+      type: finalType,
+      instructions: auditionNote,
       note: auditionNote,
-      preferredDate: auditionDate || undefined,
-    });
-    showToast(`Audition request for ${auditionModalApp.talentName || auditionModalApp.name} sent to Vismaya Casting Desk.`);
-    setAuditionModalApp(null);
+      scriptUrl: auditionScriptUrl ? auditionScriptUrl.trim() : undefined,
+      deadline: auditionDate ? new Date(auditionDate).toISOString() : undefined,
+      scheduledAt: auditionDate ? new Date(auditionDate).toISOString() : undefined,
+      meetingLink: isLiveEnabled ? auditionMeetingLink || (auditionType === "Virtual Interview" ? "https://meet.google.com/vsm-audition-live" : undefined) : undefined,
+      location: isLiveEnabled ? auditionVenue || (auditionType === "Screen Test" ? "Studio 4, Vismaya Production Complex, Mumbai" : undefined) : undefined,
+    };
+
+    setIsSubmittingAudition(true);
+    try {
+      if (isReal || isRealMode("auditions")) {
+        const res = await recruiterService.requestAudition(appId, payload);
+        if (res?.success) {
+          showToast(`Self-tape requested for ${auditionModalApp.talentName || auditionModalApp.name}.`);
+          const audsRes = await recruiterService.getOrganizationAuditions();
+          if (audsRes?.data) setRealAuditions(audsRes.data);
+          setAuditionModalApp(null);
+        } else {
+          showToast(res?.message || "Failed to schedule audition");
+        }
+      } else {
+        requestAudition({
+          applicationId: appId,
+          ...payload,
+        });
+        showToast(`Audition request for ${auditionModalApp.talentName || auditionModalApp.name} sent to Vismaya Casting Desk.`);
+        setAuditionModalApp(null);
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to submit audition request";
+      showToast(msg);
+    } finally {
+      setIsSubmittingAudition(false);
+    }
   };
 
   const handleConfirmSelect = async (e) => {
@@ -502,7 +614,7 @@ export default function ShortlistAuditionsPage() {
           appId,
           "Selected",
           selectedNote || "Final selection confirmed for production.",
-          "Zee Films"
+          "Organization"
         );
         setSelectedModalApp(null);
         if (reviewPortfolioModalApp && (reviewPortfolioModalApp.id === appId || reviewPortfolioModalApp._id === appId)) {
@@ -535,7 +647,7 @@ export default function ShortlistAuditionsPage() {
           appId,
           "Not Selected",
           notSelectedReason || "Candidate not selected for this role.",
-          "Zee Films"
+          "Organization"
         );
         setNotSelectedModalApp(null);
         if (reviewPortfolioModalApp && (reviewPortfolioModalApp.id === appId || reviewPortfolioModalApp._id === appId)) {
@@ -570,6 +682,46 @@ export default function ShortlistAuditionsPage() {
 
   // Status pill renderer
   const renderStatusPill = (stage, app) => {
+    if (stage === "opportunity_cancelled") {
+      return (
+        <span className="v-stage-status-pill cancelled" style={{ background: "rgba(180, 35, 24, 0.08)", color: "#B42318", border: "1px solid rgba(180, 35, 24, 0.25)", padding: "4px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+          <span className="v-pill-dot" style={{ background: "#B42318", width: "6px", height: "6px", borderRadius: "50%" }} />
+          <span>Opportunity Cancelled</span>
+        </span>
+      );
+    }
+    if (stage === "pending_approval") {
+      return (
+        <span className="v-stage-status-pill pending-relay" style={{ background: "#FEF7E6", color: "#B54708", border: "1px solid #FEDF89", padding: "4px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+          <Clock size={12} style={{ color: "#B54708" }} />
+          <span>Awaiting Vismaya approval</span>
+        </span>
+      );
+    }
+    if (stage === "aud_rejected") {
+      const aud = getAuditionForApp(app?.id || app?._id);
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <span className="v-stage-status-pill rejected" style={{ background: "rgba(180, 35, 24, 0.08)", color: "#B42318", border: "1px solid rgba(180, 35, 24, 0.25)", padding: "4px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <XCircle size={12} style={{ color: "#B42318" }} />
+            <span>Audition Request Rejected</span>
+          </span>
+          {aud?.vismayaRejectionReason && (
+            <span style={{ fontSize: "11px", color: "#B42318", maxWidth: "240px", lineHeight: "1.3", fontWeight: 500 }}>
+              Reason: {aud.vismayaRejectionReason}
+            </span>
+          )}
+        </div>
+      );
+    }
+    if (stage === "withdrawn") {
+      return (
+        <span className="v-stage-status-pill withdrawn" style={{ background: "#F3EFE6", color: "#5A584F", border: "1px solid #E8E2D4", padding: "4px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+          <span className="v-pill-dot" style={{ background: "#777970", width: "6px", height: "6px", borderRadius: "50%" }} />
+          <span>Withdrawn</span>
+        </span>
+      );
+    }
     if (stage === "rev") {
       return (
         <span className="v-stage-status-pill rev">
@@ -693,24 +845,33 @@ export default function ShortlistAuditionsPage() {
           ) : (
             <div className="v-opportunity-grid">
               {orgOpportunities.map((opp) => {
-                const stats = getOpportunityStats(opp.id);
-                const isClosed =
-                  opp.status === "Completed" ||
-                  opp.status === "Cancelled" ||
-                  opp.status === "Closed";
+                const stats = getOpportunityStats(opp);
+                const rawOppStatus = String(opp.rawStatus || opp.status || "").toLowerCase().trim();
+                const normalizedOppStatus = rawOppStatus.replace(/[\s-]+/g, "_");
+                const isPublished = normalizedOppStatus === "published" || normalizedOppStatus === "active";
+                const isPending = normalizedOppStatus === "pending" || normalizedOppStatus === "pending_review" || normalizedOppStatus === "under_vismaya_review" || normalizedOppStatus === "corrections_requested";
+                const isRejected = normalizedOppStatus === "rejected";
+                const isClosed = normalizedOppStatus === "closed" || normalizedOppStatus === "completed";
+                const isCancelled = normalizedOppStatus === "cancelled" || normalizedOppStatus === "canceled" || normalizedOppStatus === "cancellation_requested";
+                const displayStatusLabel = toFrontendStatus("opportunity", rawOppStatus || "pending").toUpperCase();
+
                 const typeBadge = (opp.opportunityType || "CASTING CALL").toUpperCase();
                 const city = opp.location || opp.eligibility?.location || "Mumbai";
                 const postedDate = formatPostedDate(opp.publishedAt || opp.createdAt);
+                const hasApplicants = stats.total > 0 || (stats.applied + stats.under_review + stats.shortlist + stats.selected) > 0;
+                const canHaveApplicants = isPublished || ((isClosed || isCancelled) && hasApplicants);
+                const canViewApplicants = canHaveApplicants && hasApplicants;
 
                 return (
                   <div
                     key={`opp-card-${opp.id}`}
-                    className="v-opp-card"
-                    onClick={() => handleSelectOpportunity(opp.id)}
+                    className={`v-opp-card ${!canViewApplicants ? "v-opp-card-disabled" : ""}`}
+                    onClick={() => canViewApplicants && handleSelectOpportunity(opp.id)}
                     role="button"
-                    tabIndex={0}
+                    tabIndex={canViewApplicants ? 0 : -1}
+                    style={{ cursor: canViewApplicants ? "pointer" : "default" }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
+                      if ((e.key === "Enter" || e.key === " ") && canViewApplicants) {
                         handleSelectOpportunity(opp.id);
                       }
                     }}
@@ -725,10 +886,22 @@ export default function ShortlistAuditionsPage() {
                           </span>
                         )}
                       </div>
-                      {isClosed ? (
-                        <span className="v-opp-status-pill closed">CLOSED</span>
+                      {isPublished ? (
+                        <span className="v-opp-status-pill open" style={{ border: "1px solid #C9A55C", color: "#8A6B2E", background: "transparent" }}>
+                          {displayStatusLabel || "PUBLISHED"}
+                        </span>
+                      ) : isPending ? (
+                        <span className="v-opp-status-pill pending" style={{ border: "1px solid #FEDF89", color: "#B54708", background: "#FEF7E6" }}>
+                          {displayStatusLabel || "PENDING REVIEW"}
+                        </span>
+                      ) : isRejected ? (
+                        <span className="v-opp-status-pill rejected" style={{ border: "1px solid rgba(180, 35, 24, 0.25)", color: "#B42318", background: "rgba(180, 35, 24, 0.08)" }}>
+                          {displayStatusLabel || "REJECTED"}
+                        </span>
                       ) : (
-                        <span className="v-opp-status-pill open">OPEN</span>
+                        <span className="v-opp-status-pill closed" style={{ border: "1px solid #E8E2D4", color: "#5A584F", background: "#F3EFE6" }}>
+                          {displayStatusLabel || "CLOSED"}
+                        </span>
                       )}
                     </div>
 
@@ -766,7 +939,7 @@ export default function ShortlistAuditionsPage() {
 
                     {/* 5. Bottom Full-width Button */}
                     <div className="v-opp-card-bottom">
-                      {stats.applied > 0 ? (
+                      {canViewApplicants ? (
                         <button
                           type="button"
                           className="v-opp-card-btn filled"
@@ -922,11 +1095,11 @@ export default function ShortlistAuditionsPage() {
             ) : (
               displayApplications.map((app) => {
                 const prof = app.talentProfile || {};
-                const aud = getAuditionForApp(app.id);
+                const aud = getAuditionForApp(app.id || app._id);
                 const proj = getProjectForOpp(selectedOpp);
                 const stage = getAppStage(app);
                 const isClosed = stage === "no";
-                const profileUrl = `/recruiter/applications/${app.id}?from=shortlist&opp=${app.opportunityId}`;
+                const profileUrl = `/recruiter/applications/${app.id || app._id}?from=shortlist&opp=${app.opportunityId}`;
 
                 const isActionShort = stage === "short";
                 const isActionRev = stage === "rev";
@@ -934,7 +1107,7 @@ export default function ShortlistAuditionsPage() {
 
                 return (
                   <article
-                    key={`candidate-card-${app.id}`}
+                    key={`candidate-card-${app.id || app._id}`}
                     className={`v-candidate-card ${isClosed ? "closed-card" : ""}`}
                   >
                     {/* Top: Avatar + Name + Age/City */}
@@ -969,6 +1142,11 @@ export default function ShortlistAuditionsPage() {
                           <span style={{ fontSize: "11px", fontWeight: 600, color: "#2B5E3B", background: "#EBF5ED", padding: "1px 6px", borderRadius: "8px", border: "1px solid #D1E7D6" }}>
                             Match
                           </span>
+                          {aud && (
+                            <span style={{ fontSize: "11px", fontWeight: 600, color: "#8A6B2E", background: "#F5EFE1", padding: "1px 6px", borderRadius: "8px", border: "1px solid #E8DECA", display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                              <Video size={11} /> Audition
+                            </span>
+                          )}
                         </div>
                         <span className="v-candidate-meta-text">
                           <strong style={{ color: "#2B2D2A", fontWeight: 600 }}>{prof.primaryProfession || app.primaryProfession || "Actor"}</strong> · {prof.age ? `${prof.age} yrs` : "—"} · {prof.city || app.currentCity || "Mumbai"}
@@ -1020,7 +1198,11 @@ export default function ShortlistAuditionsPage() {
                       </button>
 
                       {/* Primary contextual status ladder action */}
-                      {isApplied ? (
+                      {stage === "opportunity_cancelled" || stage === "withdrawn" ? (
+                        <span style={{ fontSize: "12px", color: "#777970", fontStyle: "italic", padding: "8px 12px" }}>
+                          No actions available
+                        </span>
+                      ) : isApplied ? (
                         <div style={{ display: "flex", gap: "6px" }}>
                           <button
                             type="button"
@@ -1073,6 +1255,21 @@ export default function ShortlistAuditionsPage() {
                         >
                           <Play size={14} />
                           <span>TAPE</span>
+                        </button>
+                      ) : stage === "pending_approval" ? (
+                        <span style={{ fontSize: "12px", color: "#B54708", fontStyle: "italic", padding: "8px 12px" }}>
+                          Awaiting Vismaya approval
+                        </span>
+                      ) : stage === "aud_rejected" ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAuditionModal(app)}
+                          className="v-card-action-btn primary"
+                          style={{ minHeight: "44px" }}
+                          title="Request audition again"
+                        >
+                          <Video size={14} />
+                          <span>REQUEST AGAIN</span>
                         </button>
                       ) : stage === "req" || stage === "tal" ? (
                         <button
@@ -1168,25 +1365,55 @@ export default function ShortlistAuditionsPage() {
       {/* MODAL 1: Review Self-Tape */}
       {reviewVideoModalApp && (() => {
         const app = reviewVideoModalApp;
-        const aud = getAuditionForApp(app.id);
+        const aud = getAuditionForApp(app.id || app._id);
         const opp = selectedOpp || opportunities.find((o) => o.id === app.opportunityId);
-        const profileUrl = `/recruiter/applications/${app.id}?from=shortlist&opp=${app.opportunityId}`;
+        const profileUrl = `/recruiter/applications/${app.id || app._id}?from=shortlist&opp=${app.opportunityId}`;
+
+        const videoList = aud?.selfTapeSubmission?.videos?.length
+          ? aud.selfTapeSubmission.videos
+          : (aud?.selfTapeSubmission?.videoUrls?.length
+            ? aud.selfTapeSubmission.videoUrls.map((u, i) => ({ videoUrl: u, fileName: `Take ${i + 1}` }))
+            : (aud?.selfTapeSubmission?.videoUrl || aud?.submission?.videoUrl || aud?.selfTapeUrl)
+            ? [{ videoUrl: aud?.selfTapeSubmission?.videoUrl || aud?.submission?.videoUrl || aud?.selfTapeUrl, fileName: "Take 1" }]
+            : []);
+        const activeVideo = videoList[selectedTakeIndex] || videoList[0];
+        const activeSrc = activeVideo?.videoUrl || "";
+
+        const isAdminApproved = aud?.vismayaApproval === "approved" || aud?.vismayaApproval?.status === "approved";
+        const rawSt = (aud?.rawStatus || aud?.status || "").toLowerCase().replace(/[\s-_]+/g, "");
+        const isForwarded = rawSt === "forwardedtoorg" || rawSt.includes("forward") || rawSt === "reviewed";
+        const canShowVideo = isAdminApproved && isForwarded;
 
         return (
           <Modal
             isOpen={!!reviewVideoModalApp}
-            onClose={() => setReviewVideoModalApp(null)}
-            title={`Review Self-Tape: ${app.talentName}`}
-            subtitle={`Audition for ${app.roleApplied} • ${opp?.title || "Opportunity"}`}
+            onClose={() => {
+              setReviewVideoModalApp(null);
+              setSelectedTakeIndex(0);
+            }}
+            title={`Review Self-Tape: ${app.talentName || app.name || "Candidate"}`}
+            subtitle={`Audition for ${app.roleApplied || app.role || "Role"} • ${opp?.title || "Opportunity"}`}
             maxWidth="640px"
             footer={
-              <div className="v-modal-footer-row">
+              <div className="v-modal-footer-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: "10px" }}>
                 <Link href={profileUrl} className="v-modal-ghost-btn">
                   <Eye size={15} />
                   <span>View profile</span>
                 </Link>
 
-                <div style={{ display: "flex", gap: "8px" }}>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleShortlistApplicant(app);
+                    }}
+                    className="v-modal-ghost-btn"
+                    style={{ border: "1.5px solid #8A6B2E", color: "#8A6B2E", fontWeight: 700 }}
+                  >
+                    <Sparkles size={15} />
+                    <span>Shortlist</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -1215,21 +1442,90 @@ export default function ShortlistAuditionsPage() {
             }
           >
             <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-              <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #E8E2D4" }}>
-                <VideoPlayer
-                  src={aud?.selfTapeUrl}
-                  fileName={`${app.talentName}-SelfTape.mp4`}
-                  height="320px"
-                />
-              </div>
+              {/* Take Selector if multi-take */}
+              {canShowVideo && videoList.length > 1 && (
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#2B2D2A" }}>Takes:</span>
+                  {videoList.map((v, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedTakeIndex(idx)}
+                      style={{
+                        padding: "4px 10px",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        borderRadius: "6px",
+                        border: selectedTakeIndex === idx ? "1.5px solid #8A6B2E" : "1px solid #E8E2D4",
+                        background: selectedTakeIndex === idx ? "#FAF9F7" : "#FFFFFF",
+                        color: selectedTakeIndex === idx ? "#8A6B2E" : "#5A584F",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {v.fileName || `Take ${idx + 1}`}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Video Player Preview - strictly gated by admin approval and forwarded status */}
+              {canShowVideo && activeSrc ? (
+                <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #E8E2D4" }}>
+                  <VideoPlayer
+                    src={activeSrc}
+                    fileName={`${app.talentName || "Candidate"}-SelfTape.mp4`}
+                    height="320px"
+                  />
+                </div>
+              ) : (
+                <div
+                  style={{
+                    padding: "16px",
+                    borderRadius: "12px",
+                    backgroundColor: "#FEF7E6",
+                    border: "1px solid #FEDF89",
+                    color: "#B54708",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                  }}
+                >
+                  <Clock size={20} style={{ flexShrink: 0 }} />
+                  <span>
+                    Self-tape video will unlock here once Vismaya Admin reviews and approves the submission.
+                  </span>
+                </div>
+              )}
+
+              {/* Talent's Submission Notes */}
+              {aud?.selfTapeSubmission?.notes && (
+                <div style={{ background: "#FAF9F7", border: "1px solid #E8DECA", borderRadius: "10px", padding: "12px 14px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#8A6B2E", marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <FileText size={14} />
+                    <span>Talent's Submission Notes:</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#2B2D2A", fontStyle: "italic", lineHeight: 1.5 }}>
+                    "{aud.selfTapeSubmission.notes}"
+                  </p>
+                </div>
+              )}
 
               <div className="v-modal-instructions-box">
                 <div style={{ fontWeight: 600, color: "#2B2D2A", marginBottom: "4px" }}>
                   Audition Instructions Relayed by Vismaya:
                 </div>
                 <p style={{ color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
-                  {aud?.note || "Record a monologue focusing on natural dialogue delivery and camera presence."}
+                  {aud?.instructions || aud?.note || "Record a monologue focusing on natural dialogue delivery and camera presence."}
                 </p>
+                {aud?.scriptUrl && (
+                  <p style={{ marginTop: "8px", marginBottom: 0 }}>
+                    <a href={aud.scriptUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#8A6B2E", textDecoration: "underline", fontSize: "13px" }}>
+                      View Script Sides &rarr;
+                    </a>
+                  </p>
+                )}
               </div>
             </div>
           </Modal>
@@ -1246,43 +1542,103 @@ export default function ShortlistAuditionsPage() {
           maxWidth="560px"
         >
           <form onSubmit={handleSubmitAudition} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
-                Audition Format *
-              </label>
-              <select
-                value={auditionType}
-                onChange={(e) => setAuditionType(e.target.value)}
-                className="v-modal-input"
-              >
-                <option value="Audition">Video Self-Tape (Standard Submission)</option>
-                <option value="Virtual Interview">Live Virtual Audition (Google Meet / Zoom)</option>
-                <option value="Screen Test">Physical Studio Callback</option>
-              </select>
-            </div>
+            {/* Format selection */}
+            {!AUDITION_CONFIG.ENABLE_LIVE_AUDITION ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
+                  Audition Format
+                </label>
+                <div style={{ padding: "10px 14px", background: "#F5F3EF", border: "1px solid #E8E2D4", borderRadius: "8px", fontSize: "14px", color: "#2B2D2A", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Video size={16} style={{ color: "#8A6B2E" }} />
+                  <span>Video Self-Tape (Standard Submission)</span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
+                  Audition Format *
+                </label>
+                <select
+                  value={auditionType}
+                  onChange={(e) => setAuditionType(e.target.value)}
+                  className="v-modal-input"
+                >
+                  <option value="Audition">Video Self-Tape (Standard Submission)</option>
+                  <option value="Virtual Interview">Live Virtual Audition (Google Meet / Zoom)</option>
+                  <option value="Screen Test">Physical Studio Callback</option>
+                </select>
+              </div>
+            )}
 
+            {/* Submit By Deadline (Required) */}
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
-                Deadline / Target Date (Optional)
+                Submit By (Deadline Date &amp; Time) *
               </label>
               <input
-                type="date"
+                type="datetime-local"
+                required
                 value={auditionDate}
                 onChange={(e) => setAuditionDate(e.target.value)}
                 className="v-modal-input"
               />
             </div>
 
+            {/* Script sides link */}
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
-                Directions Note for Talent *
+                Script Sides Link (Optional)
+              </label>
+              <input
+                type="url"
+                placeholder="https://drive.google.com/... or sides link"
+                value={auditionScriptUrl}
+                onChange={(e) => setAuditionScriptUrl(e.target.value)}
+                className="v-modal-input"
+              />
+            </div>
+
+            {/* Live audition inputs (rendered only when ENABLE_LIVE_AUDITION is true) */}
+            {AUDITION_CONFIG.ENABLE_LIVE_AUDITION && auditionType === "Virtual Interview" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
+                  Virtual Meeting Link (e.g. Google Meet / Zoom)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://meet.google.com/vsm-audition-live"
+                  value={auditionMeetingLink}
+                  onChange={(e) => setAuditionMeetingLink(e.target.value)}
+                  className="v-modal-input"
+                />
+              </div>
+            )}
+
+            {AUDITION_CONFIG.ENABLE_LIVE_AUDITION && auditionType === "Screen Test" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
+                  Studio Venue Address
+                </label>
+                <input
+                  type="text"
+                  placeholder="Studio 4, Vismaya Production Complex, Mumbai"
+                  value={auditionVenue}
+                  onChange={(e) => setAuditionVenue(e.target.value)}
+                  className="v-modal-input"
+                />
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#2B2D2A" }}>
+                Directions &amp; Monologue Notes for Talent *
               </label>
               <textarea
                 rows={4}
                 required
                 value={auditionNote}
                 onChange={(e) => setAuditionNote(e.target.value)}
-                placeholder="Specify monologue, scenes, or dialogue directions..."
+                placeholder="Specify dialogue monologue, character nuances, lighting or delivery directions..."
                 className="v-modal-textarea"
               />
             </div>
@@ -1292,11 +1648,12 @@ export default function ShortlistAuditionsPage() {
                 type="button"
                 onClick={() => setAuditionModalApp(null)}
                 className="v-modal-cancel-btn"
+                disabled={isSubmittingAudition}
               >
                 Cancel
               </button>
-              <button type="submit" className="v-modal-submit-btn">
-                Send Request via Vismaya
+              <button type="submit" className="v-modal-submit-btn" disabled={isSubmittingAudition}>
+                {isSubmittingAudition ? "Scheduling..." : "Send Request via Vismaya"}
               </button>
             </div>
           </form>
@@ -1538,11 +1895,35 @@ export default function ShortlistAuditionsPage() {
                 {portfolioData?.portfolio?.media?.photos && portfolioData.portfolio.media.photos.length > 0 && (
                   <div style={{ marginBottom: "14px" }}>
                     <div style={{ fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "6px" }}>Photos / Headshots:</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "8px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: "8px" }}>
                       {portfolioData.portfolio.media.photos.map((p, idx) => (
-                        <a key={idx} href={p.url} target="_blank" rel="noopener noreferrer" style={{ display: "block", borderRadius: "8px", overflow: "hidden", border: "1px solid #E8E2D4", aspectRatio: "3/4" }}>
-                          <img src={p.url} alt={p.title || "Photo"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        </a>
+                        <div key={idx} style={{ position: "relative" }}>
+                          <a href={p.url} target="_blank" rel="noopener noreferrer" style={{ display: "block", borderRadius: "8px", overflow: "hidden", border: "1px solid #E8E2D4", aspectRatio: "3/4" }}>
+                            <img src={p.url} alt={p.title || "Photo"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => setReportingMedia({ id: p._id || p.id, title: p.title || `Photo ${idx + 1}` })}
+                            title="Report this photo"
+                            style={{
+                              position: "absolute",
+                              bottom: "4px",
+                              right: "4px",
+                              background: "rgba(43, 45, 42, 0.75)",
+                              color: "#FFFFFF",
+                              border: "none",
+                              borderRadius: "4px",
+                              padding: "2px 5px",
+                              fontSize: "10px",
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "2px",
+                            }}
+                          >
+                            <Flag size={10} /> Report
+                          </button>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -1556,7 +1937,25 @@ export default function ShortlistAuditionsPage() {
                       {portfolioData.portfolio.media.videos.map((v, idx) => (
                         <div key={idx} style={{ padding: "8px 12px", background: "#FAF9F7", borderRadius: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#2B2D2A" }}>{v.title || "Showreel Clip"}</span>
-                          <a href={v.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#8A6B2E", fontWeight: 600, textDecoration: "none" }}>Watch Video →</a>
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <a href={v.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#8A6B2E", fontWeight: 600, textDecoration: "none" }}>Watch Video →</a>
+                            <button
+                              type="button"
+                              onClick={() => setReportingMedia({ id: v._id || v.id, title: v.title || `Video ${idx + 1}` })}
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                color: "#8A877E",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "3px",
+                                fontSize: "11px",
+                              }}
+                            >
+                              <Flag size={11} /> Report
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1651,6 +2050,16 @@ export default function ShortlistAuditionsPage() {
             </div>
           )}
         </Modal>
+      )}
+
+      {reportingMedia && (
+        <ReportModal
+          isOpen={true}
+          onClose={() => setReportingMedia(null)}
+          targetType="MediaItem"
+          targetId={reportingMedia.id}
+          targetTitle={reportingMedia.title}
+        />
       )}
 
       {/* Embedded CSS */}

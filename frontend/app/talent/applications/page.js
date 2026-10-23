@@ -17,15 +17,23 @@ import PageHeader from "@/components/shared/PageHeader";
 import EmptyState from "@/components/shared/EmptyState";
 import ApplicationCard from "@/components/talent/ApplicationCard";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { useTalent } from "@/lib/talent/TalentContext";
+import { useAuth } from "@/context/AuthContext";
+import { isRealMode } from "@/lib/api/config";
 
 export default function TalentApplicationsPage() {
+  const { user } = useAuth();
+  const { profile, applications: ctxApplications = [] } = useTalent();
   const { applications, isHydrated } = useWorkflow();
   const filterScrollRef = useRef(null);
 
-  const currentTalentId = "tal-904";
+  const currentTalentId = user?.id || user?._id || profile?.id || profile?._id || profile?.userId || (!isRealMode("talent") ? "tal-904" : "");
   const myApplications = useMemo(() => {
+    if (isRealMode("applications") || isRealMode("talent")) {
+      return Array.isArray(ctxApplications) ? ctxApplications : [];
+    }
     return applications.filter((a) => a.talentId === currentTalentId);
-  }, [applications]);
+  }, [applications, ctxApplications, currentTalentId]);
 
   const [activeFilter, setActiveFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest"); // "newest" | "oldest"
@@ -47,12 +55,13 @@ export default function TalentApplicationsPage() {
   // Counts by status
   const counts = {
     all: myApplications.length,
-    Applied: myApplications.filter((a) => a.status === "Applied").length,
-    "Under Review": myApplications.filter((a) => a.status === "Under Review").length,
-    Shortlisted: myApplications.filter((a) => a.status === "Shortlisted").length,
-    Selected: myApplications.filter((a) => a.status === "Selected").length,
-    "Not Selected": myApplications.filter((a) => a.status === "Not Selected").length,
-    Withdrawn: myApplications.filter((a) => a.status === "Withdrawn").length,
+    Applied: myApplications.filter((a) => a.status === "Applied" || a.status === "applied").length,
+    "Under Review": myApplications.filter((a) => a.status === "Under Review" || a.status === "under_review").length,
+    Shortlisted: myApplications.filter((a) => a.status === "Shortlisted" || a.status === "shortlisted").length,
+    Selected: myApplications.filter((a) => a.status === "Selected" || a.status === "selected").length,
+    "Not Selected": myApplications.filter((a) => a.status === "Not Selected" || a.status === "not_selected").length,
+    Withdrawn: myApplications.filter((a) => a.status === "Withdrawn" || a.status === "withdrawn").length,
+    "Opportunity Cancelled": myApplications.filter((a) => a.status === "Opportunity Cancelled" || a.status === "opportunity_cancelled").length,
   };
 
   const filterChips = [
@@ -63,13 +72,19 @@ export default function TalentApplicationsPage() {
     { key: "Selected", label: "Selected", count: counts.Selected },
     { key: "Not Selected", label: "Not Selected", count: counts["Not Selected"] },
     { key: "Withdrawn", label: "Withdrawn", count: counts.Withdrawn },
+    { key: "Opportunity Cancelled", label: "Cancelled Calls", count: counts["Opportunity Cancelled"] },
   ];
 
   const filteredApplications = useMemo(() => {
     let list = myApplications;
 
     if (activeFilter !== "all") {
-      list = list.filter((a) => a.status === activeFilter);
+      list = list.filter((a) => {
+        if (activeFilter === "Opportunity Cancelled") {
+          return a.status === "Opportunity Cancelled" || a.status === "opportunity_cancelled";
+        }
+        return a.status === activeFilter;
+      });
     }
 
     return [...list].sort((a, b) => {

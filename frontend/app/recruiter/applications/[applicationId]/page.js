@@ -29,6 +29,7 @@ import {
   X,
   ChevronRight,
   ExternalLink,
+  FileText,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
@@ -37,6 +38,10 @@ import VideoPlayer from "@/components/shared/VideoPlayer";
 import PaymentCard from "@/components/payment/PaymentCard";
 import { paymentService } from "@/lib/api/services/paymentService";
 import { PRICING_CONFIG } from "@/lib/config/pricing";
+import { AUDITION_CONFIG } from "@/lib/config/audition";
+import { recruiterService } from "@/lib/api/services/recruiterService";
+import { isRealMode } from "@/lib/api/config";
+import { toFrontendStatus } from "@/lib/api/statusMapper";
 
 // Constant to hide talent phone and email directly as per platform requirement
 const HIDE_TALENT_CONTACT = true;
@@ -60,20 +65,101 @@ export default function ApplicationDetailPage() {
     isHydrated,
   } = useWorkflow();
 
-  const application = useMemo(
+  const [realApplication, setRealApplication] = useState(null);
+  const [realOpportunity, setRealOpportunity] = useState(null);
+  const [realAudition, setRealAudition] = useState(null);
+  const [isLoadingReal, setIsLoadingReal] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadRealData() {
+      if (!applicationId) return;
+      const isMongo = /^[0-9a-fA-F]{24}$/.test(String(applicationId));
+      if (!isMongo && !isRealMode("applications") && !isRealMode("recruiter")) return;
+
+      setIsLoadingReal(true);
+      try {
+        const [portfolioRes, audsRes, oppsRes] = await Promise.all([
+          recruiterService.getApplicantPortfolio(applicationId).catch(() => null),
+          recruiterService.getOrganizationAuditions().catch(() => null),
+          recruiterService.getMyOpportunities().catch(() => null),
+        ]);
+
+        if (!isMounted) return;
+
+        if (portfolioRes?.data) {
+          const appRaw = portfolioRes.data.application || {};
+          const portRaw = portfolioRes.data.portfolio || {};
+          const mappedApp = {
+            id: String(appRaw._id || appRaw.id || applicationId),
+            _id: String(appRaw._id || appRaw.id || applicationId),
+            opportunityId: String(appRaw.opportunityId?._id || appRaw.opportunityId?.id || appRaw.opportunityId || oppParam || ""),
+            talentId: String(appRaw.talentId?._id || appRaw.talentId?.id || appRaw.talentId || portRaw.userId || ""),
+            talentName: portRaw.name || portRaw.stageName || "Talent Candidate",
+            roleApplied: appRaw.roleApplied || appRaw.role || portRaw.primaryProfession || "Lead Role",
+            status: toFrontendStatus("application", appRaw.status || "applied"),
+            rawStatus: appRaw.status || "applied",
+            coverNote: appRaw.coverNote || "",
+            customAnswers: appRaw.customAnswers || [],
+            consentGiven: appRaw.consentGiven !== undefined ? appRaw.consentGiven : true,
+            createdAt: appRaw.createdAt,
+            appliedAt: appRaw.createdAt,
+            talentProfile: {
+              ...portRaw,
+              avatar: portRaw.profilePhoto,
+              skills: Array.isArray(portRaw.skills) ? portRaw.skills.map(s => typeof s === "string" ? s : (s.name || s.skillName || "")) : [],
+              city: portRaw.currentCity || "Mumbai",
+            },
+          };
+          setRealApplication(mappedApp);
+        }
+
+        if (audsRes?.data) {
+          const matchedAud = audsRes.data.find(
+            (a) => String(a.applicationId) === String(applicationId) || String(a.applicationId?._id) === String(applicationId)
+          );
+          if (matchedAud) {
+            setRealAudition(matchedAud);
+          }
+        }
+
+        if (oppsRes?.data) {
+          const targetOppId = oppParam || portfolioRes?.data?.application?.opportunityId;
+          if (targetOppId) {
+            const matchedOpp = oppsRes.data.find(
+              (o) => String(o.id) === String(targetOppId) || String(o._id) === String(targetOppId)
+            );
+            if (matchedOpp) {
+              setRealOpportunity(matchedOpp);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load real applicant data:", err);
+      } finally {
+        if (isMounted) setIsLoadingReal(false);
+      }
+    }
+    loadRealData();
+    return () => { isMounted = false; };
+  }, [applicationId, oppParam]);
+
+  const mockApplication = useMemo(
     () => applications.find((a) => a.id === applicationId),
     [applications, applicationId]
   );
+  const application = realApplication || mockApplication;
 
   const effectiveOppId = oppParam || application?.opportunityId;
 
-  const opportunity = useMemo(
+  const mockOpportunity = useMemo(
     () => (effectiveOppId ? opportunities.find((o) => o.id === effectiveOppId) : null),
     [opportunities, effectiveOppId]
   );
+  const opportunity = realOpportunity || mockOpportunity;
 
   const project = useMemo(
-    () => (opportunity ? projects.find((p) => p.id === opportunity.projectId) : null),
+    () => (opportunity ? (projects.find((p) => p.id === opportunity.projectId) || { title: opportunity.projectName || "Project" }) : null),
     [projects, opportunity]
   );
 
@@ -82,7 +168,7 @@ export default function ApplicationDetailPage() {
     [auditions, applicationId]
   );
 
-  const activeAudition = appAuditions[0];
+  const activeAudition = realAudition || appAuditions[0];
 
   // Resolve origin context (from query param -> sessionStorage -> fallback)
   const [origin, setOrigin] = useState("dashboard");
@@ -115,6 +201,8 @@ export default function ApplicationDetailPage() {
   const [isAuditionModalOpen, setIsAuditionModalOpen] = useState(false);
   const [auditionType, setAuditionType] = useState("Audition"); // "Audition" | "Interview"
   const [auditionNote, setAuditionNote] = useState("");
+  const [auditionDeadline, setAuditionDeadline] = useState("");
+  const [auditionScriptUrl, setAuditionScriptUrl] = useState("");
 
   const [isNotSelectedModalOpen, setIsNotSelectedModalOpen] = useState(false);
   const [notSelectedReason, setNotSelectedReason] = useState("");
@@ -142,14 +230,23 @@ export default function ApplicationDetailPage() {
   }, [application?.id]);
 
   // Action Handlers
-  const handleShortlist = () => {
+  const handleShortlist = async () => {
     if (!application) return;
-    setApplicationStatus(
-      application.id,
-      "Shortlisted",
-      "Shortlisted for further audition and screening rounds.",
-      "Zee Films"
-    );
+    const appId = application.id || application._id;
+    try {
+      if (isRealMode("applications") || isRealMode("recruiter")) {
+        await recruiterService.shortlistApplication(appId);
+      }
+      setApplicationStatus(
+        appId,
+        "Shortlisted",
+        "Shortlisted for further audition and screening rounds.",
+        "Organization"
+      );
+      setRealApplication(prev => prev ? { ...prev, status: "Shortlisted", rawStatus: "shortlisted" } : prev);
+    } catch (err) {
+      alert(err?.response?.data?.message || err?.message || "Failed to shortlist applicant");
+    }
   };
 
   const handleOpenAuditionModal = () => {
@@ -162,39 +259,83 @@ export default function ApplicationDetailPage() {
     setIsAuditionModalOpen(true);
   };
 
-  const handleSubmitAuditionRequest = (e) => {
+  const handleSubmitAuditionRequest = async (e) => {
     e.preventDefault();
     if (!application) return;
-    requestAudition({
-      applicationId: application.id,
-      type: auditionType,
+    if (!auditionDeadline) {
+      alert("Please specify a required submit-by deadline date and time.");
+      return;
+    }
+    const finalType = !AUDITION_CONFIG.ENABLE_LIVE_AUDITION
+      ? "self_tape"
+      : auditionType === "Interview"
+      ? "video_interview"
+      : "self_tape";
+
+    const payload = {
+      type: finalType,
+      instructions: auditionNote,
       note: auditionNote,
-    });
-    setIsAuditionModalOpen(false);
+      scriptUrl: auditionScriptUrl ? auditionScriptUrl.trim() : undefined,
+      deadline: auditionDeadline ? new Date(auditionDeadline).toISOString() : undefined,
+      scheduledAt: auditionDeadline ? new Date(auditionDeadline).toISOString() : undefined,
+    };
+
+    try {
+      if (isRealMode("recruiter") || isRealMode("auditions")) {
+        await recruiterService.requestAudition(application.id || application._id, payload);
+      } else {
+        requestAudition({
+          applicationId: application.id || application._id,
+          ...payload,
+        });
+      }
+      setIsAuditionModalOpen(false);
+    } catch (err) {
+      alert(err?.response?.data?.message || err?.message || "Failed to schedule audition");
+    }
   };
 
-  const handleConfirmNotSelected = (e) => {
+  const handleConfirmNotSelected = async (e) => {
     e.preventDefault();
     if (!application) return;
-    setApplicationStatus(
-      application.id,
-      "Not Selected",
-      notSelectedReason || "Candidate not selected for this specific role.",
-      "Zee Films"
-    );
-    setIsNotSelectedModalOpen(false);
+    const appId = application.id || application._id;
+    try {
+      if (isRealMode("applications") || isRealMode("recruiter")) {
+        await recruiterService.markNotSelected(appId, { reason: notSelectedReason });
+      }
+      setApplicationStatus(
+        appId,
+        "Not Selected",
+        notSelectedReason || "Candidate not selected for this specific role.",
+        "Organization"
+      );
+      setRealApplication(prev => prev ? { ...prev, status: "Not Selected", rawStatus: "not_selected" } : prev);
+      setIsNotSelectedModalOpen(false);
+    } catch (err) {
+      alert(err?.response?.data?.message || err?.message || "Failed to update candidate status");
+    }
   };
 
-  const handleConfirmSelected = (e) => {
+  const handleConfirmSelected = async (e) => {
     e.preventDefault();
     if (!application) return;
-    setApplicationStatus(
-      application.id,
-      "Selected",
-      selectedNote || "Final selection confirmed for the casting role.",
-      "Zee Films"
-    );
-    setIsSelectedModalOpen(false);
+    const appId = application.id || application._id;
+    try {
+      if (isRealMode("applications") || isRealMode("recruiter")) {
+        await recruiterService.selectApplication(appId, { note: selectedNote });
+      }
+      setApplicationStatus(
+        appId,
+        "Selected",
+        selectedNote || "Final selection confirmed for the casting role.",
+        "Organization"
+      );
+      setRealApplication(prev => prev ? { ...prev, status: "Selected", rawStatus: "selected" } : prev);
+      setIsSelectedModalOpen(false);
+    } catch (err) {
+      alert(err?.response?.data?.message || err?.message || "Failed to select candidate");
+    }
   };
 
   const formatDate = (isoStr) => {
@@ -1073,89 +1214,183 @@ export default function ApplicationDetailPage() {
               <span>Audition & Self-Tape Status</span>
             </h2>
 
-            {activeAudition ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <div
-                  style={{
-                    backgroundColor: "rgba(255, 255, 255, 0.04)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                    borderRadius: "14px",
-                    padding: "16px",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                    <span style={{ fontSize: "0.8rem", fontWeight: "700", color: "#eceaf5" }}>
-                      Type: {activeAudition.type}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "0.75rem",
-                        fontWeight: "700",
-                        padding: "3px 10px",
-                        borderRadius: "10px",
-                        backgroundColor:
-                          activeAudition.status === "Forwarded to Organization"
-                            ? "rgba(52, 211, 153, 0.15)"
-                            : activeAudition.status === "Self-tape Received"
-                            ? "rgba(255, 188, 0, 0.15)"
-                            : "rgba(255, 255, 255, 0.08)",
-                        color:
-                          activeAudition.status === "Forwarded to Organization"
-                            ? "#34d399"
-                            : activeAudition.status === "Self-tape Received"
-                            ? "var(--gold)"
-                            : "#8ab4ff",
-                        border: `1px solid ${
-                          activeAudition.status === "Forwarded to Organization"
-                            ? "rgba(52, 211, 153, 0.35)"
-                            : activeAudition.status === "Self-tape Received"
-                            ? "rgba(255, 188, 0, 0.35)"
-                            : "rgba(255, 255, 255, 0.14)"
-                        }`,
-                      }}
-                    >
-                      {activeAudition.status}
-                    </span>
-                  </div>
+            {activeAudition ? (() => {
+              const rawSt = (activeAudition.rawStatus || activeAudition.status || "").toLowerCase().replace(/[\s-_]+/g, "");
+              const isForwarded = rawSt === "forwardedtoorg" || rawSt.includes("forward") || rawSt === "reviewed";
+              const isAdminApproved = activeAudition.vismayaApproval === "approved" || activeAudition.vismayaApproval?.status === "approved";
+              const canShowVideo = isForwarded && isAdminApproved;
+              const videoSrc = activeAudition.selfTapeSubmission?.videoUrl || activeAudition.submission?.videoUrl || activeAudition.selfTapeUrl || activeAudition.selfTapeSubmission?.videoUrls?.[0] || "";
+              const talentNotes = activeAudition.selfTapeSubmission?.notes || activeAudition.submission?.notes || activeAudition.notes;
 
-                  <p style={{ fontSize: "0.825rem", color: "#a3acc2", margin: "0 0 10px 0", lineHeight: "1.5" }}>
-                    <strong style={{ color: "#eceaf5" }}>Note:</strong> {activeAudition.note}
-                  </p>
-
-                  <div style={{ fontSize: "0.75rem", color: "#7c869e" }}>
-                    Requested on {formatDate(activeAudition.requestedAt)}
-                  </div>
-                </div>
-
-                {/* Self Tape Player Preview */}
-                {activeAudition.status === "Forwarded to Organization" ? (
-                  <VideoPlayer
-                    src={activeAudition.selfTapeUrl}
-                    fileName={`${application?.talentName || "Candidate"}-SelfTape.mp4`}
-                    height="220px"
-                  />
-                ) : (
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                   <div
                     style={{
-                      padding: "14px",
-                      borderRadius: "12px",
-                      backgroundColor: "rgba(255, 188, 0, 0.08)",
-                      border: "1px solid rgba(255, 188, 0, 0.25)",
-                      fontSize: "0.8rem",
-                      color: "var(--gold)",
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "8px",
+                      backgroundColor: "rgba(255, 255, 255, 0.04)",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      borderRadius: "14px",
+                      padding: "16px",
                     }}
                   >
-                    <Clock size={16} style={{ flexShrink: 0, marginTop: "2px" }} />
-                    <span>
-                      Self-tape will unlock here as soon as Vismaya Casting Desk reviews and forwards the submission.
-                    </span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                      <span style={{ fontSize: "0.8rem", fontWeight: "700", color: "#eceaf5" }}>
+                        Type: {activeAudition.type || "Self-Tape"}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "0.75rem",
+                          fontWeight: "700",
+                          padding: "3px 10px",
+                          borderRadius: "10px",
+                          backgroundColor:
+                            isForwarded
+                              ? "rgba(52, 211, 153, 0.15)"
+                              : "rgba(255, 188, 0, 0.15)",
+                          color:
+                            isForwarded
+                              ? "#34d399"
+                              : "var(--gold)",
+                          border: `1px solid ${
+                            isForwarded
+                              ? "rgba(52, 211, 153, 0.35)"
+                              : "rgba(255, 188, 0, 0.35)"
+                          }`,
+                        }}
+                      >
+                        {isForwarded ? "Forwarded to Org" : (activeAudition.status || "Requested")}
+                      </span>
+                    </div>
+
+                    {(activeAudition.instructions || activeAudition.note) && (
+                      <p style={{ fontSize: "0.825rem", color: "#a3acc2", margin: "0 0 10px 0", lineHeight: "1.5" }}>
+                        <strong style={{ color: "#eceaf5" }}>Instructions:</strong> {activeAudition.instructions || activeAudition.note}
+                      </p>
+                    )}
+
+                    {/* Talent's Submission Notes */}
+                    {talentNotes && (
+                      <div style={{ backgroundColor: "rgba(255, 255, 255, 0.04)", border: "1px solid rgba(255, 188, 0, 0.25)", borderRadius: "10px", padding: "10px 12px", margin: "10px 0" }}>
+                        <span style={{ fontSize: "0.75rem", fontWeight: "700", color: "var(--gold)", display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+                          <FileText size={13} />
+                          <span>Talent's Submission Notes:</span>
+                        </span>
+                        <p style={{ fontSize: "0.825rem", color: "#eceaf5", margin: 0, fontStyle: "italic", lineHeight: "1.4" }}>
+                          "{talentNotes}"
+                        </p>
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: "0.75rem", color: "#7c869e" }}>
+                      Requested on {formatDate(activeAudition.createdAt || activeAudition.requestedAt)}
+                    </div>
                   </div>
-                )}
-              </div>
-            ) : (
+
+                  {/* Self Tape Player Preview - ONLY after admin approval */}
+                  {canShowVideo && videoSrc ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <VideoPlayer
+                        src={videoSrc}
+                        fileName={`${application?.talentName || "Candidate"}-SelfTape.mp4`}
+                        height="220px"
+                      />
+                      {/* Contextual actions */}
+                      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
+                        <button
+                          type="button"
+                          onClick={handleShortlist}
+                          style={{
+                            flex: 1,
+                            minHeight: "38px",
+                            padding: "6px 12px",
+                            fontSize: "12px",
+                            fontWeight: "700",
+                            borderRadius: "8px",
+                            background: "rgba(255, 188, 0, 0.15)",
+                            color: "var(--gold)",
+                            border: "1px solid rgba(255, 188, 0, 0.35)",
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <Sparkles size={14} />
+                          <span>Shortlist</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsSelectedModalOpen(true)}
+                          style={{
+                            flex: 1,
+                            minHeight: "38px",
+                            padding: "6px 12px",
+                            fontSize: "12px",
+                            fontWeight: "700",
+                            borderRadius: "8px",
+                            background: "rgba(52, 211, 153, 0.18)",
+                            color: "#34d399",
+                            border: "1px solid rgba(52, 211, 153, 0.4)",
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <CheckCircle2 size={14} />
+                          <span>Select</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsNotSelectedModalOpen(true)}
+                          style={{
+                            flex: 1,
+                            minHeight: "38px",
+                            padding: "6px 12px",
+                            fontSize: "12px",
+                            fontWeight: "700",
+                            borderRadius: "8px",
+                            background: "rgba(255, 107, 107, 0.15)",
+                            color: "#ff6b6b",
+                            border: "1px solid rgba(255, 107, 107, 0.35)",
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <XCircle size={14} />
+                          <span>Not Selected</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        padding: "14px",
+                        borderRadius: "12px",
+                        backgroundColor: "rgba(255, 188, 0, 0.08)",
+                        border: "1px solid rgba(255, 188, 0, 0.25)",
+                        fontSize: "0.8rem",
+                        color: "var(--gold)",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "8px",
+                      }}
+                    >
+                      <Clock size={16} style={{ flexShrink: 0, marginTop: "2px" }} />
+                      <span>
+                        Self-tape will unlock here as soon as Vismaya Casting Desk reviews and approves the submission.
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })() : (
               <div
                 style={{
                   backgroundColor: "rgba(255, 255, 255, 0.04)",
@@ -1274,21 +1509,59 @@ export default function ApplicationDetailPage() {
               Specify the audition type and directions. The Vismaya Casting Desk coordinates directly with <strong style={{ color: "#eceaf5" }}>{application.talentName}</strong> and relays instructions.
             </p>
 
+            {!AUDITION_CONFIG.ENABLE_LIVE_AUDITION ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "0.825rem", fontWeight: "600", color: "#eceaf5" }}>
+                  Request Type
+                </label>
+                <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "8px", fontSize: "0.85rem", color: "#eceaf5", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Video size={16} style={{ color: "var(--gold)" }} />
+                  <span>Self-Tape Audition (Video Submission)</span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "0.825rem", fontWeight: "600", color: "#eceaf5" }}>
+                  Request Type *
+                </label>
+                <select
+                  value={auditionType}
+                  onChange={(e) => setAuditionType(e.target.value)}
+                  style={{
+                    ...inputStyle,
+                    cursor: "pointer",
+                  }}
+                >
+                  <option value="Audition">Self-Tape Audition (Video Submission)</option>
+                  <option value="Interview">1-on-1 Virtual Interview</option>
+                </select>
+              </div>
+            )}
+
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{ fontSize: "0.825rem", fontWeight: "600", color: "#eceaf5" }}>
-                Request Type *
+                Submit By (Deadline Date &amp; Time) *
               </label>
-              <select
-                value={auditionType}
-                onChange={(e) => setAuditionType(e.target.value)}
-                style={{
-                  ...inputStyle,
-                  cursor: "pointer",
-                }}
-              >
-                <option value="Audition">Self-Tape Audition (Video Submission)</option>
-                <option value="Interview">1-on-1 Virtual Interview</option>
-              </select>
+              <input
+                type="datetime-local"
+                required
+                value={auditionDeadline}
+                onChange={(e) => setAuditionDeadline(e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "0.825rem", fontWeight: "600", color: "#eceaf5" }}>
+                Script Sides Link (Optional)
+              </label>
+              <input
+                type="url"
+                placeholder="https://drive.google.com/... or sides link"
+                value={auditionScriptUrl}
+                onChange={(e) => setAuditionScriptUrl(e.target.value)}
+                style={inputStyle}
+              />
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -1549,8 +1822,8 @@ export default function ApplicationDetailPage() {
         >
           <PaymentCard
             type="bundle_views"
-            userName="Zee Films Casting Desk"
-            userEmail="casting@zeefilms.com"
+            userName="Organization Casting Desk"
+            userEmail="casting@vismaya.com"
             onSuccess={() => {
               setShowBuyModal(false);
               checkProfileAccess(true);

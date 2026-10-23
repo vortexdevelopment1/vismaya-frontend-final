@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Organization from "../models/organization.model.js";
 import User from "../models/user.model.js";
+import Verification from "../models/verification.model.js";
 
 const generateSlug = (name: string): string => {
     return name
@@ -85,7 +86,7 @@ export const getOrganizationProfile = async (req: Request, res: Response): Promi
     try {
         const userId = req.user?.userId;
 
-        const organization = await Organization.findOne({ userId });
+        const organization = await Organization.findOne({ userId }).select("-verificationDocuments");
 
         if (!organization) {
             return res.status(404).json({
@@ -184,6 +185,21 @@ export const uploadVerificationDocument = async (req: Request, res: Response): P
             return res.status(404).json({
                 success: false,
                 message: "Organization profile not found"
+            });
+        }
+
+        const latestVerification = await Verification.findOne({ userId, verificationType: "organization_business" })
+            .sort({ createdAt: -1, submittedAt: -1 });
+
+        const sameTypeDocs = Array.isArray(organization.verificationDocuments)
+            ? organization.verificationDocuments.filter((d: any) => d.docType === docType)
+            : [];
+        const latestDoc = sameTypeDocs.length > 0 ? sameTypeDocs[sameTypeDocs.length - 1] : null;
+
+        if ((latestVerification && latestVerification.status === "rejected") || (latestDoc && latestDoc.status === "rejected")) {
+            return res.status(403).json({
+                success: false,
+                message: "Your verification was rejected. Please contact Vismaya support."
             });
         }
 

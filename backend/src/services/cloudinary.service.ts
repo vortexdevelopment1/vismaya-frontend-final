@@ -45,10 +45,16 @@ export const uploadFileBuffer = async (
     }
 
     const mime = file.mimetype || "application/octet-stream";
+    const isPdf = mime === "application/pdf" || Boolean(file.originalname?.toLowerCase().endsWith(".pdf"));
 
     // Determine resource_type based on MIME type
+    // Note: Cloudinary supports PDFs as resource_type 'image'.
+    // Uploading PDFs as 'image' with format 'pdf' guarantees inline browser rendering,
+    // application/pdf content-type headers, and .pdf extension rather than downloading extensionless raw files.
     let resourceType = "auto";
-    if (mime.startsWith("image/")) {
+    if (isPdf) {
+        resourceType = "image";
+    } else if (mime.startsWith("image/")) {
         resourceType = "image";
     } else if (mime.startsWith("video/")) {
         resourceType = "video";
@@ -65,8 +71,9 @@ export const uploadFileBuffer = async (
         ...customOptions
     };
 
-    // Auto-optimize images
-    if (resourceType === "image") {
+    if (isPdf) {
+        defaultOptions.format = "pdf";
+    } else if (resourceType === "image") {
         defaultOptions.transformation = defaultOptions.transformation || [
             { quality: "auto:good" },
             { fetch_format: "auto" }

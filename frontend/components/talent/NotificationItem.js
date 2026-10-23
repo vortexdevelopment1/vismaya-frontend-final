@@ -12,13 +12,17 @@ import {
   ShieldCheck,
   CheckCircle2,
   Sparkles,
+  Check,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { isRealMode } from "@/lib/api/config";
+import { notificationService } from "@/lib/api/services/notificationService";
 
-export default function NotificationItem({ notification }) {
+export default function NotificationItem({ notification, onMarkRead }) {
   const router = useRouter();
   const { markNotificationRead } = useWorkflow();
 
+  const isUnread = !notification.read && !notification.isRead;
   const typeKey = (notification.type || "").toLowerCase();
 
   const getIconConfig = () => {
@@ -45,9 +49,31 @@ export default function NotificationItem({ notification }) {
 
   const targetLink = notification.link || notification.actionHref;
 
-  const handleClick = () => {
-    if (!notification.read) {
+  const handleMarkAsReadOnly = async (e) => {
+    e.stopPropagation();
+    if (!isUnread) return;
+    if (isRealMode("notifications") || isRealMode("talent")) {
+      try {
+        await notificationService.markAsRead(notification.id || notification._id);
+      } catch (err) {
+        console.warn("Failed to mark as read in real mode:", err);
+      }
+    }
+    markNotificationRead(notification.id);
+    if (onMarkRead) onMarkRead(notification.id || notification._id);
+  };
+
+  const handleClick = async () => {
+    if (isUnread) {
+      if (isRealMode("notifications") || isRealMode("talent")) {
+        try {
+          await notificationService.markAsRead(notification.id || notification._id);
+        } catch (err) {
+          console.warn("Failed to mark as read in real mode:", err);
+        }
+      }
       markNotificationRead(notification.id);
+      if (onMarkRead) onMarkRead(notification.id || notification._id);
     }
     if (targetLink) {
       router.push(targetLink);
@@ -66,10 +92,10 @@ export default function NotificationItem({ notification }) {
   return (
     <div
       onClick={handleClick}
-      className={`card-surface talent-notif-item ${notification.read ? "notif-read" : "notif-unread"}`}
+      className={`card-surface talent-notif-item ${!isUnread ? "notif-read" : "notif-unread"}`}
       style={{
-        backgroundColor: notification.read ? "#FFFFFF" : "#F3EFE6",
-        border: notification.read ? "1px solid #E8E2D4" : "1px solid #8A6B2E",
+        backgroundColor: !isUnread ? "#FFFFFF" : "#F3EFE6",
+        border: !isUnread ? "1px solid #E8E2D4" : "1px solid #8A6B2E",
         padding: "16px 20px",
         display: "flex",
         alignItems: "flex-start",

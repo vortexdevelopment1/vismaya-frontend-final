@@ -11,6 +11,8 @@ export function fromApi(project) {
   const orgIdObj = project.organizationId && typeof project.organizationId === "object" ? project.organizationId : null;
   const orgId = orgIdObj ? String(orgIdObj._id || orgIdObj.id) : (project.organizationId ? String(project.organizationId) : (project.orgId ? String(project.orgId) : ""));
 
+  const oppCount = Number(project.opportunityCount ?? project.opportunitiesCount ?? 0);
+
   return {
     id,
     _id: id,
@@ -21,8 +23,11 @@ export function fromApi(project) {
     type: project.projectType || project.type || "Feature Film",
     projectType: project.projectType || project.type || "Feature Film",
     description: project.description || "",
-    status: toFrontendStatus("project", project.status || "active"),
+    status: toFrontendStatus("project", (project.status || "active").toLowerCase()),
     rawStatus: project.status || "active",
+    opportunityCount: oppCount,
+    opportunitiesCount: oppCount,
+    shortlistCount: Number(project.shortlistCount || 0),
     createdAt: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
     updatedAt: project.updatedAt ? new Date(project.updatedAt).toISOString() : null,
   };

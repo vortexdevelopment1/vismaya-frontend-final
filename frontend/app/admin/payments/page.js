@@ -349,7 +349,7 @@ export default function AdminPaymentsPage() {
         <div className="admin-payment-detail-item">
           <span className="admin-payment-detail-label">Gateway</span>
           <span className="admin-payment-detail-val">
-            {row.paymentGateway || "Mock Gateway"}
+            {row.paymentGateway || "Razorpay"}
           </span>
         </div>
       </div>
@@ -399,9 +399,11 @@ export default function AdminPaymentsPage() {
           <span style={{ fontSize: "14px", fontWeight: 600, color: "#8A6B2E", fontVariantNumeric: "tabular-nums" }}>
             ₹{(val || 0).toLocaleString()}
           </span>
-          <div style={{ fontSize: "12px", color: "#5A584F" }}>
-            ({row.commissionPercent || 15}%)
-          </div>
+          {row.commissionPercent != null ? (
+            <div style={{ fontSize: "12px", color: "#5A584F" }}>
+              ({row.commissionPercent}%)
+            </div>
+          ) : null}
         </div>
       ),
     },
@@ -632,7 +634,7 @@ export default function AdminPaymentsPage() {
 
       <div className="admin-payment-details-grid">
         <div className="admin-payment-detail-item">
-          <span className="admin-payment-detail-label">Commission ({row.commissionPercent || 15}%)</span>
+          <span className="admin-payment-detail-label">Commission {row.commissionPercent != null ? `(${row.commissionPercent}%)` : ""}</span>
           <span className="admin-payment-detail-val" style={{ color: "#8A6B2E" }}>
             ₹{(row.commissionAmount || 0).toLocaleString()}
           </span>

@@ -24,7 +24,24 @@ export function fromApi(opp) {
   const projObj = opp.projectId && typeof opp.projectId === "object" ? opp.projectId : null;
   const projectId = projObj ? String(projObj._id || projObj.id) : (opp.projectId ? String(opp.projectId) : "");
   const projectName = projObj?.projectName || projObj?.title || opp.projectName || "";
-  const orgId = projObj?.organizationId ? String(projObj.organizationId) : (opp.orgId || "");
+  const orgId = projObj?.organizationId
+    ? (typeof projObj.organizationId === "object" && projObj.organizationId !== null ? String(projObj.organizationId._id || projObj.organizationId.id || "") : String(projObj.organizationId))
+    : (opp.orgId || "");
+
+  const project = projObj ? {
+    id: projectId,
+    _id: projectId,
+    title: projObj.projectName || projObj.title || "Not provided",
+    projectName: projObj.projectName || projObj.title || "Not provided",
+    description: projObj.description || "Not provided",
+    type: projObj.projectType || projObj.type || "Not provided",
+    projectType: projObj.projectType || projObj.type || "Not provided",
+    status: toFrontendStatus("project", (projObj.status || "active").toLowerCase()),
+    rawStatus: projObj.status || "active",
+    organizationName: projObj.organizationId && typeof projObj.organizationId === "object" ? (projObj.organizationId.organizationName || "Not provided") : "Not provided",
+    opportunitiesCount: Number(projObj.opportunityCount ?? projObj.opportunitiesCount ?? 0),
+    opportunityCount: Number(projObj.opportunityCount ?? projObj.opportunitiesCount ?? 0),
+  } : null;
 
   // Format deadline date as YYYY-MM-DD
   let deadlineFormatted = "";
@@ -33,35 +50,57 @@ export function fromApi(opp) {
     deadlineFormatted = iso ? iso.split("T")[0] : String(opp.deadline);
   }
 
-  // Normalize Roles: support both backend single role and target roles[]
+  // Normalize Roles: support both real roles[] array and legacy single flat role
   let roles = [];
   if (Array.isArray(opp.roles) && opp.roles.length > 0) {
-    roles = opp.roles.map((r, idx) => ({
-      id: r._id ? String(r._id) : (r.id || `r-${id}-${idx + 1}`),
-      roleName: r.roleName || r.name || r.role || opp.role || "Lead Role",
-      count: Number(r.count || r.positionsCount) || 1,
-      ageRange: r.ageRange || (r.ageMin && r.ageMax ? `${r.ageMin} - ${r.ageMax} years` : "18 - 45 years"),
-      gender: r.gender || "Any",
-      description: r.description || opp.summary || "",
-      skills: Array.isArray(r.skills) ? r.skills : (opp.eligibility?.skills || []),
-      language: Array.isArray(r.languages) 
-        ? r.languages.join(", ") 
-        : (r.language || (Array.isArray(opp.eligibility?.languages) ? opp.eligibility.languages.join(", ") : "Hindi, English")),
-    }));
+    roles = opp.roles.map((r, idx) => {
+      const skills = Array.isArray(r.skills)
+        ? r.skills
+        : (typeof r.skills === "string" ? r.skills.split(",").map((s) => s.trim()).filter(Boolean) : []);
+      const languages = Array.isArray(r.languages)
+        ? r.languages
+        : (typeof r.language === "string" ? r.language.split(",").map((s) => s.trim()).filter(Boolean) : (Array.isArray(r.language) ? r.language : []));
+      const languageStr = languages.length > 0 ? languages.join(", ") : (typeof r.language === "string" && r.language.trim() ? r.language.trim() : "Not provided");
+      
+      const ageRange = r.ageRange || (r.ageMin && r.ageMax ? `${r.ageMin} - ${r.ageMax} years` : (r.ageMin ? `${r.ageMin}+ years` : (r.ageMax ? `Up to ${r.ageMax} years` : "Not provided")));
+
+      return {
+        id: r._id ? String(r._id) : (r.id || `r-${id}-${idx + 1}`),
+        roleName: r.roleName || r.name || r.role || "Not provided",
+        count: Number(r.count || r.positionsCount) || 1,
+        positionsCount: Number(r.positionsCount || r.count) || 1,
+        ageRange,
+        ageMin: r.ageMin !== undefined && r.ageMin !== null ? Number(r.ageMin) : undefined,
+        ageMax: r.ageMax !== undefined && r.ageMax !== null ? Number(r.ageMax) : undefined,
+        gender: r.gender || "Not provided",
+        description: r.description || "Not provided",
+        skills,
+        languages,
+        language: languageStr,
+      };
+    });
   } else {
-    // Expand single backend role to roles[] array expected by UI
+    // Old opportunities in DB that only have one role: show as they are from flat fields without inventing data
+    const skills = Array.isArray(opp.eligibility?.skills) ? opp.eligibility.skills : [];
+    const languages = Array.isArray(opp.eligibility?.languages) ? opp.eligibility.languages : [];
+    const languageStr = languages.length > 0 ? languages.join(", ") : (opp.eligibility?.languages || "Not provided");
+    const ageRange = opp.eligibility?.ageRange || 
+      (opp.eligibility?.ageMin && opp.eligibility?.ageMax ? `${opp.eligibility.ageMin} - ${opp.eligibility.ageMax} years` : 
+      (opp.eligibility?.ageMin ? `${opp.eligibility.ageMin}+ years` : 
+      (opp.eligibility?.ageMax ? `Up to ${opp.eligibility.ageMax} years` : "Not provided")));
+
     roles = [
       {
         id: `r-${id}-1`,
-        roleName: opp.role || "Lead Role",
+        roleName: opp.role || "Not provided",
         count: Number(opp.positionsCount) || 1,
-        ageRange: opp.eligibility?.ageRange || (opp.eligibility?.ageMin && opp.eligibility?.ageMax ? `${opp.eligibility.ageMin} - ${opp.eligibility.ageMax} years` : "18 - 45 years"),
-        gender: opp.eligibility?.gender || "Any",
-        description: opp.summary || "",
-        skills: Array.isArray(opp.eligibility?.skills) ? opp.eligibility.skills : [],
-        language: Array.isArray(opp.eligibility?.languages)
-          ? opp.eligibility.languages.join(", ")
-          : (opp.eligibility?.languages || "Hindi, English"),
+        positionsCount: Number(opp.positionsCount) || 1,
+        ageRange,
+        gender: opp.eligibility?.gender || "Not provided",
+        description: opp.summary || "Not provided",
+        skills,
+        languages,
+        language: languageStr,
       },
     ];
   }
@@ -84,27 +123,28 @@ export function fromApi(opp) {
     _id: id,
     projectId,
     projectName,
+    project,
     orgId,
-    title: opp.title || "Untitled Opportunity",
+    title: opp.title || "Not provided",
     summary: opp.summary || "",
-    role: opp.role || primaryRole.roleName || "",
+    role: opp.role || primaryRole.roleName || "Not provided",
     opportunityType: opp.opportunityType || projObj?.projectType || "Casting Call",
     roles,
     positionsCount: Number(opp.positionsCount) || roles.reduce((acc, r) => acc + (Number(r.count) || 1), 0),
-    location: opp.location || "Mumbai",
-    remuneration: opp.remuneration || "₹50,000 / day",
-    deadline: deadlineFormatted,
+    location: opp.location || "Not provided",
+    remuneration: opp.remuneration || "Not provided",
+    deadline: deadlineFormatted || "Not provided",
     eligibility: {
       professions: Array.isArray(opp.eligibility?.professions) ? opp.eligibility.professions : [primaryRole.roleName].filter(Boolean),
       minExperienceYears: Number(opp.eligibility?.minExperienceYears) || 0,
       languages: Array.isArray(opp.eligibility?.languages) 
         ? opp.eligibility.languages 
-        : (primaryRole.language ? primaryRole.language.split(",").map((s) => s.trim()) : ["Hindi", "English"]),
+        : (primaryRole.languages && primaryRole.languages.length > 0 ? primaryRole.languages : []),
       workingCities: Array.isArray(opp.eligibility?.workingCities) ? opp.eligibility.workingCities : [opp.location].filter(Boolean),
       skills: Array.isArray(opp.eligibility?.skills) ? opp.eligibility.skills : (primaryRole.skills || []),
-      ageMin: Number(opp.eligibility?.ageMin) || 18,
-      ageMax: Number(opp.eligibility?.ageMax) || 60,
-      gender: opp.eligibility?.gender || primaryRole.gender || "Any",
+      ageMin: Number(opp.eligibility?.ageMin) || undefined,
+      ageMax: Number(opp.eligibility?.ageMax) || undefined,
+      gender: opp.eligibility?.gender || primaryRole.gender || "Not provided",
     },
     customQuestions,
     fullBrief: opp.summary || opp.fullBrief || "",
@@ -112,9 +152,29 @@ export function fromApi(opp) {
     rawStatus: opp.status || "pending",
     adminNote: opp.correctionNotes || opp.adminNote || "",
     rejectionReason: opp.rejectionReason || "",
+    rejectedAt: safeIsoDate(opp.rejectedAt, null),
+    rejectedBy: opp.rejectedBy ? (typeof opp.rejectedBy === "object" ? (opp.rejectedBy.name || opp.rejectedBy.email || opp.rejectedBy._id) : String(opp.rejectedBy)) : null,
+    rejectionHistory: Array.isArray(opp.rejectionHistory)
+      ? opp.rejectionHistory.map((h) => ({
+          reason: h?.reason || "",
+          rejectedAt: safeIsoDate(h?.rejectedAt, null),
+          rejectedBy: h?.rejectedBy ? (typeof h.rejectedBy === "object" ? (h.rejectedBy.name || h.rejectedBy.email || h.rejectedBy._id) : String(h.rejectedBy)) : null,
+        }))
+      : [],
+    resubmissionCount: Number(opp.resubmissionCount || 0),
+    resubmittedAt: safeIsoDate(opp.resubmittedAt, null),
+    submittedAt: safeIsoDate(opp.submittedAt, null),
     correctionNotes: opp.correctionNotes || "",
     cancellationReason: opp.cancellationReason || "",
     cancellationRequestedAt: safeIsoDate(opp.cancellationRequestedAt, null),
+    cancellationRequest: opp.cancellationRequest ? {
+      decision: opp.cancellationRequest.decision || "",
+      declineReason: opp.cancellationRequest.declineReason || opp.cancellationRequest.adminNote || "",
+      adminNote: opp.cancellationRequest.adminNote || "",
+      reason: opp.cancellationRequest.reason || opp.cancellationReason || "",
+      requestedAt: safeIsoDate(opp.cancellationRequest.requestedAt || opp.cancellationRequestedAt, null),
+      decidedAt: safeIsoDate(opp.cancellationRequest.decidedAt, null),
+    } : null,
     createdAt: safeIsoDate(opp.createdAt, new Date().toISOString()),
     publishedAt: safeIsoDate(opp.publishedAt, null),
     applicantStats: opp.applicantStats || null,
@@ -135,29 +195,40 @@ export function toApi(opp) {
     ...(opp.projectName && !opp.projectId ? { projectName: opp.projectName.trim() } : {}),
     title: opp.title?.trim(),
     summary: opp.summary?.trim() || opp.fullBrief?.trim() || opp.description?.trim() || "",
-    role: firstRole?.roleName?.trim() || opp.role?.trim() || opp.title?.trim(),
-    location: opp.location?.trim() || "Mumbai",
-    remuneration: opp.remuneration?.trim(),
+    role: firstRole?.roleName?.trim() || opp.role?.trim() || opp.title?.trim() || "",
+    location: opp.location?.trim() || "",
+    remuneration: opp.remuneration?.trim() || "",
     positionsCount: totalPositions,
 
     // Provide both flat model and target roles[] contract
-    roles: roles.map((r) => ({
-      roleName: r.roleName || r.name,
-      count: Number(r.count) || 1,
-      ageRange: r.ageRange,
-      gender: r.gender,
-      description: r.description,
-      skills: Array.isArray(r.skills) ? r.skills : [],
-      languages: typeof r.language === "string" ? r.language.split(",").map((s) => s.trim()) : (r.languages || []),
-    })),
+    roles: roles.map((r) => {
+      const skills = Array.isArray(r.skills)
+        ? r.skills
+        : (typeof r.skills === "string" ? r.skills.split(",").map((s) => s.trim()).filter(Boolean) : []);
+      const languages = Array.isArray(r.languages)
+        ? r.languages
+        : (typeof r.language === "string" ? r.language.split(",").map((s) => s.trim()).filter(Boolean) : (Array.isArray(r.language) ? r.language : []));
+      return {
+        roleName: (r.roleName || r.name || r.role || "").trim(),
+        count: Number(r.count || r.positionsCount) || 1,
+        positionsCount: Number(r.positionsCount || r.count) || 1,
+        ageRange: r.ageRange?.trim() || undefined,
+        ageMin: r.ageMin !== undefined && r.ageMin !== null ? Number(r.ageMin) : undefined,
+        ageMax: r.ageMax !== undefined && r.ageMax !== null ? Number(r.ageMax) : undefined,
+        gender: r.gender?.trim() || undefined,
+        description: r.description?.trim() || undefined,
+        skills,
+        languages,
+      };
+    }),
     eligibility: {
       professions: Array.isArray(opp.eligibility?.professions) 
         ? opp.eligibility.professions 
-        : (firstRole ? [firstRole.roleName] : []),
+        : (firstRole?.roleName ? [firstRole.roleName] : []),
       minExperienceYears: Number(opp.eligibility?.minExperienceYears) || 0,
       languages: Array.isArray(opp.eligibility?.languages)
         ? opp.eligibility.languages
-        : (firstRole?.language ? firstRole.language.split(",").map((s) => s.trim()) : ["Hindi", "English"]),
+        : (firstRole?.languages || (typeof firstRole?.language === "string" ? firstRole.language.split(",").map((s) => s.trim()).filter(Boolean) : [])),
       workingCities: Array.isArray(opp.eligibility?.workingCities) 
         ? opp.eligibility.workingCities 
         : (opp.location ? [opp.location] : []),
