@@ -585,6 +585,7 @@ export const searchTalentDirectory = async (req: Request, res: Response): Promis
         const filter: any = {
             userId: { $in: activeUserIds },
             isSearchable: true,
+            isInformational: { $ne: true },
             profileCompletionPercentage: { $gte: Math.max(parseInt(String(minCompletion), 10) || 60, 60) }
         };
 
@@ -761,6 +762,7 @@ export const getFeaturedTalent = async (req: Request, res: Response): Promise<an
         const viewerRole = req.user?.role || "guest";
         const featuredProfiles = await TalentProfile.find({
             isSearchable: true,
+            isInformational: { $ne: true },
             $or: [{ isFeatured: true }, { isTrending: true }]
         })
             .sort({ isFeatured: -1, isTrending: -1, profileCompletionPercentage: -1 })

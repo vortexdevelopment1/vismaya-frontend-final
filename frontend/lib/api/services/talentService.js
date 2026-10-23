@@ -429,5 +429,33 @@ export const talentService = {
       data: docs.map(mapAudition),
     };
   },
+
+  /**
+   * Fetch authenticated talent's submitted success stories
+   */
+  async getMySuccessStories() {
+    if (!isRealMode("talent")) {
+      return { success: true, data: [], stories: [] };
+    }
+    const res = await apiClient.get("/api/success-stories/mine");
+    const items = res?.stories || res?.data || [];
+    const arr = Array.isArray(items) ? items : [];
+    return {
+      success: true,
+      data: arr,
+      stories: arr,
+    };
+  },
+
+  /**
+   * Submit talent success story
+   */
+  async submitSuccessStory(payload) {
+    if (!isRealMode("talent")) {
+      return { success: true, message: "Success story submitted (Mock)" };
+    }
+    const res = await apiClient.post("/api/success-stories", payload);
+    return res?.data || res;
+  },
 };
 

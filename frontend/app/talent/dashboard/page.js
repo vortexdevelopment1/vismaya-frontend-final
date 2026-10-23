@@ -29,9 +29,10 @@ import { paymentService } from "@/lib/api/services/paymentService";
 import { PRICING_CONFIG } from "@/lib/config/pricing";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
-import { useAuth } from "@/context/AuthContext";
 import { isRealMode } from "@/lib/api/config";
 import { talentService } from "@/lib/api/services/talentService";
+import SuccessStorySection from "@/components/talent/SuccessStorySection";
+import { useAuth } from "@/context/AuthContext";
 
 export default function TalentDashboardPage() {
   const { user } = useAuth();
@@ -601,6 +602,9 @@ export default function TalentDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Success Story Submission & Review Status Card */}
+      <SuccessStorySection profile={profile} user={user} />
 
       {/* Main Split: Recent Applications (Left) & Recent Notifications (Right) */}
       <div className="talent-split-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "24px" }}>

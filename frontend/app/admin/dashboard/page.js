@@ -52,20 +52,14 @@ export default function AdminDashboardPage() {
 
   // Counts
   const verifiedTalentsCount = useMemo(() => {
-    if (isReal) {
-      if (metrics?.users?.verifiedTalent !== undefined) return String(metrics.users.verifiedTalent);
-      return String(talents.filter((t) => t.status === "Approved" || t.status === "approved" || t.isProfileApproved).length);
-    }
-    return "1,284";
+    if (isReal && metrics?.users?.verifiedTalent !== undefined) return String(metrics.users.verifiedTalent);
+    return String(talents.filter((t) => t.status === "Approved" || t.status === "approved" || t.isProfileApproved).length);
   }, [isReal, metrics, talents]);
 
   const activeOrganizationsCount = useMemo(() => {
-    if (isReal) {
-      if (metrics?.users?.activeOrganization !== undefined) return String(metrics.users.activeOrganization);
-      return String(recruiters.filter((r) => r.status === "Verified" || r.status === "active").length);
-    }
-    return (recruiters.length || organizations.length || 0).toString();
-  }, [isReal, metrics, recruiters, organizations]);
+    if (isReal && metrics?.users?.activeOrganization !== undefined) return String(metrics.users.activeOrganization);
+    return String(recruiters.filter((r) => r.status === "Verified" || r.status === "active").length);
+  }, [isReal, metrics, recruiters]);
 
   const liveOpportunitiesCount = useMemo(() => {
     if (isReal) return metrics?.opportunities?.published ?? 0;
@@ -78,19 +72,13 @@ export default function AdminDashboardPage() {
   }, [isReal, metrics, applications]);
 
   const pendingTalentsCount = useMemo(() => {
-    if (isReal) return metrics?.users?.pending ?? talents.filter((t) => t.status === "Pending" || t.status === "pending" || !t.isProfileApproved).length;
-    const realCount = talents.filter((t) => t.status === "Pending" || t.status === "pending" || !t.isProfileApproved).length;
-    return realCount || 3;
+    if (isReal && metrics?.users?.pending !== undefined) return metrics.users.pending;
+    return talents.filter((t) => t.status === "Pending" || t.status === "pending" || !t.isProfileApproved).length;
   }, [isReal, metrics, talents]);
 
   const pendingOrganizationsCount = useMemo(() => {
-    if (isReal) return recruiters.filter((r) => r.status === "Pending" || r.status === "pending").length;
-    const realCount = (
-      recruiters.filter((r) => r.status === "Pending" || r.status === "pending").length ||
-      organizations.filter((o) => o.status === "Pending" || o.status === "pending").length
-    );
-    return realCount || 1;
-  }, [isReal, recruiters, organizations]);
+    return recruiters.filter((r) => r.status === "Pending" || r.status === "pending").length;
+  }, [recruiters]);
 
   const pendingOpportunitiesCount = useMemo(() => {
     if (isReal) return metrics?.opportunities?.pendingReview ?? 0;

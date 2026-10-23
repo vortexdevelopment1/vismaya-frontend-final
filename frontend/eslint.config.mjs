@@ -5,9 +5,10 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   {
     rules: {
+      "no-undef": "error",
       "react-hooks/purity": "off",
       "react-hooks/set-state-in-effect": "off",
-      "react-hooks/rules-of-hooks": "off",
+      "react-hooks/rules-of-hooks": "error",
       "react-hooks/static-components": "off",
       "react-hooks/exhaustive-deps": "warn",
       "react/no-unescaped-entities": "off",

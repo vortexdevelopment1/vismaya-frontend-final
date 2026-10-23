@@ -22,7 +22,8 @@ import {
     reorderMedia,
     disputeMedia,
     nominateFeatured,
-    featureMediaItem
+    featureMediaItem,
+    reportMediaItem
  } from "../controllers/media.controller.js";
 
 import {  authorizeRoles  } from "../middleware/role.middleware.js";
@@ -112,6 +113,12 @@ router.delete(
     "/:mediaId",
     authenticateUser,
     deleteMediaItem
+);
+
+router.post(
+    "/:mediaId/report",
+    authenticateUser,
+    reportMediaItem
 );
 
 export default router;

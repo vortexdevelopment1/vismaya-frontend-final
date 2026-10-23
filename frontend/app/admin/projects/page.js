@@ -429,6 +429,7 @@ export default function AdminProjectsPage() {
             {filteredProjects.map((proj) => {
               const org = getOrgForProject(proj.orgId);
               const opps = getOpportunitiesForProject(proj.id);
+              const oppCount = proj.opportunityCount ?? proj.opportunitiesCount ?? opps.length;
 
               return (
                 <div key={proj.id} className="admin-project-mobile-card">

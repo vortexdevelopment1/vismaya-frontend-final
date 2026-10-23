@@ -23,6 +23,7 @@ export const calculateTrendingTalent = async (): Promise<{ updatedCount: number 
         // Fetch active, searchable talent profiles that are not excluded from trending
         const profiles = await TalentProfile.find({
             isSearchable: true,
+            isInformational: { $ne: true },
             trendingExcluded: { $ne: true }
         });
 

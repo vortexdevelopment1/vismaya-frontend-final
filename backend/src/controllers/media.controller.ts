@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import crypto from "crypto";
 import MediaItem from "../models/mediaItem.model.js";
 import TalentProfile from "../models/talentProfile.model.js";
+import Report from "../models/report.model.js";
 import { calculateProfileCompletion } from "../utils/profileCompletion.util.js";
 import { isSafeUrl } from "../utils/sanitize.util.js";
 import { uploadFileBuffer, generateSignedUploadParams } from "../services/cloudinary.service.js";
@@ -672,3 +673,96 @@ export const featureMediaItem = async (req: Request, res: Response): Promise<any
         });
     }
 };
+
+/**
+ * Report a media item (logged-in user, non-owner)
+ * POST /api/media/:mediaId/report
+ */
+export const reportMediaItem = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const userId = req.user?.userId;
+        const { mediaId } = req.params;
+        const { reason, details } = req.body;
+
+        if (!reason) {
+            return res.status(400).json({
+                success: false,
+                message: "Reporting reason is required"
+            });
+        }
+
+        const mediaItem = await MediaItem.findById(String(mediaId));
+        if (!mediaItem) {
+            return res.status(404).json({
+                success: false,
+                message: "Media item not found"
+            });
+        }
+
+        if (mediaItem.owner.toString() === userId?.toString()) {
+            return res.status(400).json({
+                success: false,
+                message: "You cannot report your own media item"
+            });
+        }
+
+        // Map reason string to schema enum
+        const rLower = String(reason).toLowerCase().trim();
+        let mappedReason: any = "other";
+        if (rLower.includes("inappropriate") || rLower.includes("offensive")) {
+            mappedReason = "offensive_content";
+        } else if (rLower.includes("copyright")) {
+            mappedReason = "copyright_infringement";
+        } else if (rLower.includes("fake") || rLower.includes("misleading")) {
+            mappedReason = "misleading_information";
+        } else if (rLower.includes("spam") || rLower.includes("fraud") || rLower.includes("scam")) {
+            mappedReason = "scam_or_fraud";
+        } else if (rLower.includes("impersonat")) {
+            mappedReason = "impersonation";
+        } else if (["misleading_information", "scam_or_fraud", "offensive_content", "copyright_infringement", "impersonation", "other"].includes(rLower)) {
+            mappedReason = rLower;
+        }
+
+        const existingReport = await Report.findOne({
+            reporterId: userId,
+            targetId: String(mediaId),
+            targetType: "MediaItem"
+        });
+
+        if (existingReport) {
+            return res.status(409).json({
+                success: false,
+                message: "You have already submitted a report for this content item."
+            });
+        }
+
+        const report = await Report.create({
+            reporterId: userId,
+            targetId: String(mediaId),
+            targetType: "MediaItem",
+            reason: mappedReason,
+            details: details ? String(details).trim() : "",
+            status: "pending"
+        });
+
+        res.status(201).json({
+            success: true,
+            message: "Thanks, Vismaya will review this.",
+            report,
+            reportId: report._id
+        });
+    } catch (error: any) {
+        if (error.code === 11000) {
+            return res.status(409).json({
+                success: false,
+                message: "You have already submitted a report for this content item."
+            });
+        }
+        console.error("Report media item error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Something went wrong while reporting media item"
+        });
+    }
+};
+

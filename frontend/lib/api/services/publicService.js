@@ -166,24 +166,29 @@ export const publicService = {
   /**
    * Fetch platform success stories
    */
-  async getSuccessStories() {
+  async getSuccessStories(params = {}) {
     if (!isRealMode("public")) {
       return {
         success: true,
         data: [],
+        stories: [],
+        total: 0,
       };
     }
 
-    const res = await apiClient.get("/api/success-stories");
+    const res = await apiClient.get("/api/success-stories", { params });
+    const items = res?.stories || res?.data || [];
+    const arr = Array.isArray(items) ? items : [];
     return {
       success: true,
-      data: res?.data || res?.stories || res || [],
+      data: arr,
+      stories: arr,
+      total: res?.total ?? arr.length,
     };
   },
 
   /**
    * Submit talent success story
-   * @param {Object} payload { story, role, projectName }
    */
   async submitSuccessStory(payload) {
     if (!isRealMode("public")) {

@@ -56,6 +56,9 @@ export function AdminProvider({ children }) {
   // 16. Cancellation Requests State
   const [cancellationRequests, setCancellationRequests] = useState(() => isRealMode("admin") ? [] : (adminService.getInitialState().cancellationRequests || []));
 
+  // 17. Moderation Reports State (Spec §40)
+  const [reports, setReports] = useState(() => isRealMode("admin") ? [] : []);
+
   // Fetch real data on mount when in real API mode
   useEffect(() => {
     if (!isRealMode("admin")) return;
@@ -63,7 +66,7 @@ export function AdminProvider({ children }) {
     let mounted = true;
     async function loadAdminData() {
       try {
-        const [talentsRes, orgsRes, mediaRes, notifRes, oppsRes, cancRes, audRes, payRes, metricsRes, verRes, logsRes] = await Promise.allSettled([
+        const [talentsRes, orgsRes, mediaRes, notifRes, oppsRes, cancRes, audRes, payRes, metricsRes, verRes, logsRes, reportsRes] = await Promise.allSettled([
           adminService.getTalentDirectory(),
           adminService.getOrganizationDirectory(),
           adminService.getPendingMedia(),
@@ -75,6 +78,7 @@ export function AdminProvider({ children }) {
           adminService.getDashboardMetrics(),
           adminService.getPendingVerifications(),
           adminService.getAuditLogs(),
+          adminService.getReports({ status: "open" }),
         ]);
 
         if (mounted) {
@@ -104,6 +108,9 @@ export function AdminProvider({ children }) {
           }
           if (cancRes.status === "fulfilled" && Array.isArray(cancRes.value?.data)) {
             setCancellationRequests(cancRes.value.data);
+          }
+          if (reportsRes.status === "fulfilled" && Array.isArray(reportsRes.value?.data)) {
+            setReports(reportsRes.value.data);
           }
         }
       } catch (err) {
@@ -1190,7 +1197,13 @@ export function AdminProvider({ children }) {
   // ----------------------------------------------------
   const pendingTalentsCount = talents.filter((t) => t.status === "Pending").length;
   const pendingRecruitersCount = recruiters.filter((r) => r.status === "Pending").length;
-  const pendingMediaCount = mediaQueue.filter((m) => m.status === "Pending").length;
+  const pendingMediaReviewCount = mediaQueue.filter((m) => {
+    const st = (m.status || m.moderationState || "").toLowerCase();
+    return st === "pending" || st === "admin_review" || st === "uploaded";
+  }).length;
+  const openReportsCount = reports.filter((r) => (r.status || "").toLowerCase() === "open").length;
+  const pendingMediaCount = pendingMediaReviewCount + openReportsCount;
+
   const pendingRequirementsCount = requirementRequests.filter(
     (r) => r.status === "New" || r.status === "Needs Clarification" || r.status === "Ready to Publish"
   ).length;
@@ -1210,6 +1223,19 @@ export function AdminProvider({ children }) {
         }
       } catch (err) {
         console.warn("Failed to refresh verifications in context:", err);
+      }
+    }
+  };
+
+  const refreshReports = async () => {
+    if (isRealMode("admin")) {
+      try {
+        const res = await adminService.getReports({ status: "open" });
+        if (Array.isArray(res?.data)) {
+          setReports(res.data);
+        }
+      } catch (err) {
+        console.warn("Failed to refresh reports in context:", err);
       }
     }
   };
@@ -1302,6 +1328,10 @@ export function AdminProvider({ children }) {
         verifications,
         setVerifications,
         refreshVerifications,
+        reports,
+        setReports,
+        refreshReports,
+        openReportsCount,
         totalPendingApprovals,
         unreadNotificationsCount,
       }}

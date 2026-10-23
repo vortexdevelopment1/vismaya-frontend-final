@@ -161,6 +161,8 @@ export interface ITalentProfile extends Document {
     isSearchable: boolean;
     isInformational?: boolean;
     isClaimable?: boolean;
+    isArchived?: boolean;
+    archivedAt?: Date;
     claimedBy?: Types.ObjectId;
     claimedAt?: Date;
     createdAt: Date;
@@ -499,6 +501,15 @@ const talentProfileSchema = new Schema<ITalentProfile>(
         isClaimable: {
             type: Boolean,
             default: false
+        },
+
+        isArchived: {
+            type: Boolean,
+            default: false
+        },
+
+        archivedAt: {
+            type: Date
         },
 
         claimedBy: {

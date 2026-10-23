@@ -20,11 +20,13 @@ import {
   FileText,
   Video,
   Info,
+  Flag,
 } from "lucide-react";
 import PageHeader from "@/components/shared/PageHeader";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Skeleton from "@/components/shared/Skeleton";
 import OpportunityApplyModal from "@/components/talent/OpportunityApplyModal";
+import ReportModal from "@/components/shared/ReportModal";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { useAuth } from "@/context/AuthContext";
@@ -40,6 +42,7 @@ export default function TalentOpportunityDetailsPage() {
   const { profile } = useTalent();
 
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const opportunity = getOpportunity(opportunityId);
   const project = opportunity ? getProject(opportunity.projectId) : null;
@@ -359,6 +362,27 @@ export default function TalentOpportunityDetailsPage() {
               <Send size={16} />
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setShowReportModal(true)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "10px 16px",
+              borderRadius: "4px",
+              border: "1px solid var(--border-color)",
+              background: "transparent",
+              color: "var(--text-secondary)",
+              fontSize: "0.85rem",
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
+          >
+            <Flag size={14} />
+            <span>Report listing</span>
+          </button>
         </div>
       </div>
 
@@ -769,6 +793,17 @@ export default function TalentOpportunityDetailsPage() {
           onClose={() => setShowApplyModal(false)}
           opportunity={opportunity}
           project={project}
+        />
+      )}
+
+      {/* Report Listing Modal */}
+      {showReportModal && (
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          targetType="Opportunity"
+          targetId={opportunityId}
+          targetTitle={opportunity?.title || "Opportunity"}
         />
       )}
     </div>

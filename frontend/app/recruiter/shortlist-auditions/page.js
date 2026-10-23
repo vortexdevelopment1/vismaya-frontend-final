@@ -22,14 +22,15 @@ import {
   Award,
   FileText,
   File,
-  Check,
   AlertCircle,
   Loader2,
+  Flag,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { recruiterService } from "@/lib/api/services/recruiterService";
 import { isRealMode } from "@/lib/api/config";
 import Modal from "@/components/shared/Modal";
+import ReportModal from "@/components/shared/ReportModal";
 import VideoPlayer from "@/components/shared/VideoPlayer";
 import { AUDITION_CONFIG } from "@/lib/config/audition";
 import { toFrontendStatus } from "@/lib/api/statusMapper";
@@ -75,6 +76,7 @@ export default function ShortlistAuditionsPage() {
   const [reviewPortfolioModalApp, setReviewPortfolioModalApp] = useState(null);
   const [portfolioData, setPortfolioData] = useState(null);
   const [loadingPortfolio, setLoadingPortfolio] = useState(false);
+  const [reportingMedia, setReportingMedia] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -438,7 +440,7 @@ export default function ShortlistAuditionsPage() {
       const pA = STAGE_PRIORITY.indexOf(getAppStage(a));
       const pB = STAGE_PRIORITY.indexOf(getAppStage(b));
       if (pA !== pB) return pA - pB;
-      const dateA = new Date(app.appliedDate || app.appliedAt || app.createdAt || 0).getTime();
+      const dateA = new Date(a.appliedDate || a.appliedAt || a.createdAt || 0).getTime();
       const dateB = new Date(b.appliedDate || b.appliedAt || b.createdAt || 0).getTime();
       return dateB - dateA;
     });
@@ -1893,11 +1895,35 @@ export default function ShortlistAuditionsPage() {
                 {portfolioData?.portfolio?.media?.photos && portfolioData.portfolio.media.photos.length > 0 && (
                   <div style={{ marginBottom: "14px" }}>
                     <div style={{ fontSize: "12px", fontWeight: 600, color: "#5A584F", marginBottom: "6px" }}>Photos / Headshots:</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "8px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: "8px" }}>
                       {portfolioData.portfolio.media.photos.map((p, idx) => (
-                        <a key={idx} href={p.url} target="_blank" rel="noopener noreferrer" style={{ display: "block", borderRadius: "8px", overflow: "hidden", border: "1px solid #E8E2D4", aspectRatio: "3/4" }}>
-                          <img src={p.url} alt={p.title || "Photo"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        </a>
+                        <div key={idx} style={{ position: "relative" }}>
+                          <a href={p.url} target="_blank" rel="noopener noreferrer" style={{ display: "block", borderRadius: "8px", overflow: "hidden", border: "1px solid #E8E2D4", aspectRatio: "3/4" }}>
+                            <img src={p.url} alt={p.title || "Photo"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => setReportingMedia({ id: p._id || p.id, title: p.title || `Photo ${idx + 1}` })}
+                            title="Report this photo"
+                            style={{
+                              position: "absolute",
+                              bottom: "4px",
+                              right: "4px",
+                              background: "rgba(43, 45, 42, 0.75)",
+                              color: "#FFFFFF",
+                              border: "none",
+                              borderRadius: "4px",
+                              padding: "2px 5px",
+                              fontSize: "10px",
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "2px",
+                            }}
+                          >
+                            <Flag size={10} /> Report
+                          </button>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -1911,7 +1937,25 @@ export default function ShortlistAuditionsPage() {
                       {portfolioData.portfolio.media.videos.map((v, idx) => (
                         <div key={idx} style={{ padding: "8px 12px", background: "#FAF9F7", borderRadius: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#2B2D2A" }}>{v.title || "Showreel Clip"}</span>
-                          <a href={v.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#8A6B2E", fontWeight: 600, textDecoration: "none" }}>Watch Video →</a>
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <a href={v.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "#8A6B2E", fontWeight: 600, textDecoration: "none" }}>Watch Video →</a>
+                            <button
+                              type="button"
+                              onClick={() => setReportingMedia({ id: v._id || v.id, title: v.title || `Video ${idx + 1}` })}
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                color: "#8A877E",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "3px",
+                                fontSize: "11px",
+                              }}
+                            >
+                              <Flag size={11} /> Report
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -2006,6 +2050,16 @@ export default function ShortlistAuditionsPage() {
             </div>
           )}
         </Modal>
+      )}
+
+      {reportingMedia && (
+        <ReportModal
+          isOpen={true}
+          onClose={() => setReportingMedia(null)}
+          targetType="MediaItem"
+          targetId={reportingMedia.id}
+          targetTitle={reportingMedia.title}
+        />
       )}
 
       {/* Embedded CSS */}

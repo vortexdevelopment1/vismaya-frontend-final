@@ -21,7 +21,7 @@ export const getPublicStats = async (req: Request, res: Response, next: NextFunc
             projectCount,
             successStoryCount
         ] = await Promise.all([
-            TalentProfile.countDocuments({ status: "active" }),
+            TalentProfile.countDocuments({ status: "active", isInformational: { $ne: true } }),
             Opportunity.countDocuments({ status: "Published" } as any),
             Organization.countDocuments({}),
             Project.countDocuments({}),

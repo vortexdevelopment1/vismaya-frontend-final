@@ -144,17 +144,19 @@ export default function ApplicationDetailPage() {
     return () => { isMounted = false; };
   }, [applicationId, oppParam]);
 
-  const application = realApplication || useMemo(
+  const mockApplication = useMemo(
     () => applications.find((a) => a.id === applicationId),
     [applications, applicationId]
   );
+  const application = realApplication || mockApplication;
 
   const effectiveOppId = oppParam || application?.opportunityId;
 
-  const opportunity = realOpportunity || useMemo(
+  const mockOpportunity = useMemo(
     () => (effectiveOppId ? opportunities.find((o) => o.id === effectiveOppId) : null),
     [opportunities, effectiveOppId]
   );
+  const opportunity = realOpportunity || mockOpportunity;
 
   const project = useMemo(
     () => (opportunity ? (projects.find((p) => p.id === opportunity.projectId) || { title: opportunity.projectName || "Project" }) : null),

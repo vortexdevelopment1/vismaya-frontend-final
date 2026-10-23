@@ -7,6 +7,7 @@ import StatsStudioStrip from "@/components/home/StatsStudioStrip";
 import TalentRosterSection from "@/components/home/TalentRosterSection";
 import TalentRosterSectionOld from "@/components/home/TalentRosterSection.old";
 import WorkflowSection from "@/components/home/WorkflowSection";
+import SuccessStoriesSection from "@/components/home/SuccessStoriesSection";
 
 // Switch between new light roster trial and backup old design
 const USE_NEW_ROSTER = true;
@@ -34,6 +35,9 @@ export default function Home() {
 
       {/* 5. How Vismaya Works (4-Step Workflow) */}
       <WorkflowSection />
+
+      {/* 5.5. Success Stories Carousel */}
+      <SuccessStoriesSection />
 
       {/* 6. Final Call to Action Banner */}
       <CtaBannerSection />

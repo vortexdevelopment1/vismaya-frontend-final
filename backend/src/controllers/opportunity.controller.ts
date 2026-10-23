@@ -765,31 +765,38 @@ export const reportOpportunity = async (req: Request, res: Response): Promise<an
             });
         }
 
-        const validReasons = [
-            "misleading_information",
-            "scam_or_fraud",
-            "offensive_content",
-            "copyright_infringement",
-            "impersonation",
-            "other"
-        ];
+        // Map reason string to schema enum
+        const rLower = String(reason).toLowerCase().trim();
+        let mappedReason: any = "other";
+        if (rLower.includes("inappropriate") || rLower.includes("offensive")) {
+            mappedReason = "offensive_content";
+        } else if (rLower.includes("copyright")) {
+            mappedReason = "copyright_infringement";
+        } else if (rLower.includes("fake") || rLower.includes("misleading")) {
+            mappedReason = "misleading_information";
+        } else if (rLower.includes("spam") || rLower.includes("fraud") || rLower.includes("scam")) {
+            mappedReason = "scam_or_fraud";
+        } else if (rLower.includes("impersonat")) {
+            mappedReason = "impersonation";
+        } else if (["misleading_information", "scam_or_fraud", "offensive_content", "copyright_infringement", "impersonation", "other"].includes(rLower)) {
+            mappedReason = rLower;
+        }
 
-        if (!validReasons.includes(reason)) {
-            return res.status(400).json({
+        const opportunity = await Opportunity.findById(String(opportunityId)).populate("projectId");
+        if (!opportunity) {
+            return res.status(404).json({
                 success: false,
-                message: "Invalid reporting reason"
+                message: "Opportunity not found"
             });
         }
 
-        const hasApplied = await Application.findOne({
-            opportunityId: String(opportunityId),
-            talentId
-        });
-
-        if (!hasApplied) {
-            return res.status(403).json({
+        const project: any = opportunity.projectId;
+        const ownerOrgId = project?.organizationId?._id || project?.organizationId;
+        const userOrgId = (req.user as any)?.organizationId;
+        if (ownerOrgId && (ownerOrgId.toString() === talentId?.toString() || (userOrgId && ownerOrgId.toString() === userOrgId.toString()))) {
+            return res.status(400).json({
                 success: false,
-                message: "Only verified applicants may report an opportunity."
+                message: "You cannot report your own opportunity."
             });
         }
 
@@ -810,14 +817,14 @@ export const reportOpportunity = async (req: Request, res: Response): Promise<an
             reporterId: talentId,
             targetId: String(opportunityId),
             targetType: "Opportunity",
-            reason,
+            reason: mappedReason,
             details: details ? String(details).trim() : "",
             status: "pending"
         });
 
         res.status(201).json({
             success: true,
-            message: "Report submitted successfully. Vismaya moderation team will review this listing.",
+            message: "Thanks, Vismaya will review this.",
             report,
             reportId: report._id
         });

@@ -612,6 +612,7 @@ export const getPendingTalentProfiles = async (req: Request, res: Response): Pro
         const skip = (pageNum - 1) * limitNum;
 
         const filter = {
+            isInformational: { $ne: true },
             $or: [
                 { status: "pending" },
                 { isProfileApproved: false },
@@ -1125,7 +1126,7 @@ export const getAllUsers = async (req: Request, res: Response): Promise<any> => 
 export const getTalentDirectory = async (req: Request, res: Response): Promise<any> => {
     try {
         const { profession, city, status, search, page = 1, limit = 50 } = req.query;
-        const filter: any = {};
+        const filter: any = { isInformational: { $ne: true } };
         if (profession) filter.primaryProfession = new RegExp(escapeRegex(profession), "i");
         if (city) filter.currentCity = new RegExp(escapeRegex(city), "i");
 
@@ -2081,13 +2082,13 @@ export const completeOpportunity = async (req: Request, res: Response): Promise<
 
 export const getReports = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { status, targetType, page = 1, limit = 20 } = req.query;
+        const { status, targetType, page = 1, limit = 50 } = req.query;
         const filter: any = {};
-        if (status) filter.status = status;
+        if (status && status !== "ALL") filter.status = status;
         if (targetType) filter.targetType = targetType;
 
         const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
-        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 20, 1), 100);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 50, 1), 100);
         const skip = (pageNum - 1) * limitNum;
 
         const [reports, total] = await Promise.all([
@@ -2095,17 +2096,61 @@ export const getReports = async (req: Request, res: Response): Promise<any> => {
                 .populate("reporterId", "name email role")
                 .sort({ createdAt: -1 })
                 .skip(skip)
-                .limit(limitNum),
+                .limit(limitNum)
+                .lean(),
             Report.countDocuments(filter)
         ]);
 
+        const mediaTargetIds = reports.filter(r => r.targetType === "MediaItem").map(r => r.targetId);
+        const oppTargetIds = reports.filter(r => r.targetType === "Opportunity").map(r => r.targetId);
+
+        const [mediaItems, oppItems] = await Promise.all([
+            mediaTargetIds.length > 0 ? MediaItem.find({ _id: { $in: mediaTargetIds } }).populate("owner", "name email").lean() : [],
+            oppTargetIds.length > 0 ? Opportunity.find({ _id: { $in: oppTargetIds } }).select("title role location status").lean() : []
+        ]);
+
+        const mediaMap = new Map((mediaItems as any[]).map(m => [m._id.toString(), m]));
+        const oppMap = new Map((oppItems as any[]).map(o => [o._id.toString(), o]));
+
+        const enrichedReports = reports.map((r: any) => {
+            let targetPreview = null;
+            if (r.targetType === "MediaItem") {
+                const m = mediaMap.get(r.targetId.toString());
+                if (m) {
+                    targetPreview = {
+                        url: m.url,
+                        thumbnailUrl: m.thumbnailUrl || m.url,
+                        type: m.mediaType || m.category || "Media",
+                        title: m.title || "Media Item",
+                        moderationState: m.moderationState,
+                        ownerName: (m.owner as any)?.name || "Talent"
+                    };
+                }
+            } else if (r.targetType === "Opportunity") {
+                const o = oppMap.get(r.targetId.toString());
+                if (o) {
+                    targetPreview = {
+                        title: o.title,
+                        role: o.role,
+                        location: o.location,
+                        status: o.status
+                    };
+                }
+            }
+            return {
+                ...r,
+                targetPreview
+            };
+        });
+
         res.status(200).json({
             success: true,
-            count: reports.length,
+            count: enrichedReports.length,
             total,
             page: pageNum,
             totalPages: Math.ceil(total / limitNum),
-            reports
+            reports: enrichedReports,
+            data: enrichedReports
         });
     } catch (error: any) {
         console.error("Get reports error:", error);
@@ -2115,8 +2160,8 @@ export const getReports = async (req: Request, res: Response): Promise<any> => {
 
 export const reviewReport = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { reportId } = req.params;
-        const { action, resolutionNotes } = req.body; // "resolve" or "dismiss"
+        const reportId = req.params.reportId || req.params.id;
+        const { action, resolutionNotes, mediaAction } = req.body; // "resolve" or "dismiss", mediaAction: "remove" | "restrict"
 
         if (!["resolve", "dismiss", "resolved", "dismissed"].includes(action)) {
             return res.status(400).json({ success: false, message: "Action must be resolve or dismiss" });
@@ -2133,6 +2178,53 @@ export const reviewReport = async (req: Request, res: Response): Promise<any> =>
         report.resolvedAt = new Date();
         report.resolvedBy = req.user?.userId as any;
         await report.save();
+
+        // If resolving a media report with an action (remove or restrict)
+        if (statusMapped === "resolved" && report.targetType === "MediaItem") {
+            const effectiveMediaAction = mediaAction || (action === "resolve" ? "remove" : null);
+            if (effectiveMediaAction === "remove" || effectiveMediaAction === "restrict") {
+                const media = await MediaItem.findById(report.targetId);
+                if (media) {
+                    media.moderationState = effectiveMediaAction === "remove" ? "removed" : "restricted";
+                    media.moderatedAt = new Date();
+                    media.moderatedBy = req.user?.userId as any;
+                    media.moderationNotes = resolutionNotes || `Report ${report._id} resolved with ${effectiveMediaAction}`;
+                    await media.save();
+
+                    // Notify content owner if removed
+                    if (effectiveMediaAction === "remove") {
+                        try {
+                            await Notification.create({
+                                recipient: media.owner,
+                                type: "account_status",
+                                title: "Content Removed Following User Report",
+                                message: `Your media item "${media.title || 'Portfolio Item'}" was removed following a community report review. Reason: ${resolutionNotes || "Violated community guidelines"}`,
+                                referenceId: media._id,
+                                referenceType: "System",
+                                isRead: false
+                            });
+                        } catch (notifErr: any) {
+                            console.warn("Owner notification warning:", notifErr?.message);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Notify reporter that report was reviewed (no outcome details beyond "reviewed")
+        try {
+            await Notification.create({
+                recipient: report.reporterId,
+                type: "system",
+                title: "Report Reviewed",
+                message: "Thank you for helping keep Vismaya safe. Your report has been reviewed by our moderation team.",
+                referenceId: report._id,
+                referenceType: "System",
+                isRead: false
+            });
+        } catch (notifErr: any) {
+            console.warn("Reporter notification warning:", notifErr?.message);
+        }
 
         await logAdminAction({
             adminId: (req.user?.userId as any),
@@ -2791,28 +2883,141 @@ export const reviewVerification = async (req: Request, res: Response): Promise<a
 
 // --- CONTENT MODERATION ---
 
+/**
+ * Reverted to return ONLY items needing review per Spec
+ * GET /api/admin/media/pending
+ */
 export const getPendingMedia = async (req: Request, res: Response): Promise<any> => {
     try {
         const media = await MediaItem.find({
             moderationState: { $in: ["admin_review", "uploaded", "restricted"] }
         })
             .populate("owner", "name email role")
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
 
-        res.status(200).json({ success: true, count: media.length, media });
+        // Enrich with owner stageName / vismayaId
+        const ownerIds = media.map((m: any) => m.owner?._id || m.owner).filter(Boolean);
+        const profiles = await TalentProfile.find({ userId: { $in: ownerIds } })
+            .select("userId stageName vismayaId")
+            .lean();
+        const profileMap = new Map(profiles.map(p => [p.userId.toString(), p]));
+
+        const enrichedMedia = media.map((m: any) => {
+            const ownerIdStr = (m.owner?._id || m.owner || "").toString();
+            const prof = profileMap.get(ownerIdStr);
+            const ownerName = prof?.stageName || m.owner?.name || "Talent";
+            return {
+                ...m,
+                ownerName,
+                ownerVismayaId: prof?.vismayaId || "",
+                talentName: ownerName
+            };
+        });
+
+        res.status(200).json({ success: true, count: enrichedMedia.length, media: enrichedMedia, data: enrichedMedia });
     } catch (error: any) {
         console.error("Get pending media error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while fetching media moderation queue" });
     }
 };
 
+/**
+ * Serves all moderation tabs (Pending, Approved, Rejected, All) with accurate per-state counts
+ * GET /api/admin/media
+ */
+export const getAdminMedia = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { state, page = 1, limit = 50 } = req.query;
+        const pageNum = Math.max(parseInt(String(page), 10) || 1, 1);
+        const limitNum = Math.min(Math.max(parseInt(String(limit), 10) || 50, 1), 100);
+        const skip = (pageNum - 1) * limitNum;
+
+        let filter: any = {};
+        const stateStr = String(state || "").toLowerCase().trim();
+
+        if (stateStr === "live" || stateStr === "approved") {
+            filter.moderationState = "live";
+        } else if (stateStr === "pending" || stateStr === "admin_review") {
+            filter.moderationState = { $in: ["admin_review", "uploaded", "restricted"] };
+        } else if (stateStr === "restricted") {
+            filter.moderationState = "restricted";
+        } else if (stateStr === "removed" || stateStr === "rejected") {
+            filter.moderationState = { $in: ["removed", "restricted"] };
+        } else if (stateStr === "all" || !stateStr) {
+            filter = {};
+        }
+
+        const [items, totalFiltered, pendingCount, approvedCount, rejectedCount, allCount] = await Promise.all([
+            MediaItem.find(filter)
+                .populate("owner", "name email role")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitNum)
+                .lean(),
+            MediaItem.countDocuments(filter),
+            MediaItem.countDocuments({ moderationState: { $in: ["admin_review", "uploaded", "restricted"] } }),
+            MediaItem.countDocuments({ moderationState: "live" }),
+            MediaItem.countDocuments({ moderationState: { $in: ["removed", "restricted"] } }),
+            MediaItem.countDocuments({})
+        ]);
+
+        const ownerIds = items.map((m: any) => m.owner?._id || m.owner).filter(Boolean);
+        const profiles = await TalentProfile.find({ userId: { $in: ownerIds } })
+            .select("userId stageName vismayaId currentCity")
+            .lean();
+        const profileMap = new Map(profiles.map(p => [p.userId.toString(), p]));
+
+        const enrichedItems = items.map((m: any) => {
+            const ownerIdStr = (m.owner?._id || m.owner || "").toString();
+            const prof = profileMap.get(ownerIdStr);
+            const ownerName = prof?.stageName || m.owner?.name || "Talent";
+            return {
+                ...m,
+                ownerName,
+                ownerVismayaId: prof?.vismayaId || "",
+                talentName: ownerName
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            media: enrichedItems,
+            data: enrichedItems,
+            count: enrichedItems.length,
+            total: totalFiltered,
+            page: pageNum,
+            totalPages: Math.ceil(totalFiltered / limitNum),
+            counts: {
+                pending: pendingCount,
+                approved: approvedCount,
+                rejected: rejectedCount,
+                all: allCount
+            },
+            pendingCount,
+            approvedCount,
+            rejectedCount,
+            allCount
+        });
+    } catch (error: any) {
+        console.error("Get admin media error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while fetching admin media" });
+    }
+};
+
 export const reviewMediaItem = async (req: Request, res: Response): Promise<any> => {
     try {
         const { mediaId } = req.params;
-        const { action, moderationReason } = req.body; // "approve", "reject", "restrict"
+        const rawAction = String(req.body.action || "").toLowerCase().trim();
+        const action = rawAction === "remove" ? "reject" : rawAction; // Normalize "remove" -> "reject"
+        const moderationReason = String(req.body.moderationReason ?? req.body.notes ?? req.body.reason ?? "").trim();
 
         if (!["approve", "reject", "restrict"].includes(action)) {
-            return res.status(400).json({ success: false, message: "Action must be approve, reject, or restrict" });
+            return res.status(400).json({ success: false, message: "Action must be approve, reject, remove, or restrict" });
+        }
+
+        if (action === "reject" && !moderationReason) {
+            return res.status(400).json({ success: false, message: "Moderation reason is required to reject or remove content" });
         }
 
         const media = await MediaItem.findById(mediaId);
@@ -2820,13 +3025,13 @@ export const reviewMediaItem = async (req: Request, res: Response): Promise<any>
             return res.status(404).json({ success: false, message: "Media item not found" });
         }
 
-        const stateMap = {
+        const stateMap: any = {
             approve: "live",
             reject: "removed",
             restrict: "restricted"
         };
 
-        media.moderationState = (stateMap as any)[action];
+        media.moderationState = stateMap[action];
         media.moderatedAt = new Date();
         media.moderatedBy = req.user?.userId as any;
         media.moderationNotes = moderationReason || "";
@@ -2840,7 +3045,24 @@ export const reviewMediaItem = async (req: Request, res: Response): Promise<any>
             details: `Media ${action}d. Reason: ${moderationReason || "None"}`
         });
 
-        res.status(200).json({ success: true, message: `Media item ${action}d successfully`, media });
+        // Notify content owner if removed
+        if (action === "reject") {
+            try {
+                await Notification.create({
+                    recipient: media.owner,
+                    type: "account_status",
+                    title: "Content Removed by Moderation",
+                    message: `Your media item "${media.title || 'Portfolio Item'}" was removed during moderation. Reason: ${moderationReason}`,
+                    referenceId: media._id,
+                    referenceType: "System",
+                    isRead: false
+                });
+            } catch (notifErr: any) {
+                console.warn("[reviewMediaItem] Notification warning:", notifErr?.message);
+            }
+        }
+
+        res.status(200).json({ success: true, message: `Media item ${action === "reject" ? "removed" : action + "d"} successfully`, media });
     } catch (error: any) {
         console.error("Review media error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while reviewing media" });
@@ -2853,7 +3075,15 @@ export const reviewMediaItem = async (req: Request, res: Response): Promise<any>
 export const setMediaFeaturedWork = async (req: Request, res: Response): Promise<any> => {
     try {
         const { mediaId } = req.params;
-        const { isFeatured } = req.body;
+        const rawFeatured = req.body.isFeatured !== undefined ? req.body.isFeatured : req.body.isFeaturedWork;
+
+        if (rawFeatured === undefined || typeof rawFeatured !== "boolean") {
+            return res.status(400).json({
+                success: false,
+                message: "isFeatured (boolean) is required"
+            });
+        }
+        const isFeatured = Boolean(rawFeatured);
 
         const media = await MediaItem.findById(mediaId);
         if (!media) {
@@ -3080,7 +3310,15 @@ export const createInformationalProfile = async (req: Request, res: Response): P
 
 export const getInformationalProfiles = async (req: Request, res: Response): Promise<any> => {
     try {
-        const profiles = await TalentProfile.find({ isInformational: true })
+        const { status = "active", archived } = req.query;
+        const filter: any = { isInformational: true };
+        if (status === "archived" || String(archived) === "true") {
+            filter.isArchived = true;
+        } else {
+            filter.isArchived = { $ne: true };
+        }
+
+        const profiles = await TalentProfile.find(filter)
             .sort({ createdAt: -1 })
             .lean();
 
@@ -3092,6 +3330,167 @@ export const getInformationalProfiles = async (req: Request, res: Response): Pro
     } catch (error: any) {
         console.error("Get informational profiles error:", error);
         res.status(500).json({ success: false, message: "Something went wrong while fetching informational profiles" });
+    }
+};
+
+export const updateInformationalProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const {
+            firstName,
+            lastName,
+            stageName,
+            primaryProfession,
+            category,
+            headline,
+            bio,
+            currentCity,
+            currentState,
+            country,
+            notableCredits,
+            profilePhoto,
+            isClaimable,
+            isArchived
+        } = req.body;
+
+        const profile = await TalentProfile.findOne({ _id: id, isInformational: true });
+        if (!profile) {
+            return res.status(404).json({ success: false, message: "Informational profile not found" });
+        }
+
+        if (stageName !== undefined) profile.stageName = String(stageName).trim();
+        if (firstName !== undefined) profile.firstName = String(firstName).trim();
+        if (lastName !== undefined) profile.lastName = String(lastName).trim();
+
+        if (!profile.stageName && !profile.firstName) {
+            return res.status(400).json({ success: false, message: "First name or stage name is required" });
+        }
+
+        if (primaryProfession !== undefined) {
+            const trimmedProfession = String(primaryProfession).trim();
+            if (!trimmedProfession) {
+                return res.status(400).json({ success: false, message: "Primary profession is required" });
+            }
+            profile.primaryProfession = trimmedProfession;
+        }
+
+        if (category !== undefined) {
+            const allowedCategories = ["open_talent", "film_and_tv", "voice_over", "dance_and_performing_arts", "crew_and_production"];
+            if (allowedCategories.includes(category)) {
+                profile.category = category as any;
+            } else if (category === "screen" || category === "film" || category === "television") {
+                profile.category = "film_and_tv";
+            } else if (category === "voice" || category === "voiceover") {
+                profile.category = "voice_over";
+            } else if (category === "dance" || category === "theatre") {
+                profile.category = "dance_and_performing_arts";
+            } else if (category === "crew" || category === "technical") {
+                profile.category = "crew_and_production";
+            }
+        }
+
+        if (headline !== undefined) profile.headline = String(headline).trim();
+        if (bio !== undefined) profile.bio = String(bio).trim();
+        if (currentCity !== undefined) profile.currentCity = String(currentCity).trim();
+        if (currentState !== undefined) profile.currentState = String(currentState).trim();
+        if (country !== undefined) profile.country = String(country).trim();
+        if (profilePhoto !== undefined) profile.profilePhoto = String(profilePhoto).trim();
+        if (isClaimable !== undefined) profile.isClaimable = Boolean(isClaimable);
+        if (isArchived !== undefined) {
+            profile.isArchived = Boolean(isArchived);
+            profile.archivedAt = profile.isArchived ? new Date() : undefined;
+        }
+
+        if (Array.isArray(notableCredits)) {
+            profile.credits = notableCredits.map((c: any) => ({
+                projectTitle: c.projectTitle || c.title || "Project",
+                roleOrDesignation: c.role || c.roleOrDesignation || profile.primaryProfession,
+                year: c.year || new Date().getFullYear(),
+                projectStatus: "released",
+                isVerifiedCredit: true
+            })) as any;
+        }
+
+        await profile.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "UPDATE_INFORMATIONAL_PROFILE",
+            targetType: "TalentProfile",
+            targetId: profile._id,
+            details: `Updated informational profile for '${profile.stageName || profile.firstName}' (${profile.vismayaId})`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Informational profile updated successfully",
+            profile
+        });
+    } catch (error: any) {
+        console.error("Update informational profile error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while updating informational profile" });
+    }
+};
+
+export const archiveInformationalProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const profile = await TalentProfile.findOne({ _id: id, isInformational: true });
+        if (!profile) {
+            return res.status(404).json({ success: false, message: "Informational profile not found" });
+        }
+
+        profile.isArchived = true;
+        profile.archivedAt = new Date();
+        await profile.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "ARCHIVE_INFORMATIONAL_PROFILE",
+            targetType: "TalentProfile",
+            targetId: profile._id,
+            details: `Archived informational profile '${profile.stageName || profile.firstName}' (${profile.vismayaId})`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Informational profile archived successfully",
+            profile
+        });
+    } catch (error: any) {
+        console.error("Archive informational profile error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while archiving informational profile" });
+    }
+};
+
+export const restoreInformationalProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const profile = await TalentProfile.findOne({ _id: id, isInformational: true });
+        if (!profile) {
+            return res.status(404).json({ success: false, message: "Informational profile not found" });
+        }
+
+        profile.isArchived = false;
+        profile.archivedAt = undefined;
+        await profile.save();
+
+        await logAdminAction({
+            adminId: (req.user?.userId as any),
+            action: "RESTORE_INFORMATIONAL_PROFILE",
+            targetType: "TalentProfile",
+            targetId: profile._id,
+            details: `Restored informational profile '${profile.stageName || profile.firstName}' (${profile.vismayaId})`
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Informational profile restored successfully",
+            profile
+        });
+    } catch (error: any) {
+        console.error("Restore informational profile error:", error);
+        res.status(500).json({ success: false, message: "Something went wrong while restoring informational profile" });
     }
 };
 
@@ -3382,6 +3781,9 @@ export const deleteCoupon = async (req: Request, res: Response): Promise<any> =>
 
 export const getDashboardMetrics = async (req: Request, res: Response): Promise<any> => {
     try {
+        const infoProfiles = await TalentProfile.find({ isInformational: true }).select("userId");
+        const infoUserIds = infoProfiles.map(p => p.userId).filter(Boolean);
+
         const [
             totalUsers,
             talentCount,
@@ -3399,7 +3801,8 @@ export const getDashboardMetrics = async (req: Request, res: Response): Promise<
             selfTapesToForward,
             totalRevenueAgg,
             pendingVerifications,
-            pendingMediaCount,
+            itemsNeedingReviewCount,
+            openReportsCount,
             categoryAgg,
             cityAgg,
             underReviewApps,
@@ -3408,11 +3811,11 @@ export const getDashboardMetrics = async (req: Request, res: Response): Promise<
             appMonthlyAgg,
             userMonthlyAgg
         ] = await Promise.all([
-            User.countDocuments(),
-            User.countDocuments({ role: "talent" } as any),
+            User.countDocuments({ _id: { $nin: infoUserIds } }),
+            User.countDocuments({ role: "talent", _id: { $nin: infoUserIds } } as any),
             User.countDocuments({ role: "organization" } as any),
-            User.countDocuments({ status: "pending" }),
-            User.countDocuments({ role: "talent", status: { $in: ["active", "approved", "verified"] } } as any),
+            User.countDocuments({ status: "pending", _id: { $nin: infoUserIds } }),
+            User.countDocuments({ role: "talent", status: { $in: ["active", "approved", "verified"] }, _id: { $nin: infoUserIds } } as any),
             User.countDocuments({ role: "organization", status: { $in: ["active", "approved", "verified"] } } as any),
             Opportunity.countDocuments(),
             Opportunity.countDocuments({ status: "published" } as any),
@@ -3432,14 +3835,15 @@ export const getDashboardMetrics = async (req: Request, res: Response): Promise<
                 { $group: { _id: null, total: { $sum: "$amount" } } }
             ]),
             Verification.countDocuments({ status: "pending" }),
-            MediaItem.countDocuments({ status: "pending" }),
+            MediaItem.countDocuments({ moderationState: { $in: ["admin_review", "uploaded", "restricted"] } }),
+            Report.countDocuments({ status: { $in: ["pending", "investigating"] } }),
             Project.aggregate([
                 { $match: { projectType: { $exists: true, $ne: "" } } },
                 { $group: { _id: "$projectType", count: { $sum: 1 } } },
                 { $sort: { count: -1 } }
             ]),
             TalentProfile.aggregate([
-                { $match: { currentCity: { $exists: true, $ne: "" } } },
+                { $match: { currentCity: { $exists: true, $ne: "" }, isInformational: { $ne: true } } },
                 { $group: { _id: "$currentCity", count: { $sum: 1 } } },
                 { $sort: { count: -1 } },
                 { $limit: 5 }
@@ -3473,6 +3877,7 @@ export const getDashboardMetrics = async (req: Request, res: Response): Promise<
         ]);
 
         const totalRevenue = totalRevenueAgg[0]?.total || 0;
+        const pendingMediaCount = (itemsNeedingReviewCount || 0) + (openReportsCount || 0);
 
         // Formulate 6-month timeline labels
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -3632,7 +4037,7 @@ export const globalAdminSearch = async (req: Request, res: Response): Promise<an
             Organization.find({ $or: [{ organizationName: regex }, { organizationType: regex }] }).populate("userId", "name email status").limit(10).lean(),
             Opportunity.find({ $or: [{ title: regex }, { role: regex }, { summary: regex }] }).populate("projectId", "projectName").limit(10).lean(),
             PaymentTransaction.find({ $or: [{ orderId: regex }, { paymentId: regex }, { invoiceNumber: regex }] }).populate("userId", "name email").limit(10).lean(),
-            TalentProfile.find({ $or: [{ vismayaId: regex }, { stageName: regex }, { firstName: regex }, { lastName: regex }, { primaryProfession: regex }] }).select("vismayaId stageName firstName lastName primaryProfession").limit(10).lean()
+            TalentProfile.find({ isInformational: { $ne: true }, $or: [{ vismayaId: regex }, { stageName: regex }, { firstName: regex }, { lastName: regex }, { primaryProfession: regex }] }).select("vismayaId stageName firstName lastName primaryProfession").limit(10).lean()
         ]);
 
         res.status(200).json({
