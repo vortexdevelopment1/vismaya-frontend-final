@@ -884,10 +884,15 @@ export default function AdminApplicationsOverviewPage() {
           }
           .admin-app-search-wrap {
             width: 100% !important;
-            height: 40px !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            max-height: 44px !important;
+            box-sizing: border-box !important;
+            flex: none !important;
           }
           .admin-app-search-input {
             font-size: 16px !important;
+            height: 100% !important;
           }
           .admin-app-selects-row {
             width: 100% !important;

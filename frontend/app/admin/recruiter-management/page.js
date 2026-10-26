@@ -24,11 +24,8 @@ import ReasonModal from "@/components/admin/ReasonModal";
 
 const getInitials = (name) => {
   if (!name) return "O";
-  const parts = String(name).trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return parts[0] ? parts[0].slice(0, 2).toUpperCase() : "O";
+  const trimmed = String(name).trim();
+  return trimmed ? trimmed.charAt(0).toUpperCase() : "O";
 };
 
 export default function RecruiterManagementPage() {

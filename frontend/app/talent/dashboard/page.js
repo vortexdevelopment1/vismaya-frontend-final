@@ -953,9 +953,10 @@ export default function TalentDashboardPage() {
           }
           .profile-details-col {
             width: 100% !important;
-            gap: 10px !important;
+            gap: 12px !important;
           }
           .profile-details-header {
+            display: flex !important;
             flex-direction: column !important;
             align-items: stretch !important;
             gap: 10px !important;
@@ -967,10 +968,12 @@ export default function TalentDashboardPage() {
           .profile-section-desc {
             font-size: 12.5px !important;
             line-height: 1.45 !important;
+            margin-top: 4px !important;
           }
           .talent-edit-profile-btn {
             width: 100% !important;
             height: 40px !important;
+            margin-top: 2px !important;
             font-size: 13px !important;
             justify-content: center !important;
             box-sizing: border-box !important;
@@ -992,9 +995,15 @@ export default function TalentDashboardPage() {
           .profile-item-label {
             font-size: 12.5px !important;
             min-width: 0 !important;
+            white-space: normal !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
-            white-space: nowrap !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
+            line-height: 1.35 !important;
           }
 
           /* Split Grid (Recent Applications & Alerts) */

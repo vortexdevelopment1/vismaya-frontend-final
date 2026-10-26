@@ -2414,12 +2414,24 @@ export default function ProfileBuilder({ onFinish }) {
             justify-content: center !important;
           }
           .profile-stepper-nav {
-            grid-template-columns: repeat(2, 1fr) !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             gap: 8px !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
           }
           :global(.stepper-pill) {
-            min-height: 44px !important;
+            min-height: 48px !important;
             padding: 8px 10px !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+          }
+          :global(.stepper-pill span) {
+            white-space: normal !important;
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
           }
           .responsive-two-col {
             grid-template-columns: 1fr !important;

@@ -1745,12 +1745,22 @@ export default function AdminAuditionsManagementPage() {
             gap: 10px !important;
             box-shadow: 0 4px 14px rgba(43, 45, 42, 0.05) !important;
           }
+          .aud-search-wrap {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            max-height: 44px !important;
+            flex: none !important;
+          }
           .aud-search-input {
-            height: 40px !important;
-            min-height: 40px !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            max-height: 44px !important;
             font-size: 16px !important;
             padding-left: 40px !important;
             border-radius: 10px !important;
+            box-sizing: border-box !important;
           }
           .aud-org-filter-wrap {
             flex-direction: column !important;
