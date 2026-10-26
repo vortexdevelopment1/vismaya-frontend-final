@@ -271,6 +271,7 @@ export const createOrUpdateProfile = async (req: Request, res: Response): Promis
         if (fullProfile) {
             fullProfile.stepsCompletion = completionDetails.stepsCompletion;
             fullProfile.missingSections = completionDetails.missingSections;
+            fullProfile.breakdown = completionDetails.breakdown;
             fullProfile.profileCompletionPercentage = completion;
         }
 
@@ -282,6 +283,7 @@ export const createOrUpdateProfile = async (req: Request, res: Response): Promis
             profile: fullProfile || profile,
             stepsCompletion: completionDetails.stepsCompletion,
             missingSections: completionDetails.missingSections,
+            breakdown: completionDetails.breakdown,
             profileCompletionPercentage: completion,
             pendingChanges: profile.pendingChanges
         });
@@ -372,6 +374,7 @@ export const getMyProfile = async (req: Request, res: Response): Promise<any> =>
         profile.profileCompletionPercentage = completionDetails.percentage;
         fullProfile.stepsCompletion = completionDetails.stepsCompletion;
         fullProfile.missingSections = completionDetails.missingSections;
+        fullProfile.breakdown = completionDetails.breakdown;
         fullProfile.profileCompletionPercentage = completionDetails.percentage;
 
         res.status(200).json({
@@ -379,6 +382,7 @@ export const getMyProfile = async (req: Request, res: Response): Promise<any> =>
             profile: fullProfile,
             stepsCompletion: completionDetails.stepsCompletion,
             missingSections: completionDetails.missingSections,
+            breakdown: completionDetails.breakdown,
             profileCompletionPercentage: completionDetails.percentage,
             verificationBadges: badgesMap[effectiveUserId.toString()] || { identityVerified: Boolean(profile.isVerified), professionalVerified: false }
         });

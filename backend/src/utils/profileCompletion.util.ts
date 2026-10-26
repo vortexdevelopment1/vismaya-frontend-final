@@ -1,16 +1,30 @@
 /**
  * Weighted Profile Completion Calculator for Vismaya Creative Studios
- * Enforces profession-aware weighted score calculation and exposes missing sections
+ * Enforces profession-aware weighted score calculation and exposes missing sections.
+ * 
+ * Master Spec Rules:
+ * - Minimum 60% weighted profile completion is mandatory for searchability and opportunity applications.
+ * - Single source of truth backend function returning { percentage, breakdown, missingSections }.
+ * - Returns breakdown array: [{ section, weight, earned, missing: string[] }].
+ * - Weights sum to 100 for every profession.
  */
 
-import { getProfessionFormConfig } from "../config/taxonomy.js";
+import { getProfessionCompletionConfig, ProfileCompletionItemRule } from "../config/profileCompletionWeights.js";
 import { calculateAge } from "../validators/talentProfile.validator.js";
 
-export interface ProfileCompletionBreakdown {
-    step1: number; // Professional details (max 40)
-    step2: number; // Portfolio & media (max 25)
-    step3: number; // Work experience (max 15)
-    step4: number; // Personal info & physical (max 20)
+export interface ProfileCompletionSectionBreakdown {
+    section: string;
+    weight: number;
+    earned: number;
+    missing: string[];
+}
+
+// Backward-compatible step breakdown for legacy consumers
+export interface ProfileCompletionLegacyBreakdown {
+    step1: number;
+    step2: number;
+    step3: number;
+    step4: number;
     basicInfo?: number;
     profession?: number;
     skillsAndLanguages?: number;
@@ -29,22 +43,41 @@ export interface StepsCompletionStatus {
 
 export interface ProfileCompletionDetails {
     percentage: number;
+    breakdown: ProfileCompletionSectionBreakdown[];
     missingSections: string[];
-    breakdown: ProfileCompletionBreakdown;
+    // Legacy support fields for existing frontend/test compatibility
+    legacyBreakdown?: ProfileCompletionLegacyBreakdown;
     stepsCompletion: StepsCompletionStatus;
 }
 
+/**
+ * Calculates weighted and profession-aware profile completion details.
+ * This is the SINGLE SOURCE OF TRUTH across the application.
+ */
 export const calculateProfileCompletionDetails = (profile?: any): ProfileCompletionDetails => {
+    const primaryProfession = profile?.primaryProfession || 
+                              profile?.profession || 
+                              profile?.primaryDesignation || 
+                              profile?.personal?.primaryRole || 
+                              "";
+    const category = profile?.category || "open_talent";
+
+    const config = getProfessionCompletionConfig(primaryProfession, category);
+
+    // If profile is empty/missing
     if (!profile) {
+        const breakdown: ProfileCompletionSectionBreakdown[] = config.items.map(item => ({
+            section: item.label,
+            weight: item.weight,
+            earned: 0,
+            missing: [item.description]
+        }));
+        const missingSections = breakdown.flatMap(b => b.missing);
         return {
             percentage: 0,
-            missingSections: [
-                "Step 1: Professional Details (Category, Profession, Bio >= 200 chars, City, Skills, Languages)",
-                "Step 2: Portfolio & Media (Profile Photo, at least 1 Media item)",
-                "Step 3: Work Experience (Add at least 1 Credit)",
-                "Step 4: Personal Info (Height, Physical specs, Guardian details if minor)"
-            ],
-            breakdown: {
+            breakdown,
+            missingSections,
+            legacyBreakdown: {
                 step1: 0,
                 step2: 0,
                 step3: 0,
@@ -66,19 +99,26 @@ export const calculateProfileCompletionDetails = (profile?: any): ProfileComplet
         };
     }
 
-    let score = 0;
-    const missingSections: string[] = [];
-
-    // Determine minor status on server
-    const age = profile.dob ? calculateAge(profile.dob) : null;
+    // Determine minor status
+    const dob = profile.dob || profile.personal?.dob;
+    const age = dob ? calculateAge(dob) : null;
     const isMinor = age !== null ? age < 18 : Boolean(profile.isUnder18);
 
-    // ==========================================
-    // STEP 1: Professional Details (40 points max)
-    // ==========================================
-    let step1Points = 0;
+    // Extraction helper with fallbacks across flat and nested schemas
+    const firstName = (profile.firstName || profile.personal?.firstName || profile.name || "").trim();
+    const lastName = (profile.lastName || profile.personal?.lastName || "").trim();
+    const stageName = (profile.stageName || profile.personal?.stageName || "").trim();
+    const hasBasicIdentity = Boolean((firstName || stageName) && dob);
 
-    // 1a. Category & Profession (10 pts)
+    const profilePhoto = (profile.profilePhoto || profile.avatar || profile.personal?.avatar || profile.personal?.profilePhoto || "").trim();
+    const hasProfilePhoto = Boolean(profilePhoto);
+
+    const bioText = (profile.bio || profile.personal?.bio || "").trim();
+    const hasValidBio = bioText.length >= 200 && bioText.length <= 1000;
+
+    const currentCity = (profile.currentCity || profile.city || profile.personal?.city || "").trim();
+    const hasLocation = Boolean(currentCity);
+
     const hasCategory = Boolean(profile.category);
     const hasProfession = Boolean(
         profile.primaryProfession || 
@@ -86,136 +126,323 @@ export const calculateProfileCompletionDetails = (profile?: any): ProfileComplet
         profile.profession ||
         (profile.personal && profile.personal.primaryRole)
     );
-    if (hasCategory && hasProfession) {
-        step1Points += 10;
-    } else {
-        missingSections.push("Step 1: Set Talent Category and Primary Profession.");
-    }
+    const hasProfessionalIdentity = hasCategory && hasProfession;
 
-    // 1b. Bio & Headline (10 pts)
-    const bioText = (profile.bio || (profile.personal && profile.personal.bio) || "").trim();
-    const hasValidBio = bioText.length >= 200 && bioText.length <= 1000;
-    if (hasValidBio) {
-        step1Points += 10;
-    } else {
-        missingSections.push("Step 1: Add a Professional Bio between 200 and 1000 characters.");
-    }
-
-    // 1c. Location & Availability (10 pts)
-    const currentCity = (profile.currentCity || profile.city || (profile.personal && profile.personal.city) || "").trim();
-    if (currentCity) {
-        step1Points += 10;
-    } else {
-        missingSections.push("Step 1: Provide your current City.");
-    }
-
-    // 1d. Skills & Languages (10 pts)
     const hasSkills = Array.isArray(profile.skills) && profile.skills.length > 0;
     const hasLanguages = Array.isArray(profile.languages) && profile.languages.length > 0;
-    if (hasSkills && hasLanguages) {
-        step1Points += 10;
-    } else {
-        missingSections.push("Step 1: Add at least 1 Performing Skill and 1 Language.");
-    }
+    const hasSkillsAndLanguages = hasSkills && hasLanguages;
 
-    const step1Complete = (hasCategory && hasProfession) && hasValidBio && Boolean(currentCity) && (hasSkills && hasLanguages);
-    score += step1Points;
+    const creditCount = Array.isArray(profile.credits) 
+        ? profile.credits.length 
+        : (Array.isArray(profile.experience) ? profile.experience.length : 0);
+    const hasCredits = creditCount > 0;
 
-    // ==========================================
-    // STEP 2: Portfolio & Media (25 points max)
-    // ==========================================
-    let step2Points = 0;
+    // Portfolio extraction
+    const photos: string[] = profile.portfolio?.photos || (Array.isArray(profile.photos) ? profile.photos : []);
+    const videos: string[] = profile.portfolio?.videos || (Array.isArray(profile.videos) ? profile.videos : []);
+    const showreelUrl = (profile.portfolio?.showreelUrl || profile.showreel || "").trim();
 
-    // 2a. Main Profile Photo (10 pts)
-    const hasPhoto = Boolean(profile.profilePhoto || profile.avatar || (profile.personal && profile.personal.avatar));
-    if (hasPhoto) {
-        step2Points += 10;
-    } else {
-        missingSections.push("Step 2: Upload a Main Profile Photo.");
-    }
-
-    // 2b. Portfolio Media item (15 pts)
-    const photoCount = profile.portfolio?.photos?.length || (Array.isArray(profile.photos) ? profile.photos.length : 0);
-    const videoCount = profile.portfolio?.videos?.length || (Array.isArray(profile.videos) ? profile.videos.length : 0);
-    const hasShowreel = Boolean(profile.portfolio?.showreelUrl || profile.showreel);
-    const hasMedia = photoCount > 0 || videoCount > 0 || hasShowreel;
-    if (hasMedia) {
-        step2Points += 15;
-    } else {
-        missingSections.push("Step 2: Upload at least 1 portfolio photo or showreel video.");
-    }
-
-    const step2Complete = hasPhoto && hasMedia;
-    score += step2Points;
-
-    // ==========================================
-    // STEP 3: Work Experience (15 points max)
-    // ==========================================
-    let step3Points = 0;
-    const creditCount = Array.isArray(profile.credits) ? profile.credits.length : (Array.isArray(profile.experience) ? profile.experience.length : 0);
-    if (creditCount > 0) {
-        step3Points = 15;
-    } else {
-        missingSections.push("Step 3: Add at least 1 past work credit or experience.");
-    }
-
-    const step3Complete = creditCount > 0;
-    score += step3Points;
-
-    // ==========================================
-    // STEP 4: Personal Info & Physical (20 points max)
-    // ==========================================
-    let step4Points = 0;
+    // Physical attributes extraction
     const pa = profile.physicalAttributes || profile.physical || {};
-    const heightVal = pa.heightCm || (pa.height ? Number(pa.height) : null);
+    const heightVal = pa.heightCm !== undefined ? Number(pa.heightCm) : (pa.height !== undefined ? Number(pa.height) : null);
     const hasHeight = heightVal !== null && !isNaN(heightVal) && heightVal >= 50 && heightVal <= 260;
 
-    if (isMinor) {
-        // Minor: 10 pts for physical, 10 pts for guardian details
-        if (hasHeight) step4Points += 10;
-        else missingSections.push("Step 4: Add your height measurement.");
+    // Guardian details for minor
+    const gd = profile.guardianDetails || profile.guardianConsent || {};
+    const hasGuardian = Boolean(
+        gd.guardianName && 
+        (gd.relationship || gd.relation) && 
+        (gd.contactNumber || gd.guardianPhone || gd.phone) && 
+        gd.consentGiven
+    );
 
-        const gd = profile.guardianDetails || profile.guardianConsent || {};
-        const hasGuardian = Boolean(
-            gd.guardianName && 
-            (gd.relationship || gd.relation) && 
-            (gd.contactNumber || gd.guardianPhone || gd.phone) && 
-            gd.consentGiven
-        );
-        if (hasGuardian) {
-            step4Points += 10;
-        } else {
-            missingSections.push("Step 4: Complete mandatory Legal Guardian details and consent for minors.");
+    // Compute earned points and missing items per configured item rule
+    let totalScore = 0;
+    const breakdown: ProfileCompletionSectionBreakdown[] = [];
+    const missingSections: string[] = [];
+
+    for (const item of config.items) {
+        let earned = 0;
+        const itemMissing: string[] = [];
+
+        switch (item.key) {
+            case "basic_identity":
+                if (hasBasicIdentity) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Identity: Add your full name and date of birth.");
+                }
+                break;
+
+            case "profile_photo":
+                if (hasProfilePhoto) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Profile Photo: Upload a high-quality portrait photo.");
+                }
+                break;
+
+            case "bio_headline":
+                if (hasValidBio) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Bio: Write a professional bio between 200 and 1,000 characters.");
+                }
+                break;
+
+            case "location":
+                if (hasLocation) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Location: Specify your current city.");
+                }
+                break;
+
+            case "professional_identity":
+                if (hasProfessionalIdentity) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Profession: Select your category and primary profession.");
+                }
+                break;
+
+            case "skills_languages":
+                if (hasSkillsAndLanguages) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Skills & Languages: Add at least 1 professional skill and 1 language.");
+                }
+                break;
+
+            case "experience_credits":
+                if (hasCredits) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Credits: Add at least 1 past work credit or experience entry.");
+                }
+                break;
+
+            // Actor / Performer specific items
+            case "headshot_photos":
+                if (photos.length >= 1) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Headshot: Upload at least 1 close-up headshot photo.");
+                }
+                break;
+
+            case "intro_video":
+                // Intro video or showreel
+                if (videos.length >= 1 || showreelUrl) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Intro Video: Upload an introductory video or showreel link.");
+                }
+                break;
+
+            case "physical_specs":
+                if (isMinor) {
+                    if (hasHeight && hasGuardian) {
+                        earned = item.weight;
+                    } else {
+                        if (!hasHeight) itemMissing.push("Physical: Add your height measurement.");
+                        if (!hasGuardian) itemMissing.push("Guardian: Complete mandatory legal guardian details and consent.");
+                    }
+                } else {
+                    if (hasHeight) {
+                        earned = item.weight;
+                    } else {
+                        itemMissing.push("Physical: Add your height measurement.");
+                    }
+                }
+                break;
+
+            // Model specific items
+            case "portfolio_photos":
+                // If weight is for 8+ photos (Photographers) vs 3+ photos (Models) vs 5+ (Makeup/Art) vs default 1+
+                if (item.label.includes("8") || item.description.includes("8")) {
+                    if (photos.length >= 8) earned = item.weight;
+                    else itemMissing.push(`Portfolio: Upload at least 8 photo samples (currently ${photos.length}).`);
+                } else if (item.label.includes("5") || item.description.includes("5")) {
+                    if (photos.length >= 5) earned = item.weight;
+                    else itemMissing.push(`Portfolio: Upload at least 5 portfolio samples (currently ${photos.length}).`);
+                } else if (item.label.includes("3") || item.description.includes("3")) {
+                    if (photos.length >= 3) earned = item.weight;
+                    else itemMissing.push(`Portfolio: Upload at least 3 photos (headshot, mid-shot, full-length; currently ${photos.length}).`);
+                } else {
+                    if (photos.length >= 1) earned = item.weight;
+                    else itemMissing.push("Portfolio: Upload at least 1 portfolio photo.");
+                }
+                break;
+
+            // Cinematographer specific items
+            case "showreel":
+                if (Boolean(showreelUrl) || videos.length >= 1) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Showreel: Upload or link your cinematographer showreel.");
+                }
+                break;
+
+            case "camera_gear":
+                const pDataCine = profile.professionData || {};
+                const hasCameraGear = Boolean(pDataCine.cameraKits || pDataCine.lighting || profile.crewAttributes?.equipmentList?.length);
+                if (hasCameraGear) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Equipment: Specify your camera systems or lighting proficiencies.");
+                }
+                break;
+
+            // Singer / Dancer / Choreographer specific items
+            case "performance_video":
+                if (videos.length >= 1 || showreelUrl) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Performance Video: Upload at least 1 performance video or demo reel.");
+                }
+                break;
+
+            case "voice_attributes":
+                const va = profile.voiceAttributes || profile.professionData || {};
+                const hasVoiceAttrs = Boolean(va.vocalRange || va.voiceTexture || va.accent || va.studioSetup !== undefined);
+                if (hasVoiceAttrs) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Voice Attributes: Add your vocal range, texture, or studio setup details.");
+                }
+                break;
+
+            case "dance_styles":
+                const da = profile.danceAttributes || profile.professionData || {};
+                const hasDanceStyles = (Array.isArray(da.danceStyles) && da.danceStyles.length > 0) || (Array.isArray(da.choreographyCredits) && da.choreographyCredits.length > 0);
+                if (hasDanceStyles) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Dance Styles: Add your primary dance styles or choreography credits.");
+                }
+                break;
+
+            // Art & Makeup specific
+            case "portfolio_samples":
+                if (photos.length >= 5 || videos.length >= 2) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Portfolio: Upload at least 5 work samples.");
+                }
+                break;
+
+            case "design_tools":
+                const pDataArt = profile.professionData || {};
+                const hasArtTools = Boolean(pDataArt.designTools || pDataArt.portfolioUrl || (Array.isArray(profile.skills) && profile.skills.length >= 2));
+                if (hasArtTools) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Design Tools: List your design software proficiencies.");
+                }
+                break;
+
+            case "specialties":
+                const pDataMu = profile.professionData || {};
+                const hasMuSpecialties = Boolean(pDataMu.specialties || pDataMu.genres || (Array.isArray(profile.skills) && profile.skills.length >= 2));
+                if (hasMuSpecialties) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Specialties: List your make-up or styling specialties.");
+                }
+                break;
+
+            // Music / Composer specific
+            case "work_samples":
+                if (photos.length + videos.length >= 2 || (videos.length >= 1 && showreelUrl)) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Work Samples: Upload at least 2 music tracks, video clips, or reels.");
+                }
+                break;
+
+            case "daws_genres":
+                const pDataComp = profile.professionData || {};
+                const hasDaws = Boolean(pDataComp.daws || pDataComp.genres || (Array.isArray(profile.skills) && profile.skills.length >= 2));
+                if (hasDaws) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("DAWs & Genres: List your digital audio workstations and music genres.");
+                }
+                break;
+
+            // Voice-over & Presenter specific
+            case "voice_reel":
+                if (videos.length >= 1 || showreelUrl) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Voice Reel: Upload a voice demo clip or intro video.");
+                }
+                break;
+
+            // Crew & Production specific
+            case "crew_attributes":
+                const ca = profile.crewAttributes || profile.professionData || {};
+                const hasCrewAttrs = Boolean(ca.roleCategory || ca.equipmentList?.length || ca.notableProjects?.length || ca.capabilities);
+                if (hasCrewAttrs) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Production Expertise: Specify your equipment access and production capabilities.");
+                }
+                break;
+
+            case "equipment_genres":
+                const pDataPhoto = profile.professionData || {};
+                const hasPhotoEquip = Boolean(pDataPhoto.equipment || pDataPhoto.genres || (Array.isArray(profile.skills) && profile.skills.length >= 2));
+                if (hasPhotoEquip) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Equipment & Genres: Specify your camera equipment access and photography genres.");
+                }
+                break;
+
+            // Default fallback media & details
+            case "portfolio_media":
+                if (photos.length > 0 || videos.length > 0 || showreelUrl) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Portfolio: Upload at least 1 portfolio photo or showreel video.");
+                }
+                break;
+
+            case "profession_details":
+                const hasAnySpecificDetail = hasHeight || Boolean(profile.professionData && Object.keys(profile.professionData).length > 0) || Boolean(showreelUrl);
+                if (hasAnySpecificDetail) {
+                    earned = item.weight;
+                } else {
+                    itemMissing.push("Details: Complete profession-specific details or showreel link.");
+                }
+                break;
+
+            default:
+                earned = item.weight;
+                break;
         }
-    } else {
-        // Adult: 20 pts for physical measurements
-        if (hasHeight) {
-            step4Points += 20;
-        } else {
-            missingSections.push("Step 4: Add your height and physical measurements.");
+
+        totalScore += earned;
+        breakdown.push({
+            section: item.label,
+            weight: item.weight,
+            earned,
+            missing: itemMissing
+        });
+        if (itemMissing.length > 0) {
+            missingSections.push(...itemMissing);
         }
     }
 
-    const step4Complete = isMinor 
-        ? (hasHeight && Boolean(profile.guardianDetails?.guardianName && (profile.guardianDetails?.relationship || profile.guardianDetails?.relation) && (profile.guardianDetails?.contactNumber || profile.guardianDetails?.guardianPhone || profile.guardianDetails?.phone) && profile.guardianDetails?.consentGiven))
-        : hasHeight;
+    const percentage = Math.min(Math.round(totalScore), 100);
 
-    score += step4Points;
-
-    const percentage = Math.min(Math.round(score), 100);
-
-    const breakdown: ProfileCompletionBreakdown = {
-        step1: step1Points,
-        step2: step2Points,
-        step3: step3Points,
-        step4: step4Points,
-        basicInfo: step1Points,
-        profession: hasCategory && hasProfession ? 20 : 0,
-        skillsAndLanguages: hasSkills && hasLanguages ? 15 : 0,
-        credits: step3Points,
-        portfolio: step2Points,
-        travelAndTraining: 10
-    };
+    // Legacy 4-step status mapping for existing wizards and backwards compatibility
+    const step1Complete = hasProfessionalIdentity && hasValidBio && hasLocation && hasSkillsAndLanguages;
+    const step2Complete = hasProfilePhoto && (photos.length > 0 || videos.length > 0 || Boolean(showreelUrl));
+    const step3Complete = hasCredits;
+    const step4Complete = isMinor ? (hasHeight && hasGuardian) : hasHeight;
 
     const stepsCompletion: StepsCompletionStatus = {
         step1: step1Complete,
@@ -227,8 +454,20 @@ export const calculateProfileCompletionDetails = (profile?: any): ProfileComplet
 
     return {
         percentage,
-        missingSections,
         breakdown,
+        missingSections,
+        legacyBreakdown: {
+            step1: step1Complete ? 40 : 0,
+            step2: step2Complete ? 25 : 0,
+            step3: step3Complete ? 15 : 0,
+            step4: step4Complete ? 20 : 0,
+            basicInfo: hasBasicIdentity ? 10 : 0,
+            profession: hasProfessionalIdentity ? 20 : 0,
+            skillsAndLanguages: hasSkillsAndLanguages ? 15 : 0,
+            credits: hasCredits ? 15 : 0,
+            portfolio: step2Complete ? 25 : 0,
+            travelAndTraining: 10
+        },
         stepsCompletion
     };
 };
@@ -241,4 +480,3 @@ export default {
     calculateProfileCompletion,
     calculateProfileCompletionDetails
 };
-

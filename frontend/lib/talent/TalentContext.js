@@ -886,7 +886,48 @@ export function TalentProvider({ children }) {
   const calculateProfileCompletion = () => {
     // If backend provided authoritative profileCompletionPercentage, honor it
     if (profile?.profileCompletionPercentage !== undefined && profile.profileCompletionPercentage !== null) {
-      const score = Math.min(100, Math.max(0, Number(profile.profileCompletionPercentage)));
+      const score = Math.min(100, Math.max(0, Math.round(Number(profile.profileCompletionPercentage))));
+      
+      // If backend returned profession-aware breakdown, construct rich actionable suggestions
+      if (Array.isArray(profile.breakdown) && profile.breakdown.length > 0) {
+        const checklist = profile.breakdown.map((item) => {
+          const isDone = item.earned >= item.weight;
+          const sectionKey = item.section.toLowerCase();
+          const targetSection = sectionKey.includes("photo") || sectionKey.includes("portfolio") || sectionKey.includes("media") || sectionKey.includes("reel") || sectionKey.includes("sample")
+            ? "portfolio"
+            : sectionKey.includes("credit") || sectionKey.includes("experience")
+            ? "experience"
+            : sectionKey.includes("physical") || sectionKey.includes("height")
+            ? "physical"
+            : "personal";
+
+          const missingHint = Array.isArray(item.missing) && item.missing.length > 0
+            ? item.missing[0]
+            : null;
+
+          return {
+            label: isDone ? item.section : (missingHint || `Complete ${item.section}`),
+            done: isDone,
+            weight: item.weight,
+            earned: item.earned,
+            section: targetSection,
+            missing: item.missing || []
+          };
+        });
+        return { score, checklist };
+      }
+
+      // Fallback if missing breakdown but has missingSections
+      if (Array.isArray(profile.missingSections) && profile.missingSections.length > 0) {
+        const checklist = profile.missingSections.map((hint) => ({
+          label: hint,
+          done: false,
+          section: hint.toLowerCase().includes("portfolio") || hint.toLowerCase().includes("photo") || hint.toLowerCase().includes("video") ? "portfolio" : "personal",
+          missing: [hint]
+        }));
+        return { score, checklist };
+      }
+
       const sc = profile.stepsCompletion || {};
       const checklist = [
         { label: "Step 1: Professional Details", done: Boolean(sc.step1), section: "personal" },

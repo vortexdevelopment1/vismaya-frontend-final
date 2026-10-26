@@ -130,10 +130,11 @@ export default function ProfileView({ onEditStep }) {
       })();
 
   const getStepForMissing = (msg) => {
-    if (msg.includes("Step 1")) return 1;
-    if (msg.includes("Step 2")) return 2;
-    if (msg.includes("Step 3")) return 3;
-    if (msg.includes("Step 4")) return 4;
+    if (!msg) return 1;
+    const lower = String(msg).toLowerCase();
+    if (lower.includes("portfolio") || lower.includes("photo") || lower.includes("headshot") || lower.includes("video") || lower.includes("reel") || lower.includes("sample")) return 2;
+    if (lower.includes("credit") || lower.includes("experience")) return 3;
+    if (lower.includes("physical") || lower.includes("height") || lower.includes("guardian") || lower.includes("measurement")) return 4;
     return 1;
   };
 

@@ -14,6 +14,7 @@ import Notification from "../models/notification.model.js";
 import { notifyUser } from "../services/notification.service.js";
 import { calculateAge } from "../validators/talentProfile.validator.js";
 import { isDeadlineExpired } from "../utils/date.util.js";
+import { calculateProfileCompletionDetails } from "../utils/profileCompletion.util.js";
 
 export const applyForOpportunity = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -77,12 +78,19 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
         }
 
 
-        // 6. Validate completion >= 60%
-        if (profile.profileCompletionPercentage < 60) {
-            return res.status(400).json({
-                success: false,
-                message: `Minimum 60% profile completion is required to apply for opportunities (current: ${profile.profileCompletionPercentage}%). Please update your profile.`
-            });
+        // 6. Validate completion >= 60% (excluding informational profiles)
+        const isInformational = Boolean(profile.isInformational);
+        if (!isInformational) {
+            const completionDetails = calculateProfileCompletionDetails(profile);
+            const effectiveScore = completionDetails.percentage;
+            if (effectiveScore < 60) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Minimum 60% profile completion is required to apply for opportunities (current: ${effectiveScore}%). Please update your profile.`,
+                    breakdown: completionDetails.breakdown,
+                    missingSections: completionDetails.missingSections
+                });
+            }
         }
 
         // 5. Check Max Active Applications Limit
