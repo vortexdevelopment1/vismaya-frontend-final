@@ -589,6 +589,29 @@ export default function ProfileBuilder({ onFinish }) {
     }
   };
 
+  // Calculate missing items count per step for step indicator badge
+  const step1MissingCount = [
+    Boolean(profile.category && (profile.primaryProfession || profile.profession)),
+    Boolean(profile.bio && profile.bio.trim().length >= 200),
+    Boolean(profile.currentCity || profile.city),
+    Boolean(profile.skills && profile.skills.length > 0),
+    Boolean(profile.languages && profile.languages.length > 0),
+  ].filter(val => !val).length;
+
+  const step2MissingCount = [
+    Boolean(profile.profilePhoto || profile.avatar),
+    Boolean(portfolio && portfolio.length > 0),
+  ].filter(val => !val).length;
+
+  const step3MissingCount = (profile.credits && profile.credits.length > 0) ? 0 : 1;
+
+  const step4MissingCount = isMinor
+    ? [
+        Boolean(profile.physicalAttributes?.heightCm),
+        Boolean(profile.guardianDetails?.guardianName && profile.guardianDetails?.contactNumber && profile.guardianDetails?.consentGiven),
+      ].filter(val => !val).length
+    : (profile.physicalAttributes?.heightCm ? 0 : 1);
+
   // Step names config for Stepper with short "what is missing" hints
   const stepsList = [
     {
@@ -596,6 +619,7 @@ export default function ProfileBuilder({ onFinish }) {
       name: "Professional Details",
       key: "step1",
       done: stepsCompletion.step1,
+      missingCount: step1MissingCount > 0 ? step1MissingCount : 1,
       missingHint: "Needs craft, bio & city"
     },
     {
@@ -603,6 +627,7 @@ export default function ProfileBuilder({ onFinish }) {
       name: "Portfolio & Media",
       key: "step2",
       done: stepsCompletion.step2,
+      missingCount: step2MissingCount > 0 ? step2MissingCount : 1,
       missingHint: (!profile.profilePhoto && !profile.avatar) ? "Needs photo & 1 media item" : "Needs 1 portfolio item"
     },
     {
@@ -610,6 +635,7 @@ export default function ProfileBuilder({ onFinish }) {
       name: "Work Experience",
       key: "step3",
       done: stepsCompletion.step3,
+      missingCount: step3MissingCount > 0 ? step3MissingCount : 1,
       missingHint: "Needs at least 1 credit"
     },
     {
@@ -617,6 +643,7 @@ export default function ProfileBuilder({ onFinish }) {
       name: "Personal Info",
       key: "step4",
       done: stepsCompletion.step4,
+      missingCount: step4MissingCount > 0 ? step4MissingCount : 1,
       missingHint: isMinor ? "Needs height & guardian consent" : "Needs height measurement"
     },
   ];
@@ -624,39 +651,40 @@ export default function ProfileBuilder({ onFinish }) {
   // Common styles adhering strictly to cream/gold-brown/charcoal tokens
   const cardStyle = {
     backgroundColor: "#FFFFFF",
-    border: "1px solid #E8E2D4",
+    border: "1px solid #E8E1D2",
     borderRadius: "16px",
-    padding: "24px 28px",
+    padding: "28px 32px",
     boxShadow: "0 2px 8px rgba(43, 45, 42, 0.03)",
     display: "flex",
     flexDirection: "column",
-    gap: "18px",
+    gap: "22px",
+    boxSizing: "border-box",
   };
 
   const labelStyle = {
     display: "block",
     fontSize: "12px",
     fontWeight: "600",
-    color: "#2B2D2A",
-    marginBottom: "6px",
+    color: "#6B6254",
+    marginBottom: "8px",
     textTransform: "uppercase",
-    letterSpacing: "0.04em",
+    letterSpacing: "0.06em",
   };
 
   const inputStyle = (hasError) => ({
     width: "100%",
-    height: "42px",
+    height: "46px",
     padding: "0 14px",
-    borderRadius: "8px",
-    border: `1px solid ${hasError ? "#B42318" : "#E8E2D4"}`,
+    borderRadius: "10px",
+    border: `1px solid ${hasError ? "#A3321F" : "#D9D1BF"}`,
     backgroundColor: "#FFFFFF",
-    color: "#2B2D2A",
-    fontSize: "14px",
+    color: "#2A241A",
+    fontSize: "15px",
     fontFamily: "var(--font-body), 'Inter', sans-serif",
     outline: "none",
     boxSizing: "border-box",
+    transition: "border-color 0.16s ease, box-shadow 0.16s ease",
   });
-
   const errorTextStyle = {
     fontSize: "12px",
     color: "#B42318",
@@ -665,176 +693,215 @@ export default function ProfileBuilder({ onFinish }) {
     fontWeight: "500",
   };
 
+  // Calculate progress ring math (84px desktop, 60px mobile)
+  const dRadius = 36;
+  const dCircumference = 2 * Math.PI * dRadius;
+  const dOffset = dCircumference - (profileStrength / 100) * dCircumference;
+
+  const mRadius = 24;
+  const mCircumference = 2 * Math.PI * mRadius;
+  const mOffset = mCircumference - (profileStrength / 100) * mCircumference;
+
+  // Determine missing items count and first missing item hint
+  const missingItems = stepsList.filter(s => !s.done);
+  const itemsLeft = missingItems.length;
+  const firstMissingHint = missingItems.length > 0 ? missingItems[0].missingHint : "Profile is fully complete!";
+
   return (
-    <div className="profile-builder-container" style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "1000px", margin: "0 auto" }}>
-      {/* Top Header Card with Stepper and Strength Chip */}
-      <div
-        className="profile-stepper-header-card"
-        style={{
-          backgroundColor: "#FFFFFF",
-          border: "1px solid #E8E2D4",
-          borderRadius: "16px",
-          padding: "20px 24px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "16px",
-        }}
-      >
-        <div className="profile-builder-header-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-          <div>
-            <span style={{ fontSize: "11.5px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Artist Profile Builder
-            </span>
-            <h1 style={{ fontSize: "22px", fontWeight: "700", color: "#2B2D2A", margin: "2px 0 0 0", fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif" }}>
-              {currentStep === 1 && "Step 1: Professional Identity & Craft"}
-              {currentStep === 2 && "Step 2: Portfolio Media & Profile Photo"}
-              {currentStep === 3 && "Step 3: Work Experience & Credits"}
-              {currentStep === 4 && "Step 4: Confidential Personal Info"}
-              {currentStep === "complete" && "Profile Setup Complete!"}
-            </h1>
+    <div className="profile-builder-v2">
+      {/* ========================================================================= */}
+      {/* MOBILE COMPACT HEADER CARDS (<= 767px)                                   */}
+      {/* ========================================================================= */}
+      <div className="pb-mobile-header-stack">
+        {/* Mobile Progress Card */}
+        <div className="pb-mobile-progress-card">
+          <div className="pb-progress-ring-box" style={{ width: "60px", height: "60px" }}>
+            <svg width="60" height="60" viewBox="0 0 60 60" style={{ transform: "rotate(-90deg)" }}>
+              <circle
+                cx="30"
+                cy="30"
+                r={mRadius}
+                fill="transparent"
+                stroke="#EFE7D3"
+                strokeWidth="5"
+              />
+              <circle
+                cx="30"
+                cy="30"
+                r={mRadius}
+                fill="transparent"
+                stroke="#8A6B2E"
+                strokeWidth="5"
+                strokeDasharray={mCircumference}
+                strokeDashoffset={mOffset}
+                strokeLinecap="round"
+                style={{ transition: "stroke-dashoffset 0.5s ease" }}
+              />
+            </svg>
+            <span className="pb-ring-text" style={{ fontSize: "13px" }}>{profileStrength}%</span>
           </div>
-
-          <div className="profile-builder-header-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-            <span
-              className="profile-strength-pill"
-              style={{
-                fontSize: "12px",
-                fontWeight: "700",
-                padding: "6px 14px",
-                borderRadius: "999px",
-                backgroundColor: profileStrength >= 100 ? "#ECFDF3" : profileStrength >= 60 ? "#FBF7ED" : "#FEF3F2",
-                color: profileStrength >= 100 ? "#027A48" : "#8A6B2E",
-                border: `1px solid ${profileStrength >= 100 ? "#A6F4C5" : "#E8E2D4"}`,
-                letterSpacing: "0.02em",
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-                display: "inline-flex",
-                alignItems: "center",
-              }}
-            >
-              Profile strength {profileStrength}%
+          <div className="pb-mobile-progress-info">
+            <span className="pb-col-label">Profile Strength</span>
+            <span className="pb-mobile-items-left">
+              {itemsLeft === 0 ? "Profile 100% complete" : `${itemsLeft} item${itemsLeft > 1 ? "s" : ""} left to reach 100%`}
             </span>
-
-            {Boolean(profile.stepsCompletion?.step1 || profile.primaryProfession || profile.profession) && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (onFinish) onFinish();
-                  else router.push("/talent/profile");
-                }}
-                className="btn-secondary profile-action-btn"
-                style={{ padding: "8px 16px", fontSize: "13px", height: "36px", display: "inline-flex", alignItems: "center", gap: "6px" }}
-              >
-                <Eye size={14} />
-                <span>View Profile</span>
-              </button>
-            )}
-
-            {currentStep !== "complete" && (
-              <button
-                type="button"
-                onClick={() => handleSaveStep1(false)}
-                disabled={isSaving}
-                className="btn-secondary profile-action-btn"
-                style={{ padding: "8px 16px", fontSize: "13px", height: "36px" }}
-              >
-                <Save size={14} />
-                <span>Save Draft</span>
-              </button>
+            {itemsLeft > 0 && (
+              <span className="pb-mobile-hint-text">
+                Tip: {firstMissingHint}
+              </span>
             )}
           </div>
         </div>
 
-        {/* 4-Step Stepper Tabs */}
-        <nav
-          aria-label="Profile Builder Stepper"
-          className="profile-stepper-nav"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: "10px",
-            borderTop: "1px solid #F3EFE6",
-            paddingTop: "14px",
-          }}
-        >
-          {stepsList.map((st) => {
-            const isActive = currentStep === st.num;
-            const isDone = st.done;
+        {/* Mobile 4-Segment Stepper Card */}
+        {currentStep !== "complete" && (
+          <div className="pb-mobile-stepper-card">
+            <div className="pb-mobile-step-title-row">
+              <span className="pb-mobile-step-pill">STEP {currentStep} OF 4</span>
+              <strong className="pb-mobile-step-title">
+                {stepsList.find(s => s.num === currentStep)?.name || "Profile"}
+              </strong>
+            </div>
+            
+            {/* 4 Segmented Bar */}
+            <div className="pb-mobile-segment-bar">
+              {stepsList.map(st => {
+                const isCurrent = currentStep === st.num;
+                const isDone = st.done;
+                let barBg = "#E1D4B3";
+                if (isDone) barBg = "#2F6B45";
+                if (isCurrent) barBg = "#8A6B2E";
 
-            return (
-              <button
-                key={st.num}
-                type="button"
-                onClick={() => navigateToStep(st.num)}
-                title={isDone ? `${st.name}: Complete` : `${st.name}: ${st.missingHint}`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "10px 14px",
-                  borderRadius: "10px",
-                  border: `1px solid ${isActive ? "#8A6B2E" : isDone ? "#D0D5DD" : "#E8E2D4"}`,
-                  backgroundColor: isActive ? "#FBF7ED" : "#FFFFFF",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  transition: "all 0.16s ease",
-                }}
-                className={`stepper-pill ${isActive ? "active" : ""}`}
-              >
-                <span
-                  style={{
-                    width: "24px",
-                    height: "24px",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "12px",
-                    fontWeight: "700",
-                    backgroundColor: isDone ? "#027A48" : isActive ? "#8A6B2E" : "#F3EFE6",
-                    color: isDone || isActive ? "#FFFFFF" : "#5A584F",
-                    flexShrink: 0,
-                  }}
-                >
-                  {isDone ? <Check size={14} strokeWidth={3} /> : st.num}
-                </span>
-
-                <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                  <span style={{ fontSize: "11px", color: isActive ? "#8A6B2E" : "#7A7870", fontWeight: "600" }}>
-                    Step {st.num}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "12.5px",
-                      fontWeight: isActive ? "700" : "600",
-                      color: isActive ? "#2B2D2A" : "#5A584F",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
+                return (
+                  <button
+                    key={st.num}
+                    type="button"
+                    onClick={() => navigateToStep(st.num)}
+                    className="pb-mobile-segment-btn"
+                    title={isDone ? `${st.name}: Complete` : `${st.name}: ${st.missingHint}`}
                   >
-                    {st.name}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      color: isDone ? "#027A48" : "#8A6B2E",
-                      fontWeight: 500,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      marginTop: "1px",
-                    }}
-                  >
-                    {isDone ? "Completed" : st.missingHint}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </nav>
+                    <div className="pb-segment-track" style={{ backgroundColor: barBg }} />
+                    <span className={`pb-segment-label ${isCurrent ? "active" : ""}`}>
+                      {st.name.split(" ")[0]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* ========================================================================= */}
+      {/* DESKTOP TWO-COLUMN LAYOUT CONTAINER (>= 1024px)                          */}
+      {/* ========================================================================= */}
+      <div className="pb-desktop-grid">
+        {/* LEFT STICKY COLUMN (300px) */}
+        <aside className="pb-left-sticky-col">
+          {/* Card 1: Profile Strength Ring */}
+          <div className="pb-sidebar-card">
+            <div className="pb-ring-wrapper">
+              <div className="pb-progress-ring-box" style={{ width: "84px", height: "84px" }}>
+                <svg width="84" height="84" viewBox="0 0 84 84" style={{ transform: "rotate(-90deg)" }}>
+                  <circle
+                    cx="42"
+                    cy="42"
+                    r={dRadius}
+                    fill="transparent"
+                    stroke="#EFE7D3"
+                    strokeWidth="7"
+                  />
+                  <circle
+                    cx="42"
+                    cy="42"
+                    r={dRadius}
+                    fill="transparent"
+                    stroke="#8A6B2E"
+                    strokeWidth="7"
+                    strokeDasharray={dCircumference}
+                    strokeDashoffset={dOffset}
+                    strokeLinecap="round"
+                    style={{ transition: "stroke-dashoffset 0.5s ease" }}
+                  />
+                </svg>
+                <span className="pb-ring-text" style={{ fontSize: "17px" }}>{profileStrength}%</span>
+              </div>
+              <div className="pb-ring-meta">
+                <span className="pb-col-label">Profile strength</span>
+                <span className="pb-items-left-text">
+                  {itemsLeft === 0 ? "Profile 100% complete" : `${itemsLeft} item${itemsLeft > 1 ? "s" : ""} left to reach 100%`}
+                </span>
+              </div>
+            </div>
+
+            {itemsLeft > 0 && (
+              <div className="pb-gold-tip-box">
+                <span className="pb-tip-title">Recommended action</span>
+                <p className="pb-tip-desc">{firstMissingHint}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Card 2: Vertical Stepper for Steps 1-4 */}
+          <div className="pb-sidebar-card pb-step-list-card">
+            <span className="pb-col-label" style={{ marginBottom: "12px", display: "block" }}>Profile Steps</span>
+            <div className="pb-step-list">
+              {stepsList.map(st => {
+                const isCurrent = currentStep === st.num;
+                const isDone = st.done;
+
+                let circleClass = "pb-step-circle-incomplete";
+                if (isCurrent && isDone) {
+                  circleClass = "pb-step-circle-current-done";
+                } else if (isCurrent && !isDone) {
+                  circleClass = "pb-step-circle-current-incomplete";
+                } else if (isDone) {
+                  circleClass = "pb-step-circle-done";
+                } else {
+                  circleClass = "pb-step-circle-incomplete";
+                }
+
+                let statusText = "INCOMPLETE";
+                if (isCurrent) {
+                  statusText = "EDITING";
+                } else if (isDone) {
+                  statusText = "COMPLETED";
+                } else {
+                  const count = st.missingCount;
+                  if (typeof count === "number" && count > 0) {
+                    statusText = count === 1 ? "1 ITEM NEEDED" : `${count} ITEMS NEEDED`;
+                  } else {
+                    statusText = "INCOMPLETE";
+                  }
+                }
+
+                return (
+                  <button
+                    key={st.num}
+                    type="button"
+                    onClick={() => navigateToStep(st.num)}
+                    className={`pb-step-nav-row ${isCurrent ? "current" : ""}`}
+                  >
+                    <div className={`pb-step-circle ${circleClass}`}>
+                      {isDone ? (
+                        <Check size={16} strokeWidth={2.5} />
+                      ) : (
+                        st.num
+                      )}
+                    </div>
+                    <div className="pb-step-nav-content">
+                      <span className="pb-step-status-tag">{statusText}</span>
+                      <strong className="pb-step-nav-title">{st.name}</strong>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+
+        {/* RIGHT COLUMN (Form Steps) */}
+        <main className="pb-right-form-col">
       {/* ========================================================================= */}
       {/* SCREEN 1: PROFESSIONAL DETAILS                                           */}
       {/* ========================================================================= */}
@@ -842,15 +909,15 @@ export default function ProfileBuilder({ onFinish }) {
         <div className="step-screen-container" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {/* Card 1: Professional Identity */}
           <div style={cardStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid #F3EFE6", paddingBottom: "12px" }}>
-              <div style={{ padding: "8px", borderRadius: "8px", backgroundColor: "#F3EFE6", color: "#8A6B2E" }}>
+            <div className="pb-card-header">
+              <div className="pb-card-icon-box">
                 <User size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+                <h2 className="pb-card-title">
                   Professional Identity
-                </h3>
-                <span style={{ fontSize: "12px", color: "#5A584F" }}>Category, craft, headline and professional stage name</span>
+                </h2>
+                <p className="pb-card-subtitle">Category, craft, headline and professional stage name</p>
               </div>
             </div>
 
@@ -884,26 +951,13 @@ export default function ProfileBuilder({ onFinish }) {
                 <label style={labelStyle}>Secondary Professions (Max 3)</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
                   {formState.secondaryProfessions.map((sec, idx) => (
-                    <span
-                      key={idx}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "4px 10px",
-                        borderRadius: "999px",
-                        backgroundColor: "#F3EFE6",
-                        border: "1px solid #E8E2D4",
-                        fontSize: "12.5px",
-                        fontWeight: "600",
-                        color: "#2B2D2A",
-                      }}
-                    >
-                      {sec}
+                    <span key={idx} className="pb-tag-chip">
+                      <span>{sec}</span>
                       <button
                         type="button"
                         onClick={() => removeTag("secondaryProfessions", sec)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#7A7870", display: "flex", padding: 0 }}
+                        className="pb-chip-remove-btn"
+                        title="Remove"
                       >
                         ×
                       </button>
@@ -967,15 +1021,15 @@ export default function ProfileBuilder({ onFinish }) {
 
           {/* Card 2: Profession-Specific Preferences */}
           <div style={cardStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid #F3EFE6", paddingBottom: "12px" }}>
-              <div style={{ padding: "8px", borderRadius: "8px", backgroundColor: "#F3EFE6", color: "#8A6B2E" }}>
+            <div className="pb-card-header">
+              <div className="pb-card-icon-box">
                 <Sparkles size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+                <h2 className="pb-card-title">
                   Profession-Specific Preferences &amp; Specialization
-                </h3>
-                <span style={{ fontSize: "12px", color: "#5A584F" }}>Casting genre strengths and specialized abilities</span>
+                </h2>
+                <p className="pb-card-subtitle">Casting genre strengths and specialized abilities</p>
               </div>
             </div>
 
@@ -983,26 +1037,13 @@ export default function ProfileBuilder({ onFinish }) {
               <label style={labelStyle}>Specializations &amp; Craft Styles</label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
                 {formState.specializations.map((spec, idx) => (
-                  <span
-                    key={idx}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "4px 10px",
-                      borderRadius: "999px",
-                      backgroundColor: "#F3EFE6",
-                      border: "1px solid #E8E2D4",
-                      fontSize: "12.5px",
-                      fontWeight: "600",
-                      color: "#8A6B2E",
-                    }}
-                  >
-                    {spec}
+                  <span key={idx} className="pb-tag-chip">
+                    <span>{spec}</span>
                     <button
                       type="button"
                       onClick={() => removeTag("specializations", spec)}
-                      style={{ background: "none", border: "none", cursor: "pointer", color: "#7A7870", display: "flex", padding: 0 }}
+                      className="pb-chip-remove-btn"
+                      title="Remove"
                     >
                       ×
                     </button>
@@ -1041,15 +1082,15 @@ export default function ProfileBuilder({ onFinish }) {
 
           {/* Card 3: About & Experience */}
           <div style={cardStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid #F3EFE6", paddingBottom: "12px" }}>
-              <div style={{ padding: "8px", borderRadius: "8px", backgroundColor: "#F3EFE6", color: "#8A6B2E" }}>
+            <div className="pb-card-header">
+              <div className="pb-card-icon-box">
                 <Briefcase size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+                <h2 className="pb-card-title">
                   About &amp; Career Experience
-                </h3>
-                <span style={{ fontSize: "12px", color: "#5A584F" }}>Bio, career stage and professional background</span>
+                </h2>
+                <p className="pb-card-subtitle">Bio, career stage and professional background</p>
               </div>
             </div>
 
@@ -1114,15 +1155,15 @@ export default function ProfileBuilder({ onFinish }) {
 
           {/* Card 4: Location & Availability */}
           <div style={cardStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid #F3EFE6", paddingBottom: "12px" }}>
-              <div style={{ padding: "8px", borderRadius: "8px", backgroundColor: "#F3EFE6", color: "#8A6B2E" }}>
+            <div className="pb-card-header">
+              <div className="pb-card-icon-box">
                 <Layers size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+                <h2 className="pb-card-title">
                   Location &amp; Availability
-                </h3>
-                <span style={{ fontSize: "12px", color: "#5A584F" }}>Primary base city, preferred shoot hubs and travel availability</span>
+                </h2>
+                <p className="pb-card-subtitle">Primary base city, preferred shoot hubs and travel availability</p>
               </div>
             </div>
 
@@ -1154,26 +1195,13 @@ export default function ProfileBuilder({ onFinish }) {
                 <label style={labelStyle}>Working Cities (Max 5)</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
                   {formState.workingCities.map((c, idx) => (
-                    <span
-                      key={idx}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "4px 10px",
-                        borderRadius: "999px",
-                        backgroundColor: "#F3EFE6",
-                        border: "1px solid #E8E2D4",
-                        fontSize: "12.5px",
-                        fontWeight: "600",
-                        color: "#2B2D2A",
-                      }}
-                    >
-                      {c}
+                    <span key={idx} className="pb-tag-chip">
+                      <span>{c}</span>
                       <button
                         type="button"
                         onClick={() => removeTag("workingCities", c)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#7A7870", display: "flex", padding: 0 }}
+                        className="pb-chip-remove-btn"
+                        title="Remove"
                       >
                         ×
                       </button>
@@ -1231,7 +1259,7 @@ export default function ProfileBuilder({ onFinish }) {
                     type="checkbox"
                     checked={formState.willingToTravel}
                     onChange={(e) => handleChange("willingToTravel", e.target.checked)}
-                    style={{ width: "18px", height: "18px", accentColor: "#8A6B2E" }}
+                    style={{ width: "20px", height: "20px", accentColor: "#8A6B2E", cursor: "pointer" }}
                   />
                   <span>Willing to travel outstation for shoots</span>
                 </label>
@@ -1241,7 +1269,7 @@ export default function ProfileBuilder({ onFinish }) {
                     type="checkbox"
                     checked={formState.willingToRelocate}
                     onChange={(e) => handleChange("willingToRelocate", e.target.checked)}
-                    style={{ width: "18px", height: "18px", accentColor: "#8A6B2E" }}
+                    style={{ width: "20px", height: "20px", accentColor: "#8A6B2E", cursor: "pointer" }}
                   />
                   <span>Willing to relocate for long-term production</span>
                 </label>
@@ -1251,15 +1279,15 @@ export default function ProfileBuilder({ onFinish }) {
 
           {/* Card 5: Skills & Languages */}
           <div style={cardStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid #F3EFE6", paddingBottom: "12px" }}>
-              <div style={{ padding: "8px", borderRadius: "8px", backgroundColor: "#F3EFE6", color: "#8A6B2E" }}>
+            <div className="pb-card-header">
+              <div className="pb-card-icon-box">
                 <CheckCircle2 size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+                <h2 className="pb-card-title">
                   Skills &amp; Languages
-                </h3>
-                <span style={{ fontSize: "12px", color: "#5A584F" }}>Performance skills, dance styles, spoken languages &amp; dialects</span>
+                </h2>
+                <p className="pb-card-subtitle">Performance skills, dance styles, spoken languages &amp; dialects</p>
               </div>
             </div>
 
@@ -1269,26 +1297,13 @@ export default function ProfileBuilder({ onFinish }) {
                 <label style={labelStyle}>Performing Skills &amp; Talents *</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
                   {formState.skills.map((sk, idx) => (
-                    <span
-                      key={idx}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "5px 12px",
-                        borderRadius: "999px",
-                        backgroundColor: "#F3EFE6",
-                        border: "1px solid #E8E2D4",
-                        fontSize: "12.5px",
-                        fontWeight: "600",
-                        color: "#8A6B2E",
-                      }}
-                    >
-                      {sk}
+                    <span key={idx} className="pb-tag-chip">
+                      <span>{sk}</span>
                       <button
                         type="button"
                         onClick={() => removeTag("skills", sk)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#7A7870", display: "flex", padding: 0 }}
+                        className="pb-chip-remove-btn"
+                        title="Remove"
                       >
                         ×
                       </button>
@@ -1330,26 +1345,13 @@ export default function ProfileBuilder({ onFinish }) {
                 <label style={labelStyle}>Languages &amp; Spoken Dialects *</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
                   {formState.languages.map((lg, idx) => (
-                    <span
-                      key={idx}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "5px 12px",
-                        borderRadius: "999px",
-                        backgroundColor: "#F3EFE6",
-                        border: "1px solid #E8E2D4",
-                        fontSize: "12.5px",
-                        fontWeight: "600",
-                        color: "#8A6B2E",
-                      }}
-                    >
-                      {lg}
+                    <span key={idx} className="pb-tag-chip">
+                      <span>{lg}</span>
                       <button
                         type="button"
                         onClick={() => removeTag("languages", lg)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#7A7870", display: "flex", padding: 0 }}
+                        className="pb-chip-remove-btn"
+                        title="Remove"
                       >
                         ×
                       </button>
@@ -1388,19 +1390,7 @@ export default function ProfileBuilder({ onFinish }) {
             </div>
           </div>
 
-          {/* Action Bar for Step 1 */}
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "6px" }}>
-            <button
-              type="button"
-              disabled={isSaving}
-              onClick={() => handleSaveStep1(true)}
-              className="btn-primary"
-              style={{ padding: "10px 28px", height: "44px", fontSize: "14px" }}
-            >
-              <span>{isSaving ? "Saving..." : "Save & Continue"}</span>
-              <ChevronRight size={16} />
-            </button>
-          </div>
+          
         </div>
       )}
 
@@ -1411,15 +1401,15 @@ export default function ProfileBuilder({ onFinish }) {
         <div className="step-screen-container" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {/* Main Profile Photo Card */}
           <div style={cardStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid #F3EFE6", paddingBottom: "12px" }}>
-              <div style={{ padding: "8px", borderRadius: "8px", backgroundColor: "#F3EFE6", color: "#8A6B2E" }}>
+            <div className="pb-card-header">
+              <div className="pb-card-icon-box">
                 <Camera size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+                <h2 className="pb-card-title">
                   Main Profile Photo
-                </h3>
-                <span style={{ fontSize: "12px", color: "#5A584F" }}>Mandatory headshot photo displayed across search and top navigation</span>
+                </h2>
+                <p className="pb-card-subtitle">Mandatory headshot photo displayed across search and top navigation</p>
               </div>
             </div>
 
@@ -1526,15 +1516,15 @@ export default function ProfileBuilder({ onFinish }) {
 
           {/* Upload Portfolio Item Card */}
           <div style={cardStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid #F3EFE6", paddingBottom: "12px" }}>
-              <div style={{ padding: "8px", borderRadius: "8px", backgroundColor: "#F3EFE6", color: "#8A6B2E" }}>
+            <div className="pb-card-header">
+              <div className="pb-card-icon-box">
                 <Upload size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+                <h2 className="pb-card-title">
                   Upload Portfolio Item
-                </h3>
-                <span style={{ fontSize: "12px", color: "#5A584F" }}>Add commercial headshots, showreels, self-tapes and comp cards</span>
+                </h2>
+                <p className="pb-card-subtitle">Add commercial headshots, showreels, self-tapes and comp cards</p>
               </div>
             </div>
 
@@ -1608,14 +1598,14 @@ export default function ProfileBuilder({ onFinish }) {
           <div style={cardStyle}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #F3EFE6", paddingBottom: "12px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ padding: "8px", borderRadius: "8px", backgroundColor: "#F3EFE6", color: "#8A6B2E" }}>
+                <div className="pb-card-icon-box">
                   <ImageIcon size={18} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+                  <h2 className="pb-card-title">
                     Uploaded Portfolio Items ({portfolio.length})
-                  </h3>
-                  <span style={{ fontSize: "12px", color: "#5A584F" }}>Manage active media items and visibility</span>
+                  </h2>
+                  <p className="pb-card-subtitle">Manage active media items and visibility</p>
                 </div>
               </div>
             </div>
@@ -1702,28 +1692,7 @@ export default function ProfileBuilder({ onFinish }) {
             )}
           </div>
 
-          {/* Action Bar for Step 2 */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px" }}>
-            <button
-              type="button"
-              onClick={() => navigateToStep(1)}
-              className="btn-secondary"
-              style={{ padding: "10px 20px", height: "44px", fontSize: "14px" }}
-            >
-              <ChevronLeft size={16} />
-              <span>Back</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigateToStep(3)}
-              className="btn-primary"
-              style={{ padding: "10px 28px", height: "44px", fontSize: "14px" }}
-            >
-              <span>Save &amp; Continue</span>
-              <ChevronRight size={16} />
-            </button>
-          </div>
+          
         </div>
       )}
 
@@ -1734,15 +1703,15 @@ export default function ProfileBuilder({ onFinish }) {
         <div className="step-screen-container" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {/* Card 1: Add Work Experience */}
           <div style={cardStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid #F3EFE6", paddingBottom: "12px" }}>
-              <div style={{ padding: "8px", borderRadius: "8px", backgroundColor: "#F3EFE6", color: "#8A6B2E" }}>
+            <div className="pb-card-header">
+              <div className="pb-card-icon-box">
                 <Briefcase size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+                <h2 className="pb-card-title">
                   Add Work Experience &amp; Credit
-                </h3>
-                <span style={{ fontSize: "12px", color: "#5A584F" }}>Record films, web series, theatre productions and commercial campaigns</span>
+                </h2>
+                <p className="pb-card-subtitle">Record films, web series, theatre productions and commercial campaigns</p>
               </div>
             </div>
 
@@ -1845,9 +1814,9 @@ export default function ProfileBuilder({ onFinish }) {
           {/* Card 3: Added Credits List */}
           <div style={cardStyle}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #F3EFE6", paddingBottom: "12px" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+              <h2 className="pb-card-title">
                 Added Work Credits ({(profile.credits || []).length})
-              </h3>
+              </h2>
             </div>
 
             {(!profile.credits || profile.credits.length === 0) ? (
@@ -1936,28 +1905,7 @@ export default function ProfileBuilder({ onFinish }) {
             )}
           </div>
 
-          {/* Action Bar for Step 3 */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px" }}>
-            <button
-              type="button"
-              onClick={() => navigateToStep(2)}
-              className="btn-secondary"
-              style={{ padding: "10px 20px", height: "44px", fontSize: "14px" }}
-            >
-              <ChevronLeft size={16} />
-              <span>Back</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigateToStep(4)}
-              className="btn-primary"
-              style={{ padding: "10px 28px", height: "44px", fontSize: "14px" }}
-            >
-              <span>Save &amp; Continue</span>
-              <ChevronRight size={16} />
-            </button>
-          </div>
+          
         </div>
       )}
 
@@ -1968,15 +1916,15 @@ export default function ProfileBuilder({ onFinish }) {
         <div className="step-screen-container" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {/* Card 1: Confidential Personal & Physical Details */}
           <div style={cardStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", borderBottom: "1px solid #F3EFE6", paddingBottom: "12px" }}>
-              <div style={{ padding: "8px", borderRadius: "8px", backgroundColor: "#F3EFE6", color: "#8A6B2E" }}>
+            <div className="pb-card-header">
+              <div className="pb-card-icon-box">
                 <ShieldCheck size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+                <h2 className="pb-card-title">
                   Personal Details &amp; Physical Measurements
-                </h3>
-                <span style={{ fontSize: "12px", color: "#5A584F" }}>Confidential physical specifications stored strictly for owner &amp; admin</span>
+                </h2>
+                <p className="pb-card-subtitle">Confidential physical specifications stored strictly for owner &amp; admin</p>
               </div>
             </div>
 
@@ -2142,12 +2090,12 @@ export default function ProfileBuilder({ onFinish }) {
                   <ShieldAlert size={18} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+                  <h2 className="pb-card-title">
                     Parent / Legal Guardian Details (Under 18)
-                  </h3>
-                  <span style={{ fontSize: "12px", color: "#5A584F" }}>
+                  </h2>
+                  <p className="pb-card-subtitle">
                     Mandatory child artist protection compliance under Indian entertainment guidelines
-                  </span>
+                  </p>
                 </div>
               </div>
 
@@ -2218,33 +2166,63 @@ export default function ProfileBuilder({ onFinish }) {
             </div>
           )}
 
-          {/* Action Bar for Step 4 */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px" }}>
-            <button
-              type="button"
-              onClick={() => navigateToStep(3)}
-              className="btn-secondary"
-              style={{ padding: "10px 20px", height: "44px", fontSize: "14px" }}
-            >
-              <ChevronLeft size={16} />
-              <span>Back</span>
-            </button>
+          
+        </div>
+      )}
 
-            <button
-              type="button"
-              disabled={isSaving}
-              onClick={() => handleSaveStep4(true)}
-              className="btn-primary"
-              style={{ padding: "10px 28px", height: "44px", fontSize: "14px" }}
-            >
-              <span>{isSaving ? "Saving to Backend..." : "Save & Finish"}</span>
-              <Check size={16} />
-            </button>
+      {/* ACTION BAR AT THE END OF FORM COLUMN */}
+      {currentStep !== "complete" && (
+        <div className="pb-sticky-bottom-bar">
+          <div className="pb-bottom-bar-inner">
+            <div className="pb-bottom-bar-left">
+              <span className="pb-draft-saved-text">
+                {isSaving ? "Saving changes..." : "Draft saved automatically"}
+              </span>
+            </div>
+            <div className="pb-bottom-bar-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  if (currentStep === 1) handleSaveStep1(false);
+                  else if (currentStep === 4) handleSaveStep4(false);
+                  else {
+                    addToast({
+                      type: "info",
+                      title: "Draft Saved",
+                      message: "Current progress has been saved.",
+                    });
+                  }
+                }}
+                disabled={isSaving}
+                className="btn-secondary pb-btn-draft"
+              >
+                <Save size={15} />
+                <span>Save draft</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => {
+                  if (currentStep === 1) handleSaveStep1(true);
+                  else if (currentStep === 2) navigateToStep(3);
+                  else if (currentStep === 3) navigateToStep(4);
+                  else if (currentStep === 4) handleSaveStep4(true);
+                }}
+                className="btn-primary pb-btn-continue"
+              >
+                <span>{currentStep === 4 ? (isSaving ? "Saving..." : "Save & finish") : (isSaving ? "Saving..." : "Save & continue")}</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* ========================================================================= */}
+        </main>
+      </div>
+
       {/* COMPLETION SCREEN: SHOWN AFTER STEP 4                                    */}
       {/* ========================================================================= */}
       {currentStep === "complete" && (
@@ -2377,65 +2355,562 @@ export default function ProfileBuilder({ onFinish }) {
         </div>
       )}
 
-      {/* Responsive mobile stylesheet strictly scoped to <= 640px */}
+      {/* Comprehensive layout and responsive styles for Profile Builder V2 */}
       <style jsx>{`
-        @media (max-width: 640px) {
-          .profile-builder-container {
-            gap: 16px !important;
-            padding: 0 !important;
-            width: 100% !important;
+        .profile-builder-v2 {
+          width: 100%;
+          max-width: 1240px;
+          margin: 0 auto;
+          box-sizing: border-box;
+          position: relative;
+        }
+
+        /* Desktop Grid (>= 1024px) */
+        .pb-desktop-grid {
+          display: grid;
+          grid-template-columns: 300px minmax(0, 1fr);
+          gap: 32px;
+          align-items: start;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .pb-left-sticky-col {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          position: sticky;
+          top: 88px;
+        }
+
+        .pb-sidebar-card {
+          background-color: #FFFFFF;
+          border: 1px solid #E8E1D2;
+          border-radius: 16px;
+          padding: 24px;
+          box-sizing: border-box;
+          box-shadow: 0 2px 8px rgba(43, 45, 42, 0.03);
+        }
+
+        .pb-ring-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+        }
+
+        .pb-progress-ring-box {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .pb-ring-text {
+          position: absolute;
+          font-weight: 700;
+          color: #2A241A;
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+        }
+
+        .pb-ring-meta {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 0;
+        }
+
+        .pb-col-label {
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: #6B6254;
+        }
+
+        .pb-items-left-text {
+          font-size: 13.5px;
+          color: #2A241A;
+          font-weight: 500;
+          line-height: 1.4;
+        }
+
+        .pb-gold-tip-box {
+          margin-top: 16px;
+          padding: 12px 14px;
+          border-radius: 10px;
+          background-color: #FBF3DF;
+          border: 1px solid #EFE7D3;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .pb-tip-title {
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: #8A6B2E;
+        }
+
+        .pb-tip-desc {
+          margin: 0;
+          font-size: 12.5px;
+          color: #5E471B;
+          line-height: 1.45;
+          font-weight: 500;
+        }
+
+        /* Step List in Sidebar */
+        .pb-step-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .pb-step-nav-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 12px;
+          border-radius: 12px;
+          border: 1px solid transparent;
+          background-color: transparent;
+          cursor: pointer;
+          text-align: left;
+          transition: all 0.16s ease;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .pb-step-nav-row:hover {
+          background-color: #FAF8F3;
+        }
+
+        .pb-step-nav-row.current {
+          background-color: #FBF3DF;
+          border-color: #8A6B2E;
+        }
+
+        .pb-step-circle {
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          font-size: 13px;
+          font-weight: 700;
+          box-sizing: border-box;
+        }
+
+        .pb-step-circle-done {
+          background-color: #2F6B45;
+          color: #FFFFFF;
+        }
+
+        .pb-step-circle-current,
+        .pb-step-circle-current-done {
+          background-color: #8A6B2E;
+          color: #FFFFFF;
+        }
+
+        .pb-step-circle-current-incomplete {
+          border: 2px solid #8A6B2E;
+          background-color: transparent;
+          color: #8A6B2E;
+        }
+
+        .pb-step-circle-incomplete {
+          border: 1.5px solid #D9D1BF;
+          background-color: transparent;
+          color: #6B6254;
+        }
+
+        .pb-step-nav-content {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          min-width: 0;
+        }
+
+        .pb-step-status-tag {
+          font-size: 10.5px;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          color: #6B6254;
+        }
+
+        .pb-step-nav-row.current .pb-step-status-tag {
+          color: #8A6B2E;
+        }
+
+        .pb-step-nav-title {
+          font-size: 13.5px;
+          font-weight: 700;
+          color: #2A241A;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        /* Right Form Column */
+        .pb-right-form-col {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+
+        /* Standardized Card Headers */
+        :global(.pb-card-header) {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+
+        :global(.pb-card-icon-box) {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background-color: #F3ECDC;
+          color: #8A6B2E;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        :global(.pb-card-title) {
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: 22px;
+          font-weight: 600;
+          color: #2A241A;
+          margin: 0;
+          line-height: 1.25;
+        }
+
+        :global(.pb-card-subtitle) {
+          font-size: 14px;
+          color: #6B6254;
+          margin: 4px 0 0 0;
+          line-height: 1.45;
+        }
+
+        :global(.pb-card-divider) {
+          width: 100%;
+          height: 1px;
+          background-color: #EFE9DA;
+          margin-bottom: 4px;
+        }
+
+        /* Standardized Chips */
+        :global(.pb-tag-chip) {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          height: 34px;
+          padding: 0 12px;
+          border-radius: 999px;
+          background-color: #F3ECDC;
+          border: 1px solid #E8E1D2;
+          font-size: 13px;
+          font-weight: 600;
+          color: #5E471B;
+          box-sizing: border-box;
+        }
+
+        :global(.pb-chip-remove-btn) {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: rgba(94, 71, 27, 0.12);
+          border: none;
+          color: #5E471B;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          line-height: 1;
+          padding: 0;
+          transition: background-color 0.16s ease;
+        }
+
+        :global(.pb-chip-remove-btn:hover) {
+          background: rgba(94, 71, 27, 0.25);
+        }
+
+        /* In-Flow Action Bar on Desktop (>= 768px) */
+        .pb-sticky-bottom-bar {
+          position: static;
+          width: 100%;
+          background: transparent;
+          border: none;
+          box-shadow: none;
+          z-index: 1;
+          margin-top: 24px;
+          padding-top: 20px;
+          border-top: 1px solid #EFE9DA;
+          box-sizing: border-box;
+        }
+
+        .pb-bottom-bar-inner {
+          width: 100%;
+          margin: 0;
+          height: auto;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 12px;
+          box-sizing: border-box;
+        }
+
+        .pb-bottom-bar-left {
+          margin-right: auto;
+        }
+
+        .pb-draft-saved-text {
+          font-size: 13px;
+          color: #6B6254;
+          white-space: nowrap;
+        }
+
+        .pb-bottom-bar-actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .pb-btn-draft {
+          height: 44px;
+          padding: 0 20px;
+          font-size: 14px;
+          font-weight: 600;
+          letter-spacing: 0.01em;
+          text-transform: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border-radius: 10px;
+          box-sizing: border-box;
+        }
+
+        .pb-btn-continue {
+          height: 44px;
+          padding: 0 20px;
+          font-size: 14px;
+          font-weight: 600;
+          letter-spacing: 0.01em;
+          text-transform: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border-radius: 10px;
+          box-sizing: border-box;
+        }
+
+        /* Hide mobile stack by default on desktop */
+        .pb-mobile-header-stack {
+          display: none;
+        }
+
+        /* Responsive Breakpoint: Tablet & Mobile (<= 1023px) */
+        @media (max-width: 1023px) {
+          .pb-desktop-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
           }
-          .profile-stepper-header-card {
-            padding: 16px !important;
-            border-radius: 14px !important;
+          .pb-left-sticky-col {
+            display: none;
           }
-          .profile-builder-header-row {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 12px !important;
+          .pb-mobile-header-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 20px;
           }
-          .profile-builder-header-actions {
-            width: 100% !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 8px !important;
+          .pb-mobile-progress-card {
+            background-color: #FFFFFF;
+            border: 1px solid #E8E1D2;
+            border-radius: 16px;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-sizing: border-box;
           }
-          .profile-strength-pill {
-            align-self: flex-start !important;
-            width: fit-content !important;
-            white-space: nowrap !important;
-            flex-shrink: 0 !important;
+          .pb-mobile-progress-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
           }
-          .profile-action-btn {
-            width: 100% !important;
-            min-height: 40px !important;
-            height: 40px !important;
-            justify-content: center !important;
+          .pb-mobile-items-left {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2A241A;
           }
-          .profile-stepper-nav {
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: 8px !important;
-            width: 100% !important;
-            min-width: 0 !important;
-            box-sizing: border-box !important;
+          .pb-mobile-hint-text {
+            font-size: 11.5px;
+            color: #8A6B2E;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
-          :global(.stepper-pill) {
-            min-height: 48px !important;
-            padding: 8px 10px !important;
-            min-width: 0 !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
-            overflow: hidden !important;
+          .pb-mobile-stepper-card {
+            background-color: #FFFFFF;
+            border: 1px solid #E8E1D2;
+            border-radius: 16px;
+            padding: 14px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-sizing: border-box;
           }
-          :global(.stepper-pill span) {
-            white-space: normal !important;
-            word-break: break-word !important;
-            overflow-wrap: anywhere !important;
+          .pb-mobile-step-title-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
           }
-          .responsive-two-col {
+          .pb-mobile-step-pill {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #8A6B2E;
+          }
+          .pb-mobile-step-title {
+            font-size: 14px;
+            color: #2A241A;
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          }
+          .pb-mobile-segment-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+          }
+          .pb-mobile-segment-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            text-align: center;
+          }
+          .pb-segment-track {
+            height: 6px;
+            border-radius: 999px;
+            width: 100%;
+            transition: background-color 0.2s ease;
+          }
+          .pb-segment-label {
+            font-size: 10.5px;
+            color: #6B6254;
+            font-weight: 500;
+          }
+          .pb-segment-label.active {
+            color: #8A6B2E;
+            font-weight: 700;
+          }
+        }
+
+        /* Mobile specific (<= 767px) */
+        @media (max-width: 767px) {
+          :global(.profile-builder-v2) {
+            padding: 0 4px;
+            overflow-x: hidden;
+          }
+          :global(.responsive-two-col) {
             grid-template-columns: 1fr !important;
-            gap: 12px !important;
+            gap: 16px !important;
+          }
+          :global(.step-screen-container > div) {
+            padding: 20px 18px !important;
+          }
+          :global(input[type="text"]),
+          :global(input[type="email"]),
+          :global(input[type="tel"]),
+          :global(input[type="number"]),
+          :global(input[type="date"]),
+          :global(select) {
+            height: 48px !important;
+            font-size: 16px !important;
+          }
+          :global(.pb-tag-chip) {
+            height: 36px !important;
+            font-size: 13.5px !important;
+          }
+          :global(input[type="checkbox"]) {
+            width: 22px !important;
+            height: 22px !important;
+            min-height: 22px !important;
+          }
+          :global(label:has(input[type="checkbox"])) {
+            min-height: 44px !important;
+          }
+          :global(button.btn-secondary:has(svg:first-child)) {
+            min-height: 48px !important;
+          }
+          /* Action Bar on Mobile (<= 767px) */
+          .pb-sticky-bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: calc(64px + env(safe-area-inset-bottom, 0px));
+            background-color: #FFFFFF;
+            border-top: 1px solid #E8E1D2;
+            z-index: 40;
+            margin-top: 0;
+            padding-top: 0;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-shadow: 0 -4px 16px rgba(42, 36, 26, 0.05);
+            box-sizing: border-box;
+          }
+          .pb-bottom-bar-inner {
+            height: 64px;
+            padding: 0 16px;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+          }
+          .pb-bottom-bar-left {
+            display: none;
+          }
+          .pb-bottom-bar-actions {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          .pb-btn-draft {
+            flex: 1;
+            height: 44px;
+            padding: 0 12px;
+            justify-content: center;
+            font-size: 14px;
+          }
+          .pb-btn-continue {
+            flex: 1.4;
+            height: 44px;
+            padding: 0 12px;
+            justify-content: center;
+            font-size: 14px;
+          }
+          :global(select) {
+            max-width: 100% !important;
+            text-overflow: ellipsis !important;
+            overflow: hidden !important;
+            white-space: nowrap !important;
           }
         }
       `}</style>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import Link from "next/link";
 import {
   User,
   Shield,
@@ -612,38 +613,56 @@ export default function TalentSettingsPage() {
   };
 
   const menuTabs = [
-    { key: "account", label: "Account profile", icon: User },
-    { key: "security", label: "Password & security", icon: Lock },
-    { key: "notifications", label: "Notification channels", icon: Bell },
-    { key: "privacy", label: "Privacy & account", icon: Shield },
+    { key: "account", label: "Account profile", mobileLabel: "Account", icon: User },
+    { key: "security", label: "Password & security", mobileLabel: "Password", icon: Lock },
+    { key: "notifications", label: "Notification channels", mobileLabel: "Notifications", icon: Bell },
+    { key: "privacy", label: "Privacy & account", mobileLabel: "Privacy", icon: Shield },
   ];
 
   return (
     <div
+      className="settings-v2"
       style={{
         display: "flex",
         flexDirection: "column",
         width: "100%",
-        maxWidth: "1280px",
+        maxWidth: "1240px",
         margin: "0 auto",
       }}
     >
       {/* Breadcrumb, Title & Subtitle */}
       <PageHeader
-        title="Settings &amp; Preferences"
-        subtitle="Manage your authentication credentials, notification preferences, and account controls."
+        title="Settings"
+        subtitle="Manage your account details, password, notifications and privacy."
         breadcrumbs={[
           { label: "Talent Dashboard", href: "/talent/dashboard" },
           { label: "Settings" },
         ]}
-        style={{ marginBottom: "24px" }}
+        style={{ marginBottom: "28px" }}
       />
+
+      {/* Mobile Horizontally Scrollable Pill Tabs */}
+      <div className="settings-mobile-tabs" ref={tabNavRef}>
+        {menuTabs.map((item) => {
+          const isActive = activeTab === item.key;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setActiveTab(item.key)}
+              className={`settings-mobile-tab-btn ${isActive ? "tab-active" : ""}`}
+            >
+              {item.mobileLabel}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Main Settings Layout Container */}
       <div className="settings-page-layout">
         {/* Left Settings Menu */}
-        <aside className="settings-sidebar-nav" ref={tabNavRef}>
-          <div className="settings-nav-list">
+        <aside className="settings-sidebar-nav">
+          <div className="settings-nav-card">
             {menuTabs.map((item) => {
               const isActive = activeTab === item.key;
               const Icon = item.icon;
@@ -652,7 +671,7 @@ export default function TalentSettingsPage() {
                   key={item.key}
                   type="button"
                   onClick={() => setActiveTab(item.key)}
-                  className={`settings-nav-btn ${isActive ? "settings-tab-active" : ""}`}
+                  className={`settings-nav-row ${isActive ? "settings-tab-active" : ""}`}
                 >
                   <Icon size={20} className="settings-nav-icon" />
                   <span className="settings-nav-label">{item.label}</span>
@@ -662,6 +681,7 @@ export default function TalentSettingsPage() {
           </div>
         </aside>
 
+
         {/* Right Content Area */}
         <main className="settings-content-area">
           {/* TAB 1: Account Profile */}
@@ -669,18 +689,18 @@ export default function TalentSettingsPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <div>
-                  <h2 className="settings-card-title">Account identification</h2>
+                  <h2 className="settings-card-title">Account details</h2>
                   <p className="settings-card-description">
-                    Primary account identification, verified email, and callback contact details.
+                    Manage your personal identification, display photo, and verified contact details.
                   </p>
                 </div>
               </div>
               <div className="settings-card-divider" />
 
-              <div className="settings-card-body">
-                <form id="account-settings-form" onSubmit={handleSaveAccount}>
-                  {/* Top Row: Headshot + Info + Change Photo Button */}
-                  <div className="settings-avatar-row">
+              <form id="account-settings-form" onSubmit={handleSaveAccount}>
+                <div className="settings-card-body">
+                  {/* Photo Row: 76px round avatar, title + helper, change / remove buttons */}
+                  <div className="settings-photo-row">
                     <input
                       ref={settingsPhotoInputRef}
                       type="file"
@@ -708,32 +728,25 @@ export default function TalentSettingsPage() {
                       }}
                     />
                     <div
-                      className="settings-headshot-circle"
+                      className="settings-photo-avatar"
                       style={{
                         backgroundImage: profile.avatar || auth?.user?.profilePhoto || auth?.user?.avatar ? `url(${profile.avatar || auth?.user?.profilePhoto || auth?.user?.avatar})` : undefined,
-                        backgroundColor: "#F3EFE6",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "#8A6B2E",
-                        fontWeight: "700",
-                        fontSize: "18px",
                       }}
                     >
                       {!(profile.avatar || auth?.user?.profilePhoto || auth?.user?.avatar) &&
                         (accountName ? accountName.slice(0, 2).toUpperCase() : "TR")}
                     </div>
-                    <div className="settings-avatar-info">
-                      <span className="settings-avatar-title">Profile display photo</span>
-                      <span className="settings-avatar-subtitle">
-                        Used across comp cards and verified casting shortlist summaries
+                    <div className="settings-photo-meta">
+                      <span className="settings-photo-title">Profile photo</span>
+                      <span className="settings-photo-helper">
+                        JPG, PNG or WebP, at least 400x400px, max 5 MB
                       </span>
                     </div>
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <div className="settings-photo-actions">
                       <button
                         type="button"
                         onClick={() => settingsPhotoInputRef.current?.click()}
-                        className="btn-secondary settings-photo-btn"
+                        className="settings-btn-secondary settings-photo-action-btn"
                       >
                         {profile.avatar || auth?.user?.profilePhoto ? "Change photo" : "Upload photo"}
                       </button>
@@ -757,8 +770,7 @@ export default function TalentSettingsPage() {
                               }
                             }
                           }}
-                          className="btn-secondary settings-photo-btn"
-                          style={{ color: "#B42318", borderColor: "#FECDCA" }}
+                          className="settings-btn-red-outline settings-photo-action-btn"
                         >
                           Remove
                         </button>
@@ -766,9 +778,11 @@ export default function TalentSettingsPage() {
                     </div>
                   </div>
 
-                  {/* Form Grid Fields */}
-                  <div className="talent-form-grid" style={{ marginTop: "24px" }}>
-                    <div>
+                  <div className="settings-photo-divider" />
+
+                  {/* Fields in a 2-column grid (gap 26px 28px): Full name, Primary email, Phone, Primary base city */}
+                  <div className="settings-form-grid">
+                    <div className="settings-field-group">
                       <label className="settings-field-label">Full name</label>
                       <input
                         id="settings-name-input"
@@ -782,78 +796,68 @@ export default function TalentSettingsPage() {
                       <span className="settings-helper-text">Official name used on verified casting call sheets</span>
                     </div>
 
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                        <label className="settings-field-label" style={{ margin: 0 }}>Primary email</label>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          {isEmailVerified ? (
-                            <span className="settings-verified-badge">
-                              <CheckCircle2 size={12} />
-                              <span>Verified</span>
-                            </span>
-                          ) : (
-                            <span
-                              className="settings-verified-badge"
-                              style={{ backgroundColor: "#FEF3F2", color: "#B42318", borderColor: "#FECDCA" }}
-                            >
-                              <AlertCircle size={12} />
-                              <span>Unverified</span>
-                            </span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setNewEmailInput("");
-                              setEmailPasswordInput("");
-                              setEmailOtpInput("");
-                              setIsEmailOtpSent(false);
-                              setShowEmailModal(true);
-                            }}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "var(--gold)",
-                              fontSize: "12px",
-                              fontWeight: "700",
-                              cursor: "pointer",
-                              textDecoration: "underline",
-                              padding: 0,
-                            }}
-                          >
-                            Change email
-                          </button>
-                        </div>
-                      </div>
+                    <div className="settings-field-group">
+                      <label className="settings-field-label">Primary email</label>
                       <input
                         type="email"
                         value={accountEmail}
                         readOnly
-                        className="settings-input"
-                        style={{ backgroundColor: "#F9FAFB", cursor: "default", opacity: 0.9 }}
+                        className="settings-input settings-input-readonly"
                       />
+                      <div className="settings-email-status-row">
+                        {isEmailVerified ? (
+                          <span className="settings-pill-verified">
+                            <CheckCircle2 size={12} />
+                            <span>VERIFIED</span>
+                          </span>
+                        ) : (
+                          <span className="settings-pill-unverified">
+                            <AlertCircle size={12} />
+                            <span>UNVERIFIED</span>
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewEmailInput("");
+                            setEmailPasswordInput("");
+                            setEmailOtpInput("");
+                            setIsEmailOtpSent(false);
+                            setShowEmailModal(true);
+                          }}
+                          className="settings-email-action-btn"
+                        >
+                          Change email
+                        </button>
+                      </div>
                       <span className="settings-helper-text">
                         Used for sign-in and formal contract communication. Change requires email verification.
                       </span>
                     </div>
 
-                    <div>
-                      <label className="settings-field-label">
-                        Phone number for WhatsApp / SMS callbacks
-                      </label>
-                      <input
-                        type="tel"
-                        value={accountPhone}
-                        readOnly
-                        className="settings-input"
-                        style={{ backgroundColor: "#F9FAFB", cursor: "not-allowed", opacity: 0.85 }}
-                      />
+                    <div className="settings-field-group">
+                      <label className="settings-field-label">Phone (WhatsApp/SMS)</label>
+                      <div className="settings-input-with-icon">
+                        <input
+                          type="tel"
+                          value={accountPhone || ""}
+                          placeholder={!accountPhone ? "Not added" : ""}
+                          readOnly
+                          className="settings-input settings-input-readonly"
+                        />
+                        <Lock size={16} className="settings-input-lock-icon" />
+                      </div>
                       <span className="settings-helper-text">
-                        Mobile number cannot be changed. Contact support for help.
+                        The mobile number is locked.{" "}
+                        <Link href="/support" className="settings-support-link">
+                          Contact support
+                        </Link>{" "}
+                        to change it.
                       </span>
                     </div>
 
-                    <div>
-                      <label className="settings-field-label">Primary Base City</label>
+                    <div className="settings-field-group">
+                      <label className="settings-field-label">Primary base city</label>
                       <input
                         id="settings-city-input"
                         type="text"
@@ -865,7 +869,7 @@ export default function TalentSettingsPage() {
                       <span className="settings-helper-text">Primary domestic base city for audition scheduling</span>
                     </div>
 
-                    <div>
+                    <div className="settings-field-group">
                       <label className="settings-field-label">State / Province</label>
                       <input
                         id="settings-state-input"
@@ -878,51 +882,53 @@ export default function TalentSettingsPage() {
                       <span className="settings-helper-text">Domestic state or union territory</span>
                     </div>
 
-                    <div className="talent-form-grid-full">
+                    <div className="settings-field-group">
                       <label className="settings-field-label">Primary profession</label>
-                      <input
-                        type="text"
-                        value={primaryProfession}
-                        readOnly
-                        className="settings-input"
-                        style={{ backgroundColor: "#F9FAFB", cursor: "not-allowed", opacity: 0.85 }}
-                      />
+                      <div className="settings-input-with-icon">
+                        <input
+                          type="text"
+                          value={primaryProfession}
+                          readOnly
+                          className="settings-input settings-input-readonly"
+                        />
+                        <Lock size={16} className="settings-input-lock-icon" />
+                      </div>
                       <span className="settings-helper-text">
-                        Primary profession cannot be changed here. Contact support to request profession migration.
+                        Primary profession is locked to your verification credential. Contact support to migrate.
                       </span>
                     </div>
                   </div>
+                </div>
 
-                  {/* Desktop Card Footer Row */}
-                  <div className="settings-card-footer">
-                    <button
-                      type="button"
-                      onClick={handleCancelAccount}
-                      disabled={!hasAccountChanges || isSavingAccount}
-                      className="btn-secondary settings-footer-btn"
-                      style={{ opacity: !hasAccountChanges ? 0.5 : 1 }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={!hasAccountChanges || isSavingAccount}
-                      className="btn-primary settings-footer-btn"
-                      style={{ opacity: !hasAccountChanges ? 0.6 : 1, cursor: !hasAccountChanges ? "not-allowed" : "pointer" }}
-                    >
-                      <Save size={16} />
-                      <span>{isSavingAccount ? "Saving..." : "Save changes"}</span>
-                    </button>
-                  </div>
-                </form>
-              </div>
+                {/* Card Footer Bar */}
+                <div className="settings-card-footer">
+                  <button
+                    type="button"
+                    onClick={handleCancelAccount}
+                    disabled={!hasAccountChanges || isSavingAccount}
+                    className="settings-btn-secondary settings-footer-btn"
+                    style={{ opacity: !hasAccountChanges ? 0.5 : 1 }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!hasAccountChanges || isSavingAccount}
+                    className="settings-btn-primary settings-footer-btn"
+                    style={{ opacity: !hasAccountChanges ? 0.6 : 1, cursor: !hasAccountChanges ? "not-allowed" : "pointer" }}
+                  >
+                    <Save size={16} />
+                    <span>{isSavingAccount ? "Saving..." : "Save changes"}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           )}
 
           {/* TAB 2: Password & Security */}
           {activeTab === "security" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              {/* Card 1: Change Password (Spec §38: Current password OR OTP) */}
+              {/* Card 1: Change Password */}
               <div className="settings-card">
                 <div className="settings-card-header">
                   <div>
@@ -934,38 +940,38 @@ export default function TalentSettingsPage() {
                 </div>
                 <div className="settings-card-divider" />
 
-                <div className="settings-card-body">
-                  {/* Mode Selector */}
-                  <div style={{ display: "flex", gap: "16px", marginBottom: "20px" }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13.5px", fontWeight: "600", cursor: "pointer", color: passwordMode === "current" ? "var(--text-primary)" : "var(--text-muted)" }}>
-                      <input
-                        type="radio"
-                        name="passwordMode"
-                        checked={passwordMode === "current"}
-                        onChange={() => {
-                          setPasswordMode("current");
-                          setPasswordOtp("");
-                          setIsPasswordOtpSent(false);
-                        }}
-                      />
-                      <span>Use current password</span>
-                    </label>
+                <form id="password-settings-form" onSubmit={handleUpdatePassword}>
+                  <div className="settings-card-body">
+                    {/* Mode Selector */}
+                    <div style={{ display: "flex", gap: "20px", marginBottom: "24px", flexWrap: "wrap" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: "600", cursor: "pointer", color: passwordMode === "current" ? "#2A241A" : "#6B6254" }}>
+                        <input
+                          type="radio"
+                          name="passwordMode"
+                          checked={passwordMode === "current"}
+                          onChange={() => {
+                            setPasswordMode("current");
+                            setPasswordOtp("");
+                            setIsPasswordOtpSent(false);
+                          }}
+                        />
+                        <span>Use current password</span>
+                      </label>
 
-                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13.5px", fontWeight: "600", cursor: "pointer", color: passwordMode === "otp" ? "var(--text-primary)" : "var(--text-muted)" }}>
-                      <input
-                        type="radio"
-                        name="passwordMode"
-                        checked={passwordMode === "otp"}
-                        onChange={() => setPasswordMode("otp")}
-                      />
-                      <span>Verify via Email OTP</span>
-                    </label>
-                  </div>
+                      <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: "600", cursor: "pointer", color: passwordMode === "otp" ? "#2A241A" : "#6B6254" }}>
+                        <input
+                          type="radio"
+                          name="passwordMode"
+                          checked={passwordMode === "otp"}
+                          onChange={() => setPasswordMode("otp")}
+                        />
+                        <span>Verify via Email OTP</span>
+                      </label>
+                    </div>
 
-                  <form id="password-settings-form" onSubmit={handleUpdatePassword}>
-                    <div className="talent-form-grid">
+                    <div className="settings-form-grid">
                       {passwordMode === "current" ? (
-                        <div className="talent-form-grid-full">
+                        <div className="settings-field-group settings-grid-full">
                           <label className="settings-field-label">Current password</label>
                           <PasswordInput
                             placeholder="Enter current password"
@@ -977,8 +983,8 @@ export default function TalentSettingsPage() {
                           <span className="settings-helper-text">Required to confirm authorization</span>
                         </div>
                       ) : (
-                        <div className="talent-form-grid-full">
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                        <div className="settings-field-group settings-grid-full">
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                             <label className="settings-field-label" style={{ margin: 0 }}>Email verification code (OTP)</label>
                             <button
                               type="button"
@@ -987,7 +993,7 @@ export default function TalentSettingsPage() {
                               style={{
                                 background: "none",
                                 border: "none",
-                                color: "var(--gold)",
+                                color: "#8A6B2E",
                                 fontSize: "12px",
                                 fontWeight: "700",
                                 cursor: "pointer",
@@ -1012,7 +1018,7 @@ export default function TalentSettingsPage() {
                         </div>
                       )}
 
-                      <div>
+                      <div className="settings-field-group">
                         <label className="settings-field-label">New password</label>
                         <PasswordInput
                           placeholder="Minimum 8 characters"
@@ -1025,7 +1031,7 @@ export default function TalentSettingsPage() {
                         {newPassword && (
                           <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
-                              <span style={{ color: "var(--text-muted)" }}>Strength:</span>
+                              <span style={{ color: "#6B6254" }}>Strength:</span>
                               <span style={{ color: getStrengthColor(passwordStrength), fontWeight: "700" }}>
                                 {getStrengthLabel(passwordStrength)}
                               </span>
@@ -1039,9 +1045,10 @@ export default function TalentSettingsPage() {
                             />
                           </div>
                         )}
+                        <span className="settings-helper-text">Must be at least 8 characters with numbers and symbols</span>
                       </div>
 
-                      <div>
+                      <div className="settings-field-group">
                         <label className="settings-field-label">Confirm new password</label>
                         <PasswordInput
                           placeholder="Re-type new password"
@@ -1054,8 +1061,8 @@ export default function TalentSettingsPage() {
                       </div>
 
                       {/* Requirements Checklist */}
-                      <div className="talent-form-grid-full">
-                        <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)", display: "block", marginBottom: "8px" }}>
+                      <div className="settings-field-group settings-grid-full">
+                        <span style={{ fontSize: "13px", fontWeight: "600", color: "#2A241A", display: "block", marginBottom: "8px" }}>
                           Password requirements:
                         </span>
                         <div className="settings-checklist-grid">
@@ -1074,30 +1081,30 @@ export default function TalentSettingsPage() {
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    <div className="settings-card-footer">
-                      <button
-                        type="button"
-                        onClick={handleCancelPassword}
-                        className="btn-secondary settings-footer-btn"
-                        disabled={isUpdatingPassword}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="btn-primary settings-footer-btn"
-                        disabled={isUpdatingPassword}
-                      >
-                        <Key size={16} />
-                        <span>{isUpdatingPassword ? "Updating..." : "Update password"}</span>
-                      </button>
-                    </div>
-                  </form>
-                </div>
+                  <div className="settings-card-footer">
+                    <button
+                      type="button"
+                      onClick={handleCancelPassword}
+                      className="settings-btn-secondary settings-footer-btn"
+                      disabled={isUpdatingPassword}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="settings-btn-primary settings-footer-btn"
+                      disabled={isUpdatingPassword}
+                    >
+                      <Key size={16} />
+                      <span>{isUpdatingPassword ? "Updating..." : "Update password"}</span>
+                    </button>
+                  </div>
+                </form>
               </div>
 
-              {/* Card 2: Two-Factor Authentication (Spec §6 & §38) */}
+              {/* Card 2: Two-Factor Authentication */}
               <div className="settings-card">
                 <div className="settings-card-header">
                   <div>
@@ -1110,38 +1117,46 @@ export default function TalentSettingsPage() {
                 <div className="settings-card-divider" />
 
                 <div className="settings-card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0, flex: 1 }}>
                     <div
                       style={{
-                        width: "44px",
-                        height: "44px",
-                        borderRadius: "10px",
-                        backgroundColor: is2FAEnabled ? "rgba(46, 125, 50, 0.1)" : "#F3EFE6",
-                        color: is2FAEnabled ? "var(--success)" : "#8A6B2E",
+                        width: "48px",
+                        height: "48px",
+                        borderRadius: "12px",
+                        backgroundColor: is2FAEnabled ? "#E3F0E7" : "#F3ECDC",
+                        color: is2FAEnabled ? "#2F6B45" : "#8A6B2E",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        flexShrink: 0,
                       }}
                     >
-                      <ShieldCheck size={22} />
+                      <ShieldCheck size={24} />
                     </div>
                     <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontSize: "14.5px", fontWeight: "700", color: "var(--text-primary)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: "15px", fontWeight: "600", color: "#2A241A" }}>
                           Two-factor authentication
                         </span>
                         <span
-                          className="settings-verified-badge"
                           style={{
-                            backgroundColor: is2FAEnabled ? "rgba(46, 125, 50, 0.1)" : "#F3EFE6",
-                            color: is2FAEnabled ? "var(--success)" : "var(--text-muted)",
-                            borderColor: is2FAEnabled ? "rgba(46, 125, 50, 0.2)" : "#E8E2D4",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            height: "24px",
+                            padding: "0 10px",
+                            borderRadius: "999px",
+                            backgroundColor: is2FAEnabled ? "#E3F0E7" : "#F3ECDC",
+                            color: is2FAEnabled ? "#2F6B45" : "#5E471B",
+                            fontSize: "11px",
+                            fontWeight: "700",
+                            letterSpacing: ".04em",
+                            lineHeight: 1,
                           }}
                         >
-                          {is2FAEnabled ? "Enabled" : "Disabled"}
+                          {is2FAEnabled ? "ENABLED" : "DISABLED"}
                         </span>
                       </div>
-                      <span style={{ fontSize: "12.5px", color: "var(--text-muted)", marginTop: "2px", display: "block" }}>
+                      <span style={{ fontSize: "13px", color: "#6B6254", marginTop: "4px", display: "block", lineHeight: 1.5 }}>
                         {is2FAEnabled
                           ? "Verification codes are required to authorize sign-ins from unrecognized browsers."
                           : "Optional security layer. When enabled, a 6-digit code is dispatched to your email on sign in."}
@@ -1152,8 +1167,8 @@ export default function TalentSettingsPage() {
                   <button
                     type="button"
                     onClick={() => handleOpen2FAModal(is2FAEnabled ? "disable" : "enable")}
-                    className={is2FAEnabled ? "btn-secondary" : "btn-primary"}
-                    style={{ minWidth: "120px" }}
+                    className={is2FAEnabled ? "settings-btn-secondary" : "settings-btn-primary"}
+                    style={{ minHeight: "44px", padding: "0 22px" }}
                   >
                     {is2FAEnabled ? "Disable 2FA" : "Enable 2FA"}
                   </button>
@@ -1169,51 +1184,48 @@ export default function TalentSettingsPage() {
                 <div>
                   <h2 className="settings-card-title">Notification channels</h2>
                   <p className="settings-card-description">
-                    Manage your alert dispatch channels per client specification (Spec §38: Email notification toggle).
+                    Choose how Vismaya reaches you.
                   </p>
                 </div>
               </div>
               <div className="settings-card-divider" />
 
               <div className="settings-card-body">
-                <div className="settings-channels-grid">
+                <div className="settings-channel-list">
                   {/* Channel 1: In-App (Platform controlled) */}
-                  <div className="settings-channel-card">
-                    <div className="settings-channel-left">
-                      <div className="settings-channel-icon">
-                        <Bell size={20} />
-                      </div>
-                      <div className="settings-channel-text">
-                        <span className="settings-channel-title">In-app notifications</span>
-                        <span className="settings-channel-desc">
-                          Live alerts delivered directly to your artist dashboard for audition sides, callbacks, and shortlists
+                  <div className="settings-channel-row">
+                    <div className="settings-channel-icon-box">
+                      <Bell size={20} />
+                    </div>
+                    <div className="settings-channel-text-block">
+                      <span className="settings-channel-title">In-app notifications</span>
+                      <span className="settings-channel-desc">
+                        Live alerts delivered directly to your artist dashboard for audition sides, callbacks, and shortlists
+                      </span>
+                      <div style={{ marginTop: "8px" }}>
+                        <span className="settings-pill-platform-managed">
+                          PLATFORM MANAGED
                         </span>
                       </div>
                     </div>
-                    <span
-                      className="settings-verified-badge"
-                      style={{ backgroundColor: "#F3EFE6", color: "#8A6B2E", borderColor: "#E8E2D4", whiteSpace: "nowrap" }}
-                    >
-                      Platform managed
-                    </span>
                   </div>
 
-                  {/* Channel 2: Email (Single Real Toggle per Spec §38) */}
-                  <div className="settings-channel-card">
-                    <div className="settings-channel-left">
-                      <div className="settings-channel-icon">
-                        <Mail size={20} />
-                      </div>
-                      <div className="settings-channel-text">
-                        <span className="settings-channel-title">Email digests &amp; updates</span>
-                        <span className="settings-channel-desc">
-                          Formal casting confirmations, application logs, audition schedules, and production project briefs
-                        </span>
-                      </div>
+                  {/* Channel 2: Email (Toggle) */}
+                  <div className="settings-channel-row">
+                    <div className="settings-channel-icon-box">
+                      <Mail size={20} />
                     </div>
-                    <label className="settings-toggle-switch">
+                    <div className="settings-channel-text-block">
+                      <span className="settings-channel-title">Email digests &amp; updates</span>
+                      <span className="settings-channel-desc">
+                        Formal casting confirmations, application logs, audition schedules, and production project briefs
+                      </span>
+                    </div>
+                    <label className="settings-toggle-switch" aria-label="Toggle email notifications">
                       <input
                         type="checkbox"
+                        role="switch"
+                        aria-checked={notifEmail}
                         checked={notifEmail}
                         disabled={isUpdatingNotif}
                         onChange={(e) => handleToggleEmailNotification(e.target.checked)}
@@ -1230,35 +1242,49 @@ export default function TalentSettingsPage() {
           {activeTab === "privacy" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
               {/* Privacy Protocol Info Card */}
-              <div className="settings-info-card">
-                <ShieldCheck size={28} className="settings-info-icon" />
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <h3 className="settings-info-title">Verified privacy protocol</h3>
-                  <p className="settings-info-text">
-                    Per Vismaya Privacy Protocol (Spec §38), visibility controls (Public, Private, or Unlisted) are managed directly per media item in your Portfolio. Your basic comp card, verified credits, and stage name are discoverable by verified casting directors.
-                  </p>
-                </div>
-              </div>
-
-              {/* Danger Zone: Delete Profile */}
-              <div className="settings-danger-card">
+              <div className="settings-card">
                 <div className="settings-card-header">
                   <div>
-                    <h2 className="settings-danger-title">Danger zone</h2>
+                    <h2 className="settings-card-title">Privacy protocol</h2>
                     <p className="settings-card-description">
-                      Permanently erase your artist profile, portfolio media, and audition submission history. Temporary deactivation is not supported per client specification (Spec §38).
+                      How your public comp card, verified credits, and stage name are shared across casting calls.
                     </p>
                   </div>
                 </div>
-                <div className="settings-card-divider" style={{ borderColor: "rgba(255, 107, 107, 0.2)" }} />
+                <div className="settings-card-divider" />
+                <div className="settings-card-body" style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
+                  <div className="settings-channel-icon-box" style={{ flexShrink: 0 }}>
+                    <ShieldCheck size={22} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0, flex: 1 }}>
+                    <span style={{ fontSize: "15px", fontWeight: "600", color: "#2A241A" }}>
+                      Verified artist discoverability
+                    </span>
+                    <p style={{ fontSize: "13px", color: "#6B6254", lineHeight: 1.55, margin: 0 }}>
+                      Visibility controls (Public, Private, or Unlisted) are managed directly per media item in your Portfolio. Your basic comp card, verified credits, and stage name are discoverable by verified casting directors and talent agents.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-                <div className="settings-card-body" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
+              {/* Danger Zone: Separate Card with Red-Tinted Header */}
+              <div className="settings-danger-box">
+                <div className="settings-danger-box-header">
                   <div>
-                    <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--danger)", display: "block" }}>
+                    <h2 className="settings-danger-box-title">Danger zone</h2>
+                    <p className="settings-danger-box-subtitle">
+                      Permanently erase your artist profile, portfolio media, and audition submission history.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="settings-danger-box-body">
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: "600", color: "#2A241A" }}>
                       Request account deletion
                     </span>
-                    <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                      Requires email OTP verification. Once confirmed, your artist profile and active submissions will be permanently removed.
+                    <span style={{ fontSize: "13px", color: "#6B6254", lineHeight: 1.5 }}>
+                      This action cannot be undone. All active casting submissions, shortlists, and media items will be immediately removed.
                     </span>
                   </div>
 
@@ -1269,10 +1295,11 @@ export default function TalentSettingsPage() {
                       setIsDeleteOtpSent(false);
                       setShowDeleteModal(true);
                     }}
-                    className="btn-danger settings-danger-btn"
+                    className="settings-btn-red-outline"
+                    style={{ minHeight: "44px", padding: "0 20px" }}
                   >
                     <Trash2 size={16} />
-                    <span>Request account deletion</span>
+                    <span>Delete account</span>
                   </button>
                 </div>
               </div>
@@ -1283,11 +1310,12 @@ export default function TalentSettingsPage() {
 
       {/* Mobile Sticky Bottom Action Bar */}
       {(activeTab === "account" || activeTab === "security") && (
-        <div className="talent-sticky-action-bar">
+        <div className="settings-mobile-sticky-bar">
           <button
             type="button"
             onClick={activeTab === "account" ? handleCancelAccount : handleCancelPassword}
-            className="btn-secondary"
+            className="settings-btn-secondary"
+            style={{ flex: 1, minHeight: "48px" }}
             disabled={activeTab === "account" ? (!hasAccountChanges || isSavingAccount) : isUpdatingPassword}
           >
             Cancel
@@ -1295,11 +1323,12 @@ export default function TalentSettingsPage() {
           <button
             type="button"
             onClick={activeTab === "account" ? handleSaveAccount : handleUpdatePassword}
-            className="btn-primary"
+            className="settings-btn-primary"
+            style={{ flex: 1.4, minHeight: "48px" }}
             disabled={activeTab === "account" ? (!hasAccountChanges || isSavingAccount) : isUpdatingPassword}
           >
             <Save size={16} />
-            <span>{activeTab === "account" ? (isSavingAccount ? "Saving..." : "Save changes") : (isUpdatingPassword ? "Updating..." : "Update password")}</span>
+            <span>{activeTab === "account" ? (isSavingAccount ? "Saving..." : "Save changes") : (isUpdatingPassword ? "Updating..." : "Save changes")}</span>
           </button>
         </div>
       )}
@@ -1537,253 +1566,589 @@ export default function TalentSettingsPage() {
       </Modal>
 
       <style jsx global>{`
-        /* 2-Column Settings Page Layout */
+        /* =========================================================================
+           SETTINGS V2 SCOPED STYLES
+           ========================================================================= */
+        .settings-v2 {
+          width: 100%;
+        }
+
+        /* 2-Column Desktop Grid */
         .settings-page-layout {
-          display: flex;
+          display: grid;
+          grid-template-columns: 260px minmax(0, 1fr);
           gap: 32px;
           align-items: flex-start;
           width: 100%;
+          max-width: 1240px;
         }
 
+        /* Left Nav Column */
         .settings-sidebar-nav {
-          width: 240px;
+          width: 260px;
           position: sticky;
           top: 96px;
           flex-shrink: 0;
-          z-index: 10;
         }
 
-        .settings-nav-list {
+        .settings-nav-card {
+          background: #FFFFFF;
+          border: 1px solid #E8E1D2;
+          border-radius: 16px;
+          padding: 10px;
           display: flex;
           flex-direction: column;
-          gap: 6px;
-          width: 100%;
+          gap: 4px;
         }
 
-        .settings-nav-btn {
-          height: 40px;
-          border-radius: 6px;
+        .settings-nav-row {
+          height: 48px;
+          border-radius: 10px;
           display: flex;
           align-items: center;
           gap: 12px;
           padding: 0 16px;
           background: transparent;
           border: 1px solid transparent;
-          border-left: 3px solid transparent;
-          color: var(--text-secondary);
+          color: #4A4234;
           font-family: var(--font-body), "Inter", sans-serif;
-          font-size: 14px;
-          font-weight: 600;
-          text-transform: none;
-          letter-spacing: 0;
+          font-size: 15px;
+          font-weight: 500;
           cursor: pointer;
-          transition: all 0.18s ease;
+          transition: all 0.16s ease;
           width: 100%;
           text-align: left;
-          white-space: nowrap;
         }
 
-        .settings-nav-btn:hover:not(.settings-tab-active) {
-          background-color: var(--bg-alt);
-          color: var(--text-primary);
+        .settings-nav-row:hover:not(.settings-tab-active) {
+          background-color: #FAF8F3;
+          color: #2A241A;
         }
 
-        .settings-tab-active {
-          background-color: var(--bg-alt) !important;
-          color: var(--gold) !important;
-          border-left: 3px solid var(--gold) !important;
+        .settings-nav-row.settings-tab-active {
+          background: #FBF3DF !important;
+          border: 1px solid #E6D3A2 !important;
+          color: #2A241A !important;
+          font-weight: 600 !important;
         }
 
         .settings-nav-icon {
-          color: inherit;
           flex-shrink: 0;
+          color: #8A6B2E;
         }
 
+        .settings-nav-row:not(.settings-tab-active) .settings-nav-icon {
+          color: #6B6254;
+        }
+
+        /* Mobile Horizontal Tabs */
+        .settings-mobile-tabs {
+          display: none;
+        }
+
+        /* Right Content Area */
         .settings-content-area {
           flex: 1;
           min-width: 0;
           width: 100%;
         }
 
-        /* Card container for every tab */
+        /* White Cards */
         .settings-card {
           background: #FFFFFF;
-          border: 1px solid #E8E2D4;
-          border-radius: 18px;
-          box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06);
+          border: 1px solid #E8E1D2;
+          border-radius: 16px;
           overflow: hidden;
           width: 100%;
         }
 
         .settings-card-header {
-          padding: 24px;
-          display: flex;
-          align-items: flex-start;
-          justifyContent: space-between;
-          gap: 16px;
+          padding: 28px 32px 22px;
         }
 
         .settings-card-title {
           font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
-          font-size: 20px;
-          fontWeight: 600;
-          color: #2B2D2A;
+          font-size: 24px;
+          font-weight: 600;
+          color: #2A241A;
           margin: 0 0 4px 0;
-          line-height: 1.3;
+          line-height: 1.25;
         }
 
         .settings-card-description {
-          font-size: 13px;
-          color: #5A584F;
+          font-size: 14px;
+          color: #6B6254;
           margin: 0;
-          line-height: 1.45;
+          line-height: 1.5;
           font-family: var(--font-body), 'Inter', sans-serif;
         }
 
         .settings-card-divider {
           height: 1px;
-          background-color: #E8E2D4;
+          background-color: #EFE9DA;
           width: 100%;
         }
 
         .settings-card-body {
-          padding: 24px;
+          padding: 28px 32px;
         }
 
         .settings-card-footer {
-          margin-top: 28px;
-          padding-top: 20px;
-          border-top: 1px solid var(--border-color);
+          padding: 18px 32px;
+          background: #FCFAF4;
+          border-top: 1px solid #EFE9DA;
           display: flex;
           align-items: center;
-          justifyContent: flex-end;
+          justify-content: flex-end;
           gap: 12px;
         }
 
-        .settings-footer-btn {
-          min-height: 38px;
-          padding: 0 20px;
-          font-size: 13px;
+        /* Buttons */
+        .settings-btn-primary {
+          height: 46px;
+          padding: 0 24px;
+          border-radius: 10px;
+          background: #8A6B2E;
+          color: #FFFFFF;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          font-size: 14px;
           font-weight: 600;
-          text-transform: none;
-          letter-spacing: 0;
-          border-radius: 4px;
+          border: none;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: background-color 0.16s ease;
         }
 
-        /* Avatar Top Row */
-        .settings-avatar-row {
+        .settings-btn-primary:hover:not(:disabled) {
+          background: #6E5420;
+        }
+
+        .settings-btn-primary:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .settings-btn-secondary {
+          height: 46px;
+          padding: 0 24px;
+          border-radius: 10px;
+          background: #FFFFFF;
+          color: #2A241A;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          font-size: 14px;
+          font-weight: 600;
+          border: 1px solid #D9D1BF;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: background-color 0.16s ease, border-color 0.16s ease;
+        }
+
+        .settings-btn-secondary:hover:not(:disabled) {
+          background: #F7F3EA;
+          border-color: #C9A95C;
+        }
+
+        .settings-btn-secondary:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .settings-btn-red-outline {
+          height: 40px;
+          padding: 0 18px;
+          border-radius: 10px;
+          background: #FFFFFF;
+          color: #A3321F;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          font-size: 13.5px;
+          font-weight: 600;
+          border: 1px solid #E8C5BD;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          transition: all 0.16s ease;
+        }
+
+        .settings-btn-red-outline:hover:not(:disabled) {
+          background: #FBE9E5;
+          border-color: #DFA99E;
+        }
+
+        .settings-btn-red-outline:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        /* Photo Row */
+        .settings-photo-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+        }
+
+        .settings-photo-left {
           display: flex;
           align-items: center;
           gap: 20px;
-          padding: 16px;
-          background-color: var(--bg-alt);
-          border: 1px solid var(--border-color);
-          border-radius: 6px;
-          flex-wrap: wrap;
+          min-width: 0;
         }
 
-        .settings-headshot-circle {
-          width: 72px;
-          height: 72px;
+        .settings-photo-avatar {
+          width: 76px;
+          height: 76px;
           border-radius: 50%;
           background-size: cover;
           background-position: center;
-          border: 2px solid var(--gold);
-          box-shadow: var(--shadow-sm);
+          border: 2px solid #8A6B2E;
+          background-color: #F3EFE6;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          font-weight: 700;
+          color: #8A6B2E;
           flex-shrink: 0;
-          background-color: var(--bg-surface);
         }
 
-        .settings-avatar-info {
+        .settings-photo-meta {
           display: flex;
           flex-direction: column;
-          gap: 3px;
-          flex: 1;
-          min-width: 180px;
+          gap: 4px;
         }
 
-        .settings-avatar-title {
-          font-size: 15px;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-
-        .settings-avatar-subtitle {
-          font-size: 13px;
-          color: var(--text-muted);
-        }
-
-        .settings-photo-btn {
-          min-height: 36px;
-          padding: 0 16px;
-          font-size: 12px;
+        .settings-photo-title {
+          font-size: 16px;
           font-weight: 600;
-          border-radius: 4px;
-          text-transform: none;
-          letter-spacing: 0;
+          color: #2A241A;
         }
 
-        /* Form Labels and Inputs */
+        .settings-photo-helper {
+          font-size: 13px;
+          color: #6B6254;
+          line-height: 1.45;
+        }
+
+        .settings-photo-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-shrink: 0;
+        }
+
+        .settings-photo-divider {
+          height: 1px;
+          background-color: #EFE9DA;
+          width: 100%;
+          margin: 24px 0 28px;
+        }
+
+        /* 2-Column Form Grid */
+        .settings-form-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 26px 28px;
+          width: 100%;
+        }
+
+        .settings-field-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: 0;
+        }
+
         .settings-field-label {
           display: block;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 600;
-          color: var(--text-primary);
-          margin-bottom: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: #6B6254;
+          line-height: 1.2;
         }
 
         .settings-input {
           width: 100%;
-          height: 38px;
-          min-height: 38px;
-          padding: 0 14px;
-          background-color: var(--bg-surface);
-          border: 1px solid var(--border-color);
-          border-radius: 4px;
-          color: var(--text-primary);
-          font-size: 14px;
+          height: 46px;
+          padding: 0 16px;
+          border-radius: 10px;
+          border: 1px solid #D9D1BF;
+          background: #FFFFFF;
+          color: #2A241A;
+          font-family: var(--font-body), 'Inter', sans-serif;
+          font-size: 15px;
           outline: none;
-          transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+          box-sizing: border-box;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease;
         }
 
         .settings-input:focus {
-          border-color: var(--gold);
-          box-shadow: 0 0 0 2px rgba(155, 122, 63, 0.2);
+          border-color: #8A6B2E;
+          box-shadow: 0 0 0 2px rgba(138, 107, 46, 0.2);
+        }
+
+        .settings-input-readonly {
+          background-color: #F7F3EA !important;
+          color: #4A4234 !important;
+          cursor: default;
+        }
+
+        .settings-input-with-icon {
+          position: relative;
+          display: flex;
+          align-items: center;
+          width: 100%;
+        }
+
+        .settings-input-lock-icon {
+          position: absolute;
+          right: 14px;
+          color: #8A6B2E;
+          pointer-events: none;
         }
 
         .settings-helper-text {
           display: block;
-          font-size: 12px;
-          color: var(--text-muted);
-          margin-top: 6px;
+          font-size: 13px;
+          color: #6B6254;
+          line-height: 1.5;
         }
 
-        .settings-verified-badge {
+        .settings-helper-link {
+          color: #8A6B2E;
+          font-weight: 600;
+          text-decoration: underline;
+          cursor: pointer;
+        }
+
+        /* Email Status Pills */
+        .settings-pill-verified {
           display: inline-flex;
           align-items: center;
-          gap: 4px;
-          padding: 2px 8px;
-          border-radius: 4px;
-          background-color: #EFF2EC;
-          border: 1px solid #D1DCC8;
-          color: var(--text-primary);
+          gap: 5px;
+          height: 26px;
+          padding: 0 10px;
+          border-radius: 999px;
+          background: #E3F0E7;
+          color: #2F6B45;
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
+          line-height: 1;
           letter-spacing: 0.04em;
         }
 
-        .settings-eye-toggle {
-          position: absolute;
-          right: 12px;
-          color: var(--text-muted);
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 6px;
+        .settings-pill-unverified {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          height: 26px;
+          padding: 0 10px;
+          border-radius: 999px;
+          background: #FBEBDD;
+          color: #8F3F16;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          line-height: 1;
+          letter-spacing: 0.04em;
+        }
+
+        .settings-pill-platform-managed {
+          display: inline-flex;
+          align-items: center;
+          height: 26px;
+          padding: 0 10px;
+          border-radius: 999px;
+          background: #F3ECDC;
+          color: #5E471B;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          line-height: 1;
+          letter-spacing: 0.04em;
+          width: fit-content;
+        }
+
+        /* Notification Channels List */
+        .settings-channel-list {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+        }
+
+        .settings-channel-row {
+          display: flex;
+          align-items: flex-start;
+          gap: 16px;
+          padding: 16px 0;
+          border-top: 1px solid #EFE9DA;
+          width: 100%;
+        }
+
+        .settings-channel-row:first-child {
+          border-top: none;
+          padding-top: 0;
+        }
+
+        .settings-channel-row:last-child {
+          padding-bottom: 0;
+        }
+
+        .settings-channel-icon-box {
+          width: 40px;
+          height: 40px;
+          border-radius: 10px;
+          background: #F3ECDC;
+          color: #8A6B2E;
           display: flex;
           align-items: center;
           justify-content: center;
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .settings-channel-text-block {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          word-break: normal;
+          overflow-wrap: break-word;
+        }
+
+        .settings-channel-title {
+          font-size: 15px;
+          font-weight: 600;
+          color: #2A241A;
+          line-height: 1.35;
+          word-break: normal;
+        }
+
+        .settings-channel-desc {
+          font-size: 13px;
+          color: #6B6254;
+          line-height: 1.5;
+          word-break: normal;
+        }
+
+        /* 52x30 Sleek Switch */
+        .settings-toggle-switch {
+          position: relative;
+          display: inline-block;
+          width: 52px;
+          height: 30px;
+          flex: none;
+          cursor: pointer;
+        }
+
+        .settings-toggle-switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+
+        .settings-toggle-slider {
+          position: absolute;
+          inset: 0;
+          background-color: #D9D1BF;
+          border-radius: 999px;
+          transition: background-color 0.2s ease;
+        }
+
+        .settings-toggle-slider::before {
+          position: absolute;
+          content: "";
+          height: 24px;
+          width: 24px;
+          left: 3px;
+          bottom: 3px;
+          background-color: #FFFFFF;
+          border-radius: 50%;
+          transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        }
+
+        .settings-toggle-switch input:checked + .settings-toggle-slider {
+          background-color: #8A6B2E;
+        }
+
+        .settings-toggle-switch input:checked + .settings-toggle-slider::before {
+          transform: translateX(22px);
+        }
+
+        /* Danger Box */
+        .settings-danger-box {
+          background: #FFFFFF;
+          border: 1px solid #E8C5BD;
+          border-radius: 16px;
+          overflow: hidden;
+          width: 100%;
+        }
+
+        .settings-danger-box-header {
+          padding: 20px 24px;
+          background: #FBE9E5;
+          border-bottom: 1px solid #E8C5BD;
+        }
+
+        .settings-danger-box-title {
+          font-family: var(--font-heading), 'Playfair Display', Georgia, serif;
+          font-size: 20px;
+          font-weight: 600;
+          color: #A3321F;
+          margin: 0 0 2px 0;
+          line-height: 1.3;
+        }
+
+        .settings-danger-box-body {
+          padding: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+
+        /* Mobile Sticky Footer Bar */
+        .settings-mobile-sticky-bar {
+          display: none;
+        }
+
+        /* Active Sessions & Helpers */
+        .settings-session-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          padding: 14px 16px;
+          border-radius: 10px;
+          background-color: #FAF8F3;
+          border: 1px solid #E8E1D2;
+          flex-wrap: wrap;
+        }
+
+        .settings-session-icon {
+          width: 38px;
+          height: 38px;
+          border-radius: 8px;
+          background-color: #FFFFFF;
+          border: 1px solid #E8E1D2;
+          color: #8A6B2E;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
         }
 
         .settings-checklist-grid {
@@ -1798,12 +2163,12 @@ export default function TalentSettingsPage() {
           align-items: center;
           gap: 6px;
           font-size: 12px;
-          color: var(--text-muted);
-          transition: color 0.2s ease;
+          color: #6B6254;
+          transition: color 0.16s ease;
         }
 
         .settings-check-item.check-pass {
-          color: var(--gold);
+          color: #2F6B45;
           font-weight: 600;
         }
 
@@ -1811,284 +2176,179 @@ export default function TalentSettingsPage() {
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background-color: var(--border-color);
-        }
-
-        /* Active Sessions */
-        .settings-session-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 14px;
-          padding: 14px 16px;
-          border-radius: 6px;
-          background-color: var(--bg-alt);
-          border: 1px solid var(--border-color);
-          flex-wrap: wrap;
-        }
-
-        .settings-session-icon {
-          width: 38px;
-          height: 38px;
-          border-radius: 4px;
-          background-color: var(--bg-surface);
-          border: 1px solid var(--border-color);
-          color: var(--gold);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .settings-current-badge {
-          display: inline-flex;
-          padding: 2px 8px;
-          border-radius: 4px;
-          background-color: var(--bg-surface);
-          border: 1px solid var(--border-color);
-          color: var(--gold);
-          font-size: 11px;
-          font-weight: 700;
-          text-transform: uppercase;
-        }
-
-        .settings-signout-btn {
-          min-height: 34px;
-          padding: 0 14px;
-          font-size: 12px;
-          border-radius: 4px;
-        }
-
-        /* Notification Channels Grid */
-        .settings-channels-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 16px;
-          width: 100%;
-        }
-
-        .settings-channel-card {
-          background-color: var(--bg-alt);
-          border: 1px solid var(--border-color);
-          border-radius: 6px;
-          padding: 16px 18px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 14px;
-        }
-
-        .settings-channel-left {
-          display: flex;
-          align-items: flex-start;
-          gap: 14px;
-          min-width: 0;
-          flex: 1;
-        }
-
-        .settings-channel-icon {
-          width: 38px;
-          height: 38px;
-          border-radius: 4px;
-          background-color: var(--bg-surface);
-          border: 1px solid var(--border-color);
-          color: var(--gold);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          margin-top: 2px;
-        }
-
-        .settings-channel-text {
-          display: flex;
-          flex-direction: column;
-          gap: 3px;
-          min-width: 0;
-        }
-
-        .settings-channel-title {
-          font-size: 14px;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-
-        .settings-channel-desc {
-          font-size: 12px;
-          color: var(--text-muted);
-          line-height: 1.45;
-        }
-
-        /* Sleek Toggle Switch */
-        .settings-toggle-switch {
-          position: relative;
-          display: inline-block;
-          width: 44px;
-          height: 24px;
-          flex-shrink: 0;
-          cursor: pointer;
-        }
-
-        .settings-toggle-switch input {
-          opacity: 0;
-          width: 0;
-          height: 0;
-        }
-
-        .settings-toggle-slider {
-          position: absolute;
-          inset: 0;
-          background-color: var(--border-color);
-          border-radius: 999px;
-          transition: background-color 0.2s ease;
-          border: 1px solid var(--border-color);
-        }
-
-        .settings-toggle-slider::before {
-          position: absolute;
-          content: "";
-          height: 18px;
-          width: 18px;
-          left: 2px;
-          bottom: 2px;
-          background-color: #FFFFFF;
-          border-radius: 50%;
-          transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-        }
-
-        .settings-toggle-switch input:checked + .settings-toggle-slider {
-          background-color: var(--gold);
-          border-color: var(--gold);
-        }
-
-        .settings-toggle-switch input:checked + .settings-toggle-slider::before {
-          transform: translateX(20px);
-          background-color: #FFFFFF;
-        }
-
-        /* Privacy Info Card */
-        .settings-info-card {
-          background: var(--bg-alt);
-          border: 1px solid var(--border-color);
-          border-radius: 6px;
-          padding: 22px 24px;
-          display: flex;
-          align-items: flex-start;
-          gap: 16px;
-        }
-
-        .settings-info-icon {
-          color: var(--gold);
-          flex-shrink: 0;
-          margin-top: 2px;
-        }
-
-        .settings-info-title {
-          font-family: Georgia, serif;
-          font-size: 16px;
-          font-weight: 700;
-          color: var(--text-primary);
-          margin: 0;
-        }
-
-        .settings-info-text {
-          font-size: 13px;
-          color: var(--text-secondary);
-          line-height: 1.55;
-          margin: 0;
-        }
-
-        /* Danger Zone Card */
-        .settings-danger-card {
-          background: #FAF0F0;
-          border: 1px solid #F5C6C6;
-          border-radius: 6px;
-          box-shadow: var(--shadow-card);
-          overflow: hidden;
-          width: 100%;
-        }
-
-        .settings-danger-title {
-          font-family: Georgia, serif;
-          font-size: 18px;
-          font-weight: 700;
-          color: var(--danger);
-          margin: 0 0 4px 0;
-        }
-
-        .settings-danger-btn {
-          min-height: 38px;
-          padding: 0 20px;
-          font-size: 13px;
-          font-weight: 600;
-          border-radius: 4px;
-          text-transform: none;
-          letter-spacing: 0;
+          background-color: #D9D1BF;
         }
 
         /* =========================================================================
-           RESPONSIVE BREAKPOINTS BELOW 1024px and 768px
+           RESPONSIVE BREAKPOINTS (Desktop < 1024px and Mobile <= 767px)
            ========================================================================= */
         @media (max-width: 1023.98px) {
           .settings-page-layout {
+            display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 24px;
           }
 
           .settings-sidebar-nav {
             width: 100%;
             position: static;
             top: auto;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-            padding-bottom: 4px;
           }
 
-          .settings-sidebar-nav::-webkit-scrollbar {
+          .settings-nav-card {
+            flex-direction: row;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            padding: 8px;
+          }
+
+          .settings-nav-card::-webkit-scrollbar {
             display: none;
           }
 
-          .settings-nav-list {
-            flex-direction: row;
-            gap: 8px;
-            width: max-content;
-          }
-
-          .settings-nav-btn {
-            scroll-snap-align: start;
+          .settings-nav-row {
             flex-shrink: 0;
             width: auto;
-            border-left: 1px solid transparent;
-            border-radius: 4px;
-            padding: 0 18px;
-            background-color: var(--bg-alt);
-            border: 1px solid var(--border-color);
-          }
-
-          .settings-tab-active {
-            border-left: 1px solid var(--gold) !important;
-            border-color: var(--gold) !important;
-            background: var(--bg-alt) !important;
-          }
-
-          .settings-channels-grid {
-            grid-template-columns: minmax(0, 1fr);
+            padding: 0 16px;
           }
         }
 
         @media (max-width: 767.98px) {
+          .settings-v2 {
+            padding-bottom: 100px; /* Leave room for mobile sticky bar */
+          }
+
+          /* Hide left nav card on mobile */
+          .settings-sidebar-nav {
+            display: none !important;
+          }
+
+          /* Show horizontal pills */
+          .settings-mobile-tabs {
+            display: flex !important;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -16px 20px -16px;
+            padding: 0 16px;
+            width: calc(100% + 32px);
+          }
+
+          .settings-mobile-tabs::-webkit-scrollbar {
+            display: none;
+          }
+
+          .settings-mobile-tab-btn {
+            flex: none;
+            height: 44px;
+            padding: 0 16px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 1px solid #E1D4B3;
+            background: #FFFFFF;
+            color: #4A4234;
+            cursor: pointer;
+            transition: all 0.16s ease;
+          }
+
+          .settings-mobile-tab-btn.settings-tab-active {
+            background: #FBF3DF !important;
+            border-color: #C9A95C !important;
+            color: #2A241A !important;
+          }
+
+          /* Card adjustments */
+          .settings-card {
+            border-radius: 14px;
+          }
+
           .settings-card-header {
-            padding: 16px;
+            padding: 20px 18px 16px;
           }
+
+          .settings-card-title {
+            font-size: 22px !important;
+          }
+
           .settings-card-body {
-            padding: 16px;
+            padding: 20px 18px;
           }
+
+          /* Single-column fields on mobile with 48px inputs and 16px font */
+          .settings-form-grid {
+            grid-template-columns: 1fr !important;
+            gap: 20px !important;
+          }
+
+          .settings-input {
+            height: 48px !important;
+            font-size: 16px !important; /* Prevents iOS auto-zoom */
+          }
+
+          /* Photo row on mobile */
+          .settings-photo-row {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 16px !important;
+          }
+
+          .settings-photo-left {
+            gap: 16px !important;
+          }
+
+          .settings-photo-avatar {
+            width: 64px !important;
+            height: 64px !important;
+          }
+
+          .settings-photo-actions {
+            width: 100% !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 10px !important;
+          }
+
+          .settings-photo-actions .settings-btn-secondary,
+          .settings-photo-actions .settings-btn-red-outline {
+            height: 44px !important;
+            width: 100% !important;
+            padding: 0 10px !important;
+            font-size: 13px !important;
+          }
+
+          /* Hide card footer, show sticky mobile bar */
           .settings-card-footer {
-            display: none; /* Controlled by mobile sticky bar */
+            display: none !important;
+          }
+
+          .settings-mobile-sticky-bar {
+            display: flex !important;
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 88px !important;
+            background: #FFFFFF !important;
+            border-top: 1px solid #E8E1D2 !important;
+            padding: 16px 20px !important;
+            gap: 12px !important;
+            z-index: 100 !important;
+            box-shadow: 0 -4px 16px rgba(43, 45, 42, 0.06) !important;
+            align-items: center !important;
+          }
+
+          .settings-mobile-sticky-bar .settings-btn-secondary {
+            flex: 1 !important;
+            height: 48px !important;
+          }
+
+          .settings-mobile-sticky-bar .settings-btn-primary {
+            flex: 1.4 !important;
+            height: 48px !important;
           }
         }
       `}</style>

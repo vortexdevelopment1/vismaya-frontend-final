@@ -117,6 +117,7 @@ export default function TalentDashboardPage() {
   ).length;
 
   const recentApplications = myApplications.slice(0, 4);
+  const totalNotifsCount = talentNotifications.length;
   const recentNotifications = talentNotifications.slice(0, 3);
 
   // Profile Ring Math
@@ -607,7 +608,7 @@ export default function TalentDashboardPage() {
       <SuccessStorySection profile={profile} user={user} />
 
       {/* Main Split: Recent Applications (Left) & Recent Notifications (Right) */}
-      <div className="talent-split-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "24px" }}>
+      <div className="talent-split-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "24px", alignItems: "start" }}>
         {/* Recent Applications Card */}
         <div
           className="card-surface talent-dash-card"
@@ -624,10 +625,10 @@ export default function TalentDashboardPage() {
         >
           <div className="talent-dash-card-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
             <div>
-              <h2 className="talent-dash-card-title" style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "20px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
+              <h2 className="talent-dash-card-title" style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "22px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
                 Recent Application Updates
               </h2>
-              <span className="talent-dash-card-subtitle" style={{ fontSize: "13px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              <span className="talent-dash-card-subtitle" style={{ fontSize: "13px", color: "#6B6254", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Latest status in your casting pipeline
               </span>
             </div>
@@ -644,6 +645,7 @@ export default function TalentDashboardPage() {
                 gap: "4px",
                 textDecoration: "none",
                 fontFamily: "var(--font-body), 'Inter', sans-serif",
+                minHeight: "44px",
               }}
             >
               <span>View all ({totalAppsCount})</span>
@@ -653,53 +655,72 @@ export default function TalentDashboardPage() {
 
           <div className="talent-app-list" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {recentApplications.length === 0 ? (
-              <div style={{ padding: "24px 0", textAlign: "center", color: "#5A584F", fontSize: "14px" }}>
+              <div style={{ padding: "24px 0", textAlign: "center", color: "#6B6254", fontSize: "14px" }}>
                 No applications submitted yet.
               </div>
             ) : (
               recentApplications.map((app) => {
                 const opp = getOpportunity(app.opportunityId);
+                const s = (app.status || "").toLowerCase().trim();
+                const isShortlisted = s === "shortlisted" || s === "selected";
+                const isCancelled = s === "cancelled" || s === "opportunity cancelled" || s === "opportunity_cancelled" || s === "not selected" || s === "not-selected" || s === "withdrawn" || s === "rejected";
+                const dotColor = isShortlisted ? "#2F6B45" : isCancelled ? "#A3321F" : "#8A6B2E";
+
                 return (
                   <Link
                     key={app.id || app._id}
                     href={`/talent/applications?id=${app.id || app._id}`}
                     className="recent-app-item"
                     style={{
-                      backgroundColor: "#F3EFE6",
-                      border: "1px solid #E8E2D4",
+                      backgroundColor: "#FFFFFF",
+                      border: "1px solid #E8E1D2",
                       borderRadius: "12px",
-                      padding: "12px 16px",
+                      padding: "14px 16px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
                       gap: "12px",
                       textDecoration: "none",
                       cursor: "pointer",
-                      transition: "border-color 0.16s ease, transform 0.16s ease",
+                      transition: "background-color 0.16s ease, border-color 0.16s ease",
                     }}
                   >
-                    <div className="recent-app-info" style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0, flex: 1 }}>
+                    <div className="recent-app-left" style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
                       <span
-                        className="recent-app-title"
+                        className="recent-app-status-dot"
                         style={{
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: "#2B2D2A",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          fontFamily: "var(--font-body), 'Inter', sans-serif",
+                          width: "10px",
+                          height: "10px",
+                          minWidth: "10px",
+                          borderRadius: "50%",
+                          backgroundColor: dotColor,
+                          flexShrink: 0,
                         }}
-                      >
-                        {opp?.title || app.opportunityTitle || "Opportunity"}
-                      </span>
-                      <span className="recent-app-meta" style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
-                        Role: <strong style={{ color: "#6E5420" }}>{app.roleApplied || app.roleName || app.role || opp?.role || "Lead Role"}</strong> &bull; {new Date(app.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
-                      </span>
+                      />
+                      <div className="recent-app-info" style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0, flex: 1 }}>
+                        <span
+                          className="recent-app-title"
+                          style={{
+                            fontSize: "15px",
+                            fontWeight: 600,
+                            color: "#2B2D2A",
+                            overflowWrap: "anywhere",
+                            fontFamily: "var(--font-body), 'Inter', sans-serif",
+                          }}
+                        >
+                          {opp?.title || app.opportunityTitle || "Opportunity"}
+                        </span>
+                        <span className="recent-app-meta" style={{ fontSize: "13px", color: "#6B6254", overflowWrap: "anywhere", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                          Role: <strong style={{ fontWeight: 600, color: "#2B2D2A" }}>{app.roleApplied || app.roleName || app.role || opp?.role || "Lead Role"}</strong> &bull; {new Date(app.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="recent-app-badge" style={{ flexShrink: 0 }}>
-                      <StatusBadge status={app.status} size="sm" />
+                    <div className="recent-app-right" style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                      <div className="recent-app-badge" style={{ flexShrink: 0 }}>
+                        <StatusBadge status={app.status} size="md" />
+                      </div>
+                      <ChevronRight size={16} className="recent-app-chevron" style={{ color: "#6B6254", flexShrink: 0 }} />
                     </div>
                   </Link>
                 );
@@ -724,10 +745,10 @@ export default function TalentDashboardPage() {
         >
           <div className="talent-dash-card-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
             <div>
-              <h2 className="talent-dash-card-title" style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "20px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
+              <h2 className="talent-dash-card-title" style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "22px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
                 Recent Alerts &amp; Announcements
               </h2>
-              <span className="talent-dash-card-subtitle" style={{ fontSize: "13px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              <span className="talent-dash-card-subtitle" style={{ fontSize: "13px", color: "#6B6254", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Audition callbacks and Vismaya notices
               </span>
             </div>
@@ -744,22 +765,87 @@ export default function TalentDashboardPage() {
                 gap: "4px",
                 textDecoration: "none",
                 fontFamily: "var(--font-body), 'Inter', sans-serif",
+                minHeight: "44px",
               }}
             >
-              <span>View all</span>
+              <span>View all ({totalNotifsCount})</span>
               <ChevronRight size={14} />
             </Link>
           </div>
 
           <div className="talent-dash-notifs-list" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {recentNotifications.length === 0 ? (
-              <div style={{ padding: "24px 0", textAlign: "center", color: "#5A584F", fontSize: "14px" }}>
+              <div style={{ padding: "24px 0", textAlign: "center", color: "#6B6254", fontSize: "14px" }}>
                 No notifications right now.
               </div>
             ) : (
-              recentNotifications.map((n) => (
-                <NotificationItem key={n.id} notification={n} />
-              ))
+              recentNotifications.map((n) => {
+                const isUnread = !n.read && !n.isRead;
+                const dotColor = isUnread ? "#8A6B2E" : "#D9D1BF";
+                const targetLink = n.link || n.actionHref || "/talent/notifications";
+                const timeDisplay = n.createdAt
+                  ? new Date(n.createdAt).toLocaleDateString("en-IN", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : n.time || "Recently";
+
+                return (
+                  <Link
+                    key={n.id || n._id}
+                    href={targetLink}
+                    className="recent-notif-row"
+                    style={{
+                      backgroundColor: "#FFFFFF",
+                      border: "1px solid #E8E1D2",
+                      borderRadius: "12px",
+                      padding: "14px 16px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "12px",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      transition: "background-color 0.16s ease, border-color 0.16s ease",
+                    }}
+                  >
+                    <div className="recent-notif-left" style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
+                      <span
+                        className="recent-notif-status-dot"
+                        style={{
+                          width: "10px",
+                          height: "10px",
+                          minWidth: "10px",
+                          borderRadius: "50%",
+                          backgroundColor: dotColor,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div className="recent-notif-info" style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0, flex: 1 }}>
+                        <span
+                          className="recent-notif-title"
+                          style={{
+                            fontSize: "15px",
+                            fontWeight: isUnread ? 700 : 600,
+                            color: "#2B2D2A",
+                            overflowWrap: "anywhere",
+                            fontFamily: "var(--font-body), 'Inter', sans-serif",
+                          }}
+                        >
+                          {n.title || n.message || "Notification"}
+                        </span>
+                        <span className="recent-notif-meta" style={{ fontSize: "13px", color: "#6B6254", overflowWrap: "anywhere", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                          {n.message && n.title ? `${n.message.slice(0, 50)}${n.message.length > 50 ? "..." : ""} • ` : ""}{timeDisplay}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="recent-notif-right" style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                      <ChevronRight size={16} className="recent-notif-chevron" style={{ color: "#6B6254", flexShrink: 0 }} />
+                    </div>
+                  </Link>
+                );
+              })
             )}
           </div>
         </div>
@@ -823,6 +909,15 @@ export default function TalentDashboardPage() {
         .profile-checklist-item:hover {
           background-color: #FAF9F7 !important;
           border-color: #8A6B2E !important;
+        }
+
+        .talent-split-grid {
+          align-items: start !important;
+        }
+        :global(.recent-app-item:hover),
+        :global(.recent-notif-row:hover) {
+          background-color: #FBF8F0 !important;
+          border-color: #D9D1BF !important;
         }
 
         @media (max-width: 767.98px) {
@@ -1035,16 +1130,28 @@ export default function TalentDashboardPage() {
           .talent-dash-notifs-list {
             gap: 8px !important;
           }
-          .recent-app-item {
-            padding: 10px 12px !important;
+          .recent-app-item,
+          .recent-notif-row {
+            padding: 12px 14px !important;
             gap: 10px !important;
-            border-radius: 10px !important;
+            border-radius: 12px !important;
           }
-          .recent-app-info {
+          .recent-app-left,
+          .recent-notif-left {
+            gap: 10px !important;
+            align-items: flex-start !important;
+          }
+          .recent-app-status-dot,
+          .recent-notif-status-dot {
+            margin-top: 5px !important;
+          }
+          .recent-app-info,
+          .recent-notif-info {
             min-width: 0 !important;
             gap: 2px !important;
           }
-          .recent-app-title {
+          .recent-app-title,
+          .recent-notif-title {
             font-size: 14px !important;
             line-height: 1.35 !important;
             white-space: normal !important;
@@ -1056,12 +1163,32 @@ export default function TalentDashboardPage() {
             overflow-wrap: anywhere !important;
             word-break: break-word !important;
           }
-          .recent-app-meta {
+          .recent-app-meta,
+          .recent-notif-meta {
             font-size: 12px !important;
             line-height: 1.35 !important;
             white-space: normal !important;
             overflow-wrap: anywhere !important;
           }
+        }
+
+        @media (max-width: 480px) {
+          .recent-app-item {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+          }
+          .recent-app-left {
+            width: 100% !important;
+          }
+          .recent-app-right {
+            width: 100% !important;
+            padding-left: 20px !important;
+            justify-content: flex-start !important;
+          }
+          .recent-app-chevron,
+          .recent-notif-chevron {
+            display: none !important;
           }
         }
 

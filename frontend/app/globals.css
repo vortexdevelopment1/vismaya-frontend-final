@@ -553,17 +553,19 @@ tbody td {
 .status-badge {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  height: 24px;
-  min-height: 24px;
-  padding: 0 10px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 12px;
   font-size: 11px;
   font-weight: 700;
   border-radius: 999px;
   white-space: nowrap;
   line-height: 1;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  box-sizing: border-box;
 }
 
 /* =========================================================================
@@ -1308,7 +1310,10 @@ td span[style*="borderRadius"] {
   white-space: nowrap !important;
   word-break: normal !important;
   overflow-wrap: normal !important;
-  display: inline-block !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
 }
 
 /* 12. Mobile tap targets (<= 640px) */
