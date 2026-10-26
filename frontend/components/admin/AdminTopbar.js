@@ -731,38 +731,61 @@ export default function AdminTopbar({ onOpenMobile }) {
             height: 56px !important;
             min-height: 56px !important;
             padding-inline: 12px !important;
+            gap: 8px !important;
           }
           .admin-topbar-left {
             gap: 8px !important;
+            flex-shrink: 0 !important;
           }
           .admin-hamburger-btn {
-            width: 36px !important;
-            height: 36px !important;
-            min-height: 36px !important;
-            min-width: 36px !important;
+            width: 40px !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            min-width: 40px !important;
             border-radius: 9px !important;
+            flex-shrink: 0 !important;
           }
           .admin-topbar-title {
-            font-size: 17px !important;
+            font-size: 16px !important;
             line-height: 1.25 !important;
+            max-width: 120px !important;
+          }
+          .admin-global-search-container {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
           }
           .admin-status-chip {
             display: none !important;
           }
           .admin-topbar-right {
-            gap: 8px !important;
+            gap: 6px !important;
+            flex-shrink: 0 !important;
           }
           .admin-notif-btn {
             width: 36px !important;
             height: 36px !important;
             border-radius: 9px !important;
+            flex-shrink: 0 !important;
           }
           .admin-avatar-btn {
             width: 34px !important;
             height: 34px !important;
+            min-width: 34px !important;
+            min-height: 34px !important;
             border-radius: 50% !important;
             font-size: 12px !important;
             flex-shrink: 0 !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .admin-export-btn-text {
+            display: none !important;
+          }
+          :global(.admin-topbar-right button[title*="Download Operational CSV"]) {
+            width: 36px !important;
+            padding-inline: 0 !important;
+            justify-content: center !important;
           }
         }
       `}</style>

@@ -217,23 +217,27 @@ export default function OrganizationDashboardPage() {
           >
             <CreditCard size={24} />
           </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+          <div style={{ minWidth: 0, flex: "1 1 auto" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "8px", flexWrap: "wrap" }}>
               <span
                 style={{
                   fontFamily: "var(--font-heading), Georgia, serif",
                   fontSize: "28px",
                   fontWeight: "700",
                   color: "#8A6B2E",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  display: "inline-block",
+                  lineHeight: 1.2,
                 }}
               >
                 {credits.balance}
               </span>
-              <span style={{ fontSize: "15px", fontWeight: "600", color: "#2B2D2A" }}>
+              <span style={{ fontSize: "15px", fontWeight: "600", color: "#2B2D2A", whiteSpace: "nowrap" }}>
                 Profile-View Credits Available
               </span>
               {credits.balance < PRICING_CONFIG.LOW_BALANCE && (
-                <span style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", backgroundColor: "#F3EFE6", padding: "2px 8px", borderRadius: "12px" }}>
+                <span style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", backgroundColor: "#F3EFE6", padding: "2px 8px", borderRadius: "12px", whiteSpace: "nowrap" }}>
                   LOW BALANCE
                 </span>
               )}

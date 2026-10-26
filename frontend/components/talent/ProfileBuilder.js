@@ -680,7 +680,7 @@ export default function ProfileBuilder({ onFinish }) {
           gap: "16px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+        <div className="profile-builder-header-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
           <div>
             <span style={{ fontSize: "11.5px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
               Artist Profile Builder
@@ -694,8 +694,9 @@ export default function ProfileBuilder({ onFinish }) {
             </h1>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div className="profile-builder-header-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             <span
+              className="profile-strength-pill"
               style={{
                 fontSize: "12px",
                 fontWeight: "700",
@@ -705,6 +706,10 @@ export default function ProfileBuilder({ onFinish }) {
                 color: profileStrength >= 100 ? "#027A48" : "#8A6B2E",
                 border: `1px solid ${profileStrength >= 100 ? "#A6F4C5" : "#E8E2D4"}`,
                 letterSpacing: "0.02em",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                display: "inline-flex",
+                alignItems: "center",
               }}
             >
               Profile strength {profileStrength}%
@@ -717,7 +722,7 @@ export default function ProfileBuilder({ onFinish }) {
                   if (onFinish) onFinish();
                   else router.push("/talent/profile");
                 }}
-                className="btn-secondary"
+                className="btn-secondary profile-action-btn"
                 style={{ padding: "8px 16px", fontSize: "13px", height: "36px", display: "inline-flex", alignItems: "center", gap: "6px" }}
               >
                 <Eye size={14} />
@@ -730,7 +735,7 @@ export default function ProfileBuilder({ onFinish }) {
                 type="button"
                 onClick={() => handleSaveStep1(false)}
                 disabled={isSaving}
-                className="btn-secondary"
+                className="btn-secondary profile-action-btn"
                 style={{ padding: "8px 16px", fontSize: "13px", height: "36px" }}
               >
                 <Save size={14} />
@@ -2382,10 +2387,39 @@ export default function ProfileBuilder({ onFinish }) {
           }
           .profile-stepper-header-card {
             padding: 16px !important;
+            border-radius: 14px !important;
+          }
+          .profile-builder-header-row {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+          }
+          .profile-builder-header-actions {
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 8px !important;
+          }
+          .profile-strength-pill {
+            align-self: flex-start !important;
+            width: fit-content !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+          }
+          .profile-action-btn {
+            width: 100% !important;
+            min-height: 40px !important;
+            height: 40px !important;
+            justify-content: center !important;
           }
           .profile-stepper-nav {
             grid-template-columns: repeat(2, 1fr) !important;
             gap: 8px !important;
+          }
+          :global(.stepper-pill) {
+            min-height: 44px !important;
+            padding: 8px 10px !important;
           }
           .responsive-two-col {
             grid-template-columns: 1fr !important;

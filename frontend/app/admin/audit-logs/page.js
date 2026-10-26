@@ -148,8 +148,8 @@ export default function AdminAuditLogsPage() {
           <Loader2 size={32} style={{ color: "#8A6B2E", animation: "spin 1s linear infinite" }} />
         </div>
       ) : filteredLogs.length > 0 ? (
-        <div style={{ background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "14px", overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
+        <div style={{ background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "14px", overflowX: "auto", WebkitOverflowScrolling: "touch", width: "100%" }}>
+          <table style={{ width: "100%", minWidth: "760px", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
             <thead>
               <tr style={{ background: "#FAF9F7", borderBottom: "1px solid #E8E2D4", color: "#5A584F", fontSize: "11.5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                 <th style={{ padding: "14px 18px", fontWeight: 700 }}>Timestamp</th>
@@ -182,6 +182,8 @@ export default function AdminAuditLogsPage() {
                         background: log.action.includes("reject") || log.action.includes("suspend") ? "#FDEDEC" : "#EBF5ED",
                         padding: "3px 8px",
                         borderRadius: "6px",
+                        whiteSpace: "nowrap",
+                        display: "inline-block",
                       }}
                     >
                       {log.action}

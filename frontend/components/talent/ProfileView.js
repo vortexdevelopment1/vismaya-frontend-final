@@ -248,7 +248,7 @@ export default function ProfileView({ onEditStep }) {
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <div className="talent-profile-view-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             <button
               id="btn-recruiter-preview"
               type="button"
@@ -314,7 +314,7 @@ export default function ProfileView({ onEditStep }) {
               {profileStrength}% Complete
             </span>
           </div>
-          <ProgressBar progress={profileStrength} />
+          <ProgressBar value={profileStrength} progress={profileStrength} />
         </div>
       </div>
 
@@ -426,6 +426,8 @@ export default function ProfileView({ onEditStep }) {
               fontSize: "13px",
               fontWeight: 600,
               cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
             <Edit3 size={14} />
@@ -694,6 +696,8 @@ export default function ProfileView({ onEditStep }) {
               fontSize: "13px",
               fontWeight: 600,
               cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
             <Edit3 size={14} />
@@ -878,6 +882,8 @@ export default function ProfileView({ onEditStep }) {
               fontSize: "13px",
               fontWeight: 600,
               cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
             <Edit3 size={14} />
@@ -1022,6 +1028,8 @@ export default function ProfileView({ onEditStep }) {
               fontSize: "13px",
               fontWeight: 600,
               cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
             <Edit3 size={14} />
@@ -1380,6 +1388,18 @@ export default function ProfileView({ onEditStep }) {
           }
           .view-card-header {
             padding: 16px 18px !important;
+          }
+          .talent-profile-view-actions {
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+          .talent-profile-view-actions > button {
+            width: 100% !important;
+            min-height: 40px !important;
+            height: 40px !important;
+            justify-content: center !important;
           }
         }
       `}</style>

@@ -511,8 +511,8 @@ export default function TalentDashboardPage() {
 
           {/* Details & Checklist */}
           <div className="profile-details-col" style={{ display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}>
-            <div className="profile-details-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
-              <div>
+            <div className="profile-details-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+              <div style={{ minWidth: 0, flex: "1 1 240px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <Sparkles size={18} style={{ color: "#8A6B2E", flexShrink: 0 }} />
                   <h2 className="profile-section-heading" style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "22px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
@@ -978,14 +978,23 @@ export default function TalentDashboardPage() {
           .profile-checklist-grid {
             grid-template-columns: 1fr !important;
             gap: 8px !important;
+            width: 100% !important;
+            min-width: 0 !important;
           }
           .profile-checklist-item {
             padding: 10px 12px !important;
-            min-height: 40px !important;
+            min-height: 42px !important;
             border-radius: 8px !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
           }
           .profile-item-label {
             font-size: 12.5px !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
           }
 
           /* Split Grid (Recent Applications & Alerts) */

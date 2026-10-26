@@ -122,7 +122,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: clip;
   font-size: 16px;
-  line-height: 1.8;
+  line-height: 1.5;
 }
 
 /* Typography Rules */
@@ -132,6 +132,7 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 400;
   letter-spacing: -0.015em;
   font-variant-numeric: lining-nums;
+  line-height: 1.25;
 }
 
 /* Enforce font inheritance on interactive elements */
@@ -1225,6 +1226,101 @@ button,
 
   .card-surface {
     border-radius: 14px !important;
+  }
+}
+
+/* ==========================================================================
+   UI FIX BATCH 1: Shared Components & Global Responsive Refinements
+   - Item 1: Card headings ~1.25, descriptions/subtitles ~1.5
+   - Item 6: Filter chips wrapper & parents min-width 0, overflow-x auto
+   - Item 7: Inline action links ("Edit") white-space nowrap
+   - Item 8: Admin tables horizontal scroll wrapper, status badges nowrap
+   - Item 12: Mobile tap targets minimum 40px for chips, tabs, pills, icons
+   ========================================================================== */
+
+/* 1. Card headings, titles and subtitles line-heights */
+.dash-card h1, .dash-card h2, .dash-card h3,
+.card-surface h1, .card-surface h2, .card-surface h3,
+.view-card-header h1, .view-card-header h2, .view-card-header h3,
+.talent-dash-card-title,
+.profile-section-heading,
+.recruiter-section-title,
+.stat-card-label {
+  line-height: 1.25 !important;
+}
+
+.dash-card p, .card-surface p,
+.talent-dash-card-subtitle,
+.profile-section-desc,
+.recruiter-section-subtitle,
+.stat-card-desc,
+.page-header-subtitle {
+  line-height: 1.5 !important;
+}
+
+/* 6 & 7. Filter chips & inline action links nowrap */
+.talent-filter-scroll-wrap,
+.notif-tabs-scroll-wrap {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+}
+.talent-filter-scroll-wrap::-webkit-scrollbar,
+.notif-tabs-scroll-wrap::-webkit-scrollbar {
+  display: none !important;
+}
+
+.app-sort-label,
+.app-sort-row {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+/* 7. Inline action links (Edit, View, etc.) must never break mid-word */
+a[id^="link-edit"],
+button[id^="link-edit"],
+.edit-link,
+.action-link-inline {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* 8. Admin tables and status/action badges */
+.admin-table-container,
+.admin-table-wrap,
+div:has(> table) {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.status-badge,
+.badge,
+.status-pill,
+.admin-status-badge,
+span[class*="status-badge"],
+span[class*="status-pill"],
+td span[style*="borderRadius"] {
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  display: inline-block !important;
+}
+
+/* 12. Mobile tap targets (<= 640px) */
+@media (max-width: 640px) {
+  .app-filter-chip,
+  .chip,
+  .tab-btn,
+  .tab-touch-btn,
+  .talent-edit-profile-btn,
+  .profile-action-btn,
+  .admin-hamburger-btn {
+    min-height: 40px !important;
   }
 }
 
