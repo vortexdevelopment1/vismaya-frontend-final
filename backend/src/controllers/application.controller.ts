@@ -13,6 +13,7 @@ import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
 import { notifyUser } from "../services/notification.service.js";
 import { calculateAge } from "../validators/talentProfile.validator.js";
+import { isDeadlineExpired } from "../utils/date.util.js";
 
 export const applyForOpportunity = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -30,11 +31,14 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             });
         }
 
-        // 2. Cancelled opportunities check (Part A D6b)
-        if (opportunity.status === "cancelled") {
+        // 2. Enforce closure at request time: deadline passed or closed/cancelled/completed
+        const isClosed = ["closed", "cancelled", "completed"].includes(opportunity.status) ||
+            isDeadlineExpired(opportunity.deadline);
+
+        if (isClosed) {
             return res.status(400).json({
                 success: false,
-                message: "Cannot apply to a cancelled opportunity"
+                message: "Applications for this opportunity are closed"
             });
         }
 
@@ -72,13 +76,6 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             });
         }
 
-        // 5. Check if deadline has passed
-        if (opportunity.deadline && new Date() > new Date(opportunity.deadline)) {
-            return res.status(400).json({
-                success: false,
-                message: "Application deadline has passed"
-            });
-        }
 
         // 6. Validate completion >= 60%
         if (profile.profileCompletionPercentage < 60) {

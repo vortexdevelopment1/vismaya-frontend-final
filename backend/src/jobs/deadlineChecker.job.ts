@@ -1,46 +1,113 @@
 import Opportunity from "../models/opportunity.model.js";
+import Project from "../models/project.model.js";
+import Organization from "../models/organization.model.js";
+import Application from "../models/application.model.js";
+import Notification from "../models/notification.model.js";
 import ProjectShortlist from "../models/projectShortlist.model.js";
+import { isDeadlineExpired } from "../utils/date.util.js";
 
 /**
- * Check and automatically close opportunities whose deadlines have passed
+ * Check and automatically close opportunities whose deadlines have passed.
+ * Respects Asia/Kolkata date boundaries (closed after the end of the deadline date).
+ * Idempotent: only touches opportunities with status "published".
+ * Notifies the owning organization once.
+ * 
+ * @param targetOpportunityIds Optional filter for testing on specific opportunity IDs without touching live records.
  */
-export const checkAndCloseExpiredOpportunities = async (): Promise<{ closedCount?: number; error?: string }> => {
+export const checkAndCloseExpiredOpportunities = async (
+    targetOpportunityIds?: (string | any)[]
+): Promise<{ closedCount: number; closedIds?: string[]; error?: string }> => {
     try {
         const now = new Date();
-        const expiredOpportunities = await Opportunity.find({
-            status: "published",
-            deadline: { $lte: now }
-        });
+        const query: any = {
+            status: "published"
+        };
 
-        if (!expiredOpportunities || expiredOpportunities.length === 0) {
-            return { closedCount: 0 };
+        if (targetOpportunityIds && targetOpportunityIds.length > 0) {
+            query._id = { $in: targetOpportunityIds };
         }
 
-        const oppIds = expiredOpportunities.map(o => o._id);
+        const publishedOpportunities = await Opportunity.find(query);
 
-        // Update opportunity status to closed
-        await Opportunity.updateMany(
-            { _id: { $in: oppIds } },
-            {
-                $set: {
-                    status: "closed",
-                    closedAt: now,
-                    autoClosedAt: now
+        if (!publishedOpportunities || publishedOpportunities.length === 0) {
+            return { closedCount: 0, closedIds: [] };
+        }
+
+        const expiredOpportunities = publishedOpportunities.filter(opp =>
+            isDeadlineExpired(opp.deadline, now)
+        );
+
+        if (expiredOpportunities.length === 0) {
+            return { closedCount: 0, closedIds: [] };
+        }
+
+        const closedOppIds: string[] = [];
+
+        for (const opp of expiredOpportunities) {
+            // Strictly update only if still published (idempotency guard)
+            const updateResult = await Opportunity.updateOne(
+                { _id: opp._id, status: "published" },
+                {
+                    $set: {
+                        status: "closed",
+                        closedAt: now,
+                        autoClosedAt: now
+                    }
                 }
+            );
+
+            if (updateResult.modifiedCount === 0) {
+                continue;
             }
-        );
 
-        // Expire project shortlists tied to closed opportunities (§8: Shortlists expire when the opportunity closes)
-        await ProjectShortlist.updateMany(
-            { opportunityId: { $in: oppIds }, status: "shortlisted" },
-            { $set: { status: "archived" as any } }
-        );
+            closedOppIds.push(String(opp._id));
 
-        console.log(`[DeadlineChecker Job]: Auto-closed ${oppIds.length} expired opportunities and archived associated shortlists.`);
-        return { closedCount: oppIds.length };
+            // Expire project shortlists tied to closed opportunities (§8: Shortlists expire when the opportunity closes)
+            await ProjectShortlist.updateMany(
+                { opportunityId: opp._id, status: "shortlisted" },
+                { $set: { status: "archived" as any } }
+            );
+
+            // Notify owning organization once
+            try {
+                const project = await Project.findById(opp.projectId);
+                if (project?.organizationId) {
+                    const organization = await Organization.findById(project.organizationId);
+                    if (organization?.userId) {
+                        const appCount = await Application.countDocuments({ opportunityId: opp._id });
+
+                        // Check if notification already exists to guarantee strictly one notification
+                        const existingNotif = await Notification.findOne({
+                            recipient: organization.userId,
+                            type: "opportunity_closed",
+                            referenceId: opp._id
+                        });
+
+                        if (!existingNotif) {
+                            await Notification.create({
+                                recipient: organization.userId,
+                                type: "opportunity_closed",
+                                title: "Opportunity Closed",
+                                message: `Your opportunity ${opp.title} has closed. ${appCount} applications received`,
+                                referenceId: opp._id,
+                                referenceType: "Opportunity"
+                            });
+                        }
+                    }
+                }
+            } catch (notifErr) {
+                console.error(`[DeadlineChecker Job] Failed to notify organization for opportunity ${opp._id}:`, notifErr);
+            }
+        }
+
+        if (closedOppIds.length > 0) {
+            console.log(`[DeadlineChecker Job]: Auto-closed ${closedOppIds.length} expired opportunities and notified owning organizations.`);
+        }
+
+        return { closedCount: closedOppIds.length, closedIds: closedOppIds };
     } catch (error: any) {
         console.error("[DeadlineChecker Job Error]:", error);
-        return { error: error?.message || String(error) };
+        return { closedCount: 0, error: error?.message || String(error) };
     }
 };
 

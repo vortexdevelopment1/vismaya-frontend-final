@@ -32,6 +32,7 @@ import { isRealMode } from "@/lib/api/config";
 import { talentService } from "@/lib/api/services/talentService";
 import { AUDITION_CONFIG, maxResubmissionsAfterRejection } from "@/lib/config/audition";
 import ContactVismayaButton from "@/components/shared/ContactVismayaButton";
+import { isDeadlineExpired } from "@/lib/shared/dateUtils";
 
 export default function TalentAuditionsPage() {
   const { user } = useAuth();
@@ -319,7 +320,7 @@ export default function TalentAuditionsPage() {
             const project = opp ? getProject(opp.projectId) : null;
 
             const rawStatus = (aud.rawStatus || aud.status || "").toLowerCase().replace(/\s+/g, "_");
-            const isPastDeadline = aud.deadline && new Date() > new Date(aud.deadline);
+            const isPastDeadline = Boolean(aud.isExpired || (aud.deadline && isDeadlineExpired(aud.deadline)));
             const isRejected = rawStatus === "rejected" || aud.status === "Rejected" || aud.vismayaApproval === "rejected";
             const isSubmitted = (rawStatus === "submitted" || rawStatus === "self_tape_received" || aud.status === "Submitted" || aud.status === "Self-tape Received" || Boolean(aud.selfTapeSubmission?.submittedAt)) && !isRejected;
             const isForwarded = (rawStatus === "forwarded_to_org" || aud.status === "Forwarded to Organization" || aud.status === "Forwarded to Org") && !isRejected;
@@ -429,7 +430,7 @@ export default function TalentAuditionsPage() {
                       </span>
                     ) : isPastDeadline ? (
                       <span style={{ fontSize: "0.785rem", fontWeight: 700, padding: "4px 10px", borderRadius: "6px", background: "rgba(180, 35, 24, 0.08)", color: "#B42318", border: "1px solid rgba(180, 35, 24, 0.25)" }}>
-                        Submission closed
+                        Expired
                       </span>
                     ) : (
                       <StatusBadge status={aud.status} size="md" />

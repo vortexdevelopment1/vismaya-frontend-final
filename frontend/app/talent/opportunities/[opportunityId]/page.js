@@ -31,6 +31,7 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { useAuth } from "@/context/AuthContext";
 import { isRealMode } from "@/lib/api/config";
+import { isDeadlineExpired } from "@/lib/shared/dateUtils";
 
 export default function TalentOpportunityDetailsPage() {
   const params = useParams();
@@ -65,7 +66,7 @@ export default function TalentOpportunityDetailsPage() {
   const now = new Date().getTime();
   const deadlineTime = opportunity ? new Date(opportunity.deadline).getTime() : 0;
   const diffDays = Math.ceil((deadlineTime - now) / (1000 * 60 * 60 * 24));
-  const isExpired = diffDays < 0;
+  const isExpired = isDeadlineExpired(opportunity?.deadline) || opportunity?.isClosed || opportunity?.displayStatus === "Closed" || opportunity?.status === "closed" || diffDays < 0;
   const isUrgent = diffDays >= 0 && diffDays <= 3;
 
   if (!isHydrated) {
@@ -350,7 +351,7 @@ export default function TalentOpportunityDetailsPage() {
                 cursor: "not-allowed",
               }}
             >
-              Application Deadline Passed
+              Closed
             </button>
           ) : (
             <button

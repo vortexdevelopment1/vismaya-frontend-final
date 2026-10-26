@@ -10,6 +10,7 @@ import { notifyUser } from "../services/notification.service.js";
 import { logAdminAction } from "../services/audit.service.js";
 import { isSafeUrl } from "../utils/sanitize.util.js";
 import { AUDITION_CONFIG, maxResubmissionsAfterRejection } from "../config/audition.config.js";
+import { isDeadlineExpired } from "../utils/date.util.js";
 
 export const createAudition = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -231,10 +232,10 @@ export const submitSelfTape = async (req: Request, res: Response): Promise<any> 
         }
 
         // Validate deadline
-        if (audition.deadline && new Date() > new Date(audition.deadline)) {
-            return res.status(400).json({
+        if (audition.deadline && isDeadlineExpired(audition.deadline)) {
+            return res.status(403).json({
                 success: false,
-                message: "Self-tape submission deadline has passed"
+                message: "The deadline for this audition has passed"
             });
         }
 
@@ -547,7 +548,8 @@ export const getAuditionsForApplication = async (req: Request, res: Response): P
 
         const isOrg = req.user?.role === "organization";
         const auditions = rawAuditions.map(aud => {
-            const doc = aud.toObject ? aud.toObject() : { ...aud };
+            const doc: any = aud.toObject ? aud.toObject() : { ...aud };
+            doc.isExpired = doc.deadline ? isDeadlineExpired(doc.deadline) : false;
             const isApprovedByAdmin = doc.vismayaApproval === "approved" && (doc.status === "forwarded_to_org" || doc.status === "reviewed");
             if (isOrg && doc.type === "self_tape" && !isApprovedByAdmin) {
                 delete doc.selfTapeSubmission;
@@ -698,10 +700,16 @@ export const getMyAuditions = async (req: Request, res: Response): Promise<any> 
             .populate("organizationId", "organizationName")
             .sort({ createdAt: -1 });
 
+        const formatted = auditions.map(aud => {
+            const doc: any = aud.toObject ? aud.toObject() : { ...aud };
+            doc.isExpired = doc.deadline ? isDeadlineExpired(doc.deadline) : false;
+            return doc;
+        });
+
         res.status(200).json({
             success: true,
-            count: auditions.length,
-            auditions
+            count: formatted.length,
+            auditions: formatted
         });
 
     } catch (error) {

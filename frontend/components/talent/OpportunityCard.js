@@ -12,7 +12,7 @@ import {
   Banknote,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
-import { formatDate } from "@/lib/shared/dateUtils";
+import { formatDate, isDeadlineExpired } from "@/lib/shared/dateUtils";
 import { useAuth } from "@/context/AuthContext";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { isRealMode } from "@/lib/api/config";
@@ -36,7 +36,7 @@ export default function OpportunityCard({ opportunity, project, onApply }) {
   const deadlineTime = opportunity.deadline ? new Date(opportunity.deadline).getTime() : NaN;
   const hasValidDeadline = !isNaN(deadlineTime);
   const diffDays = hasValidDeadline ? Math.ceil((deadlineTime - now) / (1000 * 60 * 60 * 24)) : null;
-  const isExpired = diffDays !== null && diffDays < 0;
+  const isExpired = isDeadlineExpired(opportunity.deadline) || opportunity.isClosed || opportunity.displayStatus === "Closed" || opportunity.status === "closed" || (diffDays !== null && diffDays < 0);
   const isUrgent = diffDays !== null && diffDays >= 0 && diffDays <= 3;
 
   const rolesCount = opportunity.roles ? opportunity.roles.length : 1;

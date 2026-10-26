@@ -130,3 +130,42 @@ export function formatRemunerationDisplay(remuneration) {
 
   return { display, full };
 }
+
+/**
+ * Returns the end of the calendar day (23:59:59.999) in Asia/Kolkata timezone as a UTC Date object.
+ * @param {string|Date} deadlineInput
+ * @returns {Date|null}
+ */
+export function getKolkataEndOfDay(deadlineInput) {
+  if (!deadlineInput) return null;
+  try {
+    const dateObj = new Date(deadlineInput);
+    if (isNaN(dateObj.getTime())) return null;
+    const kolkataDateStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(dateObj);
+    const [y, m, d] = kolkataDateStr.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, d, 18, 29, 59, 999));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Checks if a given deadline has passed.
+ * Respects Asia/Kolkata end-of-day inclusive rule.
+ * Null-safe: returns false if deadline is missing or invalid.
+ * @param {string|Date|null|undefined} deadlineInput
+ * @param {Date} [now=new Date()]
+ * @returns {boolean}
+ */
+export function isDeadlineExpired(deadlineInput, now = new Date()) {
+  if (!deadlineInput) return false;
+  const endOfDay = getKolkataEndOfDay(deadlineInput);
+  if (!endOfDay || isNaN(endOfDay.getTime())) return false;
+  return now.getTime() > endOfDay.getTime();
+}
+

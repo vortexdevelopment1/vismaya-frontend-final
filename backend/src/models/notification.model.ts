@@ -48,6 +48,7 @@ const notificationSchema = new Schema<INotification>(
                 "opportunity_corrections_requested",
                 "opportunity_cancellation_reviewed",
                 "opportunity_cancelled",
+                "opportunity_closed",
                 "application_withdrawn",
                 "reapplication_reviewed",
                 "verification_update",

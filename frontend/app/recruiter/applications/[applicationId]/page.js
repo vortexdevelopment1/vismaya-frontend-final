@@ -1755,14 +1755,21 @@ export default function ApplicationDetailPage() {
               <button type="button" onClick={() => router.back()} className="btn-secondary" style={{ padding: "0 16px", height: "40px" }}>
                 Return to Applicants
               </button>
-              <button
-                type="button"
-                onClick={() => setShowBuyModal(true)}
+              <Link
+                href="/recruiter/credits"
                 className="btn-primary"
-                style={{ padding: "0 18px", height: "40px" }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 18px",
+                  height: "40px",
+                  textDecoration: "none",
+                  borderRadius: "4px"
+                }}
               >
                 <span>Buy More Views</span>
-              </button>
+              </Link>
             </div>
           }
         >

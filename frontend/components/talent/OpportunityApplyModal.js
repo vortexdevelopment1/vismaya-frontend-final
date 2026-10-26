@@ -34,7 +34,7 @@ export default function OpportunityApplyModal({ isOpen, onClose, opportunity, pr
 
   const oppRoles = useMemo(() => {
     return Array.isArray(opportunity?.roles) && opportunity.roles.length > 0 ? opportunity.roles : [];
-  }, [opportunity?.roles]);
+  }, [opportunity]);
   const hasMultipleRoles = oppRoles.length > 1;
 
   const [selectedRoleName, setSelectedRoleName] = useState(() => {
