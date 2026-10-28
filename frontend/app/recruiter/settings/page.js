@@ -401,7 +401,7 @@ export default function OrganizationSettingsPage() {
             alignItems: "center",
             gap: "8px",
             fontSize: "13px",
-            color: "#5A584F",
+            color: "#6B6254",
             marginBottom: "8px",
             fontFamily: "var(--font-body), 'Inter', sans-serif",
           }}
@@ -409,26 +409,26 @@ export default function OrganizationSettingsPage() {
           <Link
             href="/recruiter/dashboard"
             style={{
-              color: "#5A584F",
+              color: "#6B6254",
               textDecoration: "none",
               transition: "color 0.15s ease",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "#8A6B2E")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#5A584F")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#6B6254")}
           >
             Dashboard
           </Link>
-          <ChevronRight size={13} style={{ color: "#5A584F" }} />
+          <ChevronRight size={13} style={{ color: "#6B6254" }} />
           <span style={{ color: "#8A6B2E", fontWeight: 600 }}>Settings</span>
         </nav>
 
         <h1
           className="settings-page-title"
           style={{
-            fontFamily: "Playfair Display, Georgia, serif",
+            fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
             fontSize: "40px",
             fontWeight: 700,
-            color: "#2B2D2A",
+            color: "#2A241A",
             margin: "0 0 8px 0",
             letterSpacing: "-0.01em",
             lineHeight: 1.2,
@@ -441,12 +441,12 @@ export default function OrganizationSettingsPage() {
           style={{
             fontFamily: "var(--font-body), 'Inter', sans-serif",
             fontSize: "16px",
-            color: "#5A584F",
+            color: "#6B6254",
             margin: 0,
             lineHeight: 1.6,
           }}
         >
-          Manage organization verification credentials, authorized contact details, security, and notification channels.
+          Manage verification credentials, contact details, security and notifications.
         </p>
       </div>
 
@@ -590,7 +590,7 @@ export default function OrganizationSettingsPage() {
       <div className="settings-layout-container">
         {/* Left Sticky Settings Menu (Desktop) / Horizontal Tab Bar (Mobile) */}
         <nav aria-label="Settings categories" className="settings-menu-nav">
-          <div className="settings-menu-track">
+          <div className="settings-menu-track" role="tablist" aria-label="Settings categories">
             {SETTINGS_MENU_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.key;
@@ -600,6 +600,10 @@ export default function OrganizationSettingsPage() {
                   key={item.key}
                   ref={(el) => (tabRefs.current[item.key] = el)}
                   type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls={`tabpanel-${item.key}`}
+                  id={`tab-${item.key}`}
                   onClick={() => handleTabClick(item.key)}
                   className={`settings-menu-item ${isActive ? "active" : ""}`}
                 >
@@ -994,180 +998,157 @@ export default function OrganizationSettingsPage() {
                 </div>
               ) : (
                 <>
-                  {/* Status Banner Card */}
-                  <div className="settings-card">
-                <div className="settings-card-body" style={{ padding: "32px" }}>
-                  <div
-                    className="verif-banner-row"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      flexWrap: "wrap",
-                      gap: "20px",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
-                      <div
-                        className="verif-shield-box"
-                        style={{
-                          width: "56px",
-                          height: "56px",
-                          borderRadius: "16px",
-                          backgroundColor: "rgba(138, 107, 46, 0.12)",
-                          border: "1px solid rgba(138, 107, 46, 0.25)",
-                          color: "#8A6B2E",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <ShieldCheck size={30} />
-                      </div>
-                      <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                          <h2
-                            className="verif-status-heading"
-                            style={{
-                              fontSize: "22px",
-                              fontWeight: "700",
-                              color: "#2B2D2A",
-                              fontFamily: "Playfair Display, Georgia, serif",
-                              margin: 0,
-                            }}
-                          >
-                            Verification status:
-                          </h2>
-                          <span
-                            className="verif-status-badge"
-                            style={{
-                              fontSize: "12px",
-                              fontWeight: "700",
-                              padding: "4px 12px",
-                              borderRadius: "8px",
-                              backgroundColor: "rgba(138, 107, 46, 0.12)",
-                              color: "#6E5420",
-                              border: "1px solid rgba(138, 107, 46, 0.25)",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.04em",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "6px",
-                            }}
-                          >
-                            <Check size={14} />
-                            Verified Organization
-                          </span>
+                  {/* Verification Status Card */}
+                  <div className="settings-card verif-status-card" id="tabpanel-verification" role="tabpanel" aria-labelledby="tab-verification">
+                    <div className="settings-card-body verif-status-card-body">
+                      <div className="verif-status-top-row">
+                        <div className="verif-shield-box">
+                          <ShieldCheck size={26} />
                         </div>
-                        <p className="verif-status-desc" style={{ fontSize: "14px", color: "#5A584F", margin: "6px 0 0 0" }}>
-                          Last compliance review by Vismaya Senior Casting Desk: <strong>October 02, 2026</strong>
+                        <div className="verif-status-header-text">
+                          <h2 className="verif-status-heading">
+                            Verification status
+                          </h2>
+                          <div className="verif-badge-wrap">
+                            <span
+                              className={`verif-status-pill ${
+                                String(currentOrg?.status || currentOrg?.verificationState || "").toLowerCase() === "verified"
+                                  ? "verif-status-pill-verified"
+                                  : String(currentOrg?.status || currentOrg?.verificationState || "").toLowerCase() === "rejected"
+                                  ? "verif-status-pill-rejected"
+                                  : "verif-status-pill-pending"
+                              }`}
+                            >
+                              <CheckCircle2 size={12} />
+                              <span>
+                                {String(currentOrg?.status || currentOrg?.verificationState || "").toLowerCase() === "verified"
+                                  ? "VERIFIED ORGANIZATION"
+                                  : String(currentOrg?.status || currentOrg?.verificationState || "").toLowerCase() === "rejected"
+                                  ? "REJECTED"
+                                  : "PENDING"}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="verif-card-divider" />
+
+                      <dl className="verif-review-dl">
+                        <dt>Last review</dt>
+                        <dd>October 02, 2026</dd>
+                        <dt>Reviewed by</dt>
+                        <dd>Vismaya Senior Casting Desk</dd>
+                      </dl>
+                    </div>
+                  </div>
+
+                  {/* Submitted Compliance Credentials Card */}
+                  <div className="settings-card compliance-credentials-card">
+                    <div className="settings-card-header compliance-card-header">
+                      <div>
+                        <h2 className="settings-card-title">Compliance credentials</h2>
+                        <p className="settings-card-desc">
+                          Official credentials verified during onboarding to ensure authentic and compliant casting calls.
                         </p>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Documents Card */}
-              <div className="settings-card">
-                <div className="settings-card-header">
-                  <div>
-                    <h2 className="settings-card-title">Submitted compliance credentials</h2>
-                    <p className="settings-card-desc">
-                      Official credentials verified during onboarding to ensure authentic and compliant casting calls.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="settings-card-body">
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    {/* Document 1 */}
-                    <div className="doc-row">
-                      <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0 }}>
-                        <div className="doc-icon-box">
-                          <FileText size={20} />
+                    <div className="settings-card-body compliance-card-body" style={{ padding: 0 }}>
+                      <div className="compliance-docs-list">
+                        {/* Document 1: Company Registration */}
+                        <div className="compliance-doc-item">
+                          <div className="compliance-doc-top">
+                            <div className="compliance-doc-icon-box">
+                              <FileText size={20} />
+                            </div>
+                            <div className="compliance-doc-text-col">
+                              <div className="compliance-doc-title">
+                                <span>Company registration </span>
+                                <span className="compliance-doc-sub">(Certificate of Incorporation)</span>
+                              </div>
+                              <div className="compliance-doc-pill-wrap">
+                                <span className="verif-status-pill verif-status-pill-verified">
+                                  <CheckCircle2 size={12} />
+                                  <span>VERIFIED</span>
+                                </span>
+                              </div>
+                              <span className="compliance-doc-filename">
+                                CIN_Zee_Films_Incorporation_2026.pdf
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => showFeedback("Replace document dialog opened for Company Registration.")}
+                            className="btn-replace-doc-mobile"
+                          >
+                            Replace document
+                          </button>
                         </div>
-                        <div style={{ minWidth: 0 }}>
-                          <strong style={{ fontSize: "15px", color: "#2B2D2A", display: "block", fontWeight: 600 }}>
-                            Company registration (Certificate of Incorporation)
-                          </strong>
-                          <span style={{ fontSize: "13px", color: "#5A584F", marginTop: "2px", display: "block" }}>
-                            CIN_Zee_Films_Incorporation_2026.pdf • Verified
-                          </span>
-                        </div>
-                      </div>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                        <span className="status-chip-active">Verified</span>
-                        <button
-                          type="button"
-                          onClick={() => showFeedback("Replace document dialog opened for Company Registration.")}
-                          className="btn-replace-doc"
-                        >
-                          Replace
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Document 2 */}
-                    <div className="doc-row">
-                      <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0 }}>
-                        <div className="doc-icon-box">
-                          <FileText size={20} />
+                        {/* Document 2: GST Registration */}
+                        <div className="compliance-doc-item">
+                          <div className="compliance-doc-top">
+                            <div className="compliance-doc-icon-box">
+                              <FileText size={20} />
+                            </div>
+                            <div className="compliance-doc-text-col">
+                              <div className="compliance-doc-title">
+                                <span>GST registration certificate</span>
+                              </div>
+                              <div className="compliance-doc-pill-wrap">
+                                <span className="verif-status-pill verif-status-pill-verified">
+                                  <CheckCircle2 size={12} />
+                                  <span>VERIFIED</span>
+                                </span>
+                              </div>
+                              <span className="compliance-doc-filename">
+                                GSTIN_27AAACZ1234F1Z8_Cert.pdf
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => showFeedback("Replace document dialog opened for GST Certificate.")}
+                            className="btn-replace-doc-mobile"
+                          >
+                            Replace document
+                          </button>
                         </div>
-                        <div style={{ minWidth: 0 }}>
-                          <strong style={{ fontSize: "15px", color: "#2B2D2A", display: "block", fontWeight: 600 }}>
-                            GST registration certificate
-                          </strong>
-                          <span style={{ fontSize: "13px", color: "#5A584F", marginTop: "2px", display: "block" }}>
-                            GSTIN_27AAACZ1234F1Z8_Cert.pdf • Verified
-                          </span>
-                        </div>
-                      </div>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                        <span className="status-chip-active">Verified</span>
-                        <button
-                          type="button"
-                          onClick={() => showFeedback("Replace document dialog opened for GST Certificate.")}
-                          className="btn-replace-doc"
-                        >
-                          Replace
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Document 3 */}
-                    <div className="doc-row">
-                      <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0 }}>
-                        <div className="doc-icon-box">
-                          <FileText size={20} />
+                        {/* Document 3: Signatory Proof */}
+                        <div className="compliance-doc-item">
+                          <div className="compliance-doc-top">
+                            <div className="compliance-doc-icon-box">
+                              <FileText size={20} />
+                            </div>
+                            <div className="compliance-doc-text-col">
+                              <div className="compliance-doc-title">
+                                <span>Authorized signatory identity proof</span>
+                              </div>
+                              <div className="compliance-doc-pill-wrap">
+                                <span className="verif-status-pill verif-status-pill-verified">
+                                  <CheckCircle2 size={12} />
+                                  <span>VERIFIED</span>
+                                </span>
+                              </div>
+                              <span className="compliance-doc-filename">
+                                Govt_ID_Vikram_Malhotra.pdf
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => showFeedback("Replace document dialog opened for Signatory ID.")}
+                            className="btn-replace-doc-mobile"
+                          >
+                            Replace document
+                          </button>
                         </div>
-                        <div style={{ minWidth: 0 }}>
-                          <strong style={{ fontSize: "15px", color: "#2B2D2A", display: "block", fontWeight: 600 }}>
-                            Authorized signatory identity proof
-                          </strong>
-                          <span style={{ fontSize: "13px", color: "#5A584F", marginTop: "2px", display: "block" }}>
-                            Govt_ID_Vikram_Malhotra.pdf • Verified
-                          </span>
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                        <span className="status-chip-active">Verified</span>
-                        <button
-                          type="button"
-                          onClick={() => showFeedback("Replace document dialog opened for Signatory ID.")}
-                          className="btn-replace-doc"
-                        >
-                          Replace
-                        </button>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
             </>
           )}
         </div>
@@ -1997,22 +1978,171 @@ export default function OrganizationSettingsPage() {
           padding-bottom: 0;
         }
 
-        .doc-row:first-child {
-          padding-top: 0;
+        /* Status Pills (Desktop default) */
+        .verif-status-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          height: 26px;
+          padding: 0 10px;
+          border-radius: 999px;
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          line-height: 1;
+          white-space: nowrap;
+          box-sizing: border-box;
         }
 
-        .doc-icon-box,
-        .session-icon-box {
+        .verif-status-pill-verified {
+          background-color: #E3F0E7;
+          color: #2F6B45;
+        }
+
+        .verif-status-pill-pending {
+          background-color: #FBEBDD;
+          color: #8F3F16;
+        }
+
+        .verif-status-pill-rejected {
+          background-color: #FBE9E5;
+          color: #A3321F;
+        }
+
+        .verif-status-top-row {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+        }
+
+        .verif-shield-box {
+          width: 56px;
+          height: 56px;
+          border-radius: 16px;
+          background-color: #E3F0E7;
+          color: #2F6B45;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .verif-status-heading {
+          font-family: var(--font-heading), "Playfair Display", Georgia, serif;
+          font-size: 22px;
+          font-weight: 700;
+          color: #2A241A;
+          margin: 0;
+          line-height: 1.25;
+        }
+
+        .verif-card-divider {
+          height: 1px;
+          background-color: #EFE9DA;
+          width: 100%;
+          margin: 20px 0;
+        }
+
+        .verif-review-dl {
+          display: grid;
+          grid-template-columns: 110px minmax(0, 1fr);
+          gap: 10px 16px;
+          margin: 0;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        .verif-review-dl dt {
+          color: #6B6254;
+          font-weight: 500;
+        }
+
+        .verif-review-dl dd {
+          color: #2A241A;
+          font-weight: 600;
+          margin: 0;
+        }
+
+        /* Compliance Docs List (Desktop) */
+        .compliance-docs-list {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .compliance-doc-item {
+          padding: 24px 32px;
+          border-top: 1px solid #EFE9DA;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        .compliance-doc-item:first-child {
+          border-top: none;
+        }
+
+        .compliance-doc-top {
+          display: flex;
+          align-items: flex-start;
+          gap: 16px;
+        }
+
+        .compliance-doc-icon-box {
           width: 44px;
           height: 44px;
           border-radius: 12px;
-          background: #F3EFE6;
-          border: 1px solid #E8E2D4;
+          background: #F3ECDC;
           color: #8A6B2E;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
+        }
+
+        .compliance-doc-text-col {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          flex: 1;
+          min-width: 0;
+        }
+
+        .compliance-doc-title {
+          font-size: 15px;
+          font-weight: 600;
+          color: #2A241A;
+          line-height: 1.35;
+        }
+
+        .compliance-doc-sub {
+          color: #6B6254;
+          font-weight: 500;
+        }
+
+        .compliance-doc-filename {
+          font-size: 13px;
+          color: #6B6254;
+          overflow-wrap: anywhere;
+        }
+
+        .btn-replace-doc-mobile {
+          height: 38px;
+          padding: 0 16px;
+          border-radius: 10px;
+          border: 1px solid #CDBF9E;
+          background: #FFFFFF;
+          color: #5E471B;
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 13.5px;
+          font-weight: 600;
+          cursor: pointer;
+          align-self: flex-start;
+          transition: all 0.16s ease;
+        }
+
+        .btn-replace-doc-mobile:hover {
+          background: #FBF3DF;
         }
 
         .status-chip-active {
@@ -2248,59 +2378,61 @@ export default function OrganizationSettingsPage() {
           }
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 767px) {
           /* Page Container & Spacing */
           .settings-page-wrapper {
-            gap: 12px !important;
+            gap: 16px !important;
             padding: 16px !important;
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
             overflow-x: hidden !important;
-            background: transparent !important;
+            background: #FAF8F3 !important;
           }
           .settings-page-wrapper.has-dirty-bar {
-            padding-bottom: 80px !important;
+            padding-bottom: 84px !important;
           }
 
           /* B. Header */
           .settings-page-header {
-            margin-bottom: 0 !important;
-            gap: 6px !important;
+            margin-bottom: 4px !important;
+            gap: 8px !important;
           }
           .settings-breadcrumb {
-            font-size: 11.5px !important;
+            font-size: 13px !important;
+            color: #6B6254 !important;
             white-space: nowrap !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
-            margin-bottom: 6px !important;
+            margin-bottom: 8px !important;
             display: flex !important;
             align-items: center !important;
             gap: 6px !important;
           }
           .settings-breadcrumb a,
           .settings-breadcrumb span {
-            font-size: 11.5px !important;
+            font-size: 13px !important;
           }
           .settings-page-title {
-            font-size: 22px !important;
+            font-family: var(--font-heading), "Playfair Display", Georgia, serif !important;
+            font-size: 30px !important;
             line-height: 1.2 !important;
+            font-weight: 600 !important;
+            color: #2A241A !important;
             margin: 0 0 6px 0 !important;
             letter-spacing: -0.01em !important;
           }
           .settings-page-desc {
-            font-size: 13px !important;
-            line-height: 1.5 !important;
-            color: #5A584F !important;
-            display: -webkit-box !important;
-            -webkit-line-clamp: 3 !important;
-            -webkit-box-orient: vertical !important;
-            overflow: hidden !important;
+            font-size: 15px !important;
+            line-height: 1.55 !important;
+            color: #6B6254 !important;
+            display: block !important;
+            margin: 0 !important;
           }
 
           /* Feedback Toast */
           .settings-page-wrapper > div[style*="border-radius: 12px"] {
-            padding: 10px 14px !important;
+            padding: 12px 14px !important;
             font-size: 13px !important;
             gap: 8px !important;
             border-radius: 10px !important;
@@ -2310,7 +2442,7 @@ export default function OrganizationSettingsPage() {
           .settings-layout-container {
             display: flex !important;
             flex-direction: column !important;
-            gap: 12px !important;
+            gap: 16px !important;
             width: 100% !important;
           }
           .settings-content-area {
@@ -2319,68 +2451,79 @@ export default function OrganizationSettingsPage() {
           }
           .settings-content-area form,
           .settings-content-area > div {
-            gap: 12px !important;
+            gap: 16px !important;
             width: 100% !important;
           }
 
-          /* C. Tabs: NO horizontal scroll, compact chips fitting in 2 lines */
+          /* C. Tabs: ONE horizontally scrollable row */
           .settings-menu-nav {
-            overflow: visible !important;
-            padding: 0 !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important;
+            padding: 0 16px 4px 16px !important;
+            margin: 0 -16px !important;
+            width: calc(100% + 32px) !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            margin: 0 !important;
-            width: 100% !important;
+            border-radius: 0 !important;
+          }
+          .settings-menu-nav::-webkit-scrollbar {
+            display: none !important;
           }
           .settings-menu-track {
             display: flex !important;
             flex-direction: row !important;
-            flex-wrap: wrap !important;
-            gap: 5px !important;
-            width: 100% !important;
+            flex-wrap: nowrap !important;
+            gap: 8px !important;
+            width: max-content !important;
           }
           .settings-menu-item {
-            flex: 1 1 auto !important;
-            height: 32px !important;
-            padding: 0 10px !important;
+            flex: none !important;
+            height: 44px !important;
+            padding: 0 16px !important;
             border-radius: 999px !important;
-            font-size: 11px !important;
+            font-size: 14px !important;
             font-weight: 600 !important;
             white-space: nowrap !important;
+            border: 1px solid #E1D4B3 !important;
+            background: #FFFFFF !important;
+            color: #2A241A !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            gap: 6px !important;
+            gap: 8px !important;
             width: auto !important;
             box-shadow: none !important;
             box-sizing: border-box !important;
+            transition: all 0.16s ease !important;
           }
           .settings-menu-item.active {
-            background-color: #F3EFE6 !important;
-            border: 1px solid #8A6B2E !important;
-            border-bottom: 1px solid #8A6B2E !important;
-            color: #8A6B2E !important;
+            background: #FBF3DF !important;
+            border: 1px solid #C9A95C !important;
+            border-bottom: 1px solid #C9A95C !important;
+            color: #5E471B !important;
             font-weight: 600 !important;
             box-shadow: none !important;
           }
           .settings-menu-item:not(.active) {
-            background-color: #FFFFFF !important;
-            border: 1px solid #E8E2D4 !important;
-            border-bottom: 1px solid #E8E2D4 !important;
-            color: #5A584F !important;
+            background: #FFFFFF !important;
+            border: 1px solid #E1D4B3 !important;
+            border-bottom: 1px solid #E1D4B3 !important;
+            color: #2A241A !important;
             box-shadow: none !important;
           }
           .settings-menu-item .menu-item-icon-wrap {
             display: inline-flex !important;
-            width: 14px !important;
-            height: 14px !important;
+            width: 16px !important;
+            height: 16px !important;
             align-items: center !important;
             justify-content: center !important;
           }
           .settings-menu-item .menu-item-icon-wrap :global(svg) {
-            width: 14px !important;
-            height: 14px !important;
+            width: 16px !important;
+            height: 16px !important;
           }
           .settings-menu-item .menu-item-label {
             flex: 0 1 auto !important;
@@ -2396,8 +2539,8 @@ export default function OrganizationSettingsPage() {
 
           /* D. Section Cards */
           .settings-card {
-            border-radius: 14px !important;
-            border: 1px solid #E8E2D4 !important;
+            border-radius: 16px !important;
+            border: 1px solid #E8E1D2 !important;
             box-shadow: 0 1px 3px rgba(43, 45, 42, 0.04) !important;
             overflow: visible !important;
             width: 100% !important;
@@ -2406,8 +2549,8 @@ export default function OrganizationSettingsPage() {
             background-color: #FFFFFF !important;
           }
           .settings-card-header {
-            padding: 14px 14px 10px 14px !important;
-            border-bottom: 1px solid #E8E2D4 !important;
+            padding: 16px 16px 12px 16px !important;
+            border-bottom: 1px solid #E8E1D2 !important;
             gap: 4px !important;
             box-sizing: border-box !important;
             width: 100% !important;
@@ -2415,15 +2558,15 @@ export default function OrganizationSettingsPage() {
             overflow: visible !important;
           }
           .settings-card-title {
-            font-size: 17px !important;
+            font-size: 18px !important;
             line-height: 1.25 !important;
             margin: 0 0 3px 0 !important;
-            color: #2B2D2A !important;
+            color: #2A241A !important;
           }
           .settings-card-desc {
-            font-size: 12px !important;
+            font-size: 13px !important;
             line-height: 1.5 !important;
-            color: #5A584F !important;
+            color: #6B6254 !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
@@ -2431,7 +2574,7 @@ export default function OrganizationSettingsPage() {
             word-wrap: break-word !important;
           }
           .settings-card-body {
-            padding: 14px !important;
+            padding: 16px !important;
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
@@ -2442,7 +2585,7 @@ export default function OrganizationSettingsPage() {
           .settings-form-grid {
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) !important;
-            gap: 14px !important;
+            gap: 16px !important;
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
@@ -2458,14 +2601,14 @@ export default function OrganizationSettingsPage() {
             box-sizing: border-box !important;
             display: flex !important;
             flex-direction: column !important;
-            gap: 2px !important;
+            gap: 4px !important;
           }
           .form-label {
-            font-size: 12px !important;
+            font-size: 13px !important;
             font-weight: 600 !important;
             line-height: 1.3 !important;
             margin-bottom: 4px !important;
-            color: #2B2D2A !important;
+            color: #2A241A !important;
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
@@ -2473,14 +2616,14 @@ export default function OrganizationSettingsPage() {
             word-wrap: break-word !important;
           }
           .req {
-            font-size: 12px !important;
-            color: #B42318 !important;
+            font-size: 13px !important;
+            color: #A3321F !important;
             font-weight: 700 !important;
           }
           .form-hint {
-            font-size: 11.5px !important;
+            font-size: 12px !important;
             line-height: 1.4 !important;
-            color: #5A584F !important;
+            color: #6B6254 !important;
             margin-top: 4px !important;
             width: 100% !important;
             max-width: 100% !important;
@@ -2489,9 +2632,9 @@ export default function OrganizationSettingsPage() {
             word-wrap: break-word !important;
           }
           .form-error {
-            font-size: 11.5px !important;
+            font-size: 12px !important;
             line-height: 1.4 !important;
-            color: #B42318 !important;
+            color: #A3321F !important;
             margin-top: 4px !important;
             width: 100% !important;
             max-width: 100% !important;
@@ -2514,43 +2657,43 @@ export default function OrganizationSettingsPage() {
           .settings-card select,
           .settings-card :global(.v-password-input),
           .settings-card :global(.v-password-wrapper input) {
-            height: 42px !important;
-            min-height: 42px !important;
+            height: 48px !important;
+            min-height: 48px !important;
             font-size: 16px !important;
-            padding: 0 12px !important;
+            padding: 0 14px !important;
             border-radius: 10px !important;
-            border: 1px solid #E8E2D4 !important;
+            border: 1px solid #E8E1D2 !important;
             background-color: #FFFFFF !important;
-            color: #2B2D2A !important;
+            color: #2A241A !important;
             text-overflow: ellipsis !important;
             font-family: var(--font-body), "Inter", sans-serif !important;
           }
           .settings-card :global(.v-password-input) {
-            padding-right: 42px !important;
+            padding-right: 46px !important;
           }
           .settings-card :global(.v-password-toggle-btn) {
-            min-width: 36px !important;
-            min-height: 36px !important;
-            width: 36px !important;
-            height: 36px !important;
-            right: 4px !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            width: 44px !important;
+            height: 44px !important;
+            right: 2px !important;
           }
           .settings-card select,
           .form-select {
             width: 100% !important;
             min-width: 0 !important;
             max-width: 100% !important;
-            height: 42px !important;
-            min-height: 42px !important;
+            height: 48px !important;
+            min-height: 48px !important;
             font-size: 16px !important;
-            padding-left: 12px !important;
-            padding-right: 32px !important;
+            padding-left: 14px !important;
+            padding-right: 36px !important;
             border-radius: 10px !important;
-            border: 1px solid #E8E2D4 !important;
+            border: 1px solid #E8E1D2 !important;
             background-color: #FFFFFF !important;
-            background-position: right 12px center !important;
+            background-position: right 14px center !important;
             background-size: 16px 16px !important;
-            color: #2B2D2A !important;
+            color: #2A241A !important;
             text-overflow: ellipsis !important;
             white-space: nowrap !important;
             overflow: hidden !important;
@@ -2561,16 +2704,16 @@ export default function OrganizationSettingsPage() {
             width: 100% !important;
             min-width: 0 !important;
             max-width: 100% !important;
-            min-height: 96px !important;
+            min-height: 100px !important;
             height: auto !important;
             font-size: 16px !important;
-            padding: 10px 12px !important;
+            padding: 12px 14px !important;
             border-radius: 10px !important;
-            border: 1px solid #E8E2D4 !important;
+            border: 1px solid #E8E1D2 !important;
             background-color: #FFFFFF !important;
             box-sizing: border-box !important;
-            color: #2B2D2A !important;
-            line-height: 1.4 !important;
+            color: #2A241A !important;
+            line-height: 1.45 !important;
             resize: vertical !important;
             overflow-x: hidden !important;
             overflow-y: auto !important;
@@ -2579,7 +2722,7 @@ export default function OrganizationSettingsPage() {
 
           /* F. Studio Logo & Branding */
           .branding-logo-row {
-            gap: 12px !important;
+            gap: 14px !important;
             align-items: center !important;
             flex-wrap: nowrap !important;
             width: 100% !important;
@@ -2600,38 +2743,40 @@ export default function OrganizationSettingsPage() {
             width: 100% !important;
             max-width: 100% !important;
             flex: 1 1 auto !important;
-            gap: 3px !important;
+            gap: 4px !important;
             box-sizing: border-box !important;
           }
           .branding-watermark-title {
-            font-size: 13px !important;
+            font-size: 14px !important;
             line-height: 1.3 !important;
             width: 100% !important;
             word-wrap: break-word !important;
           }
           .branding-hint {
-            font-size: 11.5px !important;
+            font-size: 12px !important;
             line-height: 1.35 !important;
             width: 100% !important;
             word-wrap: break-word !important;
           }
           .branding-btn-wrap {
-            margin-top: 6px !important;
+            margin-top: 8px !important;
             width: 100% !important;
           }
           .btn-upload-logo {
-            height: 36px !important;
-            font-size: 12px !important;
-            padding: 0 14px !important;
-            border-radius: 9px !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            font-size: 13.5px !important;
+            font-weight: 600 !important;
+            padding: 0 16px !important;
+            border-radius: 10px !important;
             width: auto !important;
           }
 
           /* G. Action Buttons (Save changes / Cancel) */
           .settings-card-footer,
           .settings-save-bar {
-            padding: 12px 14px !important;
-            border-top: 1px solid #E8E2D4 !important;
+            padding: 14px 16px !important;
+            border-top: 1px solid #E8E1D2 !important;
             display: flex !important;
             width: 100% !important;
             box-sizing: border-box !important;
@@ -2639,7 +2784,7 @@ export default function OrganizationSettingsPage() {
           .footer-actions {
             display: grid !important;
             grid-template-columns: 1fr 1fr !important;
-            gap: 8px !important;
+            gap: 10px !important;
             width: 100% !important;
             box-sizing: border-box !important;
             flex-direction: row !important;
@@ -2650,24 +2795,28 @@ export default function OrganizationSettingsPage() {
             grid-column: 1 / -1 !important;
           }
           .btn-ghost-cancel {
-            height: 42px !important;
-            font-size: 13px !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
             border-radius: 10px !important;
             background-color: #FFFFFF !important;
-            border: 1px solid #E8E2D4 !important;
-            color: #5A584F !important;
+            border: 1px solid #E8E1D2 !important;
+            color: #6B6254 !important;
             width: 100% !important;
             justify-content: center !important;
           }
           .btn-ghost-cancel:disabled {
             background-color: #FAF9F7 !important;
-            border-color: #E8E2D4 !important;
+            border-color: #E8E1D2 !important;
             color: #8A877D !important;
             opacity: 0.55 !important;
           }
           .btn-primary-gold {
-            height: 42px !important;
-            font-size: 13px !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
             border-radius: 10px !important;
             background-color: #8A6B2E !important;
             color: #FFFFFF !important;
@@ -2675,96 +2824,227 @@ export default function OrganizationSettingsPage() {
             justify-content: center !important;
           }
           .btn-primary-gold:hover {
-            background-color: #6E5420 !important;
+            background-color: #5E471B !important;
           }
 
           /* Mobile Sticky Bottom Bar (when dirty) */
           .mobile-sticky-action-bar {
             display: grid !important;
             grid-template-columns: 1fr 1fr !important;
-            gap: 8px !important;
+            gap: 10px !important;
             position: fixed !important;
             bottom: 0 !important;
             left: 0 !important;
             right: 0 !important;
-            padding: 10px 16px !important;
+            padding: 12px 16px !important;
             background: rgba(255, 255, 255, 0.98) !important;
             backdrop-filter: blur(12px) !important;
             -webkit-backdrop-filter: blur(12px) !important;
-            border-top: 1px solid #E8E2D4 !important;
+            border-top: 1px solid #E8E1D2 !important;
             box-shadow: 0 -4px 16px rgba(43, 45, 42, 0.08) !important;
             z-index: 50 !important;
           }
           .mobile-sticky-action-bar .btn-ghost-cancel,
           .mobile-sticky-action-bar .btn-primary-gold {
-            height: 42px !important;
-            font-size: 13px !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            border-radius: 10px !important;
           }
 
           /* Verification Tab */
-          .verif-banner-row {
-            gap: 12px !important;
+          .verif-status-card {
+            padding: 18px !important;
+            border-radius: 16px !important;
+            border: 1px solid #E8E1D2 !important;
+            background: #FFFFFF !important;
           }
-          .verif-banner-row > div:first-child {
-            gap: 12px !important;
+          .verif-status-top-row {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: flex-start !important;
+            gap: 14px !important;
           }
-          .verif-shield-box {
-            width: 44px !important;
-            height: 44px !important;
-            min-width: 44px !important;
-            min-height: 44px !important;
+          .verif-shield-box,
+          .verif-shield-box-48 {
+            width: 48px !important;
+            height: 48px !important;
+            min-width: 48px !important;
+            min-height: 48px !important;
             border-radius: 12px !important;
+            background: #E3F0E7 !important;
+            color: #2F6B45 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
           }
-          .verif-shield-box :global(svg) {
+          .verif-shield-box :global(svg),
+          .verif-shield-box-48 :global(svg) {
             width: 24px !important;
             height: 24px !important;
           }
-          .verif-status-heading {
-            font-size: 16px !important;
+          .verif-status-header-text {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 6px !important;
           }
-          .verif-status-badge {
-            font-size: 10.5px !important;
-            padding: 3px 8px !important;
-            border-radius: 6px !important;
+          .verif-status-heading,
+          .verif-status-title {
+            font-family: var(--font-heading), "Playfair Display", Georgia, serif !important;
+            font-size: 20px !important;
+            line-height: 1.25 !important;
+            font-weight: 600 !important;
+            color: #2A241A !important;
+            margin: 0 !important;
           }
-          .verif-status-desc {
-            font-size: 12px !important;
-            margin: 4px 0 0 0 !important;
+          .verif-badge-wrap,
+          .compliance-doc-pill-wrap {
+            display: flex !important;
+            margin-top: 6px !important;
           }
-          .doc-row {
-            padding: 10px 0 !important;
-            gap: 10px !important;
-            min-height: 40px !important;
-            flex-wrap: nowrap !important;
-          }
-          .doc-icon-box {
-            width: 32px !important;
-            height: 32px !important;
-            min-width: 32px !important;
-            min-height: 32px !important;
-            border-radius: 8px !important;
-          }
-          .doc-icon-box :global(svg) {
-            width: 16px !important;
-            height: 16px !important;
-          }
-          .doc-row strong {
-            font-size: 12.5px !important;
-            line-height: 1.3 !important;
-          }
-          .doc-row span {
-            font-size: 11px !important;
-          }
-          .status-chip-active {
-            font-size: 10px !important;
-            padding: 2px 7px !important;
-            border-radius: 6px !important;
-          }
-          .btn-replace-doc {
-            height: 32px !important;
-            font-size: 11.5px !important;
+          .verif-status-pill {
+            display: inline-flex !important;
+            align-items: center !important;
+            height: 26px !important;
             padding: 0 10px !important;
-            border-radius: 8px !important;
+            border-radius: 999px !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.06em !important;
+            line-height: 1 !important;
+            white-space: nowrap !important;
+          }
+          .verif-card-divider {
+            height: 1px !important;
+            background-color: #EFE9DA !important;
+            width: 100% !important;
+            margin: 16px 0 !important;
+          }
+          .verif-review-dl {
+            display: grid !important;
+            grid-template-columns: 110px minmax(0, 1fr) !important;
+            gap: 8px 12px !important;
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+            margin: 0 !important;
+          }
+          .verif-review-dl dt {
+            color: #6B6254 !important;
+            font-weight: 500 !important;
+          }
+          .verif-review-dl dd {
+            color: #2A241A !important;
+            font-weight: 600 !important;
+            margin: 0 !important;
+          }
+
+          /* Compliance Credentials Card */
+          .compliance-credentials-card {
+            border-radius: 16px !important;
+            border: 1px solid #E8E1D2 !important;
+            background: #FFFFFF !important;
+            overflow: hidden !important;
+          }
+          .compliance-credentials-card .settings-card-header {
+            padding: 18px 18px 14px !important;
+            border-bottom: 1px solid #EFE9DA !important;
+          }
+          .compliance-credentials-card .settings-card-title {
+            font-family: var(--font-heading), "Playfair Display", Georgia, serif !important;
+            font-size: 20px !important;
+            line-height: 1.25 !important;
+            font-weight: 600 !important;
+            color: #2A241A !important;
+            margin: 0 0 4px 0 !important;
+          }
+          .compliance-credentials-card .settings-card-desc {
+            font-size: 13px !important;
+            line-height: 1.4 !important;
+            color: #6B6254 !important;
+            margin: 0 !important;
+          }
+          .compliance-doc-item {
+            padding: 16px !important;
+            border-top: 1px solid #EFE9DA !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0 !important;
+          }
+          .compliance-doc-item:first-child {
+            border-top: none !important;
+          }
+          .compliance-doc-top {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+            width: 100% !important;
+          }
+          .compliance-doc-icon-box {
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px !important;
+            min-height: 40px !important;
+            border-radius: 10px !important;
+            background: #F3ECDC !important;
+            color: #8A6B2E !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+          }
+          .compliance-doc-icon-box :global(svg) {
+            width: 20px !important;
+            height: 20px !important;
+          }
+          .compliance-doc-text-col {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .compliance-doc-title {
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            line-height: 1.35 !important;
+            color: #2A241A !important;
+            margin: 0 !important;
+          }
+          .compliance-doc-sub {
+            color: #6B6254 !important;
+            font-weight: 500 !important;
+          }
+          .compliance-doc-item .verif-status-pill {
+            margin-top: 8px !important;
+            align-self: flex-start !important;
+          }
+          .compliance-doc-filename {
+            font-size: 13px !important;
+            color: #6B6254 !important;
+            overflow-wrap: anywhere !important;
+            margin-top: 4px !important;
+          }
+          .btn-replace-doc-mobile {
+            width: 100% !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            border-radius: 10px !important;
+            border: 1px solid #CDBF9E !important;
+            background: #FFFFFF !important;
+            color: #5E471B !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            margin-top: 14px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            transition: all 0.16s ease !important;
+          }
+          .btn-replace-doc-mobile:hover {
+            background: #FBF3DF !important;
           }
 
           /* Security Tab */
@@ -2819,15 +3099,27 @@ export default function OrganizationSettingsPage() {
             font-size: 11px !important;
           }
           .session-current-chip {
-            font-size: 9.5px !important;
-            padding: 2px 6px !important;
-            border-radius: 5px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            height: 26px !important;
+            padding: 0 10px !important;
+            border-radius: 999px !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.06em !important;
+            line-height: 1 !important;
+            white-space: nowrap !important;
           }
           .btn-signout-session {
-            height: 32px !important;
-            font-size: 11.5px !important;
-            padding: 0 10px !important;
-            border-radius: 8px !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            font-size: 13.5px !important;
+            font-weight: 600 !important;
+            padding: 0 16px !important;
+            border-radius: 10px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
           }
 
           /* Notification Channels Tab */
@@ -2837,49 +3129,49 @@ export default function OrganizationSettingsPage() {
             width: 100% !important;
           }
           .channel-row {
-            padding: 10px 0 !important;
+            padding: 12px 0 !important;
             gap: 12px !important;
             min-height: 44px !important;
             align-items: center !important;
           }
           .channel-icon-box {
-            width: 32px !important;
-            height: 32px !important;
-            min-width: 32px !important;
-            min-height: 32px !important;
-            border-radius: 8px !important;
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
+            border-radius: 10px !important;
           }
           .channel-icon-box :global(svg) {
-            width: 16px !important;
-            height: 16px !important;
+            width: 18px !important;
+            height: 18px !important;
           }
           .channel-title {
-            font-size: 13px !important;
+            font-size: 14px !important;
             margin-bottom: 2px !important;
             line-height: 1.3 !important;
           }
           .channel-desc {
-            font-size: 11.5px !important;
+            font-size: 12px !important;
             line-height: 1.4 !important;
           }
           .notif-toggle-btn {
-            width: 40px !important;
-            height: 22px !important;
-            min-width: 40px !important;
-            border-radius: 11px !important;
+            width: 44px !important;
+            height: 26px !important;
+            min-width: 44px !important;
+            border-radius: 13px !important;
             padding: 2px !important;
           }
           .notif-toggle-knob {
-            width: 18px !important;
-            height: 18px !important;
+            width: 22px !important;
+            height: 22px !important;
           }
 
           /* Notice banner */
           .settings-card-body > div[style*="marginTop: 24px"] {
             margin-top: 14px !important;
-            padding: 10px 12px !important;
+            padding: 12px 14px !important;
             border-radius: 10px !important;
-            font-size: 11.5px !important;
+            font-size: 12px !important;
             gap: 8px !important;
           }
 
@@ -2888,68 +3180,25 @@ export default function OrganizationSettingsPage() {
             padding: 16px !important;
           }
           .unsaved-modal-box {
-            padding: 18px 16px !important;
-            border-radius: 14px !important;
+            padding: 20px 18px !important;
+            border-radius: 16px !important;
             max-width: 100% !important;
             width: 100% !important;
-            gap: 12px !important;
+            gap: 14px !important;
           }
           .unsaved-modal-box h3 {
-            font-size: 16px !important;
+            font-size: 17px !important;
           }
           .unsaved-modal-box p {
-            font-size: 13px !important;
+            font-size: 13.5px !important;
           }
           .unsaved-modal-box button {
-            height: 42px !important;
-            font-size: 13px !important;
-            padding: 0 14px !important;
-          }
-        }
-
-        @media (max-width: 400px) {
-          .settings-page-wrapper {
-            padding: 12px !important;
-          }
-          .settings-card {
-            border-radius: 12px !important;
-          }
-          .settings-card-header {
-            padding: 12px 12px 8px 12px !important;
-          }
-          .settings-card-body {
-            padding: 12px !important;
-          }
-          .settings-card-footer,
-          .settings-save-bar {
-            padding: 10px 12px !important;
-          }
-          .branding-logo-box {
-            width: 64px !important;
-            height: 64px !important;
-            min-width: 64px !important;
-            min-height: 64px !important;
-            font-size: 24px !important;
-          }
-        }
-
-        @media (max-width: 380px) {
-          .settings-menu-track {
-            gap: 4px !important;
-          }
-          .settings-menu-item {
-            font-size: 10.5px !important;
-            padding: 0 7px !important;
-            height: 30px !important;
-            gap: 4px !important;
-          }
-          .settings-menu-item .menu-item-icon-wrap {
-            width: 13px !important;
-            height: 13px !important;
-          }
-          .settings-menu-item .menu-item-icon-wrap :global(svg) {
-            width: 13px !important;
-            height: 13px !important;
+            height: 44px !important;
+            min-height: 44px !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            padding: 0 16px !important;
+            border-radius: 10px !important;
           }
         }
       `}</style>

@@ -804,18 +804,80 @@ export default function TalentSettingsPage() {
                         readOnly
                         className="settings-input settings-input-readonly"
                       />
-                      <div className="settings-email-status-row">
-                        {isEmailVerified ? (
-                          <span className="settings-pill-verified">
-                            <CheckCircle2 size={12} />
-                            <span>VERIFIED</span>
-                          </span>
-                        ) : (
-                          <span className="settings-pill-unverified">
-                            <AlertCircle size={12} />
-                            <span>UNVERIFIED</span>
-                          </span>
+                      <div
+                        className="settings-email-status-row"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          flexWrap: "wrap",
+                          marginTop: "10px",
+                        }}
+                      >
+                        <div className="settings-pill-container" style={{ display: "inline-flex" }}>
+                          {isEmailVerified ? (
+                            <span
+                              className="settings-pill-verified"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                height: "26px",
+                                padding: "0 10px",
+                                borderRadius: "999px",
+                                backgroundColor: "#E3F0E7",
+                                color: "#2F6B45",
+                                fontSize: "11px",
+                                fontWeight: 700,
+                                letterSpacing: "0.06em",
+                                lineHeight: 1,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              <CheckCircle2 size={12} />
+                              <span>VERIFIED</span>
+                            </span>
+                          ) : (
+                            <span
+                              className="settings-pill-unverified"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                height: "26px",
+                                padding: "0 10px",
+                                borderRadius: "999px",
+                                backgroundColor: "#FBEBDD",
+                                color: "#8F3F16",
+                                fontSize: "11px",
+                                fontWeight: 700,
+                                letterSpacing: "0.06em",
+                                lineHeight: 1,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              <AlertCircle size={12} />
+                              <span>UNVERIFIED</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {!isEmailVerified && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewEmailInput(accountEmail);
+                              setEmailPasswordInput("");
+                              setEmailOtpInput("");
+                              setIsEmailOtpSent(false);
+                              setShowEmailModal(true);
+                            }}
+                            className="settings-email-action-btn settings-email-verify-btn"
+                          >
+                            Verify email
+                          </button>
                         )}
+
                         <button
                           type="button"
                           onClick={() => {
@@ -825,7 +887,7 @@ export default function TalentSettingsPage() {
                             setIsEmailOtpSent(false);
                             setShowEmailModal(true);
                           }}
-                          className="settings-email-action-btn"
+                          className="settings-email-action-btn settings-email-change-btn"
                         >
                           Change email
                         </button>
@@ -1921,46 +1983,110 @@ export default function TalentSettingsPage() {
           font-size: 13px;
           color: #6B6254;
           line-height: 1.5;
+          margin-top: 8px;
         }
 
-        .settings-helper-link {
+        .settings-helper-link,
+        .settings-support-link {
           color: #8A6B2E;
+          font-size: 13px;
           font-weight: 600;
-          text-decoration: underline;
+          text-decoration: none;
           cursor: pointer;
+          transition: color 0.16s ease;
+        }
+
+        .settings-helper-link:hover,
+        .settings-helper-link:focus,
+        .settings-support-link:hover,
+        .settings-support-link:focus {
+          color: #6E5420;
+          text-decoration: underline;
+        }
+
+        /* Email Status Row & Action Buttons */
+        .settings-email-status-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 10px;
+        }
+
+        .settings-email-action-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          height: 32px;
+          padding: 0 12px;
+          border-radius: 10px;
+          border: 1px solid #CDBF9E;
+          background: #FFFFFF;
+          color: #5E471B;
+          font-family: var(--font-body), "Inter", sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          line-height: 1;
+          cursor: pointer;
+          white-space: nowrap;
+          text-decoration: none;
+          box-sizing: border-box;
+          transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+        }
+
+        .settings-email-action-btn:hover:not(:disabled) {
+          background-color: #FBF3DF;
+          border-color: #C9A95C;
+          color: #5E471B;
+        }
+
+        .settings-email-action-btn:focus-visible {
+          outline: 2px solid #8A6B2E;
+          outline-offset: 2px;
+        }
+
+        .settings-email-action-btn:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
         }
 
         /* Email Status Pills */
         .settings-pill-verified {
           display: inline-flex;
           align-items: center;
-          gap: 5px;
+          gap: 6px;
           height: 26px;
           padding: 0 10px;
           border-radius: 999px;
           background: #E3F0E7;
           color: #2F6B45;
+          font-family: var(--font-body), "Inter", sans-serif;
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
           line-height: 1;
-          letter-spacing: 0.04em;
+          letter-spacing: 0.06em;
+          white-space: nowrap;
+          box-sizing: border-box;
         }
 
         .settings-pill-unverified {
           display: inline-flex;
           align-items: center;
-          gap: 5px;
+          gap: 6px;
           height: 26px;
           padding: 0 10px;
           border-radius: 999px;
           background: #FBEBDD;
           color: #8F3F16;
+          font-family: var(--font-body), "Inter", sans-serif;
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
           line-height: 1;
-          letter-spacing: 0.04em;
+          letter-spacing: 0.06em;
+          white-space: nowrap;
+          box-sizing: border-box;
         }
 
         .settings-pill-platform-managed {
@@ -2287,6 +2413,32 @@ export default function TalentSettingsPage() {
           .settings-input {
             height: 48px !important;
             font-size: 16px !important; /* Prevents iOS auto-zoom */
+          }
+
+          /* Email status row on mobile: pill on first line, buttons share next line */
+          .settings-email-status-row {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            gap: 10px !important;
+          }
+
+          .settings-pill-container {
+            flex-basis: 100% !important;
+            width: 100% !important;
+            display: flex !important;
+          }
+
+          .settings-email-status-row .settings-pill-verified,
+          .settings-email-status-row .settings-pill-unverified {
+            width: fit-content !important;
+            flex: 0 0 auto !important;
+          }
+
+          .settings-email-action-btn {
+            height: 40px !important;
+            padding: 0 14px !important;
+            font-size: 13px !important;
           }
 
           /* Photo row on mobile */

@@ -19,6 +19,8 @@ import {
   MapPin,
   Lock,
   Globe,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
@@ -223,6 +225,65 @@ export default function AdminOpportunitiesPage() {
     return projects.find((p) => p.id === projId);
   };
 
+  const getOpportunityStatusPill = (status) => {
+    const s = String(status || "").toLowerCase();
+    if (s === "published" || s === "active") {
+      return {
+        label: "PUBLISHED LIVE",
+        bg: "#E3F0E7",
+        color: "#2F6B45",
+        border: "rgba(47, 107, 69, 0.25)",
+      };
+    }
+    if (isOpportunityPending(status)) {
+      return {
+        label: "IN REVIEW",
+        bg: "#FBEBDD",
+        color: "#8F3F16",
+        border: "rgba(143, 63, 22, 0.25)",
+      };
+    }
+    if (s === "closed") {
+      return {
+        label: "CLOSED",
+        bg: "#EFEAE0",
+        color: "#5C5545",
+        border: "rgba(92, 85, 69, 0.25)",
+      };
+    }
+    if (s === "cancelled") {
+      return {
+        label: "CANCELLED",
+        bg: "#FBE9E5",
+        color: "#A3321F",
+        border: "rgba(163, 50, 31, 0.25)",
+      };
+    }
+    if (s === "completed") {
+      return {
+        label: "COMPLETED",
+        bg: "#F3ECDC",
+        color: "#5E471B",
+        border: "rgba(138, 107, 46, 0.25)",
+      };
+    }
+    return {
+      label: (status || "DRAFT").toUpperCase(),
+      bg: "#EFEAE0",
+      color: "#5C5545",
+      border: "rgba(92, 85, 69, 0.25)",
+    };
+  };
+
+  const mobileStatusTabs = [
+    { key: "ALL", label: "All", count: statusCounts.ALL },
+    { key: "Published", label: "Published live", count: statusCounts.Published },
+    { key: "Submitted", label: "In review", count: statusCounts.Submitted },
+    { key: "Closed", label: "Closed", count: statusCounts.Closed },
+    { key: "Cancelled", label: "Cancelled", count: statusCounts.Cancelled },
+    { key: "Completed", label: "Completed", count: statusCounts.Completed },
+  ];
+
   if (!isHydrated) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -234,7 +295,9 @@ export default function AdminOpportunitiesPage() {
 
   return (
     <div className="admin-opp-page" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      {/* Page Header */}
+      {/* ===================== DESKTOP LAYOUT (>= 768px) ===================== */}
+      <div className="admin-opp-desktop-layout">
+        {/* Page Header */}
       <PageHeader
         title="Opportunities Directory"
         subtitle="Platform-wide directory of casting opportunities, application metrics, auto-closing schedules, and statuses."
@@ -558,141 +621,519 @@ export default function AdminOpportunitiesPage() {
               </table>
             </div>
           </div>
+        </>
+      )}
+      </div>
 
-          {/* Mobile Stacked Card List */}
-          <div className="admin-opp-mobile-cards">
+      {/* ===================== MOBILE LAYOUT (<= 767px) ===================== */}
+      <div className="admin-opp-mobile-layout">
+        {/* Header */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {/* Breadcrumb */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#6B6254" }}>
+            <Link href="/admin/dashboard" style={{ color: "#6B6254", textDecoration: "none" }}>
+              Dashboard
+            </Link>
+            <span>/</span>
+            <span style={{ color: "#8A6B2E", fontWeight: 600 }}>Opportunities</span>
+          </div>
+
+          {/* Title */}
+          <h1
+            style={{
+              margin: 0,
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: "30px",
+              lineHeight: 1.2,
+              fontWeight: 600,
+              color: "#2A241A",
+            }}
+          >
+            Opportunities directory
+          </h1>
+
+          {/* Total Count Pill */}
+          <div>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                height: "26px",
+                padding: "0 10px",
+                borderRadius: "999px",
+                fontSize: "11px",
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                lineHeight: 1,
+                whiteSpace: "nowrap",
+                backgroundColor: "#F3ECDC",
+                color: "#5E471B",
+                border: "1px solid rgba(138, 107, 46, 0.25)",
+              }}
+            >
+              {opportunities.length} TOTAL OPPORTUNITIES
+            </span>
+          </div>
+
+          {/* Description */}
+          <p
+            style={{
+              margin: 0,
+              fontSize: "15px",
+              lineHeight: 1.55,
+              color: "#6B6254",
+            }}
+          >
+            Every casting opportunity on the platform, with application counts and closing status.
+          </p>
+        </div>
+
+        {/* Status Chips: horizontally scrollable row */}
+        <div className="admin-opp-chip-row" role="tablist">
+          {mobileStatusTabs.map((tab) => {
+            const isActive = statusFilter === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setStatusFilter(tab.key)}
+                style={{
+                  flex: "none",
+                  height: "40px",
+                  padding: "0 14px",
+                  borderRadius: "999px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                  border: isActive ? "1px solid #C9A95C" : "1px solid #E1D4B3",
+                  backgroundColor: isActive ? "#FBF3DF" : "#FFFFFF",
+                  color: isActive ? "#5E471B" : "#2A241A",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  fontFamily: "Inter, sans-serif",
+                }}
+              >
+                <span>{tab.label}</span>
+                <span
+                  style={{
+                    minWidth: "20px",
+                    height: "20px",
+                    borderRadius: "999px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0 6px",
+                    backgroundColor: isActive ? "#8A6B2E" : "#F3ECDC",
+                    color: isActive ? "#FFFFFF" : "#5E471B",
+                  }}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search + Organization Filter */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {/* Search input */}
+          <div style={{ position: "relative", width: "100%" }}>
+            <Search
+              size={18}
+              style={{
+                position: "absolute",
+                left: "14px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#6B6254",
+                pointerEvents: "none",
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Search title or studio"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: "100%",
+                height: "48px",
+                fontSize: "16px",
+                borderRadius: "10px",
+                border: "1px solid #D9D1BF",
+                backgroundColor: "#FFFFFF",
+                color: "#2A241A",
+                paddingLeft: "42px",
+                paddingRight: "14px",
+                boxSizing: "border-box",
+                outline: "none",
+                fontFamily: "Inter, sans-serif",
+              }}
+            />
+          </div>
+
+          {/* Organization Select */}
+          <div style={{ position: "relative", width: "100%" }}>
+            <select
+              aria-label="Organization"
+              value={orgFilter}
+              onChange={(e) => setOrgFilter(e.target.value)}
+              style={{
+                width: "100%",
+                height: "48px",
+                fontSize: "16px",
+                borderRadius: "10px",
+                border: "1px solid #D9D1BF",
+                backgroundColor: "#FFFFFF",
+                color: "#2A241A",
+                paddingLeft: "14px",
+                paddingRight: "40px",
+                appearance: "none",
+                WebkitAppearance: "none",
+                MozAppearance: "none",
+                boxSizing: "border-box",
+                outline: "none",
+                cursor: "pointer",
+                fontFamily: "Inter, sans-serif",
+              }}
+            >
+              <option value="ALL">All organizations</option>
+              {organizations.map((org) => (
+                <option key={org.id} value={org.id}>
+                  {org.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={18}
+              style={{
+                position: "absolute",
+                right: "14px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#6B6254",
+                pointerEvents: "none",
+              }}
+            />
+          </div>
+
+          {/* Showing counter */}
+          <div style={{ fontSize: "13px", color: "#6B6254", marginTop: "-2px" }}>
+            Showing {filteredOpportunities.length} of {opportunities.length} opportunities
+          </div>
+        </div>
+
+        {/* Mobile Opportunity Cards */}
+        {filteredOpportunities.length === 0 ? (
+          <div
+            style={{
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E8E1D2",
+              borderRadius: "16px",
+              padding: "36px 20px",
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04)",
+            }}
+          >
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                backgroundColor: "#F3ECDC",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#8A6B2E",
+                marginBottom: "4px",
+              }}
+            >
+              <Megaphone size={28} />
+            </div>
+            <h3
+              style={{
+                fontSize: "20px",
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontWeight: 600,
+                color: "#2A241A",
+                margin: 0,
+                lineHeight: 1.3,
+              }}
+            >
+              No opportunities found
+            </h3>
+            <p style={{ color: "#6B6254", fontSize: "14px", margin: 0, lineHeight: 1.45, maxWidth: "280px" }}>
+              No opportunities match your filter criteria. Try clearing your search or status filter.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {filteredOpportunities.map((opp) => {
               const org = getOrgForOpp(opp.orgId);
               const proj = getProjectForOpp(opp.projectId);
               const apps = getApplicantsForOpp(opp.id);
               const isClosed = opp.status === "Closed";
+              const statusPill = getOpportunityStatusPill(opp.status);
 
               return (
-                <div key={opp.id} className="admin-opp-mobile-card">
-                  {/* Line 1: Type Pill + Status */}
+                <div
+                  key={opp.id}
+                  style={{
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #E8E1D2",
+                    borderRadius: "16px",
+                    padding: "18px",
+                    display: "flex",
+                    flexDirection: "column",
+                    boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04)",
+                  }}
+                >
+                  {/* Top row: Category pill + Status pill */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
                     <span
                       style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        height: "26px",
+                        padding: "0 10px",
+                        borderRadius: "999px",
                         fontSize: "11px",
-                        fontWeight: 600,
-                        color: "#6E5420",
-                        backgroundColor: "rgba(201, 165, 92, 0.16)",
-                        border: "1px solid rgba(201, 165, 92, 0.25)",
-                        padding: "2px 8px",
-                        borderRadius: "6px",
+                        fontWeight: 700,
+                        letterSpacing: "0.06em",
+                        lineHeight: 1,
                         whiteSpace: "nowrap",
+                        backgroundColor: "#F3ECDC",
+                        color: "#5E471B",
+                        border: "1px solid rgba(138, 107, 46, 0.25)",
+                        textTransform: "uppercase",
                       }}
                     >
-                      {opp.opportunityType}
+                      {opp.opportunityType || "Casting Call"}
                     </span>
-                    <StatusBadge status={opp.status} size="xs" />
-                  </div>
 
-                  {/* Title & Location */}
-                  <div>
-                    <h4
-                      style={{
-                        fontFamily: "var(--font-playfair), serif",
-                        fontSize: "15px",
-                        fontWeight: 600,
-                        color: "#2B2D2A",
-                        margin: 0,
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {opp.title}
-                    </h4>
-                    <div style={{ fontSize: "12px", color: "#5A584F", marginTop: "2px" }}>
-                      {opp.location}
-                    </div>
-                  </div>
-
-                  {/* 2-Column Info Grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "13px" }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <span style={{ fontSize: "10.5px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
-                        Project & Studio
-                      </span>
-                      <span style={{ color: "#2B2D2A", fontWeight: 600, fontSize: "12.5px" }}>
-                        {proj?.title || "Project"}
-                      </span>
-                      <span style={{ color: "#5A584F", fontSize: "11.5px" }}>
-                        {org?.name || "Organization"}
-                      </span>
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <span style={{ fontSize: "10.5px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700 }}>
-                        Deadline
-                      </span>
-                      <span style={{ color: "#2B2D2A", fontWeight: 600, fontSize: "12.5px" }}>
-                        {opp.deadline}
-                      </span>
-                      {isClosed ? (
-                        <span style={{ fontSize: "10.5px", color: "#6E5420", fontWeight: 700 }}>
-                          Auto-closed
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: "11px", color: "#5A584F" }}>
-                          Auto-closes
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Applicants Count & Action Row */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: "10px",
-                      paddingTop: "6px",
-                      borderTop: "1px solid #E8E2D4",
-                    }}
-                  >
                     <span
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
-                        gap: "5px",
-                        fontSize: "12px",
-                        color: apps.length > 0 ? "#6E5420" : "#5A584F",
-                        fontWeight: 600,
+                        height: "26px",
+                        padding: "0 10px",
+                        borderRadius: "999px",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        letterSpacing: "0.06em",
+                        lineHeight: 1,
+                        whiteSpace: "nowrap",
+                        backgroundColor: statusPill.bg,
+                        color: statusPill.color,
+                        border: `1px solid ${statusPill.border}`,
                       }}
                     >
-                      <Users size={13} />
-                      <span>{apps.length} Applicants</span>
+                      {statusPill.label}
                     </span>
+                  </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setViewModalOpp(opp)}
+                  {/* Title as h2 */}
+                  <h2
+                    style={{
+                      fontFamily: "'Playfair Display', Georgia, serif",
+                      fontSize: "22px",
+                      lineHeight: 1.25,
+                      fontWeight: 600,
+                      color: "#2A241A",
+                      marginTop: "14px",
+                      marginBottom: 0,
+                      overflowWrap: "anywhere",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {opp.title}
+                  </h2>
+
+                  {/* Location line under it */}
+                  {opp.location && (
+                    <div
                       style={{
-                        height: "34px",
-                        padding: "0 14px",
-                        fontSize: "12.5px",
-                        fontWeight: 600,
-                        borderRadius: "8px",
-                        backgroundColor: "#8A6B2E",
-                        color: "#FFFFFF",
-                        border: "none",
-                        cursor: "pointer",
-                        display: "inline-flex",
+                        display: "flex",
                         alignItems: "center",
-                        gap: "5px",
+                        gap: "4px",
+                        fontSize: "13px",
+                        color: "#6B6254",
+                        marginTop: "4px",
                       }}
                     >
-                      <Eye size={13} />
-                      <span>Details</span>
-                    </button>
+                      <MapPin size={13} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                      <span>{opp.location}</span>
+                    </div>
+                  )}
+
+                  {/* 2-column grid block */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "12px",
+                      padding: "14px 0",
+                      marginTop: "14px",
+                      borderTop: "1px solid #EFE9DA",
+                      borderBottom: "1px solid #EFE9DA",
+                    }}
+                  >
+                    {/* Project */}
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                          color: "#6B6254",
+                          marginBottom: "2px",
+                        }}
+                      >
+                        PROJECT
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: "#2A241A",
+                          overflowWrap: "anywhere",
+                          lineHeight: 1.35,
+                        }}
+                      >
+                        {proj?.title || "Project"}
+                      </div>
+                    </div>
+
+                    {/* Studio */}
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                          color: "#6B6254",
+                          marginBottom: "2px",
+                        }}
+                      >
+                        STUDIO
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: "#2A241A",
+                          overflowWrap: "anywhere",
+                          lineHeight: 1.35,
+                        }}
+                      >
+                        {org?.name || "Studio"}
+                      </div>
+                    </div>
+
+                    {/* Deadline */}
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                          color: "#6B6254",
+                          marginBottom: "2px",
+                        }}
+                      >
+                        DEADLINE
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: "#2A241A",
+                          overflowWrap: "anywhere",
+                          lineHeight: 1.35,
+                        }}
+                      >
+                        {opp.deadline || "TBD"}
+                      </div>
+                      {isClosed && (
+                        <div style={{ fontSize: "12.5px", color: "#6B6254", marginTop: "2px" }}>
+                          Auto-closed
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Applicants */}
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                          color: "#6B6254",
+                          marginBottom: "2px",
+                        }}
+                      >
+                        APPLICANTS
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: "'Playfair Display', Georgia, serif",
+                          fontSize: "22px",
+                          fontWeight: 600,
+                          color: "#2A241A",
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        {apps.length}
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Full-width primary gold button "View details" */}
+                  <button
+                    type="button"
+                    onClick={() => setViewModalOpp(opp)}
+                    style={{
+                      marginTop: "14px",
+                      width: "100%",
+                      height: "44px",
+                      borderRadius: "10px",
+                      border: "none",
+                      backgroundColor: "#8A6B2E",
+                      color: "#FFFFFF",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      boxShadow: "0 2px 4px rgba(138, 107, 46, 0.2)",
+                    }}
+                  >
+                    <span>View details</span>
+                    <ChevronRight size={16} />
+                  </button>
                 </div>
               );
             })}
           </div>
-        </>
-      )}
+        )}
+      </div>
 
       {/* Read-Only Details Modal */}
       {viewModalOpp && (
@@ -957,94 +1398,47 @@ export default function AdminOpportunitiesPage() {
       )}
 
       <style jsx>{`
-        .admin-opp-mobile-cards {
+        .admin-opp-desktop-layout {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        .admin-opp-mobile-layout {
           display: none;
         }
-        @media (max-width: 640px) {
-          .admin-opp-page {
-            gap: 16px !important;
-          }
-          .admin-opp-tabs-wrap {
-            display: flex !important;
-            flex-wrap: wrap !important;
-            gap: 5px !important;
-            width: 100% !important;
-          }
-          .admin-opp-tab-btn {
-            flex: 1 1 auto !important;
-            height: 28px !important;
-            min-height: 28px !important;
-            padding: 0 8px !important;
-            border-radius: 999px !important;
-            font-size: 10.5px !important;
-            font-weight: 600 !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 5px !important;
-          }
-          .admin-opp-tab-badge {
-            min-width: 16px !important;
-            height: 16px !important;
-            border-radius: 8px !important;
-            font-size: 9.5px !important;
-            font-weight: 700 !important;
-            padding: 0 4px !important;
-          }
-          .admin-opp-filter-card {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            padding: 12px 14px !important;
-            border-radius: 14px !important;
-            gap: 10px !important;
-          }
-          .admin-opp-search-wrap {
-            width: 100% !important;
-            height: 40px !important;
-          }
-          .admin-opp-search-input {
-            font-size: 16px !important;
-          }
-          .admin-opp-org-select-wrap {
-            width: 100% !important;
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 4px !important;
-          }
-          .admin-opp-org-select {
-            width: 100% !important;
-            height: 40px !important;
-            font-size: 16px !important;
-          }
-          .admin-opp-desktop-table {
+        .admin-opp-chip-row {
+          display: flex;
+          flex-wrap: nowrap;
+          gap: 8px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          margin: 0 -16px;
+          padding: 0 16px;
+          -webkit-overflow-scrolling: touch;
+        }
+        .admin-opp-chip-row::-webkit-scrollbar {
+          display: none;
+        }
+
+        @media (max-width: 767px) {
+          .admin-opp-desktop-layout {
             display: none !important;
           }
-          .admin-opp-mobile-cards {
+          .admin-opp-mobile-layout {
             display: flex !important;
-            flex-direction: column !important;
-            gap: 10px !important;
-            width: 100% !important;
-          }
-          .admin-opp-mobile-card {
-            background-color: #FFFFFF !important;
-            border: 1px solid #E8E2D4 !important;
-            border-radius: 14px !important;
-            padding: 12px 14px !important;
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 10px !important;
-            box-shadow: 0 2px 4px rgba(43, 45, 42, 0.04) !important;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
           }
         }
+
         @media (max-width: 400px) {
-          .admin-opp-tab-btn {
-            font-size: 10px !important;
-            padding: 0 5px !important;
-          }
-          .admin-opp-tab-badge {
-            font-size: 9px !important;
-            min-width: 15px !important;
-            height: 15px !important;
+          .admin-opp-chip-row {
+            margin: 0 -12px;
+            padding: 0 12px;
           }
         }
       `}</style>

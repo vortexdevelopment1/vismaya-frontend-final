@@ -577,6 +577,49 @@ export function TalentProvider({ children }) {
     });
   };
 
+  const updateMedia = async (id, payload) => {
+    let updatedItem = null;
+    if (isRealMode("media")) {
+      try {
+        const res = await mediaService.updateMedia(id, payload);
+        updatedItem = res?.data || null;
+      } catch (err) {
+        addToast({
+          type: "danger",
+          title: "Update Failed",
+          message: err?.message || "Could not update media.",
+        });
+        throw err;
+      }
+    }
+
+    setPortfolio((prev) => {
+      const updated = prev.map((m) => {
+        if (m.id === id || m._id === id) {
+          return {
+            ...m,
+            ...(updatedItem || {}),
+            ...payload,
+          };
+        }
+        return m;
+      });
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("vismaya_talent_portfolio", JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
+
+    addToast({
+      type: "success",
+      title: "Media Updated",
+      message: "Portfolio item updated successfully.",
+    });
+    return updatedItem;
+  };
+
   // Refresh Profile from Backend
   const refreshProfile = useCallback(async () => {
     if (!isRealMode("talent")) return;
@@ -1091,6 +1134,7 @@ export function TalentProvider({ children }) {
         portfolio,
         refreshPortfolio,
         addMedia,
+        updateMedia,
         deleteMedia,
         castingCalls,
         applications,
