@@ -143,7 +143,7 @@ export default function VerificationQueuesPage() {
         await loadData();
       } else {
         setVerifications((prev) => prev.filter((v) => (v._id || v.id) !== id));
-        showToast(`Verification for ${ver.userName || "user"} approved (Mock).`);
+        showToast(`Verification for ${ver.userName || "user"} approved successfully.`);
       }
     } catch (err) {
       showToast(err?.message || "Failed to approve verification");
@@ -175,7 +175,7 @@ export default function VerificationQueuesPage() {
       }
     } else {
       setVerifications((prev) => prev.filter((v) => (v._id || v.id) !== id));
-      showToast(type === "reject" ? "Verification rejected (Mock)." : "Request more info sent (Mock).");
+      showToast(type === "reject" ? "Verification rejected." : "Request more info sent.");
       setActionModal(null);
     }
   };

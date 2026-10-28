@@ -54,21 +54,6 @@ export default function ContactVismayaButton({
       >
         <HelpCircle size={14} style={{ color: "#8A6B2E", flexShrink: 0 }} />
         <span>Support contact will be available soon.</span>
-        {refStr && (
-          <span
-            style={{
-              fontSize: "11.5px",
-              fontWeight: "600",
-              color: "#6E5420",
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #E8E2D4",
-              padding: "1px 6px",
-              borderRadius: "4px",
-            }}
-          >
-            Ref: #{refStr}
-          </span>
-        )}
         <Link
           href="/support"
           style={{
@@ -147,21 +132,6 @@ export default function ContactVismayaButton({
           <span>WhatsApp Desk</span>
           <ExternalLink size={12} style={{ opacity: 0.8 }} />
         </a>
-      )}
-
-      {refStr && (
-        <span
-          style={{
-            fontSize: "11.5px",
-            color: "#777970",
-            padding: "4px 8px",
-            borderRadius: "4px",
-            backgroundColor: "#F3EFE6",
-            border: "1px solid #E8E2D4",
-          }}
-        >
-          Ref: #{refStr}
-        </span>
       )}
     </div>
   );

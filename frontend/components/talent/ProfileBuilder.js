@@ -1783,7 +1783,7 @@ export default function ProfileBuilder({ onFinish }) {
                     style={{ padding: "8px 22px", fontSize: "13px", height: "40px" }}
                   >
                     <Plus size={15} />
-                    <span>{isAddingCredit ? "Saving to Backend..." : "Submit Credit for Verification"}</span>
+                    <span>{isAddingCredit ? "Saving..." : "Submit Credit for Verification"}</span>
                   </button>
                 </div>
               </div>

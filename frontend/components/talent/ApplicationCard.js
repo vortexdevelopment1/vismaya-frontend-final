@@ -316,9 +316,6 @@ export default function ApplicationCard({ application }) {
               >
                 {opportunity?.opportunityType || "Opportunity"}
               </span>
-              <span className="app-card-ref" style={{ fontSize: "12px", color: "var(--text-muted, #777970)" }}>
-                Ref: #{application.id}
-              </span>
             </div>
 
             <h3
@@ -748,7 +745,7 @@ export default function ApplicationCard({ application }) {
         isOpen={showDetails}
         onClose={() => setShowDetails(false)}
         title={opportunity?.title || application.opportunityTitle || application.roleApplied || "Application Details"}
-        subtitle={`Role: ${application.roleName || application.roleApplied || application.role || opportunity?.role || "—"} • Ref #${application.id || application._id}`}
+        subtitle={`Role: ${application.roleName || application.roleApplied || application.role || opportunity?.role || "—"}`}
         maxWidth="600px"
         footer={
           <button onClick={() => setShowDetails(false)} className="btn-secondary btn-dash app-modal-btn">

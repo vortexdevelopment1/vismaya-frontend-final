@@ -1053,7 +1053,7 @@ export function TalentProvider({ children }) {
 
     addToast({
       type: "info",
-      title: "Reapplication Requested (Mock)",
+      title: "Reapplication Requested",
       message: "Request queued for Admin review.",
     });
   };
@@ -1083,7 +1083,7 @@ export function TalentProvider({ children }) {
 
     addToast({
       type: "success",
-      title: "Identity Verified (Mock)",
+      title: "Identity Documents Submitted",
       message: "Documents uploaded.",
     });
   };
@@ -1113,7 +1113,7 @@ export function TalentProvider({ children }) {
 
     addToast({
       type: "success",
-      title: "Credits Submitted (Mock)",
+      title: "Credits Submitted",
       message: "Work submitted.",
     });
   };

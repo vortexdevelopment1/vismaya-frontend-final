@@ -249,7 +249,7 @@ export default function AdminTopbar({ onOpenMobile }) {
           )}
           <input
             type="text"
-            placeholder="Global search users, orgs, opportunities, IDs..."
+            placeholder="Global search users, orgs, opportunities..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -333,11 +333,11 @@ export default function AdminTopbar({ onOpenMobile }) {
               gap: "10px",
             }}
           >
-            {/* Talent Profiles / Vismaya IDs */}
+            {/* Talent Profiles */}
             {(searchResults.talentProfiles || []).length > 0 && (
               <div>
                 <div style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", marginBottom: "6px", letterSpacing: "0.05em" }}>
-                  Talent Profiles &amp; Vismaya IDs
+                  Talent Profiles
                 </div>
                 {searchResults.talentProfiles.map((tp) => (
                   <Link
@@ -362,9 +362,6 @@ export default function AdminTopbar({ onOpenMobile }) {
                         {tp.stageName || `${tp.firstName || ""} ${tp.lastName || ""}`.trim() || "Talent"}
                       </span>
                     </div>
-                    <span style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", backgroundColor: "#F3EFE6", padding: "2px 6px", borderRadius: "4px" }}>
-                      {tp.vismayaId || "ID"}
-                    </span>
                   </Link>
                 ))}
               </div>
@@ -856,31 +853,45 @@ export default function AdminTopbar({ onOpenMobile }) {
             gap: 8px !important;
             flex-shrink: 0 !important;
           }
-          .admin-mobile-search-btn {
+          .admin-hamburger-btn,
+          .admin-mobile-search-btn,
+          .admin-notif-btn {
             display: flex !important;
             width: 44px !important;
             height: 44px !important;
             min-width: 44px !important;
             min-height: 44px !important;
-            border-radius: 10px !important;
-            border: 1px solid #E8E2D4 !important;
-            background: #F3EFE6 !important;
-            color: #2B2D2A !important;
+            border-radius: 12px !important;
+            border: 1px solid #E8E1D2 !important;
+            background: #FFFFFF !important;
+            color: #5E471B !important;
             align-items: center !important;
             justify-content: center !important;
             cursor: pointer !important;
             flex-shrink: 0 !important;
+            transition: background 0.15s ease, border-color 0.15s ease !important;
           }
-          .admin-notif-btn {
-            width: 44px !important;
-            height: 44px !important;
-            min-width: 44px !important;
-            min-height: 44px !important;
-            border-radius: 10px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            flex-shrink: 0 !important;
+          .admin-hamburger-btn:hover,
+          .admin-hamburger-btn:active,
+          .admin-mobile-search-btn:hover,
+          .admin-mobile-search-btn:active,
+          .admin-notif-btn:hover,
+          .admin-notif-btn:active {
+            background: #FBF3DF !important;
+          }
+          .admin-hamburger-btn:focus-visible,
+          .admin-mobile-search-btn:focus-visible,
+          .admin-notif-btn:focus-visible {
+            outline: 2px solid #8A6B2E !important;
+            outline-offset: 2px !important;
+          }
+          .admin-hamburger-btn svg,
+          .admin-mobile-search-btn svg,
+          .admin-notif-btn svg {
+            width: 20px !important;
+            height: 20px !important;
+            stroke: #5E471B !important;
+            color: #5E471B !important;
           }
           .admin-avatar-btn {
             width: 40px !important;

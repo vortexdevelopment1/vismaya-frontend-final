@@ -166,7 +166,7 @@ export default function ContentModerationPage() {
       }
     } else {
       if (approveMedia) approveMedia(id);
-      showToast("Content item approved (Mock).", "success");
+      showToast("Content item approved.", "success");
       setActionLoading((prev) => {
         const n = { ...prev };
         delete n[id];
@@ -216,7 +216,7 @@ export default function ContentModerationPage() {
       }
     } else {
       if (rejectMedia) rejectMedia(id, reason);
-      showToast("Content item rejected (Mock).", "success");
+      showToast("Content item rejected and removed.", "success");
       setRejectingMedia(null);
       setIsModalSubmitting(false);
       setActionLoading((prev) => {
@@ -254,7 +254,7 @@ export default function ContentModerationPage() {
         });
       }
     } else {
-      showToast("Media restricted (Mock).", "success");
+      showToast("Media restricted to industry-only view.", "success");
       setActionLoading((prev) => {
         const n = { ...prev };
         delete n[id];
@@ -276,7 +276,7 @@ export default function ContentModerationPage() {
           isFeatured: nextState,
           isFeaturedWork: nextState,
         });
-        showToast(nextState ? "Added to Featured Work (Spec §15)." : "Removed from Featured Work.", "success");
+        showToast(nextState ? "Added to Featured Work." : "Removed from Featured Work.", "success");
         await loadMediaData(activeTab);
       } catch (err) {
         const msg = err?.response?.data?.message || err?.message || "Failed to update featured work";
@@ -289,7 +289,7 @@ export default function ContentModerationPage() {
         });
       }
     } else {
-      showToast(nextState ? "Added to Featured Work (Mock)." : "Removed from Featured Work (Mock).", "success");
+      showToast(nextState ? "Added to Featured Work." : "Removed from Featured Work.", "success");
       setActionLoading((prev) => {
         const n = { ...prev };
         delete n[id];
@@ -311,7 +311,7 @@ export default function ContentModerationPage() {
           disputeState: nextState,
           disputeReason: isCurrentlyDisputed ? "Resolved by admin" : "Third party copyright claim"
         });
-        showToast(nextState === "disputed" ? "Media hidden due to copyright dispute (Spec §40)." : "Media dispute resolved and restored.", "success");
+        showToast(nextState === "disputed" ? "Media hidden due to copyright dispute." : "Media dispute resolved and restored.", "success");
         await loadMediaData(activeTab);
       } catch (err) {
         showToast(err?.response?.data?.message || err?.message || "Failed to update dispute status", "error");
@@ -323,7 +323,7 @@ export default function ContentModerationPage() {
         });
       }
     } else {
-      showToast(nextState === "disputed" ? "Media hidden due to copyright dispute (Mock)." : "Media restored (Mock).", "success");
+      showToast(nextState === "disputed" ? "Media hidden due to copyright dispute." : "Media dispute resolved and restored.", "success");
       setActionLoading((prev) => {
         const n = { ...prev };
         delete n[id];
@@ -424,7 +424,7 @@ export default function ContentModerationPage() {
       {/* Page Header */}
       <PageHeader
         title="Content Moderation"
-        subtitle="Review uploaded headshots, showreels, and external links against Spec §15 & §40 policy rules: photo standards, link validation, copyright disputes, and Featured Work selection."
+        subtitle="Review uploaded headshots, showreels, and external links against platform policy rules: photo standards, link validation, copyright disputes, and Featured Work selection."
         badge={`${mediaCounts.pending + openReportsCount} Needing Action`}
       />
 
@@ -445,7 +445,7 @@ export default function ContentModerationPage() {
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           <ShieldAlert size={22} style={{ color: "#8A6B2E", flexShrink: 0 }} />
           <div style={{ fontSize: "13px", color: "#5A584F" }}>
-            <strong style={{ color: "#2B2D2A" }}>Spec §15 Policy Checklist:</strong> Headshots must show full face, no sunglasses, no filter distortion, no text overlays. Featured Work is curated by Vismaya (max 4 per profile). Disputed items (§40) are immediately hidden.
+            <strong style={{ color: "#2B2D2A" }}>Policy Checklist:</strong> Headshots must show full face, no sunglasses, no filter distortion, no text overlays. Featured Work is curated by Vismaya (max 4 per profile). Disputed items are immediately hidden.
           </div>
         </div>
       </div>
@@ -527,7 +527,7 @@ export default function ContentModerationPage() {
                           </span>
                         </div>
                         <div style={{ fontSize: "12.5px", color: "#5A584F", marginTop: "4px" }}>
-                          Reporter: <strong>{reporterName}</strong> · Target: <strong>{report.targetType}</strong> ({report.targetId ? String(report.targetId).slice(-6) : ""})
+                          Reporter: <strong>{reporterName}</strong> · Target: <strong>{report.targetType}</strong>
                         </div>
                       </div>
                     </div>

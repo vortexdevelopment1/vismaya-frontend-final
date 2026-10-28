@@ -503,10 +503,6 @@ export default function TalentAuditionsPage() {
                   </dd>
                 </dl>
 
-                {/* 4. Ref number: separate line below the list, 12px #8A8170, overflow-wrap: anywhere, margin-top 12px */}
-                <div className="aud-card-ref-line">
-                  Ref: #{aud.id}
-                </div>
 
                 {/* 5. 1px #EFE9DA divider with 16px vertical margin */}
                 <div className="aud-card-divider" />

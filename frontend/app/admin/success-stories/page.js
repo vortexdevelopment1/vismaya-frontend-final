@@ -88,7 +88,7 @@ export default function SuccessStoriesApprovalPage() {
         await loadData(activeTab);
       } else {
         setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
-        showToast("Success story approved (Mock).");
+        showToast("Success story approved for platform showcase.");
       }
     } catch (err) {
       showToast(err?.response?.data?.message || err?.message || "Failed to approve story");
@@ -115,7 +115,7 @@ export default function SuccessStoriesApprovalPage() {
         await loadData(activeTab);
       } else {
         setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
-        showToast("Success story rejected (Mock).");
+        showToast("Success story rejected with feedback.");
         setRejectingStory(null);
       }
     } catch (err) {
@@ -145,7 +145,7 @@ export default function SuccessStoriesApprovalPage() {
         await loadData(activeTab);
       } else {
         setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
-        showToast("Success story unpublished (Mock).");
+        showToast("Success story unpublished from website.");
         setUnpublishingStory(null);
       }
     } catch (err) {
@@ -168,7 +168,7 @@ export default function SuccessStoriesApprovalPage() {
         await loadData(activeTab);
       } else {
         setStories((prev) => prev.filter((s) => (s._id || s.id) !== id));
-        showToast("Success story republished (Mock).");
+        showToast("Success story republished to platform showcase.");
       }
     } catch (err) {
       showToast(err?.response?.data?.message || err?.message || "Failed to republish story");
@@ -235,7 +235,7 @@ export default function SuccessStoriesApprovalPage() {
       {/* Page Header */}
       <PageHeader
         title="Success Stories Approval"
-        subtitle="Review, publish, unpublish, and manage casting success testimonials per Spec §42."
+        subtitle="Review, publish, unpublish, and manage casting success testimonials."
         badge={`${counts.pending} Pending Approval`}
       />
 

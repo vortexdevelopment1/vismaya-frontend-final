@@ -151,16 +151,6 @@ export default function ProjectDetailsPage({ params: paramsPromise }) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-          <div>
-            <span style={{ fontSize: "0.725rem", color: "var(--text-muted)", display: "block", textTransform: "uppercase", fontWeight: 700 }}>
-              Project ID
-            </span>
-            <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)", }}>
-              {project.id}
-            </span>
-          </div>
-
-          <div style={{ width: "1px", height: "30px", backgroundColor: "var(--border-color)" }} />
 
           <div>
             <span style={{ fontSize: "0.725rem", color: "var(--text-muted)", display: "block", textTransform: "uppercase", fontWeight: 700 }}>

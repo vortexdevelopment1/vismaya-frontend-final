@@ -399,7 +399,7 @@ export function RecruiterProvider({ children }) {
 
     addToast({
       type: "success",
-      title: "Talent Profile Unlocked (Mock)",
+      title: "Talent Profile Unlocked",
       message: "1 credit consumed.",
     });
   };
@@ -426,7 +426,7 @@ export function RecruiterProvider({ children }) {
 
     addToast({
       type: "success",
-      title: "Added to Favourites (Mock)",
+      title: "Added to Favourites",
       message: "Saved to private favourites list.",
     });
   };
@@ -453,7 +453,7 @@ export function RecruiterProvider({ children }) {
 
     addToast({
       type: "info",
-      title: "Removed (Mock)",
+      title: "Removed from Favourites",
       message: "Removed from private favourites.",
     });
   };
@@ -480,7 +480,7 @@ export function RecruiterProvider({ children }) {
 
     addToast({
       type: "success",
-      title: "Shortlisted (Mock)",
+      title: "Added to Project Shortlist",
       message: "Artist added to project roster.",
     });
   };

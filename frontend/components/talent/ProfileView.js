@@ -205,24 +205,8 @@ export default function ProfileView({ onEditStep }) {
                 <StatusBadge status={profile.status || "approved"} />
               </div>
 
-              {/* Vismaya ID & Category/Profession */}
+              {/* Category/Profession */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", fontSize: "13px", color: "#5A584F" }}>
-                <span
-                  id="view-vismaya-id"
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: "700",
-                    padding: "2px 8px",
-                    borderRadius: "6px",
-                    backgroundColor: "#F3EFE6",
-                    color: "#8A6B2E",
-                    border: "1px solid #E8E2D4",
-                    letterSpacing: "0.04em",
-                  }}
-                >
-                  {profile.vismayaId || profile.id || "VIS-TALENT"}
-                </span>
-                <span>&bull;</span>
                 <span id="view-profession" style={{ fontWeight: 600, color: "#8A6B2E" }}>
                   {CATEGORY_LABELS[profile.category] || "Open Talent"} &bull; {primaryProf || "Actor"}
                 </span>

@@ -83,7 +83,7 @@ export default function RecruiterManagementPage() {
       minWidth: "260px",
       render: (val, row) => {
         const compName = row.company || row.companyName || "Organization";
-        const subInfo = `ID: ${row.id} • ${row.gstNumber || row.registrationNumber || "GST Pending"}`;
+        const subInfo = row.email || row.city || row.gstNumber || row.registrationNumber || "";
         return (
           <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, maxWidth: "260px" }}>
             {row.avatar ? (
@@ -133,18 +133,20 @@ export default function RecruiterManagementPage() {
               >
                 {compName}
               </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#5A584F",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-                title={subInfo}
-              >
-                {subInfo}
-              </div>
+              {subInfo ? (
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#5A584F",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={subInfo}
+                >
+                  {subInfo}
+                </div>
+              ) : null}
             </div>
           </div>
         );
@@ -286,7 +288,7 @@ export default function RecruiterManagementPage() {
 
   const renderMobileCard = (row) => {
     const compName = row.company || row.companyName || "Organization";
-    const subInfo = `ID: ${row.id} • ${row.gstNumber || row.registrationNumber || "GST Pending"}`;
+    const subInfo = row.email || row.city || row.gstNumber || row.registrationNumber || "";
     const contactName = row.contactPerson || row.contactName || "Contact";
     const email = row.email || "";
 
@@ -355,17 +357,20 @@ export default function RecruiterManagementPage() {
               >
                 {compName}
               </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#5A584F",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {subInfo}
-              </div>
+              {subInfo ? (
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#5A584F",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={subInfo}
+                >
+                  {subInfo}
+                </div>
+              ) : null}
             </div>
           </div>
           <StatusBadge status={row.status} size="xs" />
