@@ -18,6 +18,8 @@ import {
   Eye,
   Trophy,
   ArrowRight,
+  Search,
+  ChevronDown,
 } from "lucide-react";
 import PageHeader from "@/components/shared/PageHeader";
 import StatCard from "@/components/shared/StatCard";
@@ -117,6 +119,7 @@ export default function TalentDashboardPage() {
   ).length;
 
   const recentApplications = myApplications.slice(0, 4);
+  const totalNotifsCount = talentNotifications.length;
   const recentNotifications = talentNotifications.slice(0, 3);
 
   // Profile Ring Math
@@ -124,8 +127,30 @@ export default function TalentDashboardPage() {
   const circumference = 2 * Math.PI * ringRadius;
   const strokeDashoffset = circumference - (profileCompletionScore / 100) * circumference;
 
+  // Mobile Profile Ring Math (72px ring, r = 27, circumference = 2 * PI * 27 = 169.646)
+  const mobileRingRadius = 27;
+  const mobileCircumference = 2 * Math.PI * mobileRingRadius;
+  const mobileStrokeDashoffset = mobileCircumference - (profileCompletionScore / 100) * mobileCircumference;
+
+  const incompleteSteps = (profileChecklist || []).filter((item) => !item.done);
+  const completedStepsCount = (profileChecklist || []).length - incompleteSteps.length;
+  const totalStepsCount = (profileChecklist || []).length;
+  const firstIncompleteStep = incompleteSteps[0] || null;
+
+  const formatIncompleteStepLabel = (label = "") => {
+    if (!label) return "Complete missing profile step";
+    if (label.toLowerCase().includes("portfolio") && (label.toLowerCase().includes("upload") || label.toLowerCase().includes("photo") || label.toLowerCase().includes("video") || label.toLowerCase().includes("showreel"))) {
+      return "Add at least 1 portfolio photo or showreel";
+    }
+    const parts = label.split(":");
+    if (parts.length > 1 && parts[0].trim().length <= 25) {
+      return parts.slice(1).join(":").trim();
+    }
+    return label;
+  };
+
   return (
-    <div className="talent-dashboard-root" style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+    <div className="talent-dashboard-root talent-dash" style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
       {/* 0. Gate Banners: Payment or Profile Completion */}
       {!isPaid ? (
         <div
@@ -355,14 +380,15 @@ export default function TalentDashboardPage() {
           }}
           className="talent-browse-btn"
         >
-          <Megaphone size={16} />
+          <Search size={16} className="talent-browse-icon-mobile" />
+          <Megaphone size={16} className="talent-browse-icon-desktop" />
           <span>Browse Opportunities</span>
         </Link>
       </div>
 
-      {/* Top 4 Stat Cards */}
+      {/* Top 4 Stat Cards: Desktop Grid (hidden on mobile <= 767px) */}
       <div
-        className="talent-stat-grid"
+        className="talent-stat-grid talent-stat-grid-desktop"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
@@ -407,6 +433,69 @@ export default function TalentDashboardPage() {
         />
       </div>
 
+      {/* Top 4 Stat Cards: Mobile 2x2 Grid (visible only on mobile <= 767px) */}
+      <div className="talent-stat-grid-mobile">
+        <div className="talent-mob-stat-card">
+          <div className="talent-mob-stat-top">
+            <span className="talent-mob-stat-label">Applications</span>
+            <div className="talent-mob-stat-icon">
+              <FileText size={16} />
+            </div>
+          </div>
+          <div className="talent-mob-stat-number">{totalAppsCount}</div>
+          <span className="talent-mob-stat-pill">
+            <TrendingUp size={11} style={{ marginRight: 4, display: "inline-block" }} />
+            {totalAppsCount > 0 ? "Active in review" : "None"}
+          </span>
+          <span className="talent-mob-stat-desc">Submitted to casting teams</span>
+        </div>
+
+        <div className="talent-mob-stat-card">
+          <div className="talent-mob-stat-top">
+            <span className="talent-mob-stat-label">Shortlisted</span>
+            <div className="talent-mob-stat-icon">
+              <UserCheck size={16} />
+            </div>
+          </div>
+          <div className="talent-mob-stat-number">{shortlistedCount}</div>
+          <span className="talent-mob-stat-pill">
+            <TrendingUp size={11} style={{ marginRight: 4, display: "inline-block" }} />
+            {shortlistedCount > 0 ? "Under consideration" : "None"}
+          </span>
+          <span className="talent-mob-stat-desc">Shortlisted by studios</span>
+        </div>
+
+        <div className="talent-mob-stat-card">
+          <div className="talent-mob-stat-top">
+            <span className="talent-mob-stat-label">Selected</span>
+            <div className="talent-mob-stat-icon">
+              <Trophy size={16} />
+            </div>
+          </div>
+          <div className="talent-mob-stat-number">{selectedCount}</div>
+          <span className="talent-mob-stat-pill">
+            <TrendingUp size={11} style={{ marginRight: 4, display: "inline-block" }} />
+            {selectedCount > 0 ? "Roles confirmed" : "None"}
+          </span>
+          <span className="talent-mob-stat-desc">Confirmed selections</span>
+        </div>
+
+        <div className="talent-mob-stat-card">
+          <div className="talent-mob-stat-top">
+            <span className="talent-mob-stat-label">Auditions</span>
+            <div className="talent-mob-stat-icon">
+              <Video size={16} />
+            </div>
+          </div>
+          <div className="talent-mob-stat-number">{pendingAuditionsCount}</div>
+          <span className="talent-mob-stat-pill">
+            <TrendingUp size={11} style={{ marginRight: 4, display: "inline-block" }} />
+            {pendingAuditionsCount > 0 ? "Self-tape required" : "All clear"}
+          </span>
+          <span className="talent-mob-stat-desc">Invites and self-tapes</span>
+        </div>
+      </div>
+
       {/* Profile Completion Card: "Artist Profile Strength" */}
       <div
         className="card-surface talent-profile-card"
@@ -423,183 +512,446 @@ export default function TalentDashboardPage() {
           overflow: "hidden",
         }}
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "auto 1fr",
-            gap: "28px",
-            alignItems: "center",
-          }}
-          className="profile-ring-grid"
-        >
-          {/* Circular SVG Ring */}
+        {/* Desktop Profile Strength Layout (> 767px) */}
+        <div className="profile-desktop-layout">
           <div
-            className="profile-ring-wrap"
             style={{
-              position: "relative",
-              width: "124px",
-              height: "124px",
-              display: "flex",
+              display: "grid",
+              gridTemplateColumns: "auto 1fr",
+              gap: "28px",
               alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
             }}
+            className="profile-ring-grid"
           >
-            <svg className="profile-ring-svg" width="124" height="124" viewBox="0 0 120 120" style={{ transform: "rotate(-90deg)" }}>
-              <circle
-                cx="60"
-                cy="60"
-                r={ringRadius}
-                fill="none"
-                stroke="#E8E2D4"
-                strokeWidth="10"
-              />
-              <circle
-                cx="60"
-                cy="60"
-                r={ringRadius}
-                fill="none"
-                stroke="#8A6B2E"
-                strokeWidth="10"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                style={{ transition: "stroke-dashoffset 0.8s ease-in-out" }}
-              />
-            </svg>
-
-            {/* Center Percentage */}
+            {/* Circular SVG Ring */}
             <div
-              className="profile-ring-center"
+              className="profile-ring-wrap"
               style={{
-                position: "absolute",
+                position: "relative",
+                width: "124px",
+                height: "124px",
                 display: "flex",
-                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                textAlign: "center",
+                flexShrink: 0,
               }}
             >
-              <span
-                className="profile-score-num"
+              <svg className="profile-ring-svg" width="124" height="124" viewBox="0 0 120 120" style={{ transform: "rotate(-90deg)" }}>
+                <circle
+                  cx="60"
+                  cy="60"
+                  r={ringRadius}
+                  fill="none"
+                  stroke="#E8E2D4"
+                  strokeWidth="10"
+                />
+                <circle
+                  cx="60"
+                  cy="60"
+                  r={ringRadius}
+                  fill="none"
+                  stroke="#8A6B2E"
+                  strokeWidth="10"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                  style={{ transition: "stroke-dashoffset 0.8s ease-in-out" }}
+                />
+              </svg>
+
+              {/* Center Percentage */}
+              <div
+                className="profile-ring-center"
+                style={{
+                  position: "absolute",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                }}
+              >
+                <span
+                  className="profile-score-num"
+                  style={{
+                    fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                    fontSize: "1.75rem",
+                    fontWeight: 600,
+                    color: "#2B2D2A",
+                    lineHeight: 1,
+                  }}
+                >
+                  {profileCompletionScore}%
+                </span>
+                <span
+                  className="profile-score-label"
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    color: "#8A6B2E",
+                    textTransform: "uppercase",
+                    marginTop: "3px",
+                    letterSpacing: "0.10em",
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
+                  }}
+                >
+                  Score
+                </span>
+              </div>
+            </div>
+
+            {/* Details & Checklist */}
+            <div className="profile-details-col" style={{ display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}>
+              <div className="profile-details-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                <div style={{ minWidth: 0, flex: "1 1 240px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Sparkles size={18} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                    <h2 className="profile-section-heading" style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "22px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
+                      Artist Profile Strength
+                    </h2>
+                  </div>
+                  <span className="profile-section-desc" style={{ fontSize: "14px", color: "#5A584F", marginTop: "4px", display: "block", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                    Keep your portfolio clips and looks up to date to increase shortlist rankings with casting teams.
+                  </span>
+                </div>
+
+                <Link
+                  href="/talent/profile"
+                  style={{
+                    height: "40px",
+                    padding: "0 18px",
+                    borderRadius: "10px",
+                    border: "1px solid #8A6B2E",
+                    backgroundColor: "#FFFFFF",
+                    color: "#8A6B2E",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    textDecoration: "none",
+                    transition: "all 0.16s ease",
+                    fontFamily: "var(--font-body), 'Inter', sans-serif",
+                  }}
+                  className="talent-edit-profile-btn"
+                >
+                  <span>Edit Profile</span>
+                  <ChevronRight size={14} />
+                </Link>
+              </div>
+
+              {/* Checklist items */}
+              <div className="profile-checklist-grid">
+                {profileChecklist.map((item, idx) => (
+                  <Link
+                    key={idx}
+                    href={item.section === "portfolio" ? "/talent/portfolio" : "/talent/profile"}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 16px",
+                      borderRadius: "10px",
+                      backgroundColor: "#F3EFE6",
+                      border: "1px solid #E8E2D4",
+                      textDecoration: "none",
+                      transition: "all 0.16s ease",
+                      minHeight: "44px",
+                      fontFamily: "var(--font-body), 'Inter', sans-serif",
+                    }}
+                    className="profile-checklist-item"
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                      {item.done ? (
+                        <CheckCircle2 size={16} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                      ) : (
+                        <AlertCircle size={16} style={{ color: "#5A584F", flexShrink: 0 }} />
+                      )}
+                      <span
+                        className="profile-item-label"
+                        style={{
+                          fontSize: "13.5px",
+                          color: "#2B2D2A",
+                          fontWeight: item.done ? "600" : "500",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {item.label}
+                      </span>
+                    </div>
+
+                    {!item.done && (
+                      <span style={{ fontSize: "12px", color: "#8A6B2E", fontWeight: 700, flexShrink: 0, marginLeft: "6px" }}>
+                        Add &rarr;
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Profile Strength Layout (<= 767px) */}
+        <div className="profile-mobile-layout" style={{ display: "none", flexDirection: "column", gap: "14px", width: "100%" }}>
+          {/* Top row: 72px ring + Title & subtext */}
+          <div className="profile-mob-top-row" style={{ display: "flex", alignItems: "center", gap: "16px", width: "100%" }}>
+            <div
+              className="profile-mob-ring-wrap"
+              style={{
+                width: 72,
+                height: 72,
+                minWidth: 72,
+                minHeight: 72,
+                flex: "none",
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <svg width="72" height="72" viewBox="0 0 72 72" style={{ width: 72, height: 72, transform: "rotate(-90deg)", display: "block" }}>
+                <circle
+                  cx="36"
+                  cy="36"
+                  r={mobileRingRadius}
+                  fill="none"
+                  stroke="#E8E1D2"
+                  strokeWidth="7"
+                />
+                <circle
+                  cx="36"
+                  cy="36"
+                  r={mobileRingRadius}
+                  fill="none"
+                  stroke="#8A6B2E"
+                  strokeWidth="7"
+                  strokeDasharray={mobileCircumference}
+                  strokeDashoffset={mobileStrokeDashoffset}
+                  strokeLinecap="round"
+                  style={{ transition: "stroke-dashoffset 0.8s ease-in-out" }}
+                />
+              </svg>
+              <div
+                className="profile-mob-ring-center"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  pointerEvents: "none",
+                }}
+              >
+                <span
+                  className="profile-mob-score-num"
+                  style={{
+                    fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                    fontSize: "20px",
+                    fontWeight: 600,
+                    color: "#2A241A",
+                    lineHeight: 1,
+                  }}
+                >
+                  {profileCompletionScore}%
+                </span>
+              </div>
+            </div>
+
+            <div className="profile-mob-title-col" style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: 0, flex: 1 }}>
+              <h2
+                className="profile-mob-heading"
                 style={{
                   fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
-                  fontSize: "1.75rem",
+                  fontSize: "20px",
+                  lineHeight: 1.25,
                   fontWeight: 600,
-                  color: "#2B2D2A",
-                  lineHeight: 1,
+                  color: "#2A241A",
+                  margin: 0,
                 }}
               >
-                {profileCompletionScore}%
-              </span>
+                Profile strength
+              </h2>
               <span
-                className="profile-score-label"
+                className="profile-mob-subline"
                 style={{
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  color: "#8A6B2E",
-                  textTransform: "uppercase",
-                  marginTop: "3px",
-                  letterSpacing: "0.10em",
                   fontFamily: "var(--font-body), 'Inter', sans-serif",
+                  fontSize: "13px",
+                  color: "#6B6254",
+                  lineHeight: 1.4,
+                  marginTop: "4px",
                 }}
               >
-                Score
+                {incompleteSteps.length > 0
+                  ? `${incompleteSteps.length} step${incompleteSteps.length === 1 ? "" : "s"} left to reach 100%.`
+                  : "All steps complete! 100% profile strength reached."}
               </span>
             </div>
           </div>
 
-          {/* Details & Checklist */}
-          <div className="profile-details-col" style={{ display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}>
-            <div className="profile-details-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Sparkles size={18} style={{ color: "#8A6B2E", flexShrink: 0 }} />
-                  <h2 className="profile-section-heading" style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "22px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
-                    Artist Profile Strength
-                  </h2>
-                </div>
-                <span className="profile-section-desc" style={{ fontSize: "14px", color: "#5A584F", marginTop: "4px", display: "block", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
-                  Keep your portfolio clips and looks up to date to increase shortlist rankings with casting teams.
-                </span>
-              </div>
-
-              <Link
-                href="/talent/profile"
+          {/* Highlighted first incomplete step */}
+          {firstIncompleteStep && (
+            <Link
+              href={firstIncompleteStep.section === "portfolio" ? "/talent/portfolio" : "/talent/profile"}
+              className="profile-mob-first-incomplete"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "12px 14px",
+                borderRadius: "12px",
+                background: "#FBF3DF",
+                backgroundColor: "#FBF3DF",
+                border: "1px solid #EBDDB4",
+                textDecoration: "none",
+                color: "#2A241A",
+                marginTop: "16px",
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+            >
+              <AlertCircle size={20} style={{ color: "#8A6B2E", flex: "none", width: 20, height: 20 }} />
+              <span
+                className="profile-mob-incomplete-text"
                 style={{
-                  height: "40px",
-                  padding: "0 18px",
-                  borderRadius: "10px",
-                  border: "1px solid #8A6B2E",
-                  backgroundColor: "#FFFFFF",
-                  color: "#8A6B2E",
-                  fontSize: "13px",
+                  flex: 1,
+                  minWidth: 0,
+                  fontSize: "14px",
+                  lineHeight: 1.4,
                   fontWeight: 600,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  textDecoration: "none",
-                  transition: "all 0.16s ease",
+                  color: "#2A241A",
+                  overflowWrap: "anywhere",
                   fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
-                className="talent-edit-profile-btn"
               >
-                <span>Edit Profile</span>
-                <ChevronRight size={14} />
-              </Link>
-            </div>
+                {formatIncompleteStepLabel(firstIncompleteStep.label)}
+              </span>
+              <span
+                className="profile-mob-add-link"
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  color: "#8A6B2E",
+                  whiteSpace: "nowrap",
+                  textDecoration: "none",
+                  flex: "none",
+                  marginLeft: "auto",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
+                }}
+              >
+                Add &rarr;
+              </span>
+            </Link>
+          )}
 
-            {/* Checklist items */}
-            <div className="profile-checklist-grid">
+          {/* Collapsible N of M steps complete */}
+          <details className="profile-mob-details" style={{ width: "100%" }}>
+            <summary
+              className="profile-mob-summary"
+              style={{
+                minHeight: "44px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#5E471B",
+                cursor: "pointer",
+                listStyle: "none",
+                userSelect: "none",
+                padding: "4px 0",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
+              }}
+            >
+              <span style={{ color: "#5E471B", fontSize: "14px", fontWeight: 600 }}>{completedStepsCount} of {totalStepsCount} steps complete</span>
+              <ChevronDown size={18} className="profile-mob-chevron" style={{ color: "#5E471B", flex: "none" }} />
+            </summary>
+            <div className="profile-mob-checklist-list" style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "6px" }}>
               {profileChecklist.map((item, idx) => (
                 <Link
                   key={idx}
                   href={item.section === "portfolio" ? "/talent/portfolio" : "/talent/profile"}
+                  className="profile-mob-check-row"
                   style={{
+                    minHeight: "44px",
+                    borderRadius: "12px",
+                    background: "#F7F3EA",
+                    backgroundColor: "#F7F3EA",
+                    padding: "10px 14px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: "12px 16px",
-                    borderRadius: "10px",
-                    backgroundColor: "#F3EFE6",
-                    border: "1px solid #E8E2D4",
                     textDecoration: "none",
-                    transition: "all 0.16s ease",
-                    minHeight: "44px",
-                    fontFamily: "var(--font-body), 'Inter', sans-serif",
+                    color: "#2A241A",
+                    boxSizing: "border-box",
+                    border: "1px solid transparent",
                   }}
-                  className="profile-checklist-item"
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
                     {item.done ? (
-                      <CheckCircle2 size={16} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                      <CheckCircle2 size={16} style={{ color: "#2F6B45", flex: "none" }} />
                     ) : (
-                      <AlertCircle size={16} style={{ color: "#5A584F", flexShrink: 0 }} />
+                      <AlertCircle size={16} style={{ color: "#8A6B2E", flex: "none" }} />
                     )}
                     <span
-                      className="profile-item-label"
                       style={{
                         fontSize: "13.5px",
-                        color: "#2B2D2A",
-                        fontWeight: item.done ? "600" : "500",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
+                        fontWeight: item.done ? 600 : 500,
+                        color: "#2A241A",
+                        overflowWrap: "anywhere",
+                        fontFamily: "var(--font-body), 'Inter', sans-serif",
                       }}
                     >
                       {item.label}
                     </span>
                   </div>
-
                   {!item.done && (
-                    <span style={{ fontSize: "12px", color: "#8A6B2E", fontWeight: 700, flexShrink: 0, marginLeft: "6px" }}>
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        color: "#8A6B2E",
+                        fontWeight: 700,
+                        flex: "none",
+                        marginLeft: "8px",
+                        whiteSpace: "nowrap",
+                        textDecoration: "none",
+                        fontFamily: "var(--font-body), 'Inter', sans-serif",
+                      }}
+                    >
                       Add &rarr;
                     </span>
                   )}
                 </Link>
               ))}
             </div>
-          </div>
+          </details>
+
+          {/* Full-width secondary "Edit profile >" button */}
+          <Link
+            href="/talent/profile"
+            className="profile-mob-edit-btn"
+            style={{
+              width: "100%",
+              height: "48px",
+              borderRadius: "10px",
+              border: "1px solid #CDBF9E",
+              background: "#FFFFFF",
+              backgroundColor: "#FFFFFF",
+              color: "#5E471B",
+              fontSize: "14px",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textDecoration: "none",
+              boxSizing: "border-box",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+            }}
+          >
+            <span style={{ color: "#5E471B", fontSize: "14px", fontWeight: 600, textDecoration: "none" }}>Edit profile &gt;</span>
+          </Link>
         </div>
       </div>
 
@@ -607,7 +959,7 @@ export default function TalentDashboardPage() {
       <SuccessStorySection profile={profile} user={user} />
 
       {/* Main Split: Recent Applications (Left) & Recent Notifications (Right) */}
-      <div className="talent-split-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "24px" }}>
+      <div className="talent-split-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "24px", alignItems: "start" }}>
         {/* Recent Applications Card */}
         <div
           className="card-surface talent-dash-card"
@@ -624,11 +976,13 @@ export default function TalentDashboardPage() {
         >
           <div className="talent-dash-card-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
             <div>
-              <h2 className="talent-dash-card-title" style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "20px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
-                Recent Application Updates
+              <h2 className="talent-dash-card-title" style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "22px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
+                <span className="recent-updates-title-desktop">Recent Application Updates</span>
+                <span className="recent-updates-title-mobile">Recent updates</span>
               </h2>
-              <span className="talent-dash-card-subtitle" style={{ fontSize: "13px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
-                Latest status in your casting pipeline
+              <span className="talent-dash-card-subtitle" style={{ fontSize: "13px", color: "#6B6254", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                <span className="recent-updates-sub-desktop">Latest status in your casting pipeline</span>
+                <span className="recent-updates-sub-mobile">Latest in your casting pipeline</span>
               </span>
             </div>
 
@@ -644,6 +998,7 @@ export default function TalentDashboardPage() {
                 gap: "4px",
                 textDecoration: "none",
                 fontFamily: "var(--font-body), 'Inter', sans-serif",
+                minHeight: "44px",
               }}
             >
               <span>View all ({totalAppsCount})</span>
@@ -653,53 +1008,84 @@ export default function TalentDashboardPage() {
 
           <div className="talent-app-list" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {recentApplications.length === 0 ? (
-              <div style={{ padding: "24px 0", textAlign: "center", color: "#5A584F", fontSize: "14px" }}>
+              <div style={{ padding: "24px 0", textAlign: "center", color: "#6B6254", fontSize: "14px" }}>
                 No applications submitted yet.
               </div>
             ) : (
               recentApplications.map((app) => {
                 const opp = getOpportunity(app.opportunityId);
+                const s = (app.status || "").toLowerCase().trim();
+                const isShortlisted = s === "shortlisted" || s === "selected";
+                const isCancelled = s === "cancelled" || s === "opportunity cancelled" || s === "opportunity_cancelled" || s === "not selected" || s === "not-selected" || s === "withdrawn" || s === "rejected";
+                const dotColor = isShortlisted ? "#2F6B45" : isCancelled ? "#A3321F" : "#8A6B2E";
+
+                const roleText = app.roleApplied || app.roleName || app.role || opp?.role || "Lead Role";
+                const appliedDateStr = app.appliedAt ? new Date(app.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" }) : "Recently";
+
                 return (
                   <Link
                     key={app.id || app._id}
                     href={`/talent/applications?id=${app.id || app._id}`}
                     className="recent-app-item"
                     style={{
-                      backgroundColor: "#F3EFE6",
-                      border: "1px solid #E8E2D4",
+                      backgroundColor: "#FFFFFF",
+                      border: "1px solid #E8E1D2",
                       borderRadius: "12px",
-                      padding: "12px 16px",
+                      padding: "14px 16px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
                       gap: "12px",
                       textDecoration: "none",
                       cursor: "pointer",
-                      transition: "border-color 0.16s ease, transform 0.16s ease",
+                      transition: "background-color 0.16s ease, border-color 0.16s ease",
                     }}
                   >
-                    <div className="recent-app-info" style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0, flex: 1 }}>
+                    <div className="recent-app-left" style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
                       <span
-                        className="recent-app-title"
+                        className="recent-app-status-dot"
                         style={{
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: "#2B2D2A",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          fontFamily: "var(--font-body), 'Inter', sans-serif",
+                          width: "10px",
+                          height: "10px",
+                          minWidth: "10px",
+                          borderRadius: "50%",
+                          backgroundColor: dotColor,
+                          flexShrink: 0,
                         }}
-                      >
-                        {opp?.title || app.opportunityTitle || "Opportunity"}
-                      </span>
-                      <span className="recent-app-meta" style={{ fontSize: "12px", color: "#5A584F", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
-                        Role: <strong style={{ color: "#6E5420" }}>{app.roleApplied || app.roleName || app.role || opp?.role || "Lead Role"}</strong> &bull; {new Date(app.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
-                      </span>
+                      />
+                      <div className="recent-app-info" style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0, flex: 1 }}>
+                        <span
+                          className="recent-app-title"
+                          style={{
+                            fontSize: "15px",
+                            fontWeight: 600,
+                            color: "#2B2D2A",
+                            overflowWrap: "anywhere",
+                            fontFamily: "var(--font-body), 'Inter', sans-serif",
+                          }}
+                        >
+                          <span className="recent-app-title-desktop">{opp?.title || app.opportunityTitle || "Opportunity"}</span>
+                          <span className="recent-app-title-mobile">{roleText}</span>
+                        </span>
+                        <span className="recent-app-meta" style={{ fontSize: "13px", color: "#6B6254", overflowWrap: "anywhere", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                          <span className="recent-app-meta-desktop">
+                            Role: <strong style={{ fontWeight: 600, color: "#2B2D2A" }}>{roleText}</strong> &bull; {appliedDateStr}
+                          </span>
+                          <span className="recent-app-meta-mobile">
+                            {appliedDateStr}
+                          </span>
+                        </span>
+                        <div className="recent-app-badge-mobile">
+                          <StatusBadge status={app.status} size="md" />
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="recent-app-badge" style={{ flexShrink: 0 }}>
-                      <StatusBadge status={app.status} size="sm" />
+                    <div className="recent-app-right" style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                      <div className="recent-app-badge recent-app-badge-desktop" style={{ flexShrink: 0 }}>
+                        <StatusBadge status={app.status} size="md" />
+                      </div>
+                      <ChevronRight size={16} className="recent-app-chevron" style={{ color: "#6B6254", flexShrink: 0 }} />
                     </div>
                   </Link>
                 );
@@ -724,10 +1110,10 @@ export default function TalentDashboardPage() {
         >
           <div className="talent-dash-card-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
             <div>
-              <h2 className="talent-dash-card-title" style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "20px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
+              <h2 className="talent-dash-card-title" style={{ fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif", fontSize: "22px", fontWeight: 600, color: "#2B2D2A", margin: 0 }}>
                 Recent Alerts &amp; Announcements
               </h2>
-              <span className="talent-dash-card-subtitle" style={{ fontSize: "13px", color: "#5A584F", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+              <span className="talent-dash-card-subtitle" style={{ fontSize: "13px", color: "#6B6254", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
                 Audition callbacks and Vismaya notices
               </span>
             </div>
@@ -744,22 +1130,87 @@ export default function TalentDashboardPage() {
                 gap: "4px",
                 textDecoration: "none",
                 fontFamily: "var(--font-body), 'Inter', sans-serif",
+                minHeight: "44px",
               }}
             >
-              <span>View all</span>
+              <span>View all ({totalNotifsCount})</span>
               <ChevronRight size={14} />
             </Link>
           </div>
 
           <div className="talent-dash-notifs-list" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {recentNotifications.length === 0 ? (
-              <div style={{ padding: "24px 0", textAlign: "center", color: "#5A584F", fontSize: "14px" }}>
+              <div style={{ padding: "24px 0", textAlign: "center", color: "#6B6254", fontSize: "14px" }}>
                 No notifications right now.
               </div>
             ) : (
-              recentNotifications.map((n) => (
-                <NotificationItem key={n.id} notification={n} />
-              ))
+              recentNotifications.map((n) => {
+                const isUnread = !n.read && !n.isRead;
+                const dotColor = isUnread ? "#8A6B2E" : "#D9D1BF";
+                const targetLink = n.link || n.actionHref || "/talent/notifications";
+                const timeDisplay = n.createdAt
+                  ? new Date(n.createdAt).toLocaleDateString("en-IN", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : n.time || "Recently";
+
+                return (
+                  <Link
+                    key={n.id || n._id}
+                    href={targetLink}
+                    className="recent-notif-row"
+                    style={{
+                      backgroundColor: "#FFFFFF",
+                      border: "1px solid #E8E1D2",
+                      borderRadius: "12px",
+                      padding: "14px 16px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "12px",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      transition: "background-color 0.16s ease, border-color 0.16s ease",
+                    }}
+                  >
+                    <div className="recent-notif-left" style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
+                      <span
+                        className="recent-notif-status-dot"
+                        style={{
+                          width: "10px",
+                          height: "10px",
+                          minWidth: "10px",
+                          borderRadius: "50%",
+                          backgroundColor: dotColor,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div className="recent-notif-info" style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0, flex: 1 }}>
+                        <span
+                          className="recent-notif-title"
+                          style={{
+                            fontSize: "15px",
+                            fontWeight: isUnread ? 700 : 600,
+                            color: "#2B2D2A",
+                            overflowWrap: "anywhere",
+                            fontFamily: "var(--font-body), 'Inter', sans-serif",
+                          }}
+                        >
+                          {n.title || n.message || "Notification"}
+                        </span>
+                        <span className="recent-notif-meta" style={{ fontSize: "13px", color: "#6B6254", overflowWrap: "anywhere", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                          {n.message && n.title ? `${n.message.slice(0, 50)}${n.message.length > 50 ? "..." : ""} • ` : ""}{timeDisplay}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="recent-notif-right" style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                      <ChevronRight size={16} className="recent-notif-chevron" style={{ color: "#6B6254", flexShrink: 0 }} />
+                    </div>
+                  </Link>
+                );
+              })
             )}
           </div>
         </div>
@@ -825,234 +1276,587 @@ export default function TalentDashboardPage() {
           border-color: #8A6B2E !important;
         }
 
-        @media (max-width: 767.98px) {
-          .profile-ring-grid {
-            grid-template-columns: 1fr !important;
-            justify-items: center;
-            text-align: center;
-          }
-          .profile-checklist-grid {
-            grid-template-columns: 1fr !important;
-          }
+        .talent-split-grid {
+          align-items: start !important;
+        }
+        :global(.recent-app-item:hover),
+        :global(.recent-notif-row:hover) {
+          background-color: #FBF8F0 !important;
+          border-color: #D9D1BF !important;
         }
 
-        @media (max-width: 640px) {
-          .talent-dashboard-root {
+        /* Desktop vs Mobile visibility defaults */
+        :global(.talent-browse-icon-mobile) {
+          display: none !important;
+        }
+        :global(.talent-browse-icon-desktop) {
+          display: inline-block !important;
+        }
+        .talent-stat-grid-desktop {
+          display: grid !important;
+        }
+        .talent-stat-grid-mobile {
+          display: none !important;
+        }
+        .profile-desktop-layout {
+          display: block !important;
+        }
+        .profile-mobile-layout {
+          display: none !important;
+        }
+        .recent-app-title-mobile {
+          display: none !important;
+        }
+        .recent-app-title-desktop {
+          display: inline !important;
+        }
+        .recent-app-meta-mobile {
+          display: none !important;
+        }
+        .recent-app-meta-desktop {
+          display: inline !important;
+        }
+        .recent-app-badge-mobile {
+          display: none !important;
+        }
+        .recent-app-badge-desktop {
+          display: block !important;
+        }
+        .recent-updates-title-mobile,
+        .recent-updates-sub-mobile {
+          display: none !important;
+        }
+        .recent-updates-title-desktop,
+        .recent-updates-sub-desktop {
+          display: inline !important;
+        }
+
+        /* Mobile Layout scoped strictly to <= 767.98px */
+        @media (max-width: 767.98px) {
+          .recent-updates-title-mobile,
+          .recent-updates-sub-mobile {
+            display: inline !important;
+          }
+          .recent-updates-title-desktop,
+          .recent-updates-sub-desktop {
+            display: none !important;
+          }
+          .talent-dash {
             gap: 16px !important;
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
           }
 
-          /* Welcome block redesign */
+          /* 1. WELCOME */
+          :global(.talent-browse-icon-mobile) {
+            display: inline-block !important;
+          }
+          :global(.talent-browse-icon-desktop) {
+            display: none !important;
+          }
           .talent-welcome-section {
             display: flex !important;
             flex-direction: column !important;
-            gap: 10px !important;
+            gap: 12px !important;
             width: 100% !important;
           }
           .talent-welcome-left {
-            display: grid !important;
-            grid-template-columns: 48px 1fr !important;
-            grid-template-areas:
-              "avatar info"
-              "desc   desc" !important;
-            row-gap: 8px !important;
-            column-gap: 12px !important;
-            align-items: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
             width: 100% !important;
           }
           .talent-avatar-wrap {
-            grid-area: avatar !important;
-            width: 48px !important;
-            height: 48px !important;
+            display: flex !important;
+            align-items: center !important;
           }
           .talent-avatar-img,
           .talent-avatar-initials {
-            width: 48px !important;
-            height: 48px !important;
-            font-size: 16px !important;
+            width: 56px !important;
+            height: 56px !important;
+            min-width: 56px !important;
+            min-height: 56px !important;
+            border-radius: 50% !important;
           }
           .talent-welcome-user-info {
-            grid-area: info !important;
             display: flex !important;
             flex-direction: column !important;
-            gap: 3px !important;
-            align-items: flex-start !important;
-            text-align: left !important;
-            min-width: 0 !important;
+            gap: 8px !important;
+            width: 100% !important;
           }
           .talent-welcome-title-row {
             display: flex !important;
             flex-direction: column !important;
             align-items: flex-start !important;
-            gap: 3px !important;
+            gap: 6px !important;
             width: 100% !important;
           }
           .talent-welcome-title {
-            font-size: 21px !important;
-            line-height: 1.25 !important;
-            text-align: left !important;
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif !important;
+            font-size: 26px !important;
+            line-height: 1.2 !important;
+            font-weight: 600 !important;
+            color: #2A241A !important;
             margin: 0 !important;
             overflow-wrap: anywhere !important;
-            word-break: break-word !important;
           }
-          .talent-welcome-badge :global(span) {
-            font-size: 10.5px !important;
-            padding: 2px 7px !important;
+          .talent-welcome-badge :global(.status-badge) {
+            display: inline-flex !important;
+            align-items: center !important;
+            height: 26px !important;
+            padding: 0 10px !important;
+            border-radius: 999px !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.06em !important;
+            line-height: 1 !important;
+            white-space: nowrap !important;
           }
           .talent-welcome-desc {
-            grid-area: desc !important;
-            font-size: 13px !important;
-            line-height: 1.5 !important;
-            text-align: left !important;
+            font-family: var(--font-body), 'Inter', sans-serif !important;
+            font-size: 15px !important;
+            color: #6B6254 !important;
+            line-height: 1.45 !important;
             margin: 0 !important;
-            color: #5A584F !important;
           }
           .talent-browse-btn {
             width: 100% !important;
-            height: 42px !important;
-            font-size: 13px !important;
+            height: 48px !important;
+            border-radius: 10px !important;
+            background-color: #8A6B2E !important;
+            color: #FFFFFF !important;
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            display: flex !important;
+            align-items: center !important;
             justify-content: center !important;
-            box-sizing: border-box !important;
-            margin-top: 2px !important;
-          }
-
-          /* Stat cards 2x2 grid */
-          .talent-stat-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: 10px !important;
-            width: 100% !important;
-          }
-
-          /* Profile completeness card */
-          .talent-profile-card {
-            padding: 14px !important;
-            gap: 12px !important;
-            border-radius: 14px !important;
-          }
-          .profile-ring-grid {
-            grid-template-columns: 1fr !important;
-            gap: 12px !important;
-            justify-items: center !important;
-            text-align: center !important;
-          }
-          .profile-ring-wrap {
-            width: 90px !important;
-            height: 90px !important;
-          }
-          .profile-ring-svg {
-            width: 90px !important;
-            height: 90px !important;
-          }
-          .profile-score-num {
-            font-size: 1.35rem !important;
-          }
-          .profile-score-label {
-            font-size: 9px !important;
-          }
-          .profile-details-col {
-            width: 100% !important;
-            gap: 10px !important;
-          }
-          .profile-details-header {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 10px !important;
-            text-align: left !important;
-          }
-          .profile-section-heading {
-            font-size: 18px !important;
-          }
-          .profile-section-desc {
-            font-size: 12.5px !important;
-            line-height: 1.45 !important;
-          }
-          .talent-edit-profile-btn {
-            width: 100% !important;
-            height: 40px !important;
-            font-size: 13px !important;
-            justify-content: center !important;
-            box-sizing: border-box !important;
-          }
-          .profile-checklist-grid {
-            grid-template-columns: 1fr !important;
             gap: 8px !important;
-          }
-          .profile-checklist-item {
-            padding: 10px 12px !important;
-            min-height: 40px !important;
-            border-radius: 8px !important;
-          }
-          .profile-item-label {
-            font-size: 12.5px !important;
+            box-sizing: border-box !important;
+            margin-top: 4px !important;
           }
 
-          /* Split Grid (Recent Applications & Alerts) */
-          .talent-split-grid {
-            grid-template-columns: 1fr !important;
-            gap: 14px !important;
-            width: 100% !important;
+          /* 2. STATS 2x2 Grid */
+          .talent-stat-grid-desktop {
+            display: none !important;
           }
-          .talent-dash-card {
-            padding: 14px !important;
+          .talent-stat-grid-mobile {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             gap: 12px !important;
-            border-radius: 14px !important;
             width: 100% !important;
-            box-sizing: border-box !important;
           }
-          .talent-dash-card-header {
+          .talent-mob-stat-card {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E8E1D2 !important;
+            border-radius: 16px !important;
+            padding: 14px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            box-sizing: border-box !important;
+            min-width: 0 !important;
+          }
+          .talent-mob-stat-top {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
             gap: 6px !important;
           }
-          .talent-dash-card-title {
-            font-size: 18.5px !important;
+          .talent-mob-stat-label {
+            font-family: var(--font-body), 'Inter', sans-serif !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.08em !important;
+            text-transform: uppercase !important;
+            color: #6B6254 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
           }
-          .talent-dash-card-subtitle {
-            font-size: 12px !important;
+          .talent-mob-stat-icon {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            border-radius: 8px !important;
+            background-color: #F3ECDC !important;
+            color: #8A6B2E !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
           }
-          .talent-dash-view-link {
-            font-size: 12px !important;
+          .talent-mob-stat-number {
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif !important;
+            font-size: 32px !important;
+            line-height: 1 !important;
+            font-weight: 600 !important;
+            color: #2A241A !important;
+            font-variant-numeric: lining-nums tabular-nums !important;
           }
-          .talent-app-list,
-          .talent-dash-notifs-list {
-            gap: 8px !important;
+          .talent-mob-stat-pill {
+            align-self: flex-start !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            height: 26px !important;
+            padding: 0 10px !important;
+            border-radius: 999px !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.06em !important;
+            line-height: 1 !important;
+            white-space: nowrap !important;
+            background-color: #F3ECDC !important;
+            color: #5E471B !important;
+            border: 1px solid rgba(138, 107, 46, 0.25) !important;
+            box-sizing: border-box !important;
           }
-          .recent-app-item {
-            padding: 10px 12px !important;
-            gap: 10px !important;
-            border-radius: 10px !important;
-          }
-          .recent-app-info {
-            min-width: 0 !important;
-            gap: 2px !important;
-          }
-          .recent-app-title {
-            font-size: 14px !important;
+          .talent-mob-stat-desc {
+            font-family: var(--font-body), 'Inter', sans-serif !important;
+            font-size: 12.5px !important;
+            color: #6B6254 !important;
             line-height: 1.35 !important;
-            white-space: normal !important;
             display: -webkit-box !important;
             -webkit-line-clamp: 2 !important;
             -webkit-box-orient: vertical !important;
             overflow: hidden !important;
-            text-overflow: ellipsis !important;
+            margin-top: auto !important;
+          }
+
+          /* 3. PROFILE STRENGTH CARD */
+          .profile-desktop-layout {
+            display: none !important;
+          }
+          .profile-mobile-layout {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
+            width: 100% !important;
+          }
+          .talent-profile-card {
+            padding: 18px !important;
+            border-radius: 16px !important;
+            border: 1px solid #E8E1D2 !important;
+            background-color: #FFFFFF !important;
+            gap: 0 !important;
+            min-height: auto !important;
+            height: auto !important;
+          }
+          .profile-mob-top-row {
+            display: flex !important;
+            align-items: center !important;
+            gap: 16px !important;
+            width: 100% !important;
+          }
+          .profile-mob-ring-wrap {
+            position: relative !important;
+            width: 72px !important;
+            height: 72px !important;
+            min-width: 72px !important;
+            min-height: 72px !important;
+            flex: none !important;
+            flex-shrink: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .profile-mob-ring-center {
+            position: absolute !important;
+            inset: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          .profile-mob-score-num {
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif !important;
+            font-size: 20px !important;
+            font-weight: 600 !important;
+            color: #2A241A !important;
+            line-height: 1 !important;
+          }
+          .profile-mob-title-col {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+            min-width: 0 !important;
+            flex: 1 !important;
+          }
+          .profile-mob-heading {
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif !important;
+            font-size: 20px !important;
+            font-weight: 600 !important;
+            color: #2A241A !important;
+            line-height: 1.25 !important;
+            margin: 0 !important;
+          }
+          .profile-mob-subline {
+            font-family: var(--font-body), 'Inter', sans-serif !important;
+            font-size: 13px !important;
+            color: #6B6254 !important;
+            line-height: 1.4 !important;
+            margin-top: 4px !important;
+          }
+          .profile-mob-first-incomplete {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            background-color: #FBF3DF !important;
+            border: 1px solid #EBDDB4 !important;
+            border-radius: 12px !important;
+            padding: 12px 14px !important;
+            text-decoration: none !important;
+            color: #2A241A !important;
+            margin-top: 16px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .profile-mob-first-incomplete:hover {
+            text-decoration: none !important;
+            color: #2A241A !important;
+          }
+          .profile-mob-incomplete-text {
+            flex: 1 !important;
+            min-width: 0 !important;
+            font-size: 14px !important;
+            line-height: 1.4 !important;
+            font-weight: 600 !important;
+            color: #2A241A !important;
             overflow-wrap: anywhere !important;
-            word-break: break-word !important;
+          }
+          .profile-mob-add-link {
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            color: #8A6B2E !important;
+            white-space: nowrap !important;
+            flex: none !important;
+            flex-shrink: 0 !important;
+            margin-left: auto !important;
+            text-decoration: none !important;
+          }
+          .profile-mob-details {
+            width: 100% !important;
+          }
+          .profile-mob-summary {
+            min-height: 44px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            color: #5E471B !important;
+            cursor: pointer !important;
+            list-style: none !important;
+            user-select: none !important;
+            padding: 4px 0 !important;
+          }
+          .profile-mob-summary::-webkit-details-marker {
+            display: none !important;
+          }
+          .profile-mob-details[open] .profile-mob-chevron {
+            transform: rotate(180deg) !important;
+          }
+          .profile-mob-chevron {
+            transition: transform 0.2s ease !important;
+            color: #5E471B !important;
+            flex: none !important;
+            flex-shrink: 0 !important;
+          }
+          .profile-mob-checklist-list {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            padding-top: 6px !important;
+          }
+          .profile-mob-check-row {
+            min-height: 44px !important;
+            border-radius: 12px !important;
+            background-color: #F7F3EA !important;
+            padding: 10px 14px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-decoration: none !important;
+            color: #2A241A !important;
+            box-sizing: border-box !important;
+          }
+          .profile-mob-check-row:hover {
+            text-decoration: none !important;
+            color: #2A241A !important;
+          }
+          .profile-mob-edit-btn {
+            width: 100% !important;
+            height: 48px !important;
+            border-radius: 10px !important;
+            border: 1px solid #CDBF9E !important;
+            background-color: #FFFFFF !important;
+            color: #5E471B !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-decoration: none !important;
+            box-sizing: border-box !important;
+            margin-top: 12px !important;
+          }
+          .profile-mob-edit-btn:hover {
+            text-decoration: none !important;
+            color: #5E471B !important;
+            background-color: #FBF8F0 !important;
+          }
+
+          /* 4. RECENT APPLICATION UPDATES */
+          .talent-split-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+            width: 100% !important;
+          }
+          .talent-dash-card {
+            padding: 18px 18px 6px !important;
+            border-radius: 16px !important;
+            border: 1px solid #E8E1D2 !important;
+            background-color: #FFFFFF !important;
+            gap: 12px !important;
+            box-sizing: border-box !important;
+          }
+          .talent-dash-card-header {
+            gap: 8px !important;
+            align-items: flex-start !important;
+          }
+          .talent-dash-card-title {
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif !important;
+            font-size: 20px !important;
+            font-weight: 600 !important;
+            color: #2A241A !important;
+            line-height: 1.25 !important;
+          }
+          .talent-dash-card-subtitle {
+            font-family: var(--font-body), 'Inter', sans-serif !important;
+            font-size: 13px !important;
+            color: #6B6254 !important;
+            line-height: 1.4 !important;
+          }
+          .talent-dash-view-link {
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            color: #8A6B2E !important;
+          }
+          .talent-app-list {
+            gap: 0 !important;
+          }
+          .recent-app-title-mobile {
+            display: inline !important;
+          }
+          .recent-app-title-desktop {
+            display: none !important;
+          }
+          .recent-app-meta-mobile {
+            display: inline !important;
+          }
+          .recent-app-meta-desktop {
+            display: none !important;
+          }
+          .recent-app-badge-mobile {
+            display: block !important;
+            margin-top: 8px !important;
+          }
+          .recent-app-badge-desktop {
+            display: none !important;
+          }
+          .recent-app-badge-mobile :global(.status-badge) {
+            display: inline-flex !important;
+            align-items: center !important;
+            height: 26px !important;
+            padding: 0 10px !important;
+            border-radius: 999px !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.06em !important;
+            line-height: 1 !important;
+            white-space: nowrap !important;
+          }
+          .recent-app-item {
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding: 14px 0 !important;
+            border: none !important;
+            border-top: 1px solid #EFE9DA !important;
+            border-radius: 0 !important;
+            background-color: transparent !important;
+            box-sizing: border-box !important;
+          }
+          .recent-app-item:first-child {
+            border-top: none !important;
+          }
+          .recent-app-left {
+            flex: 1 1 0% !important;
+            min-width: 0 !important;
+            gap: 10px !important;
+            align-items: flex-start !important;
+          }
+          .recent-app-status-dot {
+            margin-top: 5px !important;
+          }
+          .recent-app-info {
+            flex: 1 1 0% !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            gap: 3px !important;
+          }
+          .recent-app-title {
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            color: #2A241A !important;
+            overflow-wrap: anywhere !important;
+            word-break: normal !important;
+            line-height: 1.35 !important;
           }
           .recent-app-meta {
-            font-size: 12px !important;
+            font-size: 13px !important;
+            color: #6B6254 !important;
+            overflow-wrap: anywhere !important;
             line-height: 1.35 !important;
-            white-space: normal !important;
+          }
+          .recent-app-right {
+            display: flex !important;
+            align-items: center !important;
+            flex-shrink: 0 !important;
+          }
+          .recent-app-chevron {
+            display: block !important;
+            color: #6B6254 !important;
+            flex-shrink: 0 !important;
+          }
+
+          /* Notifications card mobile adjustments */
+          .recent-notif-row {
+            padding: 12px 14px !important;
+            gap: 10px !important;
+            border-radius: 12px !important;
+          }
+          .recent-notif-left {
+            gap: 10px !important;
+            align-items: flex-start !important;
+          }
+          .recent-notif-status-dot {
+            margin-top: 5px !important;
+          }
+          .recent-notif-info {
+            min-width: 0 !important;
+            gap: 2px !important;
+          }
+          .recent-notif-title {
+            font-size: 14px !important;
+            line-height: 1.35 !important;
             overflow-wrap: anywhere !important;
           }
-          }
-        }
-
-        @media (max-width: 400px) {
-          .talent-welcome-title {
-            font-size: 19px !important;
-          }
-          .talent-stat-grid {
-            gap: 8px !important;
+          .recent-notif-meta {
+            font-size: 12px !important;
+            line-height: 1.35 !important;
+            overflow-wrap: anywhere !important;
           }
         }
       `}</style>

@@ -17,11 +17,6 @@ export default function PublicFooter() {
     return <PublicFooterOld />;
   }
 
-  const platformLinks = [
-    { label: "Talent Portal", href: "/talent/dashboard", isHighlight: true },
-    { label: "Organization Portal", href: "/recruiter/dashboard" },
-  ];
-
   const companyLinks = [
     { label: "Home", href: "/" },
     { label: "About Us", href: "/about" },
@@ -43,7 +38,7 @@ export default function PublicFooter() {
       <div className="public-footer-accent-line" aria-hidden="true" />
 
       <div className="public-footer-container">
-        {/* Top Row: Brand Info + 3 Columns */}
+        {/* Top Row: Brand Info + 2 Columns */}
         <div className="public-footer-top-row">
           {/* Left: Brand Column */}
           <div className="public-footer-brand-col">
@@ -61,31 +56,9 @@ export default function PublicFooter() {
             </p>
           </div>
 
-          {/* Right: 3 Navigation Link Columns */}
+          {/* Right: 2 Navigation Link Columns */}
           <div className="public-footer-nav-grid">
-            {/* 1. Platform Column */}
-            <div className="public-footer-col">
-              <span className="public-footer-col-title">Platform</span>
-              <span className="public-footer-col-line" aria-hidden="true" />
-              <div className="public-footer-col-links">
-                {platformLinks.map((item) => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className={`public-footer-link ${isActive ? "active" : ""} ${
-                        item.isHighlight ? "highlight" : ""
-                      }`}
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 2. Company Column */}
+            {/* 1. Company Column */}
             <div className="public-footer-col">
               <span className="public-footer-col-title">Company</span>
               <span className="public-footer-col-line" aria-hidden="true" />
@@ -105,7 +78,7 @@ export default function PublicFooter() {
               </div>
             </div>
 
-            {/* 3. Trust & Legal Column */}
+            {/* 2. Trust & Legal Column */}
             <div className="public-footer-col">
               <span className="public-footer-col-title">Trust &amp; Legal</span>
               <span className="public-footer-col-line" aria-hidden="true" />

@@ -157,6 +157,7 @@ export default function SuccessStorySection({ profile, user }) {
 
   return (
     <div
+      className="success-story-section"
       style={{
         backgroundColor: "#FFFFFF",
         border: "1px solid #E8E2D4",
@@ -171,6 +172,7 @@ export default function SuccessStorySection({ profile, user }) {
     >
       {/* Header Row */}
       <div
+        className="success-story-header"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -179,9 +181,10 @@ export default function SuccessStorySection({ profile, user }) {
           flexWrap: "wrap",
         }}
       >
-        <div style={{ flex: 1, minWidth: "260px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+        <div className="success-story-header-left" style={{ flex: 1, minWidth: "260px" }}>
+          <div className="success-story-title-row" style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
             <div
+              className="success-story-icon-box"
               style={{
                 width: "36px",
                 height: "36px",
@@ -196,6 +199,7 @@ export default function SuccessStorySection({ profile, user }) {
               <Sparkles size={18} />
             </div>
             <h2
+              className="success-story-title"
               style={{
                 fontFamily: "var(--font-heading), 'Playfair Display', serif",
                 fontSize: "19px",
@@ -204,11 +208,12 @@ export default function SuccessStorySection({ profile, user }) {
                 margin: 0,
               }}
             >
-              Share Your Casting Success Story
+              <span className="success-story-title-desktop">Share Your Casting Success Story</span>
+              <span className="success-story-title-mobile">Share your success story</span>
             </h2>
           </div>
-          <p style={{ margin: 0, fontSize: "13.5px", color: "#5A584F", lineHeight: 1.5 }}>
-            Did Vismaya connect you with a casting director or role? Share your milestone to be featured on our landing page and public showcases per Spec §42.
+          <p className="success-story-desc" style={{ margin: 0, fontSize: "13.5px", color: "#5A584F", lineHeight: 1.5 }}>
+            Got a role through Vismaya? Share it to be featured on our landing page and public showcases.
           </p>
         </div>
 
@@ -216,6 +221,7 @@ export default function SuccessStorySection({ profile, user }) {
           type="button"
           onClick={handleOpenModal}
           disabled={hasPendingStory}
+          className="success-story-btn"
           title={hasPendingStory ? "You already have a story pending review" : "Share your story"}
           style={{
             padding: "10px 18px",
@@ -234,7 +240,14 @@ export default function SuccessStorySection({ profile, user }) {
           }}
         >
           <Plus size={16} />
-          <span>{hasPendingStory ? "Story Pending Review" : "Share Your Story"}</span>
+          {hasPendingStory ? (
+            <span>Story Pending Review</span>
+          ) : (
+            <>
+              <span className="success-story-btn-text-desktop">Share Your Story</span>
+              <span className="success-story-btn-text-mobile">Share your story</span>
+            </>
+          )}
         </button>
       </div>
 
@@ -244,12 +257,12 @@ export default function SuccessStorySection({ profile, user }) {
           <Loader2 size={24} style={{ color: "#8A6B2E", animation: "spin 1s linear infinite" }} />
         </div>
       ) : stories.length > 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px", borderTop: "1px solid #F0EEEA", paddingTop: "16px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8A877E" }}>
-            Your Submitted Stories ({stories.length})
+        <div className="success-stories-container" style={{ display: "flex", flexDirection: "column", gap: "12px", borderTop: "1px solid #F0EEEA", paddingTop: "16px" }}>
+          <div className="success-stories-heading-label" style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8A877E" }}>
+            YOUR STORIES ({stories.length})
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
+          <div className="success-stories-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
             {stories.map((s) => {
               const isApproved = s.status === "approved";
               const isRejected = s.status === "rejected";
@@ -259,6 +272,7 @@ export default function SuccessStorySection({ profile, user }) {
               return (
                 <div
                   key={s._id}
+                  className="success-story-card"
                   style={{
                     backgroundColor: "#FAF9F7",
                     border: "1px solid #E8E2D4",
@@ -269,33 +283,35 @@ export default function SuccessStorySection({ profile, user }) {
                     gap: "10px",
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <div className="success-story-card-top" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                    <div className="success-story-card-author" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                       {s.photoUrl && (
                         <img
                           src={s.photoUrl}
                           alt={s.talentName}
+                          className="success-story-card-photo"
                           style={{ width: "36px", height: "36px", borderRadius: "8px", objectFit: "cover" }}
                         />
                       )}
                       <div>
-                        <div style={{ fontSize: "13px", fontWeight: 700, color: "#2B2D2A" }}>
+                        <div className="success-story-card-name" style={{ fontSize: "13px", fontWeight: 700, color: "#2B2D2A" }}>
                           {s.projectName || s.roleOrProfession || "Success Story"}
                         </div>
-                        <div style={{ fontSize: "11.5px", color: "#8A877E" }}>
+                        <div className="success-story-card-sub" style={{ fontSize: "11.5px", color: "#8A877E" }}>
                           {s.roleOrProfession} {s.organizationName ? `· ${s.organizationName}` : ""}
                         </div>
                       </div>
                     </div>
 
                     <span
+                      className="success-story-card-pill"
                       style={{
                         fontSize: "11px",
                         fontWeight: 700,
                         padding: "3px 8px",
                         borderRadius: "6px",
-                        backgroundColor: isApproved ? "#EBF5ED" : isRejected ? "#FDF2F2" : isUnpublished ? "#F0EEEA" : "#F5EFE1",
-                        color: isApproved ? "#2B5E3B" : isRejected ? "#D9534F" : isUnpublished ? "#5A584F" : "#8A6B2E",
+                        backgroundColor: isApproved ? "#E3F0E7" : isRejected ? "#FBE9E5" : isUnpublished ? "#F0EEEA" : "#FBEBDD",
+                        color: isApproved ? "#2F6B45" : isRejected ? "#A3321F" : isUnpublished ? "#5A584F" : "#8F3F16",
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "4px",
@@ -305,16 +321,19 @@ export default function SuccessStorySection({ profile, user }) {
                       {isPending && <Clock size={11} />}
                       {isRejected && <XCircle size={11} />}
                       {isUnpublished && <EyeOff size={11} />}
-                      {isApproved ? "Approved & Live" : isRejected ? "Rejected" : isUnpublished ? "Unpublished" : "In Review"}
+                      <span className="success-story-pill-text">
+                        {isApproved ? "LIVE" : isRejected ? "REJECTED" : isUnpublished ? "Unpublished" : "PENDING"}
+                      </span>
                     </span>
                   </div>
 
-                  <p style={{ margin: 0, fontSize: "12.5px", color: "#4A483F", lineHeight: 1.5, fontStyle: "italic" }}>
+                  <p className="success-story-quote" style={{ margin: 0, fontSize: "12.5px", color: "#4A483F", lineHeight: 1.5, fontStyle: "italic" }}>
                     "{s.quote}"
                   </p>
 
                   {isRejected && s.rejectionReason && (
                     <div
+                      className="success-story-feedback-box"
                       style={{
                         backgroundColor: "#FFF5F5",
                         border: "1px solid #FED7D7",
@@ -329,7 +348,7 @@ export default function SuccessStorySection({ profile, user }) {
                     >
                       <AlertCircle size={14} style={{ flexShrink: 0, marginTop: "2px" }} />
                       <div>
-                        <strong>Editorial Feedback:</strong> {s.rejectionReason}
+                        <strong>Feedback:</strong> {s.rejectionReason}
                       </div>
                     </div>
                   )}
@@ -688,6 +707,134 @@ export default function SuccessStorySection({ profile, user }) {
           </form>
         </Modal>
       )}
+
+      <style jsx>{`
+        .success-story-title-mobile,
+        .success-story-btn-text-mobile {
+          display: none !important;
+        }
+        .success-story-title-desktop,
+        .success-story-btn-text-desktop {
+          display: inline !important;
+        }
+
+        @media (max-width: 767.98px) {
+          .success-story-title-mobile,
+          .success-story-btn-text-mobile {
+            display: inline !important;
+          }
+          .success-story-title-desktop,
+          .success-story-btn-text-desktop {
+            display: none !important;
+          }
+          .success-story-section {
+            padding: 18px !important;
+            border-radius: 16px !important;
+            border: 1px solid #E8E1D2 !important;
+            background-color: #FFFFFF !important;
+            gap: 16px !important;
+          }
+          .success-story-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 14px !important;
+          }
+          .success-story-header-left {
+            min-width: 0 !important;
+            width: 100% !important;
+          }
+          .success-story-title-row {
+            gap: 12px !important;
+            margin-bottom: 8px !important;
+            align-items: center !important;
+          }
+          .success-story-icon-box {
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px !important;
+            border-radius: 10px !important;
+            background-color: #F3ECDC !important;
+            color: #8A6B2E !important;
+          }
+          .success-story-title {
+            font-size: 20px !important;
+            line-height: 1.25 !important;
+            color: #2A241A !important;
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif !important;
+          }
+          .success-story-desc {
+            font-size: 14px !important;
+            color: #6B6254 !important;
+            line-height: 1.45 !important;
+            font-family: var(--font-body), 'Inter', sans-serif !important;
+          }
+          .success-story-btn {
+            width: 100% !important;
+            height: 48px !important;
+            border-radius: 10px !important;
+            justify-content: center !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            background-color: #8A6B2E !important;
+            color: #FFFFFF !important;
+            box-sizing: border-box !important;
+          }
+          .success-stories-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+          .success-story-card {
+            padding: 14px !important;
+            border-radius: 12px !important;
+            border: 1px solid #EFE9DA !important;
+            background-color: #FCFAF4 !important;
+            gap: 10px !important;
+          }
+          .success-story-card-top {
+            align-items: center !important;
+            gap: 8px !important;
+          }
+          .success-story-card-name {
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            color: #2A241A !important;
+          }
+          .success-story-card-sub,
+          .success-story-card-photo {
+            display: none !important;
+          }
+          .success-story-card-pill {
+            height: 26px !important;
+            padding: 0 10px !important;
+            border-radius: 999px !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.06em !important;
+            line-height: 1 !important;
+            white-space: nowrap !important;
+            box-sizing: border-box !important;
+          }
+          .success-story-quote {
+            font-size: 13.5px !important;
+            font-style: italic !important;
+            color: #2A241A !important;
+            overflow-wrap: anywhere !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            line-height: 1.45 !important;
+          }
+          .success-story-feedback-box {
+            background-color: #FBE9E5 !important;
+            border: 1px solid rgba(163, 50, 31, 0.25) !important;
+            color: #A3321F !important;
+            font-size: 13px !important;
+            border-radius: 10px !important;
+            padding: 10px 12px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

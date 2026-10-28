@@ -239,7 +239,7 @@
   .public-footer-nav-grid {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 32px;
   }
 }
@@ -293,7 +293,7 @@
     margin: 0 !important;
   }
 
-  /* Link columns: 2-column grid (Platform + Company in row 1, Trust & Legal spanning below) */
+  /* Link columns: 2-column grid (Company + Trust & Legal side by side) */
   .public-footer-nav-grid {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
@@ -303,10 +303,6 @@
 
   .public-footer-col {
     min-width: 0 !important;
-  }
-
-  .public-footer-col:nth-child(3) {
-    grid-column: 1 / -1 !important;
   }
 
   .public-footer-col-title {
@@ -323,12 +319,6 @@
     display: flex !important;
     flex-direction: column !important;
     gap: 4px !important;
-  }
-
-  .public-footer-col:nth-child(3) .public-footer-col-links {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 4px 16px !important;
   }
 
   .public-footer-link {

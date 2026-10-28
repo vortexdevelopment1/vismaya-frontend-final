@@ -13,6 +13,8 @@ import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
 import { notifyUser } from "../services/notification.service.js";
 import { calculateAge } from "../validators/talentProfile.validator.js";
+import { isDeadlineExpired } from "../utils/date.util.js";
+import { calculateProfileCompletionDetails } from "../utils/profileCompletion.util.js";
 
 export const applyForOpportunity = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -30,11 +32,14 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             });
         }
 
-        // 2. Cancelled opportunities check (Part A D6b)
-        if (opportunity.status === "cancelled") {
+        // 2. Enforce closure at request time: deadline passed or closed/cancelled/completed
+        const isClosed = ["closed", "cancelled", "completed"].includes(opportunity.status) ||
+            isDeadlineExpired(opportunity.deadline);
+
+        if (isClosed) {
             return res.status(400).json({
                 success: false,
-                message: "Cannot apply to a cancelled opportunity"
+                message: "Applications for this opportunity are closed"
             });
         }
 
@@ -72,20 +77,20 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             });
         }
 
-        // 5. Check if deadline has passed
-        if (opportunity.deadline && new Date() > new Date(opportunity.deadline)) {
-            return res.status(400).json({
-                success: false,
-                message: "Application deadline has passed"
-            });
-        }
 
-        // 6. Validate completion >= 60%
-        if (profile.profileCompletionPercentage < 60) {
-            return res.status(400).json({
-                success: false,
-                message: `Minimum 60% profile completion is required to apply for opportunities (current: ${profile.profileCompletionPercentage}%). Please update your profile.`
-            });
+        // 6. Validate completion >= 60% (excluding informational profiles)
+        const isInformational = Boolean(profile.isInformational);
+        if (!isInformational) {
+            const completionDetails = calculateProfileCompletionDetails(profile);
+            const effectiveScore = completionDetails.percentage;
+            if (effectiveScore < 60) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Minimum 60% profile completion is required to apply for opportunities (current: ${effectiveScore}%). Please update your profile.`,
+                    breakdown: completionDetails.breakdown,
+                    missingSections: completionDetails.missingSections
+                });
+            }
         }
 
         // 5. Check Max Active Applications Limit
@@ -120,8 +125,87 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             }
         }
 
-        // 7. Compute eligibility warnings
+        // 7. Validate roleName based on opportunity roles schema
+        const incomingRoleName = (req.body.roleName || req.body.roleApplied || req.body.role || "").trim();
+        const oppRoles = Array.isArray(opportunity.roles) && opportunity.roles.length > 0 ? opportunity.roles : [];
+
+        let finalRoleName: string;
+        let selectedRole: any = null;
+
+        if (oppRoles.length > 1) {
+            if (!incomingRoleName) {
+                return res.status(400).json({
+                    success: false,
+                    message: "roleName is required when applying for an opportunity with multiple roles"
+                });
+            }
+            const matched = oppRoles.find(r => r.roleName.trim().toLowerCase() === incomingRoleName.toLowerCase());
+            if (!matched) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Invalid roleName: '${incomingRoleName}'. Must match one of the opportunity's roles: ${oppRoles.map(r => r.roleName).join(", ")}`
+                });
+            }
+            finalRoleName = matched.roleName;
+            selectedRole = matched;
+        } else if (oppRoles.length === 1) {
+            finalRoleName = oppRoles[0].roleName;
+            selectedRole = oppRoles[0];
+        } else {
+            finalRoleName = incomingRoleName || opportunity.role || "—";
+            selectedRole = null;
+        }
+
+        // 8. Compute eligibility warnings against selected role criteria (warnings only, never block)
         const warnings: string[] = [];
+
+        const rawApplicantDob = profile.dob || (profile as any).dateOfBirth;
+        const applicantAge = rawApplicantDob ? calculateAge(rawApplicantDob) : (typeof (profile as any).age === "number" ? (profile as any).age : null);
+        const applicantGender = (profile.gender || (profile as any).personalDetails?.gender || "").toLowerCase().trim();
+        const applicantSkills = (profile.skills || []).map((s: any) => (typeof s === "string" ? s : (s.name || s.skillName || "")).toLowerCase().trim());
+        const applicantLanguages = (profile.languages || []).map((l: any) => (typeof l === "string" ? l : (l.name || l.language || "")).toLowerCase().trim());
+
+        if (selectedRole) {
+            // Age criteria
+            if (applicantAge !== null) {
+                if (typeof selectedRole.ageMin === "number" && applicantAge < selectedRole.ageMin) {
+                    warnings.push(`Age (${applicantAge}) is below the preferred minimum age (${selectedRole.ageMin}) for role: ${finalRoleName}`);
+                }
+                if (typeof selectedRole.ageMax === "number" && applicantAge > selectedRole.ageMax) {
+                    warnings.push(`Age (${applicantAge}) is above the preferred maximum age (${selectedRole.ageMax}) for role: ${finalRoleName}`);
+                }
+            }
+
+            // Gender criteria
+            if (selectedRole.gender && !["any", "all"].includes(selectedRole.gender.toLowerCase().trim())) {
+                if (applicantGender && applicantGender !== selectedRole.gender.toLowerCase().trim()) {
+                    warnings.push(`Gender (${profile.gender || applicantGender}) does not match preferred criteria (${selectedRole.gender}) for role: ${finalRoleName}`);
+                }
+            }
+
+            // Skills criteria
+            if (Array.isArray(selectedRole.skills) && selectedRole.skills.length > 0) {
+                const hasSkill = selectedRole.skills.some((sk: string) => {
+                    const skNorm = sk.toLowerCase().trim();
+                    return applicantSkills.some((ask: string) => ask.includes(skNorm) || skNorm.includes(ask));
+                });
+                if (!hasSkill) {
+                    warnings.push(`Skills do not match preferred criteria for role: ${finalRoleName} (${selectedRole.skills.join(", ")})`);
+                }
+            }
+
+            // Languages criteria
+            if (Array.isArray(selectedRole.languages) && selectedRole.languages.length > 0) {
+                const hasLang = selectedRole.languages.some((lang: string) => {
+                    const lNorm = lang.toLowerCase().trim();
+                    return applicantLanguages.some((al: string) => al.includes(lNorm) || lNorm.includes(al));
+                });
+                if (!hasLang) {
+                    warnings.push(`Languages do not match preferred criteria for role: ${finalRoleName} (${selectedRole.languages.join(", ")})`);
+                }
+            }
+        }
+
         const oppEl = (opportunity.eligibility || {}) as any;
         if (oppEl.professions && oppEl.professions.length > 0) {
             const hasProfMatch = oppEl.professions.some((p: string) =>
@@ -130,7 +214,7 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             if (!hasProfMatch) warnings.push("Profession does not strictly match preferred criteria");
         }
 
-        // 8. Check for existing application
+        // 9. Check for existing application
         const existingApplication = await Application.findOne({
             opportunityId: String(opportunityId),
             talentId
@@ -147,6 +231,7 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
 
                 // Approved reapplication: re-run application
                 existingApplication.status = "applied";
+                existingApplication.roleName = finalRoleName;
                 existingApplication.coverNote = coverNote || existingApplication.coverNote;
                 existingApplication.customAnswers = customAnswers || existingApplication.customAnswers;
                 existingApplication.consentGiven = true;
@@ -162,7 +247,7 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
                     recipientId: talentId,
                     type: "application_submitted",
                     title: "Reapplication Submitted",
-                    message: `Your reapplication for '${opportunity.title}' has been submitted successfully.`
+                    message: `Your reapplication for '${opportunity.title}' (applied for ${finalRoleName}) has been submitted successfully.`
                 });
 
                 return res.status(200).json({
@@ -178,10 +263,11 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             });
         }
 
-        // 9. Create fresh application
+        // 10. Create fresh application
         const application = await Application.create({
             opportunityId: String(opportunityId),
             talentId,
+            roleName: finalRoleName,
             coverNote,
             customAnswers: customAnswers || [],
             consentGiven: true,
@@ -193,7 +279,7 @@ export const applyForOpportunity = async (req: Request, res: Response): Promise<
             recipientId: talentId,
             type: "application_submitted",
             title: "Application Submitted",
-            message: `Your application for '${opportunity.title}' has been submitted successfully.`
+            message: `Your application for '${opportunity.title}' (applied for ${finalRoleName}) has been submitted successfully.`
         });
 
         res.status(201).json({
@@ -220,7 +306,7 @@ export const getMyApplications = async (req: Request, res: Response): Promise<an
         })
             .populate({
                 path: "opportunityId",
-                select: "title summary role location deadline status projectId",
+                select: "title summary role roles location deadline status projectId",
                 populate: {
                     path: "projectId",
                     select: "projectName projectType"
@@ -229,12 +315,19 @@ export const getMyApplications = async (req: Request, res: Response): Promise<an
             .sort({ createdAt: -1 })
             .lean();
 
-        // O5: Remove remuneration from populated fields
+        // O5: Remove remuneration from populated fields and normalize applied role
         const sanitized = applications.map((app: any) => {
             if (app.opportunityId) {
                 delete app.opportunityId.remuneration;
             }
-            return app;
+            const opp = app.opportunityId;
+            const effectiveRole = app.roleName || (opp?.roles && opp.roles[0]?.roleName) || opp?.role || "—";
+            return {
+                ...app,
+                roleName: effectiveRole,
+                roleApplied: effectiveRole,
+                role: effectiveRole
+            };
         });
 
         res.status(200).json({
@@ -445,15 +538,56 @@ export const getOpportunityApplications = async (req: Request, res: Response): P
         const oppObjectId = mongoose.Types.ObjectId.isValid(String(opportunityId))
             ? new mongoose.Types.ObjectId(String(opportunityId))
             : opportunityId;
-        const filter: any = {
+
+        const roleQuery = (req.query.roleName || req.query.role) as string | undefined;
+
+        const baseOppFilter: any = {
             $or: [
                 { opportunityId: oppObjectId },
                 { opportunityId: String(opportunityId) }
             ]
         };
+
+        // Query all applications for this opportunity to compute applicant counts per role
+        const allOppApplications = await Application.find(baseOppFilter).select("roleName").lean();
+        const roleCounts: Record<string, number> = {};
+        if (Array.isArray(opportunity.roles) && opportunity.roles.length > 0) {
+            for (const r of opportunity.roles) {
+                roleCounts[r.roleName] = 0;
+            }
+        } else if (opportunity.role) {
+            roleCounts[opportunity.role] = 0;
+        }
+
+        for (const a of allOppApplications) {
+            const rName = a.roleName || (opportunity.roles && opportunity.roles[0]?.roleName) || opportunity.role || "—";
+            roleCounts[rName] = (roleCounts[rName] || 0) + 1;
+        }
+
+        const filter: any = { ...baseOppFilter };
         if (status) {
             const normalizedStatus = String(status).toLowerCase().trim().replace(/[\s-]+/g, "_");
             filter.status = { $regex: new RegExp(`^${normalizedStatus}$`, "i") };
+        }
+
+        if (roleQuery && roleQuery !== "ALL" && roleQuery !== "all") {
+            const trimmedRole = String(roleQuery).trim();
+            const isPrimaryOrOnlyRole = (!opportunity.roles || opportunity.roles.length <= 1) || (opportunity.roles[0]?.roleName.toLowerCase() === trimmedRole.toLowerCase());
+
+            if (isPrimaryOrOnlyRole) {
+                filter.$and = [
+                    {
+                        $or: [
+                            { roleName: { $regex: new RegExp(`^${trimmedRole}$`, "i") } },
+                            { roleName: { $exists: false } },
+                            { roleName: null },
+                            { roleName: "" }
+                        ]
+                    }
+                ];
+            } else {
+                filter.roleName = { $regex: new RegExp(`^${trimmedRole}$`, "i") };
+            }
         }
 
         const applications = await Application.find(filter)
@@ -481,6 +615,7 @@ export const getOpportunityApplications = async (req: Request, res: Response): P
         const sanitizedApplicants = applications.map((app: any) => {
             const profile = profileMap[app.talentId.toString()];
             const isUnlocked = unlockedSet.has(app.talentId.toString());
+            const effectiveRole = app.roleName || (opportunity.roles && opportunity.roles[0]?.roleName) || opportunity.role || "—";
 
             return {
                 _id: app._id,
@@ -494,6 +629,9 @@ export const getOpportunityApplications = async (req: Request, res: Response): P
                 primaryProfession: profile?.primaryProfession,
                 skills: (profile?.skills || []).slice(0, 5),
                 status: app.status,
+                roleName: effectiveRole,
+                roleApplied: effectiveRole,
+                role: effectiveRole,
                 coverNote: app.coverNote,
                 customAnswers: app.customAnswers,
                 consentGiven: app.consentGiven,
@@ -506,6 +644,7 @@ export const getOpportunityApplications = async (req: Request, res: Response): P
         res.status(200).json({
             success: true,
             count: sanitizedApplicants.length,
+            roleCounts,
             applicants: sanitizedApplicants
         });
 
@@ -639,11 +778,14 @@ export const getApplicantPortfolio = async (req: Request, res: Response): Promis
             creditExemptReason: "Direct application to organization opportunity"
         };
 
+        const effectiveAppRole = application.roleName || (opportunity.roles && opportunity.roles[0]?.roleName) || opportunity.role || "—";
         const applicationDetails = {
             _id: application._id,
             opportunityId: application.opportunityId,
             opportunityTitle: opportunity.title,
-            role: opportunity.role,
+            role: effectiveAppRole,
+            roleName: effectiveAppRole,
+            roleApplied: effectiveAppRole,
             projectId: project._id,
             projectName: project.projectName,
             status: application.status,
@@ -768,10 +910,11 @@ export const shortlistApplication = async (req: Request, res: Response): Promise
         await application.save();
 
         // Auto-add to ProjectShortlist
+        const effectiveShortlistRole = application.roleName || opportunity?.role;
         const profile = await TalentProfile.findOne({ userId: application.talentId });
         if (profile) {
             await ProjectShortlist.findOneAndUpdate(
-                { projectId: project._id, talentId: application.talentId, role: opportunity?.role },
+                { projectId: project._id, talentId: application.talentId, role: effectiveShortlistRole },
                 {
                     $setOnInsert: {
                         opportunityId: opportunity?._id,
@@ -796,7 +939,7 @@ export const shortlistApplication = async (req: Request, res: Response): Promise
                 recipientId: application.talentId,
                 type: "shortlisted",
                 title: "Application Shortlisted",
-                message: `You have been shortlisted for ${opportunity?.role || 'the role'} in ${opportunity?.title}`,
+                message: `You have been shortlisted for ${effectiveShortlistRole || 'the role'} in ${opportunity?.title}`,
                 referenceId: application._id,
                 referenceType: "Application",
                 sendEmailAlert: true
@@ -861,8 +1004,9 @@ export const selectApplication = async (req: Request, res: Response): Promise<an
         await application.save();
 
         // Update ProjectShortlist status to selected
+        const effectiveSelectedRole = application.roleName || opportunity?.role;
         await ProjectShortlist.findOneAndUpdate(
-            { projectId: project._id, talentId: application.talentId, role: opportunity?.role },
+            { projectId: project._id, talentId: application.talentId, role: effectiveSelectedRole },
             { $set: { status: "selected" } }
         );
 
@@ -876,7 +1020,7 @@ export const selectApplication = async (req: Request, res: Response): Promise<an
                 recipientId: application.talentId,
                 type: "selected",
                 title: "Application Selected",
-                message: `Congratulations! You have been selected for '${opportunity?.role || 'the role'}' in '${opportunity?.title}'.`,
+                message: `Congratulations! You have been selected for '${effectiveSelectedRole || 'the role'}' in '${opportunity?.title}'.`,
                 referenceId: application._id,
                 referenceType: "Application",
                 sendEmailAlert: true
@@ -941,6 +1085,7 @@ export const rejectApplication = async (req: Request, res: Response): Promise<an
         application.notSelectedReason = reason || "Not selected";
         await application.save();
 
+        const effectiveRejectedRole = application.roleName || opportunity?.role;
         const existingRejectNotif = await Notification.findOne({
             recipient: application.talentId,
             referenceId: application._id,
@@ -951,7 +1096,7 @@ export const rejectApplication = async (req: Request, res: Response): Promise<an
                 recipientId: application.talentId,
                 type: "not_selected",
                 title: "Application Update",
-                message: `Your application for '${opportunity?.role || 'the role'}' in '${opportunity?.title}' was not selected.`,
+                message: `Your application for '${effectiveRejectedRole || 'the role'}' in '${opportunity?.title}' was not selected.`,
                 referenceId: application._id,
                 referenceType: "Application",
                 sendEmailAlert: true

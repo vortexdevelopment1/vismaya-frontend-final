@@ -182,9 +182,9 @@ export default function TalentManagementPage() {
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
               }}
-              title={`ID: ${row.id} • ${row.email}`}
+              title={row.email}
             >
-              ID: {row.id} &bull; {row.email}
+              {row.email}
             </div>
           </div>
         </div>
@@ -378,8 +378,9 @@ export default function TalentManagementPage() {
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
                 }}
+                title={row.email}
               >
-                ID: {row.id} &bull; {row.email}
+                {row.email}
               </div>
             </div>
           </div>
@@ -485,7 +486,7 @@ export default function TalentManagementPage() {
         columns={columns}
         data={filteredTalents}
         searchable={true}
-        searchPlaceholder="Search by name, city, category, ID..."
+        searchPlaceholder="Search by name, city, category..."
         pageSize={6}
         emptyTitle="No artists found"
         emptyDescription="There are no talent profiles matching the selected status filter."

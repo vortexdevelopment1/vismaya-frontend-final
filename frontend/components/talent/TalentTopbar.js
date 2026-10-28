@@ -319,23 +319,25 @@ export default function TalentTopbar({ onOpenMobile }) {
             line-height: 22px !important;
           }
           .talent-hamburger-btn {
-            width: 36px !important;
-            height: 36px !important;
-            min-width: 36px !important;
-            min-height: 36px !important;
-            border-radius: 8px !important;
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px !important;
+            min-height: 40px !important;
+            border-radius: 9px !important;
           }
           .talent-bell-btn {
-            width: 36px !important;
-            height: 36px !important;
-            min-width: 36px !important;
-            min-height: 36px !important;
-            border-radius: 8px !important;
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px !important;
+            min-height: 40px !important;
+            border-radius: 9px !important;
           }
           .talent-topbar-avatar {
-            width: 36px !important;
-            height: 36px !important;
-            font-size: 12px !important;
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px !important;
+            min-height: 40px !important;
+            font-size: 13px !important;
           }
         }
         .talent-bell-btn:hover {

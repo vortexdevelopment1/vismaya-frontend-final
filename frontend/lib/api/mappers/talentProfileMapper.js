@@ -261,6 +261,7 @@ export function fromApi(profile) {
     completionPercentage: profile.profileCompletionPercentage || 0,
     stepsCompletion: profile.stepsCompletion || null,
     missingSections: Array.isArray(profile.missingSections) ? profile.missingSections : [],
+    breakdown: Array.isArray(profile.breakdown) ? profile.breakdown : [],
     isSearchable: Boolean(profile.isSearchable),
     isFeatured: Boolean(profile.isFeatured),
     isTrending: Boolean(profile.isTrending),

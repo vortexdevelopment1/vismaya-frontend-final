@@ -217,11 +217,14 @@ export const talentService = {
    * @param {Object} payload { roleApplied, coverNote, customAnswers, consentGiven }
    */
   async applyToOpportunity(opportunityId, payload) {
+    const roleName = payload?.roleName || payload?.roleApplied || payload?.role;
     if (!isRealMode("applications")) {
       const mockApp = {
         id: "app_mock_" + Date.now(),
         opportunityId,
         talentId: payload?.talentId || "demo_talent",
+        roleName,
+        roleApplied: roleName,
         status: "Applied",
         submittedAt: new Date().toISOString(),
         ...payload,
@@ -234,6 +237,7 @@ export const talentService = {
 
     const res = await apiClient.post(`/api/applications/${opportunityId}/apply`, {
       consentGiven: true,
+      roleName,
       ...payload,
     });
     const doc = res?.data || res?.application || res;

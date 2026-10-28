@@ -64,9 +64,9 @@ export function fromApi(app) {
     skills: app.skills || talentObj?.skills || [],
     profileUnlockRequired: false,
     roleId: app.roleId || `r-${opportunityId}-1`,
-    roleName: app.roleApplied || app.roleName || oppObj?.role || app.role || "Lead Role",
-    roleApplied: app.roleApplied || app.roleName || oppObj?.role || app.role || "Lead Role",
-    role: app.roleApplied || app.roleName || oppObj?.role || app.role || "Lead Role",
+    roleName: app.roleName || app.roleApplied || oppObj?.role || app.role || "—",
+    roleApplied: app.roleName || app.roleApplied || oppObj?.role || app.role || "—",
+    role: app.roleName || app.roleApplied || oppObj?.role || app.role || "—",
     coverNote: app.coverNote || "",
     customAnswers,
     consentGiven: app.consentGiven !== undefined ? Boolean(app.consentGiven) : true,
@@ -90,6 +90,7 @@ export function toApi(app) {
 
   const payload = {
     opportunityId: app.opportunityId,
+    roleName: app.roleName || app.roleApplied || app.role,
     coverNote: app.coverNote?.trim(),
     customAnswers: Array.isArray(app.customAnswers)
       ? app.customAnswers.map((ca) => ({

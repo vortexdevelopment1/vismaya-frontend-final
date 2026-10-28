@@ -254,17 +254,22 @@ export const unlockFullTalentProfile = async (req: Request, res: Response): Prom
             isUnlocked: true
         });
 
+        const isLowBalance = creditResult.balance !== undefined && creditResult.balance < 10;
+
         res.status(200).json({
             success: true,
             message: creditResult.isExempt
                 ? "Profile viewed under active 7-day free exemption (0 credits consumed)"
                 : "Profile unlocked successfully (1 credit consumed)",
+            lowBalanceWarning: isLowBalance,
+            warning: isLowBalance ? `Low balance alert: You have only ${creditResult.balance} profile-view credits remaining.` : null,
             creditInfo: {
                 consumed: creditResult.consumed,
                 isExempt: creditResult.isExempt,
                 remainingBalance: creditResult.balance,
                 exemptionExpiresAt: creditResult.exemptionExpiresAt,
-                lowBalanceWarning: creditResult.lowBalanceWarning,
+                lowBalanceWarning: isLowBalance,
+                warningMessage: isLowBalance ? `Low balance alert: You have only ${creditResult.balance} profile-view credits remaining.` : null,
                 buyMoreViews: creditResult.balance === 0
             },
             profile: safeFullProfile

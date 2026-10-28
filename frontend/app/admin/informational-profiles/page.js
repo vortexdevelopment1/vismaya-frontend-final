@@ -252,7 +252,7 @@ export default function InformationalProfilesPage() {
       {/* Page Header */}
       <PageHeader
         title="Vismaya-Created Informational Profiles"
-        subtitle="Curate profiles for notable artists to seed discovery per Spec §41. Excluded from talent search until claimed."
+        subtitle="Curate profiles for notable artists to seed discovery. Excluded from talent search until claimed."
         action={
           <button
             type="button"
@@ -409,12 +409,6 @@ export default function InformationalProfilesPage() {
                   </span>
                 </div>
 
-                {p.vismayaId && (
-                  <div style={{ fontSize: "12px", color: "#8A6B2E", fontWeight: 600 }}>
-                    ID: {p.vismayaId}
-                  </div>
-                )}
-
                 {p.headline && (
                   <p style={{ margin: 0, fontSize: "13px", color: "#4A483F", fontStyle: "italic" }}>
                     "{p.headline}"
@@ -559,7 +553,7 @@ export default function InformationalProfilesPage() {
           isOpen={showModal}
           onClose={() => setShowModal(false)}
           title={editingId ? "Edit Informational Profile" : "Create Informational Talent Profile"}
-          subtitle="Curate claimable talent profiles for notable artists per Spec §41."
+          subtitle="Curate claimable talent profiles for notable artists."
           maxWidth="600px"
         >
           <form onSubmit={handleFormSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>

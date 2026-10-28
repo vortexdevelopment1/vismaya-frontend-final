@@ -1,7 +1,8 @@
 import React from "react";
 
 export default function ProgressBar({
-  value = 0,
+  value,
+  progress,
   max = 100,
   label,
   showPercentage = true,
@@ -11,7 +12,8 @@ export default function ProgressBar({
   animated = false,
   style = {},
 }) {
-  const percentage = Math.min(Math.max(Math.round((value / max) * 100), 0), 100);
+  const numericVal = value !== undefined && value !== null ? value : (progress !== undefined && progress !== null ? progress : 0);
+  const percentage = Math.min(Math.max(Math.round((numericVal / max) * 100), 0), 100);
 
   return (
     <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "6px", ...style }}>

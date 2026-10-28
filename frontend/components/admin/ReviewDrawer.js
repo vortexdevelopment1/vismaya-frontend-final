@@ -154,7 +154,7 @@ export default function ReviewDrawer({
               </span>
 
               <span style={{ fontSize: "12px", color: "#5A584F" }}>
-                Joined: {data.joinedDate || (data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "Active")} &bull; ID: {data.vismayaId || data.id || data._id}
+                Joined: {data.joinedDate || (data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "Active")}
               </span>
             </div>
           </div>

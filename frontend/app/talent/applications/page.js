@@ -125,13 +125,15 @@ export default function TalentApplicationsPage() {
         }}
       >
         {/* Status Filter Chips with Horizontal Scroll */}
-        <div className="talent-filter-scroll-wrap">
+        <div className="talent-filter-scroll-wrap" style={{ minWidth: 0, maxWidth: "100%", flex: "1 1 auto", overflowX: "auto" }}>
           <div
             ref={filterScrollRef}
             className="talent-filter-scroll"
             style={{
               maxWidth: "100%",
+              minWidth: 0,
               paddingBottom: "4px",
+              overflowX: "auto",
             }}
           >
             {filterChips.map((chip) => {
@@ -180,8 +182,8 @@ export default function TalentApplicationsPage() {
         </div>
 
         {/* Sort By Dropdown */}
-        <div className="app-sort-row" style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto" }}>
-          <span className="app-sort-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
+        <div className="app-sort-row" style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto", flexShrink: 0 }}>
+          <span className="app-sort-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap", flexShrink: 0 }}>
             <ArrowUpDown size={13} className="app-sort-icon" /> Sort:
           </span>
           <select

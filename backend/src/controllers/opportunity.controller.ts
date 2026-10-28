@@ -10,6 +10,7 @@ import User from "../models/user.model.js";
 import { notifyUser } from "../services/notification.service.js";
 import { escapeRegex } from "../utils/sanitize.util.js";
 import { validateOpportunityCreate, validateOpportunityUpdate } from "../validators/opportunity.validator.js";
+import { isDeadlineExpired, getKolkataStartOfDay } from "../utils/date.util.js";
 
 const getApplicantCountApprox = (count: number): string => {
     if (count < 10) return "Under 10";
@@ -141,17 +142,24 @@ const formatOpportunityForUser = (opportunity: any, userRole?: string, isOwner?:
     const opp = opportunity.toObject ? opportunity.toObject() : { ...opportunity };
 
     const now = new Date();
-    const deadline = new Date(opp.deadline);
+    const isDeadlinePassed = opp.deadline ? isDeadlineExpired(opp.deadline, now) : false;
+    const isClosed = ["closed", "cancelled", "completed"].includes(opp.status) || isDeadlinePassed;
+    opp.isClosed = Boolean(isClosed);
+
     if (opp.status === "published") {
-        if (now > deadline) {
+        if (isDeadlinePassed) {
             opp.displayStatus = "Closed";
-        } else if (deadline.getTime() - now.getTime() <= 3 * 24 * 60 * 60 * 1000) {
+        } else if (opp.deadline && (new Date(opp.deadline).getTime() - now.getTime() <= 3 * 24 * 60 * 60 * 1000)) {
             opp.displayStatus = "Closing Soon";
         } else {
             opp.displayStatus = "Open";
         }
-    } else if (opp.status === "closed" || now > deadline) {
+    } else if (opp.status === "closed" || isDeadlinePassed) {
         opp.displayStatus = "Closed";
+    } else if (opp.status === "completed") {
+        opp.displayStatus = "Completed";
+    } else if (opp.status === "cancelled") {
+        opp.displayStatus = "Cancelled";
     } else {
         opp.displayStatus = opp.status;
     }
@@ -476,9 +484,10 @@ export const getPublishedOpportunities = async (req: Request, res: Response): Pr
         const searchTerm = keyword || search;
 
         const now = new Date();
+        const kolkataStartOfToday = getKolkataStartOfDay(now);
         const andFilters: any[] = [
             { status: "published" },
-            { deadline: { $gt: now } }
+            { deadline: { $gte: kolkataStartOfToday } }
         ];
 
         if (city) {
@@ -587,7 +596,8 @@ export const getOpportunityById = async (req: Request, res: Response): Promise<a
         }
 
         const now = new Date();
-        const isClosed = opportunity.status === "closed" || (opportunity.deadline ? now > new Date(opportunity.deadline) : false);
+        const isClosed = ["closed", "cancelled", "completed"].includes(opportunity.status) ||
+            isDeadlineExpired(opportunity.deadline, now);
 
         // O4: If closed, applicants (and only applicants, or owner/admin) can fetch it
         if (isClosed && !isOwner && req.user?.role !== "admin") {

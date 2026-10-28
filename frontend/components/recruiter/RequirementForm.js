@@ -300,10 +300,6 @@ export default function RequirementForm({ initialData = null }) {
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#a3acc2" }}>Requirement ID:</span>
-            <strong style={{ color: "#eceaf5" }}>{submittedId || "req-new"}</strong>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span style={{ color: "#a3acc2" }}>Project Type:</span>
             <strong style={{ color: "#eceaf5" }}>{formData.type}</strong>
           </div>

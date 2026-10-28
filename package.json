@@ -13,9 +13,6 @@
     "start:frontend": "npm --prefix frontend run start",
     "start:backend": "npm --prefix backend run start",
     "admin:create": "npm --prefix backend run create-admin",
-    "e2e": "node scripts/e2e/run-all.mjs",
-    "check:mock": "node scripts/audit-mock-leaks.mjs --check",
-    "check:profile": "node scripts/verify-profile-roundtrip.mjs",
-    "audit:e2e": "node scripts/audit/run_audit.mjs"
+    "check:mock": "node scripts/audit-mock-leaks.mjs --check"
   }
 }

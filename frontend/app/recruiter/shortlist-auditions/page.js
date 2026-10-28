@@ -1156,8 +1156,8 @@ export default function ShortlistAuditionsPage() {
 
                     {/* Role Applied & Project Subtitle */}
                     <div className="v-candidate-info-col">
-                      <div className="v-candidate-role-text" title={app.roleApplied || app.role}>
-                        {app.roleApplied || app.role || "Role Candidate"}
+                      <div className="v-candidate-role-text" title={app.roleName || app.roleApplied || app.role || "—"}>
+                        {app.roleName || app.roleApplied || app.role || "—"}
                       </div>
                       <div className="v-candidate-applied-date">
                         Applied on {formatPostedDate(app.appliedDate || app.appliedAt || app.createdAt)}
@@ -1795,11 +1795,6 @@ export default function ShortlistAuditionsPage() {
                     <h3 style={{ margin: 0, fontSize: "18px", fontFamily: "var(--font-heading), 'Playfair Display', serif", color: "#2B2D2A" }}>
                       {portfolioData?.portfolio?.name || reviewPortfolioModalApp.talentName || reviewPortfolioModalApp.name}
                     </h3>
-                    {portfolioData?.portfolio?.vismayaId && (
-                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#8A6B2E", background: "#F5EFE1", padding: "2px 8px", borderRadius: "6px" }}>
-                        {portfolioData.portfolio.vismayaId}
-                      </span>
-                    )}
                   </div>
 
                   <div style={{ fontSize: "13px", color: "#5A584F" }}>

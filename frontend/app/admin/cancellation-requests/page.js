@@ -79,6 +79,14 @@ export default function AdminCancellationRequestsPage() {
 
   const [statusFilter, setStatusFilter] = useState("Pending"); // Pending | Approved | Declined | ALL
   const [searchQuery, setSearchQuery] = useState("");
+  const [isMobileScreen, setIsMobileScreen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobileScreen(window.innerWidth <= 767);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Modals state
   const [approveModalReq, setApproveModalReq] = useState(null);
@@ -126,10 +134,10 @@ export default function AdminCancellationRequestsPage() {
 
   // Tab definitions
   const tabs = [
-    { key: "Pending", label: "Pending Review", count: statusCounts.Pending },
-    { key: "Approved", label: "Approved Cancellations", count: statusCounts.Approved },
-    { key: "Declined", label: "Declined Requests", count: statusCounts.Declined },
-    { key: "ALL", label: "All Requests", count: statusCounts.ALL },
+    { key: "Pending", label: "Pending Review", mobileLabel: "Pending", count: statusCounts.Pending },
+    { key: "Approved", label: "Approved Cancellations", mobileLabel: "Approved", count: statusCounts.Approved },
+    { key: "Declined", label: "Declined Requests", mobileLabel: "Declined", count: statusCounts.Declined },
+    { key: "ALL", label: "All Requests", mobileLabel: "All", count: statusCounts.ALL },
   ];
 
   // Filtered requests
@@ -307,7 +315,7 @@ export default function AdminCancellationRequestsPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "100%" }}>
       {/* Page Header */}
       <PageHeader
         title="Opportunity Cancellation Requests"
@@ -373,7 +381,8 @@ export default function AdminCancellationRequestsPage() {
               onClick={() => setStatusFilter(tab.key)}
               className={`cancel-tab-btn ${isActive ? "cancel-tab-active" : ""}`}
             >
-              <span>{tab.label}</span>
+              <span className="cancel-tab-label-desktop">{tab.label}</span>
+              <span className="cancel-tab-label-mobile">{tab.mobileLabel}</span>
               <span className={`cancel-tab-badge ${isActive ? "cancel-tab-badge-active" : ""}`}>
                 {tab.count}
               </span>
@@ -386,20 +395,22 @@ export default function AdminCancellationRequestsPage() {
       <div className="cancel-toolbar-row">
         <div className="cancel-search-wrap">
           <Search
-            size={16}
+            size={18}
+            className="cancel-search-icon"
             style={{
               position: "absolute",
               left: "14px",
               top: "50%",
               transform: "translateY(-50%)",
-              color: "#5A584F",
+              color: "#8A8170",
+              stroke: "#8A8170",
               pointerEvents: "none",
               zIndex: 2,
             }}
           />
           <input
             type="text"
-            placeholder="Search cancellation reason, opportunity, studio..."
+            placeholder={isMobileScreen ? "Search requests" : "Search cancellation reason, opportunity, studio..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="cancel-search-input"
@@ -893,6 +904,12 @@ export default function AdminCancellationRequestsPage() {
       {/* Embedded CSS */}
       <style jsx global>{`
         /* Tabs Row */
+        .cancel-tab-label-desktop {
+          display: inline;
+        }
+        .cancel-tab-label-mobile {
+          display: none;
+        }
         .cancel-tabs-row {
           display: flex;
           align-items: center;
@@ -1366,7 +1383,7 @@ export default function AdminCancellationRequestsPage() {
           box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18);
         }
 
-        /* RESPONSIVE BREAKPOINTS */
+        /* RESPONSIVE BREAKPOINTS (Mobile <= 767px) */
         @media (max-width: 767.98px) {
           .cancel-table-card {
             display: none !important;
@@ -1374,49 +1391,135 @@ export default function AdminCancellationRequestsPage() {
           .cancel-mobile-cards-stack {
             display: flex !important;
           }
-          .cancel-search-wrap {
-            max-width: 100% !important;
+          .cancel-tab-label-desktop {
+            display: none !important;
           }
-        }
-
-        @media (max-width: 640px) {
+          .cancel-tab-label-mobile {
+            display: inline !important;
+          }
+          /* Target 3: Status Tabs single scrollable row */
           .cancel-tabs-row {
             display: flex !important;
-            flex-wrap: wrap !important;
-            gap: 5px !important;
-            overflow-x: visible !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important;
+            margin: 0 -16px !important;
+            padding: 0 16px !important;
+            gap: 8px !important;
+          }
+          .cancel-tabs-row::-webkit-scrollbar {
+            display: none !important;
           }
           .cancel-tab-btn {
-            flex: 1 1 auto !important;
-            height: 28px !important;
-            padding: 0 8px !important;
+            flex: none !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            padding: 0 14px !important;
             border-radius: 999px !important;
-            font-size: 10.5px !important;
+            font-size: 14px !important;
             font-weight: 600 !important;
             white-space: nowrap !important;
+            border: 1px solid #E1D4B3 !important;
+            background-color: #FFFFFF !important;
+            color: #4A4234 !important;
+            box-shadow: none !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            gap: 4px !important;
+            gap: 8px !important;
+            box-sizing: border-box !important;
+          }
+          .cancel-tab-btn.cancel-tab-active {
+            background-color: #FBF3DF !important;
+            border-color: #C9A95C !important;
+            color: #2A241A !important;
+            box-shadow: none !important;
           }
           .cancel-tab-badge {
-            min-width: 16px !important;
-            height: 16px !important;
-            font-size: 9.5px !important;
-            padding: 0 4px !important;
+            min-width: 20px !important;
+            height: 20px !important;
+            padding: 0 6px !important;
+            border-radius: 999px !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            background-color: #F3ECDC !important;
+            color: #5E471B !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
           }
+          .cancel-tab-badge.cancel-tab-badge-active {
+            background-color: #8A6B2E !important;
+            color: #FFFFFF !important;
+          }
+
+          /* Target 2: Search input */
           .cancel-toolbar-row {
             margin-bottom: 2px !important;
+            width: 100% !important;
           }
           .cancel-search-wrap {
             max-width: 100% !important;
             width: 100% !important;
+            min-width: 0 !important;
+            position: relative !important;
           }
           .cancel-search-input {
-            height: 40px !important;
-            min-height: 40px !important;
+            height: 48px !important;
+            min-height: 48px !important;
             font-size: 16px !important;
+            padding: 0 14px 0 42px !important;
+            border-radius: 10px !important;
+            border: 1px solid #D9D1BF !important;
+            background-color: #FFFFFF !important;
+            color: #2A241A !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            outline: none !important;
+            box-sizing: border-box !important;
           }
+          .cancel-search-input:focus {
+            border-color: #8A6B2E !important;
+            outline: 2px solid rgba(138, 107, 46, 0.2) !important;
+            box-shadow: 0 0 0 2px rgba(138, 107, 46, 0.2) !important;
+          }
+          .cancel-search-input::placeholder {
+            color: #8A8170 !important;
+          }
+
+          /* Target 4: Empty state card */
+          .cancel-empty-card {
+            padding: 28px 20px !important;
+            text-align: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 16px !important;
+          }
+          .cancel-empty-icon-wrap {
+            width: 48px !important;
+            height: 48px !important;
+            min-width: 48px !important;
+            min-height: 48px !important;
+            border-radius: 14px !important;
+            background-color: #F3ECDC !important;
+            border: 1px solid #E8E1D2 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin-bottom: 12px !important;
+          }
+          .cancel-empty-icon-wrap svg {
+            width: 24px !important;
+            height: 24px !important;
+            color: #8A6B2E !important;
+          }
+        }
+
+        @media (max-width: 640px) {
           .cancel-mobile-cards-stack {
             gap: 10px !important;
           }

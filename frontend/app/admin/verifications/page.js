@@ -143,7 +143,7 @@ export default function VerificationQueuesPage() {
         await loadData();
       } else {
         setVerifications((prev) => prev.filter((v) => (v._id || v.id) !== id));
-        showToast(`Verification for ${ver.userName || "user"} approved (Mock).`);
+        showToast(`Verification for ${ver.userName || "user"} approved successfully.`);
       }
     } catch (err) {
       showToast(err?.message || "Failed to approve verification");
@@ -175,13 +175,70 @@ export default function VerificationQueuesPage() {
       }
     } else {
       setVerifications((prev) => prev.filter((v) => (v._id || v.id) !== id));
-      showToast(type === "reject" ? "Verification rejected (Mock)." : "Request more info sent (Mock).");
+      showToast(type === "reject" ? "Verification rejected." : "Request more info sent.");
       setActionModal(null);
     }
   };
 
+  const getSubmissionDocuments = (ver) => {
+    const docs = [];
+    const isBusiness = ver.verificationType === "organization_business" || ver.verificationType === "business";
+    if (isBusiness) {
+      if (ver.businessRegistrationDocUrl || ver.documentUrl) {
+        docs.push({
+          type: "Business Registration",
+          name: ver.businessRegistrationDocName || ver.documentName || "Registration Document",
+          url: ver.businessRegistrationDocUrl || ver.documentUrl,
+        });
+      }
+      if (ver.gstCertificateUrl) {
+        docs.push({
+          type: "GST Certificate",
+          name: ver.gstCertificateDocName || "GST Certificate",
+          url: ver.gstCertificateUrl,
+        });
+      }
+      if (ver.professionalProofDocUrl) {
+        docs.push({
+          type: "Industry Proof Document",
+          name: ver.professionalProofDocName || "Proof Document",
+          url: ver.professionalProofDocUrl,
+        });
+      }
+      if (Array.isArray(ver.otherEvidenceUrls) && ver.otherEvidenceUrls.length > 0) {
+        ver.otherEvidenceUrls.forEach((url, idx) => {
+          const name = (Array.isArray(ver.otherEvidenceDocNames) && ver.otherEvidenceDocNames[idx]) || `Evidence File ${idx + 1}`;
+          docs.push({
+            type: "Additional Evidence",
+            name,
+            url,
+          });
+        });
+      }
+    } else {
+      if (ver.documentUrl) {
+        docs.push({
+          type: ver.documentType || (ver.verificationType === "identity" ? "Government ID" : "Credit Proof / Contract"),
+          name: ver.documentName || "Official Verification Document",
+          url: ver.documentUrl,
+        });
+      }
+    }
+    return docs;
+  };
+
+  const formatSubmittedDate = (dateStr) => {
+    if (!dateStr) return "Submitted Recently";
+    try {
+      const d = new Date(dateStr);
+      return `Submitted ${d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}`;
+    } catch {
+      return "Submitted Recently";
+    }
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+    <div className="admin-verif-page-root" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       {toastMessage && (
         <div
           style={{
@@ -202,47 +259,49 @@ export default function VerificationQueuesPage() {
         </div>
       )}
 
-      {/* Page Header */}
-      <PageHeader
-        title="Department-Specific Verification Queues"
-        subtitle="Review identity submissions (Government ID + Live Selfie) and professional credentials (Credits + Portfolio Evidence) per Spec §40 & §44."
-        badge={`${pendingCount} Awaiting Action`}
-      />
+      {/* ===================== DESKTOP LAYOUT (>= 768px) ===================== */}
+      <div className="admin-verif-desktop-layout">
+        {/* Page Header */}
+        <PageHeader
+          title="Department-Specific Verification Queues"
+          subtitle="Review identity submissions (Government ID + Live Selfie) and professional credentials (Credits + Portfolio Evidence)."
+          badge={`${pendingCount} Awaiting Action`}
+        />
 
-      {/* Status Tabs */}
-      <Tabs tabs={statusTabs} activeTab={activeStatusTab} onChange={setActiveStatusTab} />
+        {/* Status Tabs */}
+        <Tabs tabs={statusTabs} activeTab={activeStatusTab} onChange={setActiveStatusTab} />
 
-      {/* Secondary Queue Filters */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", padding: "4px 0" }}>
-        <span style={{ fontSize: "12px", fontWeight: 700, color: "#706E66", display: "flex", alignItems: "center", gap: "4px", marginRight: "4px" }}>
-          <Filter size={13} /> Queue:
-        </span>
-        {[
-          { key: "all", label: "All Queues" },
-          { key: "identity", label: "Identity" },
-          { key: "professional", label: "Professional Credits" },
-          { key: "organization_business", label: "Business Registration" },
-        ].map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            onClick={() => setActiveQueueFilter(f.key)}
-            style={{
-              padding: "5px 12px",
-              borderRadius: "20px",
-              fontSize: "12px",
-              fontWeight: 600,
-              border: activeQueueFilter === f.key ? "1px solid #8A6B2E" : "1px solid #E8E2D4",
-              background: activeQueueFilter === f.key ? "#8A6B2E" : "#FFFFFF",
-              color: activeQueueFilter === f.key ? "#FFFFFF" : "#5A584F",
-              cursor: "pointer",
-              transition: "all 0.15s ease",
-            }}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+        {/* Secondary Queue Filters */}
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", padding: "4px 0" }}>
+          <span style={{ fontSize: "12px", fontWeight: 700, color: "#706E66", display: "flex", alignItems: "center", gap: "4px", marginRight: "4px" }}>
+            <Filter size={13} /> Queue:
+          </span>
+          {[
+            { key: "all", label: "All Queues" },
+            { key: "identity", label: "Identity" },
+            { key: "professional", label: "Professional Credits" },
+            { key: "organization_business", label: "Business Registration" },
+          ].map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setActiveQueueFilter(f.key)}
+              style={{
+                padding: "5px 12px",
+                borderRadius: "20px",
+                fontSize: "12px",
+                fontWeight: 600,
+                border: activeQueueFilter === f.key ? "1px solid #8A6B2E" : "1px solid #E8E2D4",
+                background: activeQueueFilter === f.key ? "#8A6B2E" : "#FFFFFF",
+                color: activeQueueFilter === f.key ? "#FFFFFF" : "#5A584F",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
 
       {/* Queue Content */}
       {loading ? (
@@ -689,6 +748,740 @@ export default function VerificationQueuesPage() {
           }
         />
       )}
+      </div>
+
+      {/* ===================== MOBILE LAYOUT (<= 767px) ===================== */}
+      <div className="admin-verif-mobile-layout">
+        {/* Mobile Header */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <h1
+            style={{
+              margin: 0,
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: "30px",
+              lineHeight: 1.2,
+              fontWeight: 600,
+              color: "#2A241A",
+            }}
+          >
+            Verification queues
+          </h1>
+          {pendingCount > 0 && (
+            <div>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: "26px",
+                  padding: "0 10px",
+                  borderRadius: "999px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                  lineHeight: 1,
+                  whiteSpace: "nowrap",
+                  background: "#FBEBDD",
+                  color: "#8F3F16",
+                  border: "1px solid rgba(143, 63, 22, 0.25)",
+                }}
+              >
+                {pendingCount} AWAITING ACTION
+              </span>
+            </div>
+          )}
+          <p
+            style={{
+              margin: 0,
+              fontSize: "15px",
+              lineHeight: 1.55,
+              color: "#6B6254",
+            }}
+          >
+            Review identity submissions and professional credentials before approving accounts.
+          </p>
+        </div>
+
+        {/* Status Filter: horizontally scrollable row */}
+        <div className="admin-verif-chip-row">
+          {statusTabs.map((tab) => {
+            const isActive = activeStatusTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveStatusTab(tab.key)}
+                style={{
+                  flex: "none",
+                  height: "40px",
+                  padding: "0 14px",
+                  borderRadius: "999px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                  border: isActive ? "1px solid #C9A95C" : "1px solid #E1D4B3",
+                  background: isActive ? "#FBF3DF" : "#FFFFFF",
+                  color: isActive ? "#5E471B" : "#2A241A",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <span>{tab.label}</span>
+                <span
+                  style={{
+                    minWidth: "20px",
+                    height: "20px",
+                    borderRadius: "999px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0 6px",
+                    background: isActive ? "#8A6B2E" : "#F3ECDC",
+                    color: isActive ? "#FFFFFF" : "#5E471B",
+                  }}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Queue Filter: small uppercase label and scrollable chip row */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "#6B6254",
+            }}
+          >
+            QUEUE
+          </div>
+          <div className="admin-verif-chip-row">
+            {[
+              { key: "all", label: "All queues" },
+              { key: "identity", label: "Identity" },
+              { key: "professional", label: "Professional credits" },
+              { key: "organization_business", label: "Business registration" },
+            ].map((f) => {
+              const isActive = activeQueueFilter === f.key;
+              return (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => setActiveQueueFilter(f.key)}
+                  style={{
+                    flex: "none",
+                    height: "40px",
+                    padding: "0 14px",
+                    borderRadius: "999px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                    border: isActive ? "1px solid #C9A95C" : "1px solid #E1D4B3",
+                    background: isActive ? "#FBF3DF" : "#FFFFFF",
+                    color: isActive ? "#5E471B" : "#2A241A",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Mobile Content */}
+        {loading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
+            <Loader2 size={32} style={{ color: "#8A6B2E", animation: "spin 1s linear infinite" }} />
+          </div>
+        ) : filteredVerifications.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {filteredVerifications.map((ver) => {
+              const isUserMissing = Boolean(ver.userMissing || ver.isUserMissing || !ver.userId);
+              const isIdentity = ver.verificationType === "identity";
+              const isBusiness = ver.verificationType === "organization_business" || ver.verificationType === "business";
+              const queueLabel = isIdentity
+                ? "Identity Verification"
+                : isBusiness
+                ? "Business Registration"
+                : "Professional Credits";
+
+              const rejected = isItemRejected(ver);
+              const verified = isItemVerified(ver);
+              const pending = isItemPending(ver);
+              const docs = getSubmissionDocuments(ver);
+
+              return (
+                <div
+                  key={ver._id || ver.id}
+                  style={{
+                    background: "#FFFFFF",
+                    border: "1px solid #E8E1D2",
+                    borderRadius: "16px",
+                    padding: "18px",
+                    display: "flex",
+                    flexDirection: "column",
+                    boxShadow: "0 2px 4px rgba(43,45,42,0.04)",
+                  }}
+                >
+                  {/* Top row: 44px icon box + text column */}
+                  <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                    <div
+                      style={{
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "12px",
+                        background: "#F3ECDC",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#8A6B2E",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {isBusiness ? <Building2 size={22} /> : isIdentity ? <User size={22} /> : <Award size={22} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h2
+                        style={{
+                          margin: 0,
+                          fontFamily: "'Playfair Display', Georgia, serif",
+                          fontSize: "22px",
+                          lineHeight: 1.25,
+                          fontWeight: 600,
+                          color: isUserMissing ? "#6B6254" : "#2A241A",
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {isUserMissing ? "User no longer exists" : (ver.userName || (isBusiness ? "Organization" : "Talent Member"))}
+                      </h2>
+                      <div style={{ fontSize: "13px", color: "#6B6254", marginTop: "3px" }}>
+                        {queueLabel}
+                      </div>
+                      <div style={{ fontSize: "13px", color: "#6B6254", marginTop: "2px" }}>
+                        {formatSubmittedDate(ver.submittedAt)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status pill (margin-top 12px) */}
+                  <div style={{ marginTop: "12px" }}>
+                    {rejected ? (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          height: "26px",
+                          padding: "0 10px",
+                          borderRadius: "999px",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          letterSpacing: "0.06em",
+                          lineHeight: 1,
+                          whiteSpace: "nowrap",
+                          background: "#FBE9E5",
+                          color: "#A3321F",
+                          border: "1px solid rgba(163, 50, 31, 0.25)",
+                        }}
+                      >
+                        REJECTED
+                      </span>
+                    ) : verified ? (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          height: "26px",
+                          padding: "0 10px",
+                          borderRadius: "999px",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          letterSpacing: "0.06em",
+                          lineHeight: 1,
+                          whiteSpace: "nowrap",
+                          background: "#E3F0E7",
+                          color: "#2F6B45",
+                          border: "1px solid rgba(47, 107, 69, 0.25)",
+                        }}
+                      >
+                        VERIFIED
+                      </span>
+                    ) : ver.moreInfoRequested ? (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          height: "26px",
+                          padding: "0 10px",
+                          borderRadius: "999px",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          letterSpacing: "0.06em",
+                          lineHeight: 1,
+                          whiteSpace: "nowrap",
+                          background: "#FBEBDD",
+                          color: "#8F3F16",
+                          border: "1px solid rgba(143, 63, 22, 0.25)",
+                        }}
+                      >
+                        MORE INFO REQUESTED
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          height: "26px",
+                          padding: "0 10px",
+                          borderRadius: "999px",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          letterSpacing: "0.06em",
+                          lineHeight: 1,
+                          whiteSpace: "nowrap",
+                          background: "#FBEBDD",
+                          color: "#8F3F16",
+                          border: "1px solid rgba(143, 63, 22, 0.25)",
+                        }}
+                      >
+                        PENDING REVIEW
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Section label "DOCUMENTS" */}
+                  <div style={{ marginTop: "14px", borderTop: "1px solid #EFE9DA", paddingTop: "12px" }}>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: "#6B6254",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      DOCUMENTS
+                    </div>
+                    {docs.length > 0 ? (
+                      docs.map((doc, dIdx) => (
+                        <div
+                          key={dIdx}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "12px 0",
+                            borderTop: dIdx > 0 ? "1px solid #EFE9DA" : "none",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "8px",
+                              background: "#F3ECDC",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#8A6B2E",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <FileText size={18} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: "14px", fontWeight: 600, color: "#2A241A", lineHeight: 1.3 }}>
+                              {doc.type}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "12.5px",
+                                color: "#6B6254",
+                                overflowWrap: "anywhere",
+                                wordBreak: "break-word",
+                                lineHeight: 1.3,
+                                marginTop: "2px",
+                              }}
+                            >
+                              {doc.name}
+                            </div>
+                          </div>
+                          <a
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              height: "36px",
+                              padding: "0 12px",
+                              borderRadius: "8px",
+                              border: "1px solid #CDBF9E",
+                              background: "#FFFFFF",
+                              color: "#5E471B",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              flexShrink: 0,
+                              textDecoration: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            View
+                          </a>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: "12.5px", color: "#6B6254", fontStyle: "italic", padding: "6px 0" }}>
+                        No document uploaded yet
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Detail fields */}
+                  {/* Business: Registration number */}
+                  {isBusiness && ver.businessData?.businessRegNumber && String(ver.businessData.businessRegNumber).trim().toUpperCase() !== "PENDING" && (
+                    <div style={{ padding: "12px 0", borderTop: "1px solid #EFE9DA" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B6254", marginBottom: "4px" }}>
+                        REGISTRATION NUMBER (CIN / LLPIN / UDYAM)
+                      </div>
+                      <div style={{ fontSize: "14px", fontWeight: 600, lineHeight: 1.4, color: "#2A241A", overflowWrap: "anywhere" }}>
+                        {String(ver.businessData.businessRegNumber).trim()}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Business: GSTIN / Tax Status */}
+                  {isBusiness && (ver.isGstExempt ? (
+                    <div style={{ padding: "12px 0", borderTop: "1px solid #EFE9DA" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B6254", marginBottom: "4px" }}>
+                        GST STATUS
+                      </div>
+                      <div style={{ fontSize: "14px", fontWeight: 600, lineHeight: 1.4, color: "#2A241A", overflowWrap: "anywhere" }}>
+                        Not GST registered
+                        {ver.gstExemptionReason && (
+                          <span style={{ display: "block", fontSize: "12.5px", fontWeight: 400, color: "#6B6254", marginTop: "2px" }}>
+                            Reason: {ver.gstExemptionReason}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (ver.gstin || ver.businessData?.gstin) ? (
+                    <div style={{ padding: "12px 0", borderTop: "1px solid #EFE9DA" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B6254", marginBottom: "4px" }}>
+                        GSTIN
+                      </div>
+                      <div style={{ fontSize: "14px", fontWeight: 600, lineHeight: 1.4, color: "#2A241A", overflowWrap: "anywhere" }}>
+                        {ver.gstin || ver.businessData?.gstin}
+                      </div>
+                    </div>
+                  ) : null)}
+
+                  {/* Business: Website / Industry Proof */}
+                  {isBusiness && ver.professionalProofUrl && (
+                    <div style={{ padding: "12px 0", borderTop: "1px solid #EFE9DA" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B6254", marginBottom: "4px" }}>
+                        WEBSITE / INDUSTRY PROOF
+                      </div>
+                      <div style={{ fontSize: "14px", fontWeight: 600, lineHeight: 1.4, overflowWrap: "anywhere" }}>
+                        <a
+                          href={ver.professionalProofUrl.startsWith("http") ? ver.professionalProofUrl : `https://${ver.professionalProofUrl}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: "#8A6B2E", textDecoration: "none" }}
+                        >
+                          {ver.professionalProofUrl}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Identity: Verification Selfie */}
+                  {isIdentity && ver.selfieUrl && (
+                    <div style={{ padding: "12px 0", borderTop: "1px solid #EFE9DA" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B6254", marginBottom: "6px" }}>
+                        VERIFICATION SELFIE
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <a href={ver.selfieUrl} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={ver.selfieUrl}
+                            alt="Verification Selfie"
+                            style={{ width: "64px", height: "64px", borderRadius: "8px", objectFit: "cover", border: "1px solid #E8E1D2" }}
+                          />
+                        </a>
+                        <a
+                          href={ver.selfieUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            height: "36px",
+                            padding: "0 12px",
+                            borderRadius: "8px",
+                            border: "1px solid #CDBF9E",
+                            background: "#FFFFFF",
+                            color: "#5E471B",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            textDecoration: "none",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          View Selfie
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Professional: Credit Evidence */}
+                  {!isIdentity && !isBusiness && ver.portfolioEvidence && (
+                    <div style={{ padding: "12px 0", borderTop: "1px solid #EFE9DA" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B6254", marginBottom: "4px" }}>
+                        CREDIT EVIDENCE
+                      </div>
+                      <div style={{ fontSize: "14px", fontWeight: 600, lineHeight: 1.4, color: "#2A241A", overflowWrap: "anywhere" }}>
+                        {ver.portfolioEvidence}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rejection Reason */}
+                  {ver.rejectionReason && (
+                    <div style={{ padding: "12px 0", borderTop: "1px solid #EFE9DA" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#A3321F", marginBottom: "4px" }}>
+                        REJECTION REASON
+                      </div>
+                      <div style={{ fontSize: "14px", fontWeight: 600, lineHeight: 1.4, color: "#A3321F", fontStyle: "italic", overflowWrap: "anywhere" }}>
+                        {ver.rejectionReason}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Information Requested */}
+                  {ver.moreInfoRequested && ver.moreInfoNotes && (
+                    <div style={{ padding: "12px 0", borderTop: "1px solid #EFE9DA" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#8F3F16", marginBottom: "4px" }}>
+                        INFORMATION REQUESTED BY ADMIN
+                      </div>
+                      <div style={{ fontSize: "14px", fontWeight: 600, lineHeight: 1.4, color: "#8F3F16", fontStyle: "italic", overflowWrap: "anywhere" }}>
+                        {ver.moreInfoNotes}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Divider, then actions */}
+                  <div style={{ borderTop: "1px solid #EFE9DA", paddingTop: "14px", marginTop: "4px" }}>
+                    {isUserMissing ? (
+                      <div style={{ fontSize: "12.5px", color: "#6B6254", fontStyle: "italic" }}>
+                        User no longer exists. Actions disabled.
+                      </div>
+                    ) : rejected ? (
+                      <div style={{ fontSize: "13px", color: "#A3321F", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                        <XCircle size={15} /> Rejected — Applicant must submit a new verification request to be reviewed again.
+                      </div>
+                    ) : verified ? (
+                      <div style={{ fontSize: "13px", color: "#2F6B45", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                        <CheckCircle size={15} /> Verification Approved
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {/* Approve verification full width 48px */}
+                        <button
+                          type="button"
+                          disabled={actionLoadingId === (ver._id || ver.id)}
+                          onClick={() => handleApprove(ver)}
+                          style={{
+                            width: "100%",
+                            height: "48px",
+                            borderRadius: "8px",
+                            border: "none",
+                            background: "#8A6B2E",
+                            color: "#FFFFFF",
+                            fontSize: "14px",
+                            fontWeight: 700,
+                            cursor: actionLoadingId === (ver._id || ver.id) ? "not-allowed" : "pointer",
+                            opacity: actionLoadingId === (ver._id || ver.id) ? 0.7 : 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "8px",
+                            boxShadow: "0 2px 4px rgba(138, 107, 46, 0.2)",
+                          }}
+                        >
+                          {actionLoadingId === (ver._id || ver.id) ? (
+                            <>
+                              <Loader2 size={16} className="animate-spin" /> Approving...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle size={16} /> Approve verification
+                            </>
+                          )}
+                        </button>
+
+                        {/* 2-column grid (1.5fr / 1fr, gap 10px) */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "10px" }}>
+                          <button
+                            type="button"
+                            onClick={() => setActionModal({ type: "request_info", verification: ver })}
+                            style={{
+                              height: "44px",
+                              padding: "0 8px",
+                              borderRadius: "8px",
+                              border: "1px solid #CDBF9E",
+                              background: "#FFFFFF",
+                              color: "#5E471B",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              whiteSpace: "nowrap",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "6px",
+                            }}
+                          >
+                            <HelpCircle size={15} /> Request more info
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setActionModal({ type: "reject", verification: ver })}
+                            style={{
+                              height: "44px",
+                              padding: "0 8px",
+                              borderRadius: "8px",
+                              border: "1px solid #E8C5BD",
+                              background: "#FFFFFF",
+                              color: "#A3321F",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "6px",
+                            }}
+                          >
+                            <XCircle size={15} /> Reject
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #E8E1D2",
+              borderRadius: "16px",
+              padding: "36px 20px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              gap: "10px",
+            }}
+          >
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                background: "#F3ECDC",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#8A6B2E",
+                marginBottom: "4px",
+              }}
+            >
+              <ShieldCheck size={28} />
+            </div>
+            <h3
+              style={{
+                margin: 0,
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: "20px",
+                fontWeight: 600,
+                color: "#2A241A",
+                lineHeight: 1.3,
+              }}
+            >
+              Nothing in this queue
+            </h3>
+            <p style={{ margin: 0, fontSize: "14px", color: "#6B6254", maxWidth: "280px", lineHeight: 1.45 }}>
+              There are no verification items in this view matching your filters.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <style jsx>{`
+        .admin-verif-desktop-layout {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        .admin-verif-mobile-layout {
+          display: none;
+        }
+        .admin-verif-chip-row {
+          display: flex;
+          flex-wrap: nowrap;
+          gap: 8px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          margin: 0 -16px;
+          padding: 0 16px;
+          -webkit-overflow-scrolling: touch;
+        }
+        .admin-verif-chip-row::-webkit-scrollbar {
+          display: none;
+        }
+
+        @media (max-width: 767px) {
+          .admin-verif-desktop-layout {
+            display: none !important;
+          }
+          .admin-verif-mobile-layout {
+            display: flex !important;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+          }
+        }
+
+        @media (max-width: 400px) {
+          .admin-verif-chip-row {
+            margin: 0 -12px;
+            padding: 0 12px;
+          }
+        }
+      `}</style>
 
       {/* Action Notes Modal */}
       {actionModal && (

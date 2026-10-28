@@ -393,23 +393,35 @@ export const recruiterService = {
    * Fetch applications for a specific opportunity
    * @param {string} opportunityId
    */
-  async getOpportunityApplications(opportunityId) {
+  async getOpportunityApplications(opportunityId, params = {}) {
     if (!isRealMode("applications") || !isMongoId(String(opportunityId || ""))) {
       const shortlisted = initialShortlistedTalent[opportunityId] || [];
       const apps = shortlisted.length > 0
         ? shortlisted
         : mockApplications.filter((a) => a.opportunityId === opportunityId || a.reqId === opportunityId);
+      const filtered = params?.role && params.role !== "ALL"
+        ? apps.filter(a => (a.roleApplied || a.roleName || a.role) === params.role)
+        : apps;
+      const roleCounts = {};
+      apps.forEach(a => {
+        const r = a.roleApplied || a.roleName || a.role || "Lead Role";
+        roleCounts[r] = (roleCounts[r] || 0) + 1;
+      });
       return {
         success: true,
-        data: (apps.length > 0 ? apps : mockApplications).map(mapApplication),
+        data: (filtered.length > 0 ? filtered : apps).map(mapApplication),
+        roleCounts,
+        count: filtered.length,
       };
     }
 
-    const res = await apiClient.get(`/api/applications/opportunity/${opportunityId}`);
+    const res = await apiClient.get(`/api/applications/opportunity/${opportunityId}`, { params });
     const docs = Array.isArray(res?.data) ? res.data : Array.isArray(res?.applicants) ? res.applicants : Array.isArray(res) ? res : [];
     return {
       success: true,
       data: docs.map(mapApplication),
+      roleCounts: res?.roleCounts || {},
+      count: res?.count ?? docs.length,
     };
   },
 

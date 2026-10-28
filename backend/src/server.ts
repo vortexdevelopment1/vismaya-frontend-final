@@ -88,7 +88,7 @@ export const startServer = async (): Promise<void> => {
 
     await connectDatabase();
 
-    startDeadlineChecker(30 * 60 * 1000); // Check every 30 minutes
+    startDeadlineChecker(60 * 60 * 1000); // Check hourly
 
     const server = app.listen(PORT, () => {
         console.log(`Vismaya backend running on http://localhost:${PORT}`);

@@ -130,10 +130,11 @@ export default function ProfileView({ onEditStep }) {
       })();
 
   const getStepForMissing = (msg) => {
-    if (msg.includes("Step 1")) return 1;
-    if (msg.includes("Step 2")) return 2;
-    if (msg.includes("Step 3")) return 3;
-    if (msg.includes("Step 4")) return 4;
+    if (!msg) return 1;
+    const lower = String(msg).toLowerCase();
+    if (lower.includes("portfolio") || lower.includes("photo") || lower.includes("headshot") || lower.includes("video") || lower.includes("reel") || lower.includes("sample")) return 2;
+    if (lower.includes("credit") || lower.includes("experience")) return 3;
+    if (lower.includes("physical") || lower.includes("height") || lower.includes("guardian") || lower.includes("measurement")) return 4;
     return 1;
   };
 
@@ -204,24 +205,8 @@ export default function ProfileView({ onEditStep }) {
                 <StatusBadge status={profile.status || "approved"} />
               </div>
 
-              {/* Vismaya ID & Category/Profession */}
+              {/* Category/Profession */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", fontSize: "13px", color: "#5A584F" }}>
-                <span
-                  id="view-vismaya-id"
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: "700",
-                    padding: "2px 8px",
-                    borderRadius: "6px",
-                    backgroundColor: "#F3EFE6",
-                    color: "#8A6B2E",
-                    border: "1px solid #E8E2D4",
-                    letterSpacing: "0.04em",
-                  }}
-                >
-                  {profile.vismayaId || profile.id || "VIS-TALENT"}
-                </span>
-                <span>&bull;</span>
                 <span id="view-profession" style={{ fontWeight: 600, color: "#8A6B2E" }}>
                   {CATEGORY_LABELS[profile.category] || "Open Talent"} &bull; {primaryProf || "Actor"}
                 </span>
@@ -247,7 +232,7 @@ export default function ProfileView({ onEditStep }) {
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <div className="talent-profile-view-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             <button
               id="btn-recruiter-preview"
               type="button"
@@ -313,7 +298,7 @@ export default function ProfileView({ onEditStep }) {
               {profileStrength}% Complete
             </span>
           </div>
-          <ProgressBar progress={profileStrength} />
+          <ProgressBar value={profileStrength} progress={profileStrength} />
         </div>
       </div>
 
@@ -425,6 +410,8 @@ export default function ProfileView({ onEditStep }) {
               fontSize: "13px",
               fontWeight: 600,
               cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
             <Edit3 size={14} />
@@ -693,6 +680,8 @@ export default function ProfileView({ onEditStep }) {
               fontSize: "13px",
               fontWeight: 600,
               cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
             <Edit3 size={14} />
@@ -877,6 +866,8 @@ export default function ProfileView({ onEditStep }) {
               fontSize: "13px",
               fontWeight: 600,
               cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
             <Edit3 size={14} />
@@ -1021,6 +1012,8 @@ export default function ProfileView({ onEditStep }) {
               fontSize: "13px",
               fontWeight: 600,
               cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
             <Edit3 size={14} />
@@ -1379,6 +1372,18 @@ export default function ProfileView({ onEditStep }) {
           }
           .view-card-header {
             padding: 16px 18px !important;
+          }
+          .talent-profile-view-actions {
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+          .talent-profile-view-actions > button {
+            width: 100% !important;
+            min-height: 40px !important;
+            height: 40px !important;
+            justify-content: center !important;
           }
         }
       `}</style>

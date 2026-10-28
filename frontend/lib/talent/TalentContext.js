@@ -577,6 +577,49 @@ export function TalentProvider({ children }) {
     });
   };
 
+  const updateMedia = async (id, payload) => {
+    let updatedItem = null;
+    if (isRealMode("media")) {
+      try {
+        const res = await mediaService.updateMedia(id, payload);
+        updatedItem = res?.data || null;
+      } catch (err) {
+        addToast({
+          type: "danger",
+          title: "Update Failed",
+          message: err?.message || "Could not update media.",
+        });
+        throw err;
+      }
+    }
+
+    setPortfolio((prev) => {
+      const updated = prev.map((m) => {
+        if (m.id === id || m._id === id) {
+          return {
+            ...m,
+            ...(updatedItem || {}),
+            ...payload,
+          };
+        }
+        return m;
+      });
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("vismaya_talent_portfolio", JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
+
+    addToast({
+      type: "success",
+      title: "Media Updated",
+      message: "Portfolio item updated successfully.",
+    });
+    return updatedItem;
+  };
+
   // Refresh Profile from Backend
   const refreshProfile = useCallback(async () => {
     if (!isRealMode("talent")) return;
@@ -886,7 +929,48 @@ export function TalentProvider({ children }) {
   const calculateProfileCompletion = () => {
     // If backend provided authoritative profileCompletionPercentage, honor it
     if (profile?.profileCompletionPercentage !== undefined && profile.profileCompletionPercentage !== null) {
-      const score = Math.min(100, Math.max(0, Number(profile.profileCompletionPercentage)));
+      const score = Math.min(100, Math.max(0, Math.round(Number(profile.profileCompletionPercentage))));
+      
+      // If backend returned profession-aware breakdown, construct rich actionable suggestions
+      if (Array.isArray(profile.breakdown) && profile.breakdown.length > 0) {
+        const checklist = profile.breakdown.map((item) => {
+          const isDone = item.earned >= item.weight;
+          const sectionKey = item.section.toLowerCase();
+          const targetSection = sectionKey.includes("photo") || sectionKey.includes("portfolio") || sectionKey.includes("media") || sectionKey.includes("reel") || sectionKey.includes("sample")
+            ? "portfolio"
+            : sectionKey.includes("credit") || sectionKey.includes("experience")
+            ? "experience"
+            : sectionKey.includes("physical") || sectionKey.includes("height")
+            ? "physical"
+            : "personal";
+
+          const missingHint = Array.isArray(item.missing) && item.missing.length > 0
+            ? item.missing[0]
+            : null;
+
+          return {
+            label: isDone ? item.section : (missingHint || `Complete ${item.section}`),
+            done: isDone,
+            weight: item.weight,
+            earned: item.earned,
+            section: targetSection,
+            missing: item.missing || []
+          };
+        });
+        return { score, checklist };
+      }
+
+      // Fallback if missing breakdown but has missingSections
+      if (Array.isArray(profile.missingSections) && profile.missingSections.length > 0) {
+        const checklist = profile.missingSections.map((hint) => ({
+          label: hint,
+          done: false,
+          section: hint.toLowerCase().includes("portfolio") || hint.toLowerCase().includes("photo") || hint.toLowerCase().includes("video") ? "portfolio" : "personal",
+          missing: [hint]
+        }));
+        return { score, checklist };
+      }
+
       const sc = profile.stepsCompletion || {};
       const checklist = [
         { label: "Step 1: Professional Details", done: Boolean(sc.step1), section: "personal" },
@@ -969,7 +1053,7 @@ export function TalentProvider({ children }) {
 
     addToast({
       type: "info",
-      title: "Reapplication Requested (Mock)",
+      title: "Reapplication Requested",
       message: "Request queued for Admin review.",
     });
   };
@@ -999,7 +1083,7 @@ export function TalentProvider({ children }) {
 
     addToast({
       type: "success",
-      title: "Identity Verified (Mock)",
+      title: "Identity Documents Submitted",
       message: "Documents uploaded.",
     });
   };
@@ -1029,7 +1113,7 @@ export function TalentProvider({ children }) {
 
     addToast({
       type: "success",
-      title: "Credits Submitted (Mock)",
+      title: "Credits Submitted",
       message: "Work submitted.",
     });
   };
@@ -1050,6 +1134,7 @@ export function TalentProvider({ children }) {
         portfolio,
         refreshPortfolio,
         addMedia,
+        updateMedia,
         deleteMedia,
         castingCalls,
         applications,

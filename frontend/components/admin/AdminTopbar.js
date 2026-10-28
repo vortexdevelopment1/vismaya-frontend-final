@@ -31,6 +31,7 @@ export default function AdminTopbar({ onOpenMobile }) {
   const [searchResults, setSearchResults] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchContainerRef = useRef(null);
 
   // Export State
@@ -193,7 +194,10 @@ export default function AdminTopbar({ onOpenMobile }) {
               textOverflow: "ellipsis",
             }}
           >
-            {getPageTitle()}
+            <span className="admin-title-desktop">{getPageTitle()}</span>
+            <span className="admin-title-mobile">
+              {pathname?.startsWith("/admin/verification") ? "Verification" : getPageTitle()}
+            </span>
           </h1>
 
           <span
@@ -212,7 +216,7 @@ export default function AdminTopbar({ onOpenMobile }) {
         </div>
       </div>
 
-      {/* Center: Global Search Bar (Spec Section 44) */}
+      {/* Center: Global Search Bar */}
       <div
         ref={searchContainerRef}
         style={{
@@ -221,9 +225,10 @@ export default function AdminTopbar({ onOpenMobile }) {
           minWidth: "180px",
           position: "relative",
         }}
-        className="admin-global-search-container"
+        className={`admin-global-search-container ${mobileSearchOpen ? "mobile-search-active" : ""}`}
       >
         <div
+          className="admin-global-search-inner"
           style={{
             display: "flex",
             alignItems: "center",
@@ -233,6 +238,8 @@ export default function AdminTopbar({ onOpenMobile }) {
             padding: "0 12px",
             height: "40px",
             transition: "all 0.15s ease",
+            width: "100%",
+            boxSizing: "border-box",
           }}
         >
           {isSearching ? (
@@ -242,7 +249,7 @@ export default function AdminTopbar({ onOpenMobile }) {
           )}
           <input
             type="text"
-            placeholder="Global search users, orgs, opportunities, IDs..."
+            placeholder="Global search users, orgs, opportunities..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -282,6 +289,27 @@ export default function AdminTopbar({ onOpenMobile }) {
               <X size={14} />
             </button>
           )}
+          {mobileSearchOpen && (
+            <button
+              type="button"
+              onClick={() => {
+                setMobileSearchOpen(false);
+                setShowSearchDropdown(false);
+              }}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "#5A584F",
+                cursor: "pointer",
+                padding: "4px",
+                display: "flex",
+                marginLeft: "6px",
+              }}
+              aria-label="Close search"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
 
         {/* Global Search Results Dropdown */}
@@ -305,11 +333,11 @@ export default function AdminTopbar({ onOpenMobile }) {
               gap: "10px",
             }}
           >
-            {/* Talent Profiles / Vismaya IDs */}
+            {/* Talent Profiles */}
             {(searchResults.talentProfiles || []).length > 0 && (
               <div>
                 <div style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", marginBottom: "6px", letterSpacing: "0.05em" }}>
-                  Talent Profiles &amp; Vismaya IDs
+                  Talent Profiles
                 </div>
                 {searchResults.talentProfiles.map((tp) => (
                   <Link
@@ -334,9 +362,6 @@ export default function AdminTopbar({ onOpenMobile }) {
                         {tp.stageName || `${tp.firstName || ""} ${tp.lastName || ""}`.trim() || "Talent"}
                       </span>
                     </div>
-                    <span style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", backgroundColor: "#F3EFE6", padding: "2px 6px", borderRadius: "4px" }}>
-                      {tp.vismayaId || "ID"}
-                    </span>
                   </Link>
                 ))}
               </div>
@@ -454,8 +479,8 @@ export default function AdminTopbar({ onOpenMobile }) {
 
       {/* Right Controls: Exports + System Status Chip + Bell + Avatar */}
       <div className="admin-topbar-right" style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-        {/* Export Data Control (Spec Section 44) */}
-        <div ref={exportRef} style={{ position: "relative" }}>
+        {/* Export Data Control */}
+        <div ref={exportRef} style={{ position: "relative" }} className="admin-export-wrapper">
           <button
             onClick={() => setShowExportMenu(!showExportMenu)}
             style={{
@@ -474,7 +499,7 @@ export default function AdminTopbar({ onOpenMobile }) {
               cursor: "pointer",
               transition: "all 0.15s ease",
             }}
-            title="Download Operational CSV Reports (Spec §44)"
+            title="Download Operational CSV Reports"
           >
             {exportingType ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} style={{ color: "#8A6B2E" }} />}
             <span className="admin-export-btn-text">Exports</span>
@@ -567,6 +592,19 @@ export default function AdminTopbar({ onOpenMobile }) {
           />
           <span>System normal</span>
         </div>
+
+        {/* Mobile Search Trigger Button (44px on <= 767px) */}
+        <button
+          type="button"
+          onClick={() => setMobileSearchOpen(true)}
+          aria-label="Search"
+          className="admin-mobile-search-btn"
+          style={{
+            display: "none",
+          }}
+        >
+          <Search size={18} style={{ color: "#8A6B2E" }} />
+        </button>
 
         {/* Notifications Dropdown */}
         <div style={{ position: "relative" }}>
@@ -718,6 +756,16 @@ export default function AdminTopbar({ onOpenMobile }) {
       </div>
 
       <style jsx>{`
+        .admin-title-mobile {
+          display: none;
+        }
+        .admin-title-desktop {
+          display: inline;
+        }
+        .admin-mobile-search-btn {
+          display: none !important;
+        }
+
         @media (max-width: 1024px) {
           .admin-hamburger-btn {
             display: flex !important;
@@ -726,43 +774,141 @@ export default function AdminTopbar({ onOpenMobile }) {
             display: none !important;
           }
         }
-        @media (max-width: 640px) {
+
+        @media (max-width: 767px) {
           .admin-topbar-header {
-            height: 56px !important;
-            min-height: 56px !important;
-            padding-inline: 12px !important;
+            height: 64px !important;
+            min-height: 64px !important;
+            padding-inline: 16px !important;
+            gap: 12px !important;
+            position: relative !important;
           }
           .admin-topbar-left {
-            gap: 8px !important;
+            gap: 10px !important;
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
           }
           .admin-hamburger-btn {
-            width: 36px !important;
-            height: 36px !important;
-            min-height: 36px !important;
-            min-width: 36px !important;
-            border-radius: 9px !important;
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            border-radius: 10px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
           }
-          .admin-topbar-title {
-            font-size: 17px !important;
-            line-height: 1.25 !important;
-          }
-          .admin-status-chip {
+          .admin-title-desktop {
             display: none !important;
           }
-          .admin-topbar-right {
-            gap: 8px !important;
+          .admin-title-mobile {
+            display: inline !important;
+            font-family: var(--font-heading), 'Playfair Display', Georgia, serif !important;
+            font-size: 18px !important;
+            line-height: 1.25 !important;
+            font-weight: 600 !important;
+            color: #2B2D2A !important;
+            white-space: nowrap !important;
           }
+          .admin-topbar-title {
+            font-size: 18px !important;
+            line-height: 1.25 !important;
+            max-width: none !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+          .admin-global-search-container:not(.mobile-search-active) {
+            display: none !important;
+          }
+          .admin-global-search-container.mobile-search-active {
+            display: flex !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 100% !important;
+            background: #FFFFFF !important;
+            z-index: 60 !important;
+            padding: 0 12px !important;
+            align-items: center !important;
+            box-sizing: border-box !important;
+          }
+          .admin-global-search-container.mobile-search-active .admin-global-search-inner {
+            height: 44px !important;
+            width: 100% !important;
+            border-radius: 10px !important;
+            background: #F8F6F2 !important;
+          }
+          .admin-global-search-container.mobile-search-active input {
+            font-size: 16px !important;
+          }
+          .admin-topbar-right {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            flex-shrink: 0 !important;
+          }
+          .admin-hamburger-btn,
+          .admin-mobile-search-btn,
           .admin-notif-btn {
-            width: 36px !important;
-            height: 36px !important;
-            border-radius: 9px !important;
+            display: flex !important;
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            border-radius: 12px !important;
+            border: 1px solid #E8E1D2 !important;
+            background: #FFFFFF !important;
+            color: #5E471B !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            flex-shrink: 0 !important;
+            transition: background 0.15s ease, border-color 0.15s ease !important;
+          }
+          .admin-hamburger-btn:hover,
+          .admin-hamburger-btn:active,
+          .admin-mobile-search-btn:hover,
+          .admin-mobile-search-btn:active,
+          .admin-notif-btn:hover,
+          .admin-notif-btn:active {
+            background: #FBF3DF !important;
+          }
+          .admin-hamburger-btn:focus-visible,
+          .admin-mobile-search-btn:focus-visible,
+          .admin-notif-btn:focus-visible {
+            outline: 2px solid #8A6B2E !important;
+            outline-offset: 2px !important;
+          }
+          .admin-hamburger-btn svg,
+          .admin-mobile-search-btn svg,
+          .admin-notif-btn svg {
+            width: 20px !important;
+            height: 20px !important;
+            stroke: #5E471B !important;
+            color: #5E471B !important;
           }
           .admin-avatar-btn {
-            width: 34px !important;
-            height: 34px !important;
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px !important;
+            min-height: 40px !important;
             border-radius: 50% !important;
-            font-size: 12px !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
             flex-shrink: 0 !important;
+          }
+          .admin-status-chip,
+          .admin-export-wrapper {
+            display: none !important;
           }
         }
       `}</style>

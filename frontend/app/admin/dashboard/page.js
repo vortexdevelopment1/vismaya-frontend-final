@@ -328,8 +328,9 @@ export default function AdminDashboardPage() {
                       <Icon size={19} />
                     </div>
 
-                    <div style={{ minWidth: 0 }}>
+                    <div className="admin-attention-text-wrap" style={{ minWidth: 0, flex: 1 }}>
                       <div
+                        className="admin-attention-title"
                         style={{
                           fontWeight: "600",
                           fontSize: "15px",
@@ -343,6 +344,7 @@ export default function AdminDashboardPage() {
                         {item.title}
                       </div>
                       <div
+                        className="admin-attention-desc"
                         style={{
                           fontSize: "13px",
                           color: "#5A584F",
@@ -700,6 +702,27 @@ export default function AdminDashboardPage() {
           .admin-attention-item {
             padding: 12px !important;
             border-radius: 10px !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .admin-attention-text-wrap {
+            min-width: 0 !important;
+            flex: 1 !important;
+          }
+          .admin-attention-title {
+            font-size: 14px !important;
+            line-height: 1.3 !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
+          }
+          .admin-attention-desc {
+            font-size: 12px !important;
+            line-height: 1.35 !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
           }
           .admin-workflow-card {
             flex-direction: column !important;

@@ -279,7 +279,6 @@ export default function AdminCreditsPage() {
                   <tr key={org.orgId} style={{ borderBottom: "1px solid #E8E2D4" }}>
                     <td style={{ padding: "14px" }}>
                       <div style={{ fontWeight: "600", color: "#2B2D2A" }}>{org.orgName}</div>
-                      <div style={{ fontSize: "12px", color: "#5A584F" }}>ID: {org.orgId}</div>
                     </td>
                     <td style={{ padding: "14px" }}>
                       <div>{org.contactPerson}</div>
@@ -428,7 +427,7 @@ export default function AdminCreditsPage() {
                   <th style={{ padding: "12px" }}>Transaction Type</th>
                   <th style={{ padding: "12px" }}>Change</th>
                   <th style={{ padding: "12px" }}>Balance After</th>
-                  <th style={{ padding: "12px" }}>Notes / Reference</th>
+                  <th style={{ padding: "12px" }}>Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -461,7 +460,7 @@ export default function AdminCreditsPage() {
                       {row.balanceAfter}
                     </td>
                     <td style={{ padding: "12px", color: "#5A584F", fontSize: "12.5px" }}>
-                      {row.notes} {row.reference && <span style={{ fontFamily: "monospace" }}>({row.reference})</span>}
+                      {row.notes || "—"}
                     </td>
                   </tr>
                 ))}

@@ -77,7 +77,7 @@ export function fromApi(org) {
     description: org.description || org.about || "",
     about: org.description || org.about || "",
     address: org.address || "",
-    avatar: org.avatar || org.logoUrl || "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=300&auto=format&fit=crop&q=80",
+    avatar: org.avatar || org.logoUrl || null,
     documents,
     verificationDocs: documents,
     joinedDate,

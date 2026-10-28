@@ -44,26 +44,10 @@ export default function PublicFooter() {
               className="footer-columns"
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
+                gridTemplateColumns: "repeat(2, 1fr)",
                 gap: "clamp(24px, 4vw, 48px)",
               }}
             >
-              {/* Platform */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <span style={{ fontSize: "11px", fontWeight: "700", color: "#FAF9F6", letterSpacing: "0.16em", textTransform: "uppercase" }}>
-                  Platform
-                </span>
-                <Link href="/talent/dashboard" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Talent Portal
-                </Link>
-                <Link href="/recruiter/dashboard" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Organization Portal
-                </Link>
-                <Link href="/admin/dashboard" style={{ fontSize: "14px", color: "var(--text-dark-muted, #99948A)", textDecoration: "none" }} className="footer-link">
-                  Vismaya Desk
-                </Link>
-              </div>
-
               {/* Company */}
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                 <span style={{ fontSize: "11px", fontWeight: "700", color: "#FAF9F6", letterSpacing: "0.16em", textTransform: "uppercase" }}>

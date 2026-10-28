@@ -12,15 +12,15 @@ export default function StatusBadge({
 
   // Approved / Active / Published / Verified / Completed
   const approvedConfig = {
-    bg: "#F3EFE6",
-    text: "#2B2D2A",
-    border: "#E8E2D4",
-    dot: "#8A6B2E",
+    bg: "#E3F0E7",
+    text: "#2F6B45",
+    border: "rgba(47, 107, 69, 0.25)",
+    dot: "#2F6B45",
   };
 
   // Pending / Awaiting / Needs action / Shortlisted / Under Review
   const pendingConfig = {
-    bg: "rgba(138, 107, 46, 0.12)",
+    bg: "#F3ECDC",
     text: "#6E5420",
     border: "rgba(138, 107, 46, 0.25)",
     dot: "#8A6B2E",
@@ -36,10 +36,10 @@ export default function StatusBadge({
 
   // Rejected / Cancelled / Declined / Suspended
   const redConfig = {
-    bg: "rgba(180, 35, 24, 0.08)",
-    text: "#B42318",
-    border: "rgba(180, 35, 24, 0.25)",
-    dot: "#B42318",
+    bg: "#FBE9E5",
+    text: "#A3321F",
+    border: "rgba(163, 50, 31, 0.25)",
+    dot: "#A3321F",
   };
 
   const badgeConfig = {
@@ -115,10 +115,11 @@ export default function StatusBadge({
       style={{
         display: "inline-flex",
         alignItems: "center",
+        justifyContent: "center",
         gap: "6px",
-        height: size === "xs" ? "22px" : "26px",
-        minHeight: size === "xs" ? "22px" : "26px",
-        padding: size === "xs" ? "0 8px" : "0 10px",
+        height: size === "xs" ? "22px" : "28px",
+        minHeight: size === "xs" ? "22px" : "28px",
+        padding: size === "xs" ? "0 8px" : "0 12px",
         fontSize: size === "xs" ? "10px" : "11px",
         fontWeight: "700",
         borderRadius: "999px",
@@ -130,6 +131,7 @@ export default function StatusBadge({
         textTransform: "uppercase",
         letterSpacing: "0.06em",
         fontFamily: "var(--font-body), 'Inter', sans-serif",
+        boxSizing: "border-box",
         ...style,
       }}
     >

@@ -16,6 +16,44 @@ import EmptyState from "@/components/shared/EmptyState";
 import { adminService } from "@/lib/api/services/adminService";
 import { isRealMode } from "@/lib/api/config";
 
+function formatEntityLabel(log) {
+  if (!log) return "—";
+  const typeMap = {
+    verification: "Verification Request",
+    organization: "Organization Profile",
+    talent: "Talent Profile",
+    media: "Media Item",
+    opportunity: "Opportunity",
+    application: "Application",
+    user: "User Account",
+    credit: "Credit Account",
+    payment: "Payment Entry",
+    cancellation: "Cancellation Request",
+  };
+  const rawType = String(log.entityType || "").toLowerCase();
+  const typeLabel =
+    typeMap[rawType] ||
+    (log.entityType
+      ? log.entityType.charAt(0).toUpperCase() + log.entityType.slice(1).replace(/[-_]/g, " ")
+      : "Entity");
+
+  const readableName =
+    log.entityName ||
+    log.name ||
+    log.title ||
+    log.email ||
+    (typeof log.details === "object" && log.details !== null
+      ? log.details.name ||
+        log.details.orgName ||
+        log.details.title ||
+        log.details.talentName ||
+        log.details.target ||
+        log.details.email
+      : null);
+
+  return readableName ? `${typeLabel} (${readableName})` : typeLabel;
+}
+
 export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -66,7 +104,7 @@ export default function AdminAuditLogsPage() {
           action: "reject_media",
           entityType: "media",
           entityId: "med-55",
-          details: { reason: "Spec §15 violation: sunglasses obscuring face" },
+          details: { reason: "Photo standards violation: sunglasses obscuring face" },
           ipAddress: "192.168.1.1",
           createdAt: new Date(Date.now() - 7200000).toISOString(),
         },
@@ -95,7 +133,7 @@ export default function AdminAuditLogsPage() {
       {/* Page Header */}
       <PageHeader
         title="Admin Audit Trail"
-        subtitle="Immutable read-only log of critical administrator actions: approvals, rejections, credit adjustments, and policy enforcement per Spec §44."
+        subtitle="Immutable read-only log of critical administrator actions: approvals, rejections, credit adjustments, and policy enforcement."
         badge={`${logs.length} Total Events`}
       />
 
@@ -148,8 +186,8 @@ export default function AdminAuditLogsPage() {
           <Loader2 size={32} style={{ color: "#8A6B2E", animation: "spin 1s linear infinite" }} />
         </div>
       ) : filteredLogs.length > 0 ? (
-        <div style={{ background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "14px", overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
+        <div style={{ background: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "14px", overflowX: "auto", WebkitOverflowScrolling: "touch", width: "100%" }}>
+          <table style={{ width: "100%", minWidth: "760px", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
             <thead>
               <tr style={{ background: "#FAF9F7", borderBottom: "1px solid #E8E2D4", color: "#5A584F", fontSize: "11.5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                 <th style={{ padding: "14px 18px", fontWeight: 700 }}>Timestamp</th>
@@ -182,13 +220,17 @@ export default function AdminAuditLogsPage() {
                         background: log.action.includes("reject") || log.action.includes("suspend") ? "#FDEDEC" : "#EBF5ED",
                         padding: "3px 8px",
                         borderRadius: "6px",
+                        whiteSpace: "nowrap",
+                        display: "inline-block",
                       }}
                     >
                       {log.action}
                     </span>
                   </td>
                   <td style={{ padding: "14px 18px", color: "#5A584F" }}>
-                    {log.entityType}: <code style={{ fontSize: "11px", color: "#8A6B2E" }}>{log.entityId}</code>
+                    <span style={{ fontWeight: 600, color: "#2B2D2A" }}>
+                      {formatEntityLabel(log)}
+                    </span>
                   </td>
                   <td style={{ padding: "14px 18px", color: "#4A483F" }}>
                     {typeof log.details === "object" ? JSON.stringify(log.details) : String(log.details || "—")}

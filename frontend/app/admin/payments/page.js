@@ -1173,7 +1173,7 @@ export default function AdminPaymentsPage() {
                   <FileText size={12} /> OFFICIAL TAX RECEIPT
                 </div>
                 <h3 style={{ fontSize: "20px", fontWeight: 700, color: "#2B2D2A", margin: 0, fontFamily: "var(--font-heading), 'Playfair Display', serif" }}>
-                  Receipt #{selectedReceipt.invoiceNumber || selectedReceipt.id}
+                  Receipt {selectedReceipt.invoiceNumber ? `#${selectedReceipt.invoiceNumber}` : ""}
                 </h3>
               </div>
               <button
@@ -1207,10 +1207,6 @@ export default function AdminPaymentsPage() {
               <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
                 <span>Payer Email:</span>
                 <span style={{ fontWeight: 600, color: "#2B2D2A" }}>{selectedReceipt.userEmail}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
-                <span>Order Reference:</span>
-                <span style={{ fontFamily: "monospace", fontSize: "12px", color: "#2B2D2A" }}>{selectedReceipt.orderId || selectedReceipt.id}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", color: "#5A584F" }}>
                 <span>Payment Mode:</span>
