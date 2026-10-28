@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 import PasswordInput from "@/components/PasswordInput";
+import AuthSubmitButton from "@/components/auth/AuthSubmitButton";
+import AuthStatus from "@/components/auth/AuthStatus";
 import { Lock, Mail, Shield, KeyRound, AlertCircle, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 import { adminService } from "@/lib/api/services/adminService";
 import { setAuthToken } from "@/lib/api/client";
@@ -17,7 +19,7 @@ function AdminLoginFormContent() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authStatus, setAuthStatus] = useState("idle"); // "idle" | "submitting" | "slow" | "success"
   const [formError, setFormError] = useState("");
 
   // 2FA Challenge State
@@ -26,20 +28,42 @@ function AdminLoginFormContent() {
   const [otpCode, setOtpCode] = useState("");
   const [twoFactorSuccess, setTwoFactorSuccess] = useState(false);
 
+  const slowTimerRef = useRef(null);
+  const adminEmailInputRef = useRef(null);
+  const adminOtpInputRef = useRef(null);
+  const adminErrorRef = useRef(null);
+
+  const isSubmitting = authStatus === "submitting" || authStatus === "slow";
+  const isBusy = authStatus !== "idle";
+
+  useEffect(() => {
+    return () => {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    };
+  }, []);
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
+    if (isBusy) return; // Prevent double submit
     if (!email || !password) {
       setFormError("Please enter your administrator email and password.");
       return;
     }
 
-    setIsSubmitting(true);
+    setAuthStatus("submitting");
     setFormError("");
+
+    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    slowTimerRef.current = setTimeout(() => {
+      setAuthStatus("slow");
+    }, 4000);
 
     try {
       const res = await adminService.adminLogin({ email, password });
 
       if (res.requires2FA) {
+        if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+        setAuthStatus("idle");
         setRequires2FA(true);
         const token = res.twoFactorToken || res.tempToken;
         setTempToken(token);
@@ -48,28 +72,53 @@ function AdminLoginFormContent() {
         }
         setFormError("");
       } else if (res.token && res.user) {
+        if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+        setAuthStatus("success");
         setAuthToken(res.token);
         saveSession(res.user, res.token);
+        // Keep the form disabled and DO NOT reset this state when router navigates
         router.push("/admin/dashboard");
       } else {
+        if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+        setAuthStatus("idle");
         setFormError(res.message || "Invalid email or password.");
+        setTimeout(() => {
+          if (adminErrorRef.current) {
+            adminErrorRef.current.focus();
+          } else if (adminEmailInputRef.current) {
+            adminEmailInputRef.current.focus();
+          }
+        }, 0);
       }
     } catch (err) {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      setAuthStatus("idle");
       setFormError(err.message || "Invalid email or password.");
-    } finally {
-      setIsSubmitting(false);
+      setTimeout(() => {
+        if (adminErrorRef.current) {
+          adminErrorRef.current.focus();
+        } else if (adminEmailInputRef.current) {
+          adminEmailInputRef.current.focus();
+        }
+      }, 0);
     }
   };
 
   const handle2FASubmit = async (e) => {
     e.preventDefault();
+    if (isBusy) return; // Prevent double submit
     if (!otpCode || otpCode.length !== 6) {
       setFormError("Please enter the complete 6-digit verification code.");
       return;
     }
 
-    setIsSubmitting(true);
+    setAuthStatus("submitting");
     setFormError("");
+
+    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    slowTimerRef.current = setTimeout(() => {
+      setAuthStatus("slow");
+    }, 4000);
 
     try {
       const res = await adminService.adminVerify2FA({
@@ -80,19 +129,38 @@ function AdminLoginFormContent() {
       });
 
       if (res.token && res.user) {
+        if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+        setAuthStatus("success");
         setTwoFactorSuccess(true);
         setAuthToken(res.token);
         saveSession(res.user, res.token);
+        // Keep the form disabled and DO NOT reset this state when router navigates
         setTimeout(() => {
           router.push("/admin/dashboard");
         }, 500);
       } else {
+        if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+        setAuthStatus("idle");
         setFormError(res.message || "Invalid or expired two-factor authentication code.");
+        setTimeout(() => {
+          if (adminErrorRef.current) {
+            adminErrorRef.current.focus();
+          } else if (adminOtpInputRef.current) {
+            adminOtpInputRef.current.focus();
+          }
+        }, 0);
       }
     } catch (err) {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      setAuthStatus("idle");
       setFormError(err.message || "Invalid or expired verification code.");
-    } finally {
-      setIsSubmitting(false);
+      setTimeout(() => {
+        if (adminErrorRef.current) {
+          adminErrorRef.current.focus();
+        } else if (adminOtpInputRef.current) {
+          adminOtpInputRef.current.focus();
+        }
+      }, 0);
     }
   };
 
@@ -140,6 +208,9 @@ function AdminLoginFormContent() {
       {/* Error Alert */}
       {formError && (
         <div
+          ref={adminErrorRef}
+          tabIndex={-1}
+          role="alert"
           style={{
             display: "flex",
             alignItems: "center",
@@ -151,6 +222,7 @@ function AdminLoginFormContent() {
             color: "var(--danger, #C62828)",
             fontSize: "13px",
             marginBottom: "16px",
+            outline: "none",
           }}
         >
           <AlertCircle size={16} style={{ flexShrink: 0 }} />
@@ -186,6 +258,7 @@ function AdminLoginFormContent() {
                 }}
               />
               <input
+                ref={adminEmailInputRef}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -193,16 +266,18 @@ function AdminLoginFormContent() {
                 required
                 autoComplete="email"
                 autoFocus
+                disabled={isBusy}
                 style={{
                   paddingLeft: "42px",
                   width: "100%",
                   height: "44px",
-                  backgroundColor: "#FFFFFF",
+                  backgroundColor: isBusy ? "#F7F3EA" : "#FFFFFF",
                   border: "1px solid var(--border-color, #E4E1D9)",
                   borderRadius: "var(--radius-input, 4px)",
-                  color: "var(--text-primary, #292C29)",
+                  color: isBusy ? "#8A8170" : "var(--text-primary, #292C29)",
                   boxSizing: "border-box",
                   outline: "none",
+                  cursor: isBusy ? "not-allowed" : undefined,
                 }}
               />
             </div>
@@ -229,53 +304,56 @@ function AdminLoginFormContent() {
               required
               autoComplete="current-password"
               leftIcon={<Lock size={16} />}
+              disabled={isBusy}
               inputStyle={{
                 height: "44px",
-                backgroundColor: "#FFFFFF",
+                backgroundColor: isBusy ? "#F7F3EA" : "#FFFFFF",
                 border: "1px solid var(--border-color, #E4E1D9)",
                 borderRadius: "var(--radius-input, 4px)",
-                color: "var(--text-primary, #292C29)",
+                color: isBusy ? "#8A8170" : "var(--text-primary, #292C29)",
+                cursor: isBusy ? "not-allowed" : undefined,
               }}
             />
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "6px" }}>
-              <Link
-                href="/admin/forgot-password"
-                id="link-admin-forgot-password"
-                style={{
-                  fontSize: "12.5px",
-                  color: "#8A6B2E",
-                  textDecoration: "none",
-                  fontWeight: "500",
-                }}
-              >
-                Forgot password?
-              </Link>
+              {isBusy ? (
+                <span
+                  style={{
+                    fontSize: "12.5px",
+                    color: "#8A8170",
+                    fontWeight: "500",
+                    cursor: "not-allowed",
+                    pointerEvents: "none",
+                  }}
+                >
+                  Forgot password?
+                </span>
+              ) : (
+                <Link
+                  href="/admin/forgot-password"
+                  id="link-admin-forgot-password"
+                  style={{
+                    fontSize: "12.5px",
+                    color: "#8A6B2E",
+                    textDecoration: "none",
+                    fontWeight: "500",
+                  }}
+                >
+                  Forgot password?
+                </Link>
+              )}
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="btn-primary"
-            style={{
-              width: "100%",
-              justifyContent: "center",
-              marginTop: "8px",
-              cursor: isSubmitting ? "not-allowed" : "pointer",
-            }}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 size={15} className="animate-spin" />
-                <span>Verifying Credentials...</span>
-              </>
-            ) : (
-              <>
-                <span>Authenticate Session</span>
-                <ArrowRight size={15} />
-              </>
-            )}
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0px", marginTop: "8px" }}>
+            <AuthSubmitButton
+              status={authStatus}
+              defaultText="Authenticate Session"
+              submittingText="Signing you in..."
+              successText="Signed in"
+              icon={<ArrowRight size={15} />}
+            />
+            <AuthStatus status={authStatus} />
+          </div>
         </form>
       ) : (
         /* Step 2: 2FA Verification Form */
@@ -306,6 +384,7 @@ function AdminLoginFormContent() {
                 }}
               />
               <input
+                ref={adminOtpInputRef}
                 type="text"
                 maxLength={6}
                 value={otpCode}
@@ -313,6 +392,7 @@ function AdminLoginFormContent() {
                 placeholder="123456"
                 required
                 autoFocus
+                disabled={isBusy}
                 style={{
                   paddingLeft: "42px",
                   width: "100%",
@@ -322,48 +402,35 @@ function AdminLoginFormContent() {
                   fontFamily: "monospace",
                   textAlign: "center",
                   boxSizing: "border-box",
-                  backgroundColor: "#FFFFFF",
+                  backgroundColor: isBusy ? "#F7F3EA" : "#FFFFFF",
                   border: "1px solid var(--border-color, #E4E1D9)",
                   borderRadius: "var(--radius-input, 4px)",
-                  color: "var(--text-primary, #292C29)",
+                  color: isBusy ? "#8A8170" : "var(--text-primary, #292C29)",
                   outline: "none",
+                  cursor: isBusy ? "not-allowed" : undefined,
                 }}
               />
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting || twoFactorSuccess}
-            className="btn-primary"
-            style={{
-              width: "100%",
-              justifyContent: "center",
-              marginTop: "8px",
-              cursor: isSubmitting ? "not-allowed" : "pointer",
-            }}
-          >
-            {twoFactorSuccess ? (
-              <>
-                <CheckCircle2 size={16} />
-                <span>Access Granted</span>
-              </>
-            ) : isSubmitting ? (
-              <>
-                <Loader2 size={15} className="animate-spin" />
-                <span>Validating OTP...</span>
-              </>
-            ) : (
-              <>
-                <span>Verify & Enter Console</span>
-                <ArrowRight size={15} />
-              </>
-            )}
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0px", marginTop: "8px" }}>
+            <AuthSubmitButton
+              status={authStatus}
+              defaultText="Verify & Enter Console"
+              submittingText="Verifying..."
+              successText="Verified"
+              icon={<ArrowRight size={15} />}
+            />
+            <AuthStatus status={authStatus} />
+          </div>
 
           <button
             type="button"
+            disabled={isBusy}
             onClick={() => {
+              if (isBusy) return;
+              if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+              setAuthStatus("idle");
               setRequires2FA(false);
               setTempToken("");
               setOtpCode("");
@@ -373,10 +440,10 @@ function AdminLoginFormContent() {
               width: "100%",
               background: "transparent",
               border: "none",
-              color: "var(--text-secondary, #777970)",
+              color: isBusy ? "#8A8170" : "var(--text-secondary, #777970)",
               fontSize: "13px",
               marginTop: "8px",
-              cursor: "pointer",
+              cursor: isBusy ? "not-allowed" : "pointer",
               textDecoration: "underline",
             }}
           >
