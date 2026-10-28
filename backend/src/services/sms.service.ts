@@ -37,10 +37,6 @@ export const sendSms = async ({ to, message }: { to: string; message: string }):
 
     // Dev/test fallback — no real API call
     if (process.env.NODE_ENV === "test") {
-        try {
-            const { recordSms }: any = await import("../../tests/helpers/outbox.js" as any);
-            recordSms({ to: cleanMobile, message });
-        } catch (e) { /* ignore */ }
         return { success: true, to: cleanMobile, messageId: "test_sms_" + Date.now() };
     }
 

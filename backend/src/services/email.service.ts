@@ -63,12 +63,6 @@ export const sendEmail = async ({
         if (process.env.NODE_ENV === "test") {
             (global as any).__TEST_OUTBOX__ = (global as any).__TEST_OUTBOX__ || [];
             (global as any).__TEST_OUTBOX__.push(emailPayload);
-            try {
-                const { recordEmail }: any = await import("../../tests/helpers/outbox.js" as any);
-                recordEmail(emailPayload);
-            } catch (e) {
-                // Ignore if outbox helper not found
-            }
             return {
                 success: true,
                 messageId: "test_msg_" + Date.now()

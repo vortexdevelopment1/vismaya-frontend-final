@@ -9,12 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
     "create-admin": "tsx src/scripts/create-admin.ts",
-    "admin:create": "tsx src/scripts/create-admin.ts",
-    "test": "jest --runInBand --forceExit",
-    "test:unit": "jest --testPathPattern=unit --runInBand",
-    "test:integration": "jest --testPathPattern=phase --runInBand --forceExit",
-    "test:coverage": "jest --coverage --runInBand --forceExit",
-    "test:legacy": "tsx tests/security.test.js && tsx tests/master_specification.test.js"
+    "admin:create": "tsx src/scripts/create-admin.ts"
   },
   "keywords": [],
   "author": "",

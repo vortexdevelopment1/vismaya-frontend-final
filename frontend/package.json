@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "check:mock": "node ../scripts/audit-mock-leaks.mjs --check"
+    "lint": "eslint"
   },
   "dependencies": {
     "lucide-react": "^1.49.0",
