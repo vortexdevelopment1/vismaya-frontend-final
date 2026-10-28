@@ -10,6 +10,7 @@ export default function GoogleAuthButton({
   isRegister = false,
   onSuccess = null,
   onError = null,
+  disabled = false,
 }) {
   const { loginWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -145,7 +146,7 @@ export default function GoogleAuthButton({
         type="button"
         className="v-btn-google"
         onClick={handleButtonClick}
-        disabled={isLoading}
+        disabled={isLoading || disabled}
         aria-label="Continue with Google"
       >
         {isLoading ? (

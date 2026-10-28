@@ -1329,4 +1329,208 @@ td span[style*="borderRadius"] {
   }
 }
 
+/* =========================================================================
+   AUTH SUBMIT & LOADING STATES (Talent, Recruiter, Admin)
+   ========================================================================= */
+.auth-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 52px;
+  min-height: 52px;
+  border-radius: 10px;
+  font-family: var(--font-body), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #FFFFFF !important;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  text-decoration: none;
+  user-select: none;
+  transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.auth-submit-btn-idle {
+  background-color: #8A6B2E !important;
+  cursor: pointer;
+}
+
+.auth-submit-btn-idle:hover {
+  background-color: #775A24 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(138, 107, 46, 0.25);
+}
+
+.auth-submit-btn-submitting,
+.auth-submit-btn-slow {
+  background-color: #9C7F45 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.auth-submit-btn-success {
+  background-color: #2F6B45 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.auth-submit-btn:focus-visible {
+  outline: 2px solid #8A6B2E;
+  outline-offset: 2px;
+}
+
+/* 18px Spinner for Submitting Button */
+.auth-spinner-18 {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #FFFFFF;
+  animation: auth-spin 0.8s linear infinite;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* 14px Spinner for Success Status */
+.auth-spinner-14 {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #CFE3D6;
+  border-top-color: #2F6B45;
+  animation: auth-spin 0.8s linear infinite;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Auth Status Area */
+.auth-status-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.auth-status-muted {
+  font-family: var(--font-body), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: #6B6254;
+  text-align: center;
+  margin: 0;
+  line-height: 1.4;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.auth-status-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-body), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: #2F6B45;
+  text-align: center;
+  margin: 0;
+  line-height: 1.4;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+/* 4px Indeterminate Progress Bar */
+.auth-progress-track {
+  width: 100%;
+  height: 4px;
+  background-color: #EFE6CF;
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.auth-progress-segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  background-color: #8A6B2E;
+  border-radius: 2px;
+  animation: auth-progress-slide 1.4s linear infinite;
+}
+
+@keyframes auth-progress-slide {
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Soft Gold Wake-up Box */
+.auth-soft-gold-box {
+  background-color: #FBF3DF;
+  border: 1px solid #EBDDB4;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: var(--font-body), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #5E471B;
+  text-align: left;
+  box-sizing: border-box;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+/* Disabled Input / Control Styling */
+.auth-field-disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+  background-color: #F7F3EA !important;
+  color: #8A8170 !important;
+  cursor: not-allowed !important;
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .auth-spinner-18,
+  .auth-spinner-14 {
+    animation: none !important;
+  }
+  .auth-progress-segment {
+    animation: none !important;
+    left: 0 !important;
+    width: 100% !important;
+    opacity: 0.6 !important;
+  }
+}
+
+/* Mobile adjustments (<= 767px) */
+@media (max-width: 767px) {
+  .auth-submit-btn {
+    width: 100% !important;
+    height: 52px !important;
+  }
+  .auth-status-muted,
+  .auth-status-success,
+  .auth-soft-gold-box {
+    white-space: normal !important;
+  }
+}
+
+
 

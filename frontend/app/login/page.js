@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -8,6 +8,8 @@ import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 import PasswordInput from "@/components/PasswordInput";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
+import AuthSubmitButton from "@/components/auth/AuthSubmitButton";
+import AuthStatus from "@/components/auth/AuthStatus";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowRight, Lock, Mail, Sparkles, AlertCircle } from "lucide-react";
 import { isRealMode } from "@/lib/api/config";
@@ -20,40 +22,86 @@ function LoginFormContent() {
 
   const [email, setEmail] = useState(() => isRealMode("auth") ? "" : "aanya.sharma@vismaya.io");
   const [password, setPassword] = useState(() => isRealMode("auth") ? "" : "password123");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authStatus, setAuthStatus] = useState("idle"); // "idle" | "submitting" | "slow" | "success"
   const [formError, setFormError] = useState("");
+
+  const slowTimerRef = useRef(null);
+  const emailInputRef = useRef(null);
+  const errorAlertRef = useRef(null);
+
+  const isSubmitting = authStatus === "submitting" || authStatus === "slow";
+  const isBusy = authStatus !== "idle";
+
+  useEffect(() => {
+    return () => {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isBusy) return; // Prevent double submit
     if (!email || !password) {
       setFormError("Please enter both email and password.");
       return;
     }
 
-    setIsSubmitting(true);
+    setAuthStatus("submitting");
     setFormError("");
+
+    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    slowTimerRef.current = setTimeout(() => {
+      setAuthStatus("slow");
+    }, 4000);
 
     try {
       const res = await login({ email, password });
       if (res.success && res.user) {
+        if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+        setAuthStatus("success");
+        // Keep the form disabled and DO NOT reset this state when the router navigates;
+        // the state disappears naturally when the new page mounts.
         if (redirectPath) {
           router.push(redirectPath);
         } else {
           router.push(getDashboardPath());
         }
       } else {
+        if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+        setAuthStatus("idle");
         setFormError(res.error || "Login failed. Please check your credentials.");
+        setTimeout(() => {
+          if (errorAlertRef.current) {
+            errorAlertRef.current.focus();
+          } else if (emailInputRef.current) {
+            emailInputRef.current.focus();
+          }
+        }, 0);
       }
     } catch (err) {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      setAuthStatus("idle");
       setFormError(err.message || "An unexpected error occurred during login.");
-    } finally {
-      setIsSubmitting(false);
+      setTimeout(() => {
+        if (errorAlertRef.current) {
+          errorAlertRef.current.focus();
+        } else if (emailInputRef.current) {
+          emailInputRef.current.focus();
+        }
+      }, 0);
     }
   };
 
   const handleQuickDemo = async (targetRole) => {
-    setIsSubmitting(true);
+    if (isBusy) return;
+    setAuthStatus("submitting");
     setFormError("");
+
+    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    slowTimerRef.current = setTimeout(() => {
+      setAuthStatus("slow");
+    }, 4000);
+
     try {
       const emailMap = {
         talent: "aanya.sharma@vismaya.io",
@@ -74,6 +122,8 @@ function LoginFormContent() {
         email: emailMap[targetRole] || "aanya.sharma@vismaya.io",
         password: passwordMap[targetRole] || "password123",
       });
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      setAuthStatus("success");
       router.push(pathMap[targetRole] || "/talent/dashboard");
     } catch {
       const pathMap = {
@@ -81,9 +131,9 @@ function LoginFormContent() {
         recruiter: "/recruiter/dashboard",
         admin: "/admin/dashboard",
       };
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      setAuthStatus("success");
       router.push(pathMap[targetRole] || "/talent/dashboard");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -155,6 +205,9 @@ function LoginFormContent() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
             <Link
               href="/talent/dashboard"
+              onClick={(e) => {
+                if (isBusy) e.preventDefault();
+              }}
               style={{
                 fontSize: "11px",
                 textAlign: "center",
@@ -162,7 +215,7 @@ function LoginFormContent() {
                 borderRadius: "var(--radius-btn, 4px)",
                 backgroundColor: "var(--bg-surface, #FFFFFF)",
                 border: "1px solid var(--border-color, #E4E1D9)",
-                color: "var(--text-primary, #292C29)",
+                color: isBusy ? "#8A8170" : "var(--text-primary, #292C29)",
                 fontWeight: "600",
                 textTransform: "uppercase",
                 letterSpacing: "0.04em",
@@ -172,6 +225,8 @@ function LoginFormContent() {
                 alignItems: "center",
                 justifyContent: "center",
                 transition: "all 0.18s ease",
+                pointerEvents: isBusy ? "none" : undefined,
+                opacity: isBusy ? 0.6 : 1,
               }}
               className="demo-btn"
             >
@@ -179,6 +234,9 @@ function LoginFormContent() {
             </Link>
             <Link
               href="/recruiter/dashboard"
+              onClick={(e) => {
+                if (isBusy) e.preventDefault();
+              }}
               style={{
                 fontSize: "11px",
                 textAlign: "center",
@@ -186,7 +244,7 @@ function LoginFormContent() {
                 borderRadius: "var(--radius-btn, 4px)",
                 backgroundColor: "var(--bg-surface, #FFFFFF)",
                 border: "1px solid var(--border-color, #E4E1D9)",
-                color: "var(--text-primary, #292C29)",
+                color: isBusy ? "#8A8170" : "var(--text-primary, #292C29)",
                 fontWeight: "600",
                 textTransform: "uppercase",
                 letterSpacing: "0.04em",
@@ -196,6 +254,8 @@ function LoginFormContent() {
                 alignItems: "center",
                 justifyContent: "center",
                 transition: "all 0.18s ease",
+                pointerEvents: isBusy ? "none" : undefined,
+                opacity: isBusy ? 0.6 : 1,
               }}
               className="demo-btn"
             >
@@ -207,6 +267,9 @@ function LoginFormContent() {
 
       {formError && (
         <div
+          ref={errorAlertRef}
+          tabIndex={-1}
+          role="alert"
           style={{
             display: "flex",
             alignItems: "center",
@@ -218,6 +281,7 @@ function LoginFormContent() {
             color: "var(--danger)",
             fontSize: "13px",
             marginBottom: "16px",
+            outline: "none",
           }}
         >
           <AlertCircle size={16} style={{ flexShrink: 0 }} />
@@ -233,13 +297,21 @@ function LoginFormContent() {
           <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
             <Mail size={16} style={{ position: "absolute", left: "14px", color: "var(--text-secondary, #777970)", pointerEvents: "none" }} />
             <input
+              ref={emailInputRef}
               suppressHydrationWarning
               type="email"
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ paddingLeft: "42px", width: "100%" }}
+              disabled={isBusy}
+              style={{
+                paddingLeft: "42px",
+                width: "100%",
+                backgroundColor: isBusy ? "#F7F3EA" : undefined,
+                color: isBusy ? "#8A8170" : undefined,
+                cursor: isBusy ? "not-allowed" : undefined,
+              }}
             />
           </div>
         </div>
@@ -249,9 +321,15 @@ function LoginFormContent() {
             <label style={{ fontSize: "12px", fontWeight: "600", color: "var(--text-primary, #292C29)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
               Password
             </label>
-            <Link href="/forgot-password" style={{ fontSize: "12px", color: "var(--gold)", fontWeight: "600", textDecoration: "none" }}>
-              Forgot?
-            </Link>
+            {isBusy ? (
+              <span style={{ fontSize: "12px", color: "#8A8170", fontWeight: "600", cursor: "not-allowed", pointerEvents: "none" }}>
+                Forgot?
+              </span>
+            ) : (
+              <Link href="/forgot-password" style={{ fontSize: "12px", color: "var(--gold)", fontWeight: "600", textDecoration: "none" }}>
+                Forgot?
+              </Link>
+            )}
           </div>
           <PasswordInput
             value={password}
@@ -260,21 +338,32 @@ function LoginFormContent() {
             required
             autoComplete="current-password"
             leftIcon={<Lock size={16} />}
+            disabled={isBusy}
+            inputStyle={
+              isBusy
+                ? {
+                    backgroundColor: "#F7F3EA",
+                    color: "#8A8170",
+                    cursor: "not-allowed",
+                  }
+                : {}
+            }
           />
         </div>
 
-        <button
-          suppressHydrationWarning
-          type="submit"
-          disabled={isSubmitting}
-          className="btn-primary"
-          style={{ width: "100%", justifyContent: "center", marginTop: "6px", cursor: isSubmitting ? "not-allowed" : "pointer" }}
-        >
-          <span>{isSubmitting ? "Signing in..." : "Sign In to Vismaya"}</span>
-          <ArrowRight size={15} />
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0px", marginTop: "6px" }}>
+          <AuthSubmitButton
+            status={authStatus}
+            defaultText="Sign In to Vismaya"
+            submittingText="Signing you in..."
+            successText="Signed in"
+            icon={<ArrowRight size={15} />}
+          />
+          <AuthStatus status={authStatus} />
+        </div>
 
         <GoogleAuthButton
+          disabled={isBusy}
           onSuccess={(user) => {
             if (redirectPath) {
               router.push(redirectPath);

@@ -12,7 +12,6 @@
     "typecheck:backend": "npm --prefix backend run typecheck",
     "start:frontend": "npm --prefix frontend run start",
     "start:backend": "npm --prefix backend run start",
-    "admin:create": "npm --prefix backend run create-admin",
-    "check:mock": "node scripts/audit-mock-leaks.mjs --check"
+    "admin:create": "npm --prefix backend run create-admin"
   }
 }
