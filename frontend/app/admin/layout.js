@@ -7,8 +7,9 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminTopbar from "@/components/admin/AdminTopbar";
 import ToastContainer from "@/components/shared/Toast";
 import { adminService } from "@/lib/api/services/adminService";
+import { getAuthToken, removeAuthToken } from "@/lib/api/client";
 import { USE_MOCK } from "@/lib/api/config";
-import { Loader2 } from "lucide-react";
+import RoleGateLoader from "@/components/auth/RoleGateLoader";
 
 function AdminLayoutContent({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -127,35 +128,77 @@ function AdminLayoutContent({ children }) {
 function VerifiedAdminGuard({ children }) {
   const router = useRouter();
   const [authStatus, setAuthStatus] = useState(USE_MOCK ? "authorized" : "verifying");
+  const [isWakingUp, setIsWakingUp] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     if (USE_MOCK) return;
 
+    // Fast path: if no stored auth token exists, immediately redirect to /admin/login without backend call
+    const token = getAuthToken();
+    if (!token) {
+      setAuthStatus("unauthorized");
+      router.replace("/admin/login");
+      return;
+    }
+
     let isMounted = true;
+    setErrorMessage(null);
+    setIsWakingUp(false);
+    setAuthStatus("verifying");
+
+    // 8-second wake-up hint timer
+    const wakeTimer = setTimeout(() => {
+      if (isMounted) {
+        setIsWakingUp(true);
+      }
+    }, 8000);
+
     async function checkServerSession() {
       try {
         const res = await adminService.verifyAdminSession();
         if (!isMounted) return;
 
         if (res.success && res.isAdmin) {
+          clearTimeout(wakeTimer);
           setAuthStatus("authorized");
         } else {
-          setAuthStatus("unauthorized");
-          router.replace("/admin/login");
+          // Explicit unauthorized response (401, 403 or non-admin)
+          if (res.status === 401 || res.status === 403 || res.isAdmin === false) {
+            clearTimeout(wakeTimer);
+            removeAuthToken();
+            setAuthStatus("unauthorized");
+            router.replace("/admin/login");
+          } else {
+            // Network error / server unreachable
+            clearTimeout(wakeTimer);
+            setAuthStatus("error");
+            setErrorMessage("Could not reach the server. Please check your connection.");
+          }
         }
-      } catch {
-        if (isMounted) {
+      } catch (err) {
+        if (!isMounted) return;
+        clearTimeout(wakeTimer);
+        const status = err?.status;
+        if (status === 401 || status === 403) {
+          removeAuthToken();
           setAuthStatus("unauthorized");
           router.replace("/admin/login");
+        } else {
+          setAuthStatus("error");
+          setErrorMessage("Could not reach the server. Please check your connection.");
         }
       }
     }
 
     checkServerSession();
+
     return () => {
       isMounted = false;
+      clearTimeout(wakeTimer);
     };
-  }, [router]);
+  }, [router, retryNonce]);
 
   // In mock mode, render immediately
   if (USE_MOCK) {
@@ -166,31 +209,34 @@ function VerifiedAdminGuard({ children }) {
     );
   }
 
-  // While verifying with server, show secure spinner (NO UI flash of admin layout or data)
+  // Fast-path redirecting for unauthenticated visitors
+  if (authStatus === "unauthorized") {
+    return null;
+  }
+
+  // While verifying with server, show shared RoleGateLoader
   if (authStatus === "verifying") {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#161715",
-          color: "#EDEAE4",
-          gap: "16px",
-        }}
-      >
-        <Loader2 size={36} className="animate-spin" style={{ color: "#C8A96A" }} />
-        <p style={{ fontSize: "13px", letterSpacing: "0.06em", textTransform: "uppercase", color: "#C8A96A" }}>
-          Verifying Administrator Privileges...
-        </p>
-      </div>
+      <RoleGateLoader
+        theme="admin"
+        statusText="VERIFYING ACCESS"
+        isWakingUp={isWakingUp}
+      />
     );
   }
 
-  if (authStatus === "unauthorized") {
-    return null;
+  // Network / server connection error state with retry button
+  if (authStatus === "error") {
+    return (
+      <RoleGateLoader
+        theme="admin"
+        statusText="SERVER UNREACHABLE"
+        errorMessage={errorMessage || "Could not reach the server."}
+        onRetry={() => {
+          setRetryNonce((prev) => prev + 1);
+        }}
+      />
+    );
   }
 
   return (

@@ -134,26 +134,6 @@ export const adminService = {
     };
   },
 
-  /**
-   * Verify the current admin session
-   */
-  async verifyAdminSession() {
-    if (!isRealMode("admin")) {
-      return { success: true, isAdmin: true };
-    }
-    try {
-      await apiClient.get("/api/admin/dashboard");
-      return {
-        success: true,
-        isAdmin: true,
-      };
-    } catch {
-      return {
-        success: false,
-        isAdmin: false,
-      };
-    }
-  },
 
   /**
    * Fetch pending user approvals queue
