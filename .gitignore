@@ -46,3 +46,8 @@ uploads/
 # Temporary / scratch directories
 scratch/
 docs/
+
+# More env files (examples stay tracked)
+.env.test
+.env.production
+.env.development
