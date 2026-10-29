@@ -111,12 +111,11 @@ export default function StatusBadge({
 
   return (
     <span
-      className={`status-badge ${className}`}
+      className={`status-badge ${showDot ? "status-badge-has-dot" : ""} ${className}`}
       style={{
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "6px",
         height: size === "xs" ? "22px" : "28px",
         minHeight: size === "xs" ? "22px" : "28px",
         padding: size === "xs" ? "0 8px" : "0 12px",
@@ -127,26 +126,21 @@ export default function StatusBadge({
         color: current.text,
         border: `1px solid ${current.border}`,
         whiteSpace: "nowrap",
-        lineHeight: 1,
+        wordBreak: "normal",
+        overflowWrap: "normal",
+        wordWrap: "normal",
+        lineHeight: "1",
         textTransform: "uppercase",
         letterSpacing: "0.06em",
         fontFamily: "var(--font-body), 'Inter', sans-serif",
         boxSizing: "border-box",
+        flex: "none",
+        flexShrink: 0,
+        "--badge-dot-color": current.dot || current.text,
         ...style,
       }}
     >
-      {showDot && (
-        <span
-          style={{
-            width: "5px",
-            height: "5px",
-            borderRadius: "50%",
-            backgroundColor: current.dot || current.text,
-            flexShrink: 0,
-          }}
-        />
-      )}
-      <span>{displayLabel}</span>
+      {displayLabel}
     </span>
   );
 }

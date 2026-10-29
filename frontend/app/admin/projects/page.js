@@ -171,6 +171,7 @@ export default function AdminProjectsPage() {
           className="admin-projects-search-wrap"
           style={{
             flex: "1 1 280px",
+            minWidth: "200px",
             display: "flex",
             alignItems: "center",
             gap: "10px",
@@ -286,142 +287,134 @@ export default function AdminProjectsPage() {
               backgroundColor: "#FFFFFF",
               border: "1px solid #E8E2D4",
               borderRadius: "16px",
-              overflow: "hidden",
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
               boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
+              width: "100%",
             }}
           >
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px", minWidth: "960px" }}>
-                <thead>
-                  <tr
-                    style={{
-                      backgroundColor: "#F3EFE6",
-                      borderBottom: "1px solid #E8E2D4",
-                      color: "#5A584F",
-                      fontWeight: "700",
-                      fontSize: "12px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.14em",
-                    }}
-                  >
-                    <th style={{ padding: "16px 20px" }}>Project Name &amp; Format</th>
-                    <th style={{ padding: "16px 20px" }}>Organization</th>
-                    <th style={{ padding: "16px 20px" }}>Opportunities Linked</th>
-                    <th style={{ padding: "16px 20px" }}>Created Date</th>
-                    <th style={{ padding: "16px 20px" }}>Status</th>
-                    <th style={{ padding: "16px 20px", textAlign: "right" }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProjects.map((proj) => {
-                    const org = getOrgForProject(proj.orgId);
-                    const opps = getOpportunitiesForProject(proj.id);
-                    const oppCount = proj.opportunityCount ?? proj.opportunitiesCount ?? opps.length;
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px", minWidth: "960px", tableLayout: "auto" }}>
+              <thead>
+                <tr
+                  style={{
+                    backgroundColor: "#F3EFE6",
+                    borderBottom: "1px solid #E8E2D4",
+                    color: "#5A584F",
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.14em",
+                  }}
+                >
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "220px", textAlign: "left" }}>Project Name &amp; Format</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "180px", textAlign: "left" }}>Organization</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "180px", textAlign: "left" }}>Opportunities Linked</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "130px", textAlign: "left" }}>Created Date</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "110px", textAlign: "left" }}>Status</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "100px", textAlign: "right" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProjects.map((proj) => {
+                  const org = getOrgForProject(proj.orgId);
+                  const opps = getOpportunitiesForProject(proj.id);
+                  const oppCount = proj.opportunityCount ?? proj.opportunitiesCount ?? opps.length;
 
-                    return (
-                      <tr
-                        key={proj.id}
-                        style={{
-                          borderBottom: "1px solid #E8E2D4",
-                          transition: "background-color 0.15s ease",
-                        }}
-                      >
-                        {/* Project Title & Format */}
-                        <td style={{ padding: "18px 20px" }}>
-                          <div style={{ fontWeight: 600, fontSize: "15px", color: "#2B2D2A" }}>
-                            {proj.title}
-                          </div>
-                          <div style={{ fontSize: "12px", color: "#6E5420", fontWeight: "600", marginTop: "2px" }}>
-                            {proj.type}
-                          </div>
-                        </td>
+                  return (
+                    <tr
+                      key={proj.id}
+                      style={{
+                        borderBottom: "1px solid #E8E2D4",
+                        transition: "background-color 0.15s ease",
+                      }}
+                    >
+                      {/* Project Title & Format */}
+                      <td style={{ padding: "18px 20px", textAlign: "left", minWidth: "220px" }}>
+                        <div style={{ fontWeight: 600, fontSize: "15px", color: "#2B2D2A", textAlign: "left" }}>
+                          {proj.title}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#6E5420", fontWeight: "600", marginTop: "2px", textAlign: "left" }}>
+                          {proj.type}
+                        </div>
+                      </td>
 
-                        {/* Organization */}
-                        <td style={{ padding: "18px 20px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            <Building2 size={13} style={{ color: "#5A584F" }} />
-                            <span style={{ fontWeight: 600, color: "#2B2D2A" }}>
-                              {org?.name || "Organization"}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: "12px", color: "#5A584F", marginTop: "2px" }}>
-                            {org?.type || "Production House"}
-                          </div>
-                        </td>
-
-                        {/* Opportunities Linked */}
-                        <td style={{ padding: "18px 20px" }}>
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "6px",
-                              padding: "4px 10px",
-                              borderRadius: "999px",
-                              backgroundColor: oppCount > 0 ? "rgba(138, 107, 46, 0.12)" : "#F3EFE6",
-                              color: oppCount > 0 ? "#6E5420" : "#5A584F",
-                              border: oppCount > 0 ? "1px solid rgba(138, 107, 46, 0.25)" : "1px solid #E8E2D4",
-                              fontWeight: 700,
-                              fontSize: "12px",
-                            }}
-                          >
-                            <Megaphone size={12} />
-                            <span>{oppCount} {oppCount === 1 ? "Opportunity" : "Opportunities"}</span>
+                      {/* Organization */}
+                      <td style={{ padding: "18px 20px", textAlign: "left", minWidth: "180px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <Building2 size={13} style={{ color: "#5A584F", flexShrink: 0 }} />
+                          <span style={{ fontWeight: 600, color: "#2B2D2A", whiteSpace: "nowrap" }}>
+                            {org?.name || "Organization"}
                           </span>
-                        </td>
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#5A584F", marginTop: "2px", whiteSpace: "nowrap" }}>
+                          {org?.type || "Production House"}
+                        </div>
+                      </td>
 
-                        {/* Created Date */}
-                        <td style={{ padding: "18px 20px", color: "#5A584F", fontSize: "13px" }}>
-                          {formatDate(proj.createdAt)}
-                        </td>
+                      {/* Opportunities Linked */}
+                      <td style={{ padding: "18px 20px", whiteSpace: "nowrap", minWidth: "180px" }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            padding: "4px 10px",
+                            borderRadius: "999px",
+                            backgroundColor: oppCount > 0 ? "rgba(138, 107, 46, 0.12)" : "#F3EFE6",
+                            color: oppCount > 0 ? "#6E5420" : "#5A584F",
+                            border: oppCount > 0 ? "1px solid rgba(138, 107, 46, 0.25)" : "1px solid #E8E2D4",
+                            fontWeight: 700,
+                            fontSize: "12px",
+                            whiteSpace: "nowrap",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Megaphone size={12} style={{ flexShrink: 0 }} />
+                          <span style={{ whiteSpace: "nowrap" }}>{oppCount} {oppCount === 1 ? "Opportunity" : "Opportunities"}</span>
+                        </span>
+                      </td>
 
-                        {/* Status */}
-                        <td style={{ padding: "18px 20px" }}>
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              padding: "4px 10px",
-                              borderRadius: "999px",
-                              backgroundColor: "#F3EFE6",
-                              color: "#2B2D2A",
-                              border: "1px solid #E8E2D4",
-                            }}
-                          >
-                            {proj.status}
-                          </span>
-                        </td>
+                      {/* Created Date */}
+                      <td style={{ padding: "18px 20px", color: "#5A584F", fontSize: "13px", whiteSpace: "nowrap", minWidth: "130px" }}>
+                        {formatDate(proj.createdAt)}
+                      </td>
 
-                        {/* Action */}
-                        <td style={{ padding: "18px 20px", textAlign: "right" }}>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedProject(proj)}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "6px",
-                              fontSize: "13px",
-                              color: "#8A6B2E",
-                              fontWeight: 600,
-                              background: "none",
-                              border: "none",
-                              cursor: "pointer",
-                              textDecoration: "none",
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                            onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
-                          >
-                            <Eye size={14} />
-                            <span>Drawer</span>
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                      {/* Status */}
+                      <td style={{ padding: "18px 20px", whiteSpace: "nowrap", minWidth: "110px" }}>
+                        <StatusBadge status={proj.status} size="xs" />
+                      </td>
+
+                      {/* Action */}
+                      <td style={{ padding: "18px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "100px" }}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedProject(proj)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontSize: "13px",
+                            color: "#8A6B2E",
+                            fontWeight: 600,
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            textDecoration: "none",
+                            whiteSpace: "nowrap",
+                            flexShrink: 0,
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                        >
+                          <Eye size={14} style={{ flexShrink: 0 }} />
+                          <span style={{ whiteSpace: "nowrap" }}>Drawer</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
 
           {/* Mobile Stacked Cards (< 768px) */}

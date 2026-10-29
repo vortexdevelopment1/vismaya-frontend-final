@@ -309,7 +309,7 @@ export default function AdminOpportunitiesPage() {
       />
 
       {/* Filter Tabs */}
-      <div className="admin-opp-tabs-wrap" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <div className="admin-opp-tabs-wrap" style={{ display: "flex", gap: "8px", overflowX: "auto", flexWrap: "nowrap", WebkitOverflowScrolling: "touch", paddingBottom: "4px" }}>
         {[
           { key: "ALL", label: "All Opportunities", count: statusCounts.ALL },
           { key: "Published", label: "Published Live", count: statusCounts.Published },
@@ -339,6 +339,8 @@ export default function AdminOpportunitiesPage() {
                 border: `1px solid ${isActive ? "#8A6B2E" : "#E8E2D4"}`,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
+                flex: "none",
+                flexShrink: 0,
                 transition: "all 0.15s ease",
               }}
             >
@@ -386,6 +388,7 @@ export default function AdminOpportunitiesPage() {
           className="admin-opp-search-wrap"
           style={{
             flex: "1 1 280px",
+            minWidth: "200px",
             display: "flex",
             alignItems: "center",
             gap: "10px",
@@ -472,32 +475,33 @@ export default function AdminOpportunitiesPage() {
               backgroundColor: "#FFFFFF",
               border: "1px solid #E8E2D4",
               borderRadius: "16px",
-              overflow: "hidden",
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
               boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
+              width: "100%",
             }}
           >
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px", minWidth: "960px" }}>
-                <thead>
-                  <tr
-                    style={{
-                      backgroundColor: "#F3EFE6",
-                      borderBottom: "1px solid #E8E2D4",
-                      color: "#5A584F",
-                      fontWeight: "700",
-                      fontSize: "12px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.14em",
-                    }}
-                  >
-                    <th style={{ padding: "16px 20px" }}>Opportunity</th>
-                    <th style={{ padding: "16px 20px" }}>Project &amp; Studio</th>
-                    <th style={{ padding: "16px 20px" }}>Application Deadline</th>
-                    <th style={{ padding: "16px 20px" }}>Applicants</th>
-                    <th style={{ padding: "16px 20px" }}>Status</th>
-                    <th style={{ padding: "16px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "110px" }}>Action</th>
-                  </tr>
-                </thead>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px", minWidth: "960px", tableLayout: "auto" }}>
+              <thead>
+                <tr
+                  style={{
+                    backgroundColor: "#F3EFE6",
+                    borderBottom: "1px solid #E8E2D4",
+                    color: "#5A584F",
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.14em",
+                  }}
+                >
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "200px", textAlign: "left" }}>Opportunity</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "180px", textAlign: "left" }}>Project &amp; Studio</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "160px", textAlign: "left" }}>Application Deadline</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "110px", textAlign: "left" }}>Applicants</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "120px", textAlign: "left" }}>Status</th>
+                  <th style={{ padding: "16px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "100px" }}>Action</th>
+                </tr>
+              </thead>
                 <tbody>
                   {filteredOpportunities.map((opp) => {
                     const org = getOrgForOpp(opp.orgId);
@@ -565,7 +569,7 @@ export default function AdminOpportunitiesPage() {
                         </td>
 
                         {/* Applicants Count */}
-                        <td style={{ padding: "18px 20px" }}>
+                        <td style={{ padding: "18px 20px", whiteSpace: "nowrap", minWidth: "110px" }}>
                           <span
                             style={{
                               display: "inline-flex",
@@ -578,20 +582,22 @@ export default function AdminOpportunitiesPage() {
                               border: apps.length > 0 ? "1px solid rgba(138, 107, 46, 0.25)" : "1px solid #E8E2D4",
                               fontWeight: 700,
                               fontSize: "12px",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
                             }}
                           >
-                            <Users size={13} />
-                            <span>{apps.length}</span>
+                            <Users size={13} style={{ flexShrink: 0 }} />
+                            <span style={{ whiteSpace: "nowrap" }}>{apps.length}</span>
                           </span>
                         </td>
 
                         {/* Status */}
-                        <td style={{ padding: "18px 20px" }}>
+                        <td style={{ padding: "18px 20px", whiteSpace: "nowrap", minWidth: "120px" }}>
                           <StatusBadge status={opp.status} size="sm" />
                         </td>
 
                         {/* Action */}
-                        <td style={{ padding: "18px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "110px" }}>
+                        <td style={{ padding: "18px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "100px" }}>
                           <button
                             type="button"
                             onClick={() => setViewModalOpp(opp)}
@@ -606,12 +612,14 @@ export default function AdminOpportunitiesPage() {
                               border: "none",
                               cursor: "pointer",
                               textDecoration: "none",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
                             }}
                             onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                             onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
                           >
-                            <Eye size={14} />
-                            <span>Details</span>
+                            <Eye size={14} style={{ flexShrink: 0 }} />
+                            <span style={{ whiteSpace: "nowrap" }}>Details</span>
                           </button>
                         </td>
                       </tr>
@@ -619,7 +627,6 @@ export default function AdminOpportunitiesPage() {
                   })}
                 </tbody>
               </table>
-            </div>
           </div>
         </>
       )}

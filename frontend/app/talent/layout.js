@@ -81,7 +81,12 @@ function TalentLayoutContent({ children }) {
           --sidebar-width: 280px;
           --topbar-height: 72px;
         }
-        @media (max-width: 1024px) {
+        @media (max-width: 1366px) {
+          :root {
+            --sidebar-width: 240px;
+          }
+        }
+        @media (max-width: 1100px) {
           .talent-main-container {
             margin-left: 0 !important;
             width: 100% !important;
@@ -90,8 +95,6 @@ function TalentLayoutContent({ children }) {
             padding-inline: 16px !important;
             padding-block: 20px !important;
           }
-        }
-        @media (max-width: 1023.98px) {
           .talent-sidebar:not(.sidebar-open) {
             transform: translateX(-105%) !important;
             visibility: hidden !important;

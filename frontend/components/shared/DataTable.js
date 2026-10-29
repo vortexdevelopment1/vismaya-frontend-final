@@ -96,6 +96,9 @@ export default function DataTable({
                   position: "relative",
                   display: "flex",
                   alignItems: "center",
+                  flex: "1 1 200px",
+                  maxWidth: "320px",
+                  minWidth: "180px",
                 }}
               >
                 <Search
@@ -125,7 +128,8 @@ export default function DataTable({
                     fontFamily: "var(--font-body), 'Inter', sans-serif",
                     color: "#2B2D2A",
                     outline: "none",
-                    width: "260px",
+                    width: "100%",
+                    minWidth: "180px",
                     height: "44px",
                     minHeight: "44px",
                     boxSizing: "border-box",
@@ -191,9 +195,12 @@ export default function DataTable({
                         letterSpacing: "0.14em",
                         borderBottom: "1px solid #E8E2D4",
                         whiteSpace: "nowrap",
+                        wordBreak: "normal",
+                        overflowWrap: "normal",
                         minWidth: col.minWidth || "auto",
                         width: col.width || "auto",
                         verticalAlign: "middle",
+                        textAlign: col.align || (col.key === "actions" || col.key === "action" ? "right" : "left"),
                         fontFamily: "var(--font-body), 'Inter', sans-serif",
                       }}
                     >
@@ -216,6 +223,16 @@ export default function DataTable({
                   >
                     {columns.map((col) => {
                       const minW = col.minWidth || "auto";
+                      const isNowrapCol =
+                        col.nowrap ||
+                        col.key === "actions" ||
+                        col.key === "action" ||
+                        col.key === "status" ||
+                        col.key === "date" ||
+                        col.key === "joinedDate" ||
+                        col.key === "createdAt" ||
+                        col.key === "ageGender" ||
+                        col.type === "badge";
 
                       if (col.render) {
                         return (
@@ -227,6 +244,10 @@ export default function DataTable({
                               color: "#2B2D2A",
                               verticalAlign: "middle",
                               minWidth: minW,
+                              whiteSpace: isNowrapCol ? "nowrap" : "normal",
+                              wordBreak: "normal",
+                              overflowWrap: "normal",
+                              textAlign: col.align || (col.key === "actions" || col.key === "action" ? "right" : "left"),
                             }}
                           >
                             {col.render(row[col.key], row)}
@@ -246,6 +267,8 @@ export default function DataTable({
                               verticalAlign: "middle",
                               minWidth: minW,
                               whiteSpace: "nowrap",
+                              wordBreak: "normal",
+                              overflowWrap: "normal",
                             }}
                           >
                             <StatusBadge status={value} size="xs" />
@@ -261,9 +284,12 @@ export default function DataTable({
                             color: col.primary ? "#2B2D2A" : "#5A584F",
                             fontSize: col.primary ? "15px" : "14px",
                             fontWeight: col.primary ? "600" : "normal",
-                            whiteSpace: "nowrap",
+                            whiteSpace: isNowrapCol ? "nowrap" : "normal",
+                            wordBreak: "normal",
+                            overflowWrap: "normal",
                             verticalAlign: "middle",
                             minWidth: minW,
+                            textAlign: col.align || (col.key === "actions" || col.key === "action" ? "right" : "left"),
                           }}
                         >
                           {value !== undefined && value !== null ? String(value) : "—"}

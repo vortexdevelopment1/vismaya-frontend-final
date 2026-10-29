@@ -101,11 +101,11 @@ export default function TalentTopbar({ onOpenMobile }) {
         </button>
 
         {/* Page Title & Subtitle */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0, flex: "1 1 auto" }}>
           <h1
             style={{
               fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
-              fontSize: "22px",
+              fontSize: "clamp(16px, 2vw, 22px)",
               lineHeight: "28px",
               fontWeight: 600,
               color: "#2B2D2A",
@@ -114,6 +114,7 @@ export default function TalentTopbar({ onOpenMobile }) {
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
+              minWidth: 0,
             }}
           >
             {getPageTitle()}
@@ -300,12 +301,14 @@ export default function TalentTopbar({ onOpenMobile }) {
       </div>
 
       <style jsx global>{`
-        @media (max-width: 1024px) {
-          .talent-hamburger-btn {
-            display: flex !important;
-          }
+        @media (max-width: 1400px) {
           .talent-topbar-subtitle {
             display: none !important;
+          }
+        }
+        @media (max-width: 1100px) {
+          .talent-hamburger-btn {
+            display: flex !important;
           }
         }
         @media (max-width: 640px) {

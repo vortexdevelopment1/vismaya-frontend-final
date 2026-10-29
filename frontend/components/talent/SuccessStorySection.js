@@ -315,6 +315,10 @@ export default function SuccessStorySection({ profile, user }) {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "4px",
+                        whiteSpace: "nowrap",
+                        lineHeight: 1,
+                        flex: "none",
+                        flexShrink: 0,
                       }}
                     >
                       {isApproved && <CheckCircle size={11} />}

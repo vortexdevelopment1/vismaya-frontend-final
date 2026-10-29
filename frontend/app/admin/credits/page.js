@@ -262,16 +262,16 @@ export default function AdminCreditsPage() {
 
           {/* Desktop Table View */}
           <div className="admin-credits-desktop-table" style={{ width: "100%", overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13.5px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13.5px", minWidth: "920px", tableLayout: "auto" }}>
               <thead>
                 <tr style={{ borderBottom: "2px solid #E8E2D4", textAlign: "left", color: "#5A584F" }}>
-                  <th style={{ padding: "12px 14px" }}>Organization</th>
-                  <th style={{ padding: "12px 14px" }}>Contact</th>
-                  <th style={{ padding: "12px 14px" }}>Included</th>
-                  <th style={{ padding: "12px 14px" }}>Purchased</th>
-                  <th style={{ padding: "12px 14px" }}>Consumed</th>
-                  <th style={{ padding: "12px 14px" }}>Current Balance</th>
-                  <th style={{ padding: "12px 14px", textAlign: "right" }}>Action</th>
+                  <th style={{ padding: "12px 14px", whiteSpace: "nowrap", minWidth: "180px" }}>Organization</th>
+                  <th style={{ padding: "12px 14px", whiteSpace: "nowrap", minWidth: "160px" }}>Contact</th>
+                  <th style={{ padding: "12px 14px", whiteSpace: "nowrap", minWidth: "100px" }}>Included</th>
+                  <th style={{ padding: "12px 14px", whiteSpace: "nowrap", minWidth: "100px" }}>Purchased</th>
+                  <th style={{ padding: "12px 14px", whiteSpace: "nowrap", minWidth: "100px" }}>Consumed</th>
+                  <th style={{ padding: "12px 14px", whiteSpace: "nowrap", minWidth: "140px" }}>Current Balance</th>
+                  <th style={{ padding: "12px 14px", textAlign: "right", whiteSpace: "nowrap", minWidth: "100px" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -419,15 +419,15 @@ export default function AdminCreditsPage() {
 
           {/* Desktop Table View */}
           <div className="admin-credits-desktop-table" style={{ width: "100%", overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "920px", tableLayout: "auto" }}>
               <thead>
                 <tr style={{ borderBottom: "2px solid #E8E2D4", textAlign: "left", color: "#5A584F" }}>
-                  <th style={{ padding: "12px" }}>Date</th>
-                  <th style={{ padding: "12px" }}>Studio</th>
-                  <th style={{ padding: "12px" }}>Transaction Type</th>
-                  <th style={{ padding: "12px" }}>Change</th>
-                  <th style={{ padding: "12px" }}>Balance After</th>
-                  <th style={{ padding: "12px" }}>Notes</th>
+                  <th style={{ padding: "12px", whiteSpace: "nowrap", minWidth: "120px" }}>Date</th>
+                  <th style={{ padding: "12px", whiteSpace: "nowrap", minWidth: "180px" }}>Studio</th>
+                  <th style={{ padding: "12px", whiteSpace: "nowrap", minWidth: "160px" }}>Transaction Type</th>
+                  <th style={{ padding: "12px", whiteSpace: "nowrap", minWidth: "100px" }}>Change</th>
+                  <th style={{ padding: "12px", whiteSpace: "nowrap", minWidth: "120px" }}>Balance After</th>
+                  <th style={{ padding: "12px", whiteSpace: "nowrap", minWidth: "180px" }}>Notes</th>
                 </tr>
               </thead>
               <tbody>

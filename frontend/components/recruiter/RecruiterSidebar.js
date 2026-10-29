@@ -361,7 +361,16 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
       </aside>
 
       <style jsx global>{`
-        @media (max-width: 1023.98px) {
+        @media (max-width: 1366px) and (min-width: 1101px) {
+          .recruiter-sidebar {
+            width: 240px !important;
+          }
+          :global(.recruiter-sidebar .recruiter-nav-item) {
+            padding: 8px 12px !important;
+            font-size: 13px !important;
+          }
+        }
+        @media (max-width: 1100px) {
           .recruiter-sidebar:not(.sidebar-open) {
             transform: translateX(-115%) !important;
             left: -320px !important;
@@ -382,7 +391,7 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
             display: flex !important;
           }
         }
-        @media (min-width: 1024px) {
+        @media (min-width: 1101px) {
           .mobile-close-btn {
             display: none !important;
           }

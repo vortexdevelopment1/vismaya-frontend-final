@@ -2250,6 +2250,11 @@ export default function ShortlistAuditionsPage() {
           border: 1px solid rgba(138, 107, 46, 0.22);
           border-radius: 6px;
           padding: 3px 8px;
+          white-space: nowrap !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          line-height: 1 !important;
+          flex: none !important;
         }
         .v-opp-status-pill {
           font-size: 11px;
@@ -2341,6 +2346,9 @@ export default function ShortlistAuditionsPage() {
           align-items: center;
           justify-content: center;
           gap: 8px;
+          white-space: nowrap;
+          word-break: normal;
+          overflow-wrap: normal;
           cursor: pointer;
           transition: all 0.18s ease;
           font-family: var(--font-body), 'Inter', sans-serif;
@@ -3284,6 +3292,9 @@ export default function ShortlistAuditionsPage() {
             box-sizing: border-box !important;
             padding: 0 8px !important;
             border-radius: 8px !important;
+            white-space: nowrap !important;
+            word-break: normal !important;
+            overflow-wrap: normal !important;
           }
 
           /* LEVEL 2: Summary Boxes Mobile */

@@ -660,9 +660,26 @@ select {
 
 /* Text safety against horizontal overflow */
 .safe-text,
-p, span, h1, h2, h3, h4, h5, h6, td, th {
-  overflow-wrap: anywhere;
-  word-break: break-word;
+p, h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+td, th, button, .status-badge, [class*="badge"], [class*="pill"] {
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+.status-badge-has-dot::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--badge-dot-color, currentColor);
+  margin-right: 6px;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 /* Horizontal scrollable tab/chip bar with hidden scrollbar and scroll snap */
@@ -1531,6 +1548,173 @@ select:disabled {
     white-space: normal !important;
   }
 }
+
+/* ==========================================================================
+   DESKTOP / LAPTOP RESPONSIVENESS PASS (1024px to 1536px)
+   Protects mobile (<= 767px) and 1920px (>= 1600px) desktop defaults.
+   ========================================================================== */
+
+/* 1. Global Pills, Badges, Tabs & Action Chips */
+.badge,
+.status-badge,
+.status-pill,
+.chip,
+.app-filter-chip,
+.filter-chip,
+.tag,
+.pill,
+.tab-btn,
+.tab-touch-btn {
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  flex: none !important;
+  flex-shrink: 0 !important;
+}
+
+/* 2. Responsive Tables, Columns & Action Buttons */
+.table-responsive,
+.data-table-container,
+[class*="table-wrap"],
+[class*="desktop-table"],
+.dt-desktop-view,
+.admin-projects-desktop-table,
+.admin-opp-desktop-table,
+.admin-credits-desktop-table {
+  overflow-x: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  -webkit-overflow-scrolling: touch !important;
+  position: relative !important;
+  text-align: left !important;
+}
+
+/* Inside scroll wrappers, tables must maintain sensible min-width without being crushed */
+.dt-desktop-view table,
+.table-responsive table,
+[class*="table-wrap"] table,
+[class*="desktop-table"] table,
+.admin-projects-desktop-table table,
+.admin-opp-desktop-table table,
+.admin-credits-desktop-table table,
+.cancel-table,
+.aud-table {
+  width: 100% !important;
+  min-width: 960px !important;
+  max-width: none !important;
+  table-layout: auto !important;
+  border-collapse: collapse !important;
+  margin: 0 !important;
+  text-align: left !important;
+}
+
+/* Ensure table cells align properly, text starts at left edge, and no mid-word breaking */
+table th,
+table td {
+  text-align: left;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+table th:first-child,
+table td:first-child {
+  text-align: left !important;
+}
+
+td[class*="status"],
+th[class*="status"],
+td[class*="action"],
+th[class*="action"],
+td[class*="actions"],
+th[class*="actions"],
+td[class*="date"],
+th[class*="date"],
+td[class*="count"],
+th[class*="count"],
+td:has(.status-badge),
+td:has(.badge),
+td:has(.status-pill),
+td:has(button) {
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  word-wrap: normal !important;
+}
+
+/* Status badges, pills, chips and action buttons must never break mid-word */
+.status-badge,
+.status-pill,
+[class*="badge"],
+[class*="pill"],
+[class*="chip"],
+button,
+a[class*="btn"],
+.action-icon-btn {
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  word-wrap: normal !important;
+  flex-shrink: 0;
+}
+
+td[class*="action"] > div,
+td[class*="action"] > span,
+td[class*="actions"] > div,
+td[class*="actions"] > span {
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+}
+
+/* 3. Filter Bars */
+.filter-bar,
+.filter-row,
+.admin-projects-filter-card,
+[class*="filter-card"],
+[class*="filter-wrap"] {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+}
+
+.data-table-search-input,
+.admin-projects-search-input {
+  min-width: 180px !important;
+}
+
+/* 4. Page Headers & Titles */
+.page-header-title {
+  font-size: clamp(28px, 2.2vw, 40px) !important;
+  line-height: 1.2 !important;
+  min-width: 0 !important;
+}
+
+.page-header-subtitle {
+  max-width: 780px !important;
+  min-width: 0 !important;
+}
+
+.page-header-badge {
+  white-space: nowrap !important;
+  flex: none !important;
+}
+
+/* 5. Cards & Grids at Laptop Breakpoints (1024px - 1366px) */
+@media (max-width: 1280px) and (min-width: 768px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 768px) {
+  .admin-dash-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 
 
 

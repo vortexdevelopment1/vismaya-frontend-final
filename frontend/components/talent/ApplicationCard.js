@@ -344,7 +344,7 @@ export default function ApplicationCard({ application }) {
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px" }} className="app-header-badge">
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px" }} className="app-header-status-col">
             <StatusBadge status={application.status} size="md" />
             <span className="app-card-applied-date" style={{ fontSize: "12px", color: "var(--text-muted, #777970)" }}>
               Applied {new Date(application.appliedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}

@@ -85,7 +85,12 @@ function AdminLayoutContent({ children }) {
           --sidebar-width: 280px;
           --topbar-height: 72px;
         }
-        @media (max-width: 1024px) {
+        @media (max-width: 1366px) {
+          :root {
+            --sidebar-width: 240px;
+          }
+        }
+        @media (max-width: 1100px) {
           .admin-main-container {
             margin-left: 0 !important;
             width: 100% !important;

@@ -627,7 +627,7 @@ export default function OpportunityApplicantsPage() {
           className="applicants-table-card"
         >
           <div style={{ overflowX: "auto" }} className="desktop-applicants-table">
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem", minWidth: "960px", tableLayout: "auto" }}>
               <thead style={{ position: "sticky", top: 0, zIndex: 2, backgroundColor: "#FAF9F7" }}>
                 <tr
                   style={{
@@ -639,13 +639,13 @@ export default function OpportunityApplicantsPage() {
                     letterSpacing: "0.04em",
                   }}
                 >
-                  <th style={{ padding: "16px 20px" }}>Talent / Candidate</th>
-                  <th style={{ padding: "16px 20px" }}>Applied Role</th>
-                  <th style={{ padding: "16px 20px" }}>Age & Location</th>
-                  <th style={{ padding: "16px 20px" }}>Applied Date</th>
-                  <th style={{ padding: "16px 20px" }}>Audition / Media</th>
-                  <th style={{ padding: "16px 20px" }}>Status</th>
-                  <th style={{ padding: "16px 20px", textAlign: "right" }}>Action</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "200px" }}>Talent / Candidate</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "150px" }}>Applied Role</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "140px" }}>Age &amp; Location</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "120px" }}>Applied Date</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "150px" }}>Audition / Media</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "110px" }}>Status</th>
+                  <th style={{ padding: "16px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "100px" }}>Action</th>
                 </tr>
               </thead>
               <tbody>

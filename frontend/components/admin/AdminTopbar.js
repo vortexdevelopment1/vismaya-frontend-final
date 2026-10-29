@@ -178,12 +178,12 @@ export default function AdminTopbar({ onOpenMobile }) {
         </button>
 
         {/* Page Title & Subtitle */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0, flex: "1 1 auto" }}>
           <h1
             className="admin-topbar-title"
             style={{
               fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
-              fontSize: "20px",
+              fontSize: "clamp(16px, 1.8vw, 20px)",
               lineHeight: "26px",
               fontWeight: 600,
               color: "#2B2D2A",
@@ -192,6 +192,7 @@ export default function AdminTopbar({ onOpenMobile }) {
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
+              minWidth: 0,
             }}
           >
             <span className="admin-title-desktop">{getPageTitle()}</span>
@@ -220,9 +221,9 @@ export default function AdminTopbar({ onOpenMobile }) {
       <div
         ref={searchContainerRef}
         style={{
-          flex: "1 1 auto",
-          maxWidth: "460px",
-          minWidth: "180px",
+          flex: "1 1 220px",
+          maxWidth: "420px",
+          minWidth: "160px",
           position: "relative",
         }}
         className={`admin-global-search-container ${mobileSearchOpen ? "mobile-search-active" : ""}`}
@@ -483,6 +484,8 @@ export default function AdminTopbar({ onOpenMobile }) {
         <div ref={exportRef} style={{ position: "relative" }} className="admin-export-wrapper">
           <button
             onClick={() => setShowExportMenu(!showExportMenu)}
+            aria-label="Export CSV Reports"
+            className="admin-export-btn"
             style={{
               height: "36px",
               paddingInline: "12px",
@@ -766,12 +769,43 @@ export default function AdminTopbar({ onOpenMobile }) {
           display: none !important;
         }
 
-        @media (max-width: 1024px) {
-          .admin-hamburger-btn {
-            display: flex !important;
-          }
+        @media (max-width: 1400px) {
           .admin-desktop-subtitle {
             display: none !important;
+          }
+        }
+
+        @media (max-width: 1366px) {
+          .admin-export-btn-text {
+            display: none !important;
+          }
+          .admin-export-btn {
+            padding: 0 10px !important;
+            gap: 0 !important;
+          }
+        }
+
+        @media (max-width: 1280px) {
+          .admin-global-search-container:not(.mobile-search-active) {
+            display: none !important;
+          }
+          .admin-mobile-search-btn {
+            display: flex !important;
+          }
+          .admin-status-chip span:last-child {
+            display: none !important;
+          }
+          .admin-status-chip {
+            padding-inline: 0 !important;
+            width: 26px !important;
+            height: 26px !important;
+            justify-content: center !important;
+          }
+        }
+
+        @media (max-width: 1100px) {
+          .admin-hamburger-btn {
+            display: flex !important;
           }
         }
 
