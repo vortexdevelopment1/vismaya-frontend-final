@@ -6,10 +6,14 @@ import TalentSidebar from "@/components/talent/TalentSidebar";
 import TalentTopbar from "@/components/talent/TalentTopbar";
 import ToastContainer from "@/components/shared/Toast";
 import RequireRole from "@/components/auth/RequireRole";
+import { useAuth } from "@/context/AuthContext";
+import LogoutConfirmModal from "@/components/shared/LogoutConfirmModal";
 
 function TalentLayoutContent({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const { toasts, removeToast } = useTalent();
+  const { logout } = useAuth();
 
   React.useEffect(() => {
     if (typeof document !== "undefined") {
@@ -36,6 +40,7 @@ function TalentLayoutContent({ children }) {
       <TalentSidebar
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
+        onOpenLogout={() => setLogoutModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -75,6 +80,15 @@ function TalentLayoutContent({ children }) {
 
       {/* Shared Toasts */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
+
+      {/* Logout Confirmation Modal */}
+      <LogoutConfirmModal
+        isOpen={logoutModalOpen}
+        onClose={() => setLogoutModalOpen(false)}
+        onConfirm={async () => {
+          await logout();
+        }}
+      />
 
       <style jsx global>{`
         :root {

@@ -11,7 +11,7 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useAuth } from "@/context/AuthContext";
 import StatusBadge from "@/components/shared/StatusBadge";
 
-export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) {
+export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile, onOpenLogout }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
@@ -332,9 +332,13 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
 
             <button
               type="button"
-              onClick={async (e) => {
+              onClick={(e) => {
                 e.preventDefault();
-                await logout();
+                if (typeof onOpenLogout === "function") {
+                  onOpenLogout();
+                } else {
+                  logout();
+                }
               }}
               title="Logout of Organization Portal"
               aria-label="Logout of Organization Portal"

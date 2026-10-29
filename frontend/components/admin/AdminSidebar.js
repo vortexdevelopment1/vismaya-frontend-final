@@ -10,7 +10,7 @@ import { useAdmin } from "@/lib/admin/AdminContext";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 
-export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
+export default function AdminSidebar({ mobileOpen = false, onCloseMobile, onOpenLogout }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
@@ -433,9 +433,13 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
 
             <button
               type="button"
-              onClick={async (e) => {
+              onClick={(e) => {
                 e.preventDefault();
-                await logout();
+                if (typeof onOpenLogout === "function") {
+                  onOpenLogout();
+                } else {
+                  logout("/admin/login");
+                }
               }}
               title="Logout of Admin Console"
               aria-label="Logout of Admin Console"

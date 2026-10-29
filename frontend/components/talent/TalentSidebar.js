@@ -11,7 +11,7 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useAuth } from "@/context/AuthContext";
 import { isRealMode } from "@/lib/api/config";
 
-export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
+export default function TalentSidebar({ mobileOpen = false, onCloseMobile, onOpenLogout }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -414,9 +414,13 @@ export default function TalentSidebar({ mobileOpen = false, onCloseMobile }) {
 
             <button
               type="button"
-              onClick={async (e) => {
+              onClick={(e) => {
                 e.preventDefault();
-                await logout();
+                if (typeof onOpenLogout === "function") {
+                  onOpenLogout();
+                } else {
+                  logout();
+                }
               }}
               title="Logout of Vismaya"
               aria-label="Logout"
