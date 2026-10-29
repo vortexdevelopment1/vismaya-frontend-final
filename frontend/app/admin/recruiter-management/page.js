@@ -500,7 +500,7 @@ export default function RecruiterManagementPage() {
       <PageHeader
         title="Organization Management"
         subtitle="Verify corporate identities, review CIN and GST registration documents, and manage accredited studio accounts."
-        badge={`${recruiters.length} Registered Organizations`}
+        badge={`${recruiters?.length ?? 0} Registered Organizations`}
       />
 
       {/* Filter Tabs */}

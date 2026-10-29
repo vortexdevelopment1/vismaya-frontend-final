@@ -79,8 +79,14 @@ export default function PublicNav() {
     if (routeHref === "/contact") {
       return pathname === "/contact" || pathname.startsWith("/contact/");
     }
+    if (routeHref === "/pricing") {
+      return pathname === "/pricing" || pathname.startsWith("/pricing/");
+    }
     if (routeHref === "/login") {
-      return pathname === "/login";
+      return pathname === "/login" || pathname.startsWith("/login/");
+    }
+    if (routeHref === "/register") {
+      return pathname.startsWith("/register");
     }
     if (routeHref.includes("dashboard")) {
       return (
@@ -96,14 +102,19 @@ export default function PublicNav() {
   const dashboardUrl = isLoggedIn ? (getDashboardPath() || "/talent/dashboard") : "/talent/dashboard";
 
   // Navigation Links definition
-  // When logged out: Home, About, Pricing, Contact, Login
+  // When logged out: Home, About, Pricing, Contact, Login, Register
   // When logged in: Home, About, Pricing, Contact (Right CTA button handles Dashboard, avoiding duplicate 'Dashboard' links)
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
     { label: "Pricing", href: "/pricing" },
     { label: "Contact", href: "/contact" },
-    ...(!isLoggedIn ? [{ label: "Login", href: "/login" }] : []),
+    ...(!isLoggedIn
+      ? [
+          { label: "Login", href: "/login" },
+          { label: "Register", href: "/register" },
+        ]
+      : []),
   ];
 
   return (
@@ -142,20 +153,12 @@ export default function PublicNav() {
 
         {/* 3. Right: Action Buttons (Desktop) */}
         <div className="public-nav-actions">
-          {isLoggedIn ? (
+          {isLoggedIn && (
             <Link
               href={dashboardUrl}
               className="public-nav-cta"
             >
               <span>Dashboard</span>
-              <ArrowRight size={14} className="public-nav-cta-arrow" />
-            </Link>
-          ) : (
-            <Link
-              href="/register"
-              className="public-nav-cta"
-            >
-              <span>Register</span>
               <ArrowRight size={14} className="public-nav-cta-arrow" />
             </Link>
           )}
@@ -193,26 +196,18 @@ export default function PublicNav() {
               );
             })}
 
-            <div className="public-nav-mobile-divider" />
-
-            {isLoggedIn ? (
-              <Link
-                href={dashboardUrl}
-                className="public-nav-mobile-cta"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span>Go to Dashboard</span>
-                <ArrowRight size={15} />
-              </Link>
-            ) : (
-              <Link
-                href="/register"
-                className="public-nav-mobile-cta"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span>Register Now</span>
-                <ArrowRight size={15} />
-              </Link>
+            {isLoggedIn && (
+              <>
+                <div className="public-nav-mobile-divider" />
+                <Link
+                  href={dashboardUrl}
+                  className="public-nav-mobile-cta"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span>Go to Dashboard</span>
+                  <ArrowRight size={15} />
+                </Link>
+              </>
             )}
           </div>
         )}

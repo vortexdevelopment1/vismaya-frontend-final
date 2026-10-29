@@ -91,7 +91,7 @@ export default function PageHeader({
               className="page-header-title"
               style={{
                 fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
-                fontSize: "clamp(26px, 3.5vw, 40px)",
+                fontSize: "clamp(28px, 2.2vw, 40px)",
                 lineHeight: 1.15,
                 fontWeight: 600,
                 color: "#2B2D2A",
@@ -99,6 +99,7 @@ export default function PageHeader({
                 margin: 0,
                 overflowWrap: "break-word",
                 wordBreak: "normal",
+                minWidth: 0,
               }}
             >
               {title}
@@ -113,6 +114,7 @@ export default function PageHeader({
                   padding: "4px 12px",
                   borderRadius: "999px",
                   backgroundColor: "rgba(138, 107, 46, 0.10)",
+                  flex: "none",
                   color: "#6E5420",
                   border: "1px solid rgba(138, 107, 46, 0.20)",
                   letterSpacing: "0.12em",
@@ -121,7 +123,9 @@ export default function PageHeader({
                   fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
-                {badge}
+                {typeof badge === "string"
+                  ? badge.replace(/\b(undefined|NaN|null)\b/gi, "0")
+                  : badge}
               </span>
             )}
           </div>

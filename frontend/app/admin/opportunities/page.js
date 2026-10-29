@@ -21,6 +21,7 @@ import {
   Globe,
   ChevronRight,
   ChevronDown,
+  X,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
@@ -91,7 +92,27 @@ export default function AdminOpportunitiesPage() {
 
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [orgFilter, setOrgFilter] = useState("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return new URLSearchParams(window.location.search).get("search") || "";
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const handleLocationChange = () => {
+        const q = new URLSearchParams(window.location.search).get("search") || "";
+        if (q) setSearchQuery(q);
+      };
+      window.addEventListener("popstate", handleLocationChange);
+      return () => window.removeEventListener("popstate", handleLocationChange);
+    }
+  }, []);
 
   // Detail Modal for view and action
   const [viewModalOpp, setViewModalOpp] = useState(null);
@@ -301,7 +322,7 @@ export default function AdminOpportunitiesPage() {
       <PageHeader
         title="Opportunities Directory"
         subtitle="Platform-wide directory of casting opportunities, application metrics, auto-closing schedules, and statuses."
-        badge={`${opportunities.length} Total Opportunities`}
+        badge={`${opportunities?.length ?? 0} Total Opportunities`}
         breadcrumbs={[
           { label: "Dashboard", href: "/admin/dashboard" },
           { label: "Opportunities" },
@@ -309,7 +330,7 @@ export default function AdminOpportunitiesPage() {
       />
 
       {/* Filter Tabs */}
-      <div className="admin-opp-tabs-wrap" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <div className="admin-opp-tabs-wrap" style={{ display: "flex", gap: "8px", overflowX: "auto", flexWrap: "nowrap", WebkitOverflowScrolling: "touch", paddingBottom: "4px" }}>
         {[
           { key: "ALL", label: "All Opportunities", count: statusCounts.ALL },
           { key: "Published", label: "Published Live", count: statusCounts.Published },
@@ -339,6 +360,8 @@ export default function AdminOpportunitiesPage() {
                 border: `1px solid ${isActive ? "#8A6B2E" : "#E8E2D4"}`,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
+                flex: "none",
+                flexShrink: 0,
                 transition: "all 0.15s ease",
               }}
             >
@@ -383,36 +406,81 @@ export default function AdminOpportunitiesPage() {
         }}
       >
         <div
-          className="admin-opp-search-wrap"
+          className="admin-opp-search-wrap vismaya-search-wrap"
           style={{
             flex: "1 1 280px",
+            minWidth: "200px",
+            position: "relative",
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D9D2C0",
-            borderRadius: "10px",
-            padding: "0 14px",
-            height: "44px",
+            border: "none",
+            background: "transparent",
+            padding: 0,
           }}
         >
-          <Search size={16} style={{ color: "#5A584F" }} />
+          <Search
+            size={18}
+            className="vismaya-search-icon"
+            style={{
+              position: "absolute",
+              left: "14px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#8A8170",
+              stroke: "#8A8170",
+              pointerEvents: "none",
+              zIndex: 2,
+            }}
+          />
           <input
             type="text"
-            className="admin-opp-search-input"
+            className="admin-opp-search-input vismaya-search-input"
             placeholder="Search opportunity title, studio, project..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
-              border: "none",
-              background: "transparent",
-              outline: "none",
-              fontSize: "14px",
-              color: "#2B2D2A",
               width: "100%",
-              fontFamily: "Inter, sans-serif",
+              height: "44px",
+              minHeight: "44px",
+              paddingLeft: "42px",
+              paddingRight: searchQuery ? "38px" : "14px",
+              border: "1px solid #D9D1BF",
+              borderRadius: "10px",
+              backgroundColor: "#FFFFFF",
+              color: "#2A241A",
+              fontSize: "14px",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+              outline: "none",
+              boxSizing: "border-box",
+              transition: "border-color 0.16s ease, box-shadow 0.16s ease",
             }}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="vismaya-search-clear-btn"
+              aria-label="Clear search"
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "#8A8170",
+                padding: "4px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "50%",
+                zIndex: 2,
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
         <div className="admin-opp-org-select-wrap" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -472,32 +540,33 @@ export default function AdminOpportunitiesPage() {
               backgroundColor: "#FFFFFF",
               border: "1px solid #E8E2D4",
               borderRadius: "16px",
-              overflow: "hidden",
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
               boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
+              width: "100%",
             }}
           >
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px", minWidth: "960px" }}>
-                <thead>
-                  <tr
-                    style={{
-                      backgroundColor: "#F3EFE6",
-                      borderBottom: "1px solid #E8E2D4",
-                      color: "#5A584F",
-                      fontWeight: "700",
-                      fontSize: "12px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.14em",
-                    }}
-                  >
-                    <th style={{ padding: "16px 20px" }}>Opportunity</th>
-                    <th style={{ padding: "16px 20px" }}>Project &amp; Studio</th>
-                    <th style={{ padding: "16px 20px" }}>Application Deadline</th>
-                    <th style={{ padding: "16px 20px" }}>Applicants</th>
-                    <th style={{ padding: "16px 20px" }}>Status</th>
-                    <th style={{ padding: "16px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "110px" }}>Action</th>
-                  </tr>
-                </thead>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px", minWidth: "960px", tableLayout: "auto" }}>
+              <thead>
+                <tr
+                  style={{
+                    backgroundColor: "#F3EFE6",
+                    borderBottom: "1px solid #E8E2D4",
+                    color: "#5A584F",
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.14em",
+                  }}
+                >
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "200px", textAlign: "left" }}>Opportunity</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "180px", textAlign: "left" }}>Project &amp; Studio</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "160px", textAlign: "left" }}>Application Deadline</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "110px", textAlign: "left" }}>Applicants</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "120px", textAlign: "left" }}>Status</th>
+                  <th style={{ padding: "16px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "100px" }}>Action</th>
+                </tr>
+              </thead>
                 <tbody>
                   {filteredOpportunities.map((opp) => {
                     const org = getOrgForOpp(opp.orgId);
@@ -565,7 +634,7 @@ export default function AdminOpportunitiesPage() {
                         </td>
 
                         {/* Applicants Count */}
-                        <td style={{ padding: "18px 20px" }}>
+                        <td style={{ padding: "18px 20px", whiteSpace: "nowrap", minWidth: "110px" }}>
                           <span
                             style={{
                               display: "inline-flex",
@@ -578,20 +647,22 @@ export default function AdminOpportunitiesPage() {
                               border: apps.length > 0 ? "1px solid rgba(138, 107, 46, 0.25)" : "1px solid #E8E2D4",
                               fontWeight: 700,
                               fontSize: "12px",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
                             }}
                           >
-                            <Users size={13} />
-                            <span>{apps.length}</span>
+                            <Users size={13} style={{ flexShrink: 0 }} />
+                            <span style={{ whiteSpace: "nowrap" }}>{apps.length}</span>
                           </span>
                         </td>
 
                         {/* Status */}
-                        <td style={{ padding: "18px 20px" }}>
+                        <td style={{ padding: "18px 20px", whiteSpace: "nowrap", minWidth: "120px" }}>
                           <StatusBadge status={opp.status} size="sm" />
                         </td>
 
                         {/* Action */}
-                        <td style={{ padding: "18px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "110px" }}>
+                        <td style={{ padding: "18px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "100px" }}>
                           <button
                             type="button"
                             onClick={() => setViewModalOpp(opp)}
@@ -606,12 +677,14 @@ export default function AdminOpportunitiesPage() {
                               border: "none",
                               cursor: "pointer",
                               textDecoration: "none",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
                             }}
                             onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                             onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
                           >
-                            <Eye size={14} />
-                            <span>Details</span>
+                            <Eye size={14} style={{ flexShrink: 0 }} />
+                            <span style={{ whiteSpace: "nowrap" }}>Details</span>
                           </button>
                         </td>
                       </tr>
@@ -619,7 +692,6 @@ export default function AdminOpportunitiesPage() {
                   })}
                 </tbody>
               </table>
-            </div>
           </div>
         </>
       )}

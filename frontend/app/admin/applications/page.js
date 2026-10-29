@@ -19,6 +19,7 @@ import {
   XCircle,
   AlertCircle,
   Video,
+  X,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
@@ -274,36 +275,80 @@ export default function AdminApplicationsOverviewPage() {
         }}
       >
         <div
-          className="admin-app-search-wrap"
+          className="admin-app-search-wrap vismaya-search-wrap"
           style={{
             flex: "1 1 260px",
+            position: "relative",
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D9D2C0",
-            borderRadius: "10px",
-            padding: "0 14px",
-            height: "44px",
+            border: "none",
+            background: "transparent",
+            padding: 0,
           }}
         >
-          <Search size={16} style={{ color: "#5A584F" }} />
+          <Search
+            size={18}
+            className="vismaya-search-icon"
+            style={{
+              position: "absolute",
+              left: "14px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#8A8170",
+              stroke: "#8A8170",
+              pointerEvents: "none",
+              zIndex: 2,
+            }}
+          />
           <input
             type="text"
-            className="admin-app-search-input"
+            className="admin-app-search-input vismaya-search-input"
             placeholder="Search candidate name, role, city..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
-              border: "none",
-              background: "transparent",
-              outline: "none",
-              fontSize: "14px",
-              color: "#2B2D2A",
               width: "100%",
-              fontFamily: "Inter, sans-serif",
+              height: "44px",
+              minHeight: "44px",
+              paddingLeft: "42px",
+              paddingRight: searchQuery ? "38px" : "14px",
+              border: "1px solid #D9D1BF",
+              borderRadius: "10px",
+              backgroundColor: "#FFFFFF",
+              color: "#2A241A",
+              fontSize: "14px",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+              outline: "none",
+              boxSizing: "border-box",
+              transition: "border-color 0.16s ease, box-shadow 0.16s ease",
             }}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="vismaya-search-clear-btn"
+              aria-label="Clear search"
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "#8A8170",
+                padding: "4px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "50%",
+                zIndex: 2,
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
         <div className="admin-app-selects-row" style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
@@ -412,12 +457,12 @@ export default function AdminApplicationsOverviewPage() {
                     letterSpacing: "0.14em",
                   }}
                 >
-                  <th style={{ padding: "16px 20px" }}>Candidate / Talent</th>
-                  <th style={{ padding: "16px 20px" }}>Applied Role</th>
-                  <th style={{ padding: "16px 20px" }}>Opportunity &amp; Studio</th>
-                  <th style={{ padding: "16px 20px" }}>Applied Date</th>
-                  <th style={{ padding: "16px 20px" }}>Status</th>
-                  <th style={{ padding: "16px 20px", textAlign: "right" }}>Action</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "200px", textAlign: "left" }}>Candidate / Talent</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "150px", textAlign: "left" }}>Applied Role</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "180px", textAlign: "left" }}>Opportunity &amp; Studio</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "130px", textAlign: "left" }}>Applied Date</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "120px", textAlign: "left" }}>Status</th>
+                  <th style={{ padding: "16px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "110px" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -499,17 +544,17 @@ export default function AdminApplicationsOverviewPage() {
                       </td>
 
                       {/* Applied Date */}
-                      <td style={{ padding: "16px 20px", color: "#5A584F", fontSize: "13px" }}>
+                      <td style={{ padding: "16px 20px", color: "#5A584F", fontSize: "13px", whiteSpace: "nowrap", minWidth: "130px" }}>
                         {formatDate(app.appliedAt)}
                       </td>
 
                       {/* Status */}
-                      <td style={{ padding: "16px 20px" }}>
+                      <td style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "120px" }}>
                         <StatusBadge status={app.status} size="sm" />
                       </td>
 
                       {/* Action */}
-                      <td style={{ padding: "16px 20px", textAlign: "right" }}>
+                      <td style={{ padding: "16px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "110px" }}>
                         <button
                           type="button"
                           onClick={() => setTimelineApp(app)}
@@ -526,12 +571,14 @@ export default function AdminApplicationsOverviewPage() {
                             fontWeight: 600,
                             cursor: "pointer",
                             transition: "all 0.15s ease",
+                            whiteSpace: "nowrap",
+                            flexShrink: 0,
                           }}
                           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F3EFE6")}
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#FFFFFF")}
                         >
-                          <Eye size={14} />
-                          <span>Timeline</span>
+                          <Eye size={14} style={{ flexShrink: 0 }} />
+                          <span style={{ whiteSpace: "nowrap" }}>Timeline</span>
                         </button>
                       </td>
                     </tr>
@@ -884,15 +931,26 @@ export default function AdminApplicationsOverviewPage() {
           }
           .admin-app-search-wrap {
             width: 100% !important;
-            height: 44px !important;
-            min-height: 44px !important;
-            max-height: 44px !important;
+            height: 48px !important;
+            min-height: 48px !important;
             box-sizing: border-box !important;
             flex: none !important;
+            border: none !important;
+            background: transparent !important;
+            padding: 0 !important;
           }
           .admin-app-search-input {
+            height: 48px !important;
+            min-height: 48px !important;
             font-size: 16px !important;
-            height: 100% !important;
+            padding-left: 42px !important;
+            border: 1px solid #D9D1BF !important;
+            border-radius: 10px !important;
+            background-color: #FFFFFF !important;
+          }
+          .admin-app-search-input:focus {
+            border-color: #8A6B2E !important;
+            box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
           }
           .admin-app-selects-row {
             width: 100% !important;

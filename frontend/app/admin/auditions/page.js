@@ -347,7 +347,7 @@ export default function AdminAuditionsManagementPage() {
       <PageHeader
         title="Auditions & Self-Tapes Relay"
         subtitle="Admin gateway between studio requests and talent submissions. Review audition requests, relay invitations, and moderate self-tapes."
-        badge={`${statusCounts.Requested} NEEDS RELAY`}
+        badge={`${statusCounts?.NeedsRelay ?? 0} NEEDS RELAY`}
         breadcrumbs={[
           { label: "Dashboard", href: "/admin/dashboard" },
           { label: "Auditions & Self-Tapes" },
@@ -378,15 +378,17 @@ export default function AdminAuditionsManagementPage() {
 
       {/* Toolbar Row */}
       <div className="aud-toolbar-row">
-        <div className="aud-search-wrap">
+        <div className="aud-search-wrap vismaya-search-wrap">
           <Search
-            size={16}
+            size={18}
+            className="vismaya-search-icon"
             style={{
               position: "absolute",
               left: "14px",
               top: "50%",
               transform: "translateY(-50%)",
-              color: "#5A584F",
+              color: "#8A8170",
+              stroke: "#8A8170",
               pointerEvents: "none",
               zIndex: 2,
             }}
@@ -396,14 +398,14 @@ export default function AdminAuditionsManagementPage() {
             placeholder="Search candidate, role, opportunity, studio..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="aud-search-input"
+            className="aud-search-input vismaya-search-input"
             aria-label="Search auditions"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="aud-search-clear-btn"
+              className="aud-search-clear-btn vismaya-search-clear-btn"
               aria-label="Clear search"
             >
               <X size={14} />
@@ -1310,22 +1312,25 @@ export default function AdminAuditionsManagementPage() {
           min-height: 44px;
           padding-left: 42px;
           padding-right: 38px;
-          border: 1px solid #D9D2C0;
+          border: 1px solid #D9D1BF;
           background-color: #FFFFFF;
           border-radius: 10px;
-          color: #2B2D2A;
+          color: #2A241A;
           font-size: 14px;
           font-family: var(--font-body), 'Inter', sans-serif;
           outline: none;
           box-sizing: border-box;
           transition: border-color 0.16s ease, box-shadow 0.16s ease;
         }
+        .aud-search-input:hover {
+          border-color: #C2B8A3;
+        }
         .aud-search-input:focus {
           border-color: #8A6B2E !important;
           box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
         }
         .aud-search-input::placeholder {
-          color: #6B6A63;
+          color: #8A8170;
         }
 
         .aud-search-clear-btn {
@@ -1748,18 +1753,18 @@ export default function AdminAuditionsManagementPage() {
           .aud-search-wrap {
             width: 100% !important;
             max-width: 100% !important;
-            height: 44px !important;
-            min-height: 44px !important;
-            max-height: 44px !important;
+            height: 48px !important;
+            min-height: 48px !important;
             flex: none !important;
           }
           .aud-search-input {
-            height: 44px !important;
-            min-height: 44px !important;
-            max-height: 44px !important;
+            height: 48px !important;
+            min-height: 48px !important;
             font-size: 16px !important;
-            padding-left: 40px !important;
+            padding-left: 42px !important;
+            padding-right: 38px !important;
             border-radius: 10px !important;
+            border: 1px solid #D9D1BF !important;
             box-sizing: border-box !important;
           }
           .aud-org-filter-wrap {

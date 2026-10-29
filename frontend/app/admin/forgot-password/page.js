@@ -3,8 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import PublicNav from "@/components/PublicNav";
-import PublicFooter from "@/components/PublicFooter";
+import Logo from "@/components/Logo";
 import PasswordInput from "@/components/PasswordInput";
 import {
   Shield,
@@ -653,7 +652,36 @@ export default function AdminForgotPasswordPage() {
         backgroundColor: "var(--bg-main, #FAF9F7)",
       }}
     >
-      <PublicNav />
+      {/* Admin Auth Header */}
+      <header
+        style={{
+          height: "64px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingInline: "clamp(16px, 4vw, 40px)",
+          borderBottom: "1px solid #E8E2D4",
+          backgroundColor: "#FFFFFF",
+        }}
+      >
+        <Logo variant="dark" size="sm" href="/admin/login" />
+        <div
+          style={{
+            fontSize: "11px",
+            fontWeight: 700,
+            color: "#8A6B2E",
+            backgroundColor: "#F3EFE6",
+            border: "1px solid #E8E2D4",
+            padding: "4px 10px",
+            borderRadius: "999px",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
+          }}
+        >
+          Operations Console
+        </div>
+      </header>
 
       <main
         style={{
@@ -670,7 +698,20 @@ export default function AdminForgotPasswordPage() {
         </Suspense>
       </main>
 
-      <PublicFooter />
+      {/* Admin Security Footer */}
+      <footer
+        style={{
+          padding: "20px 16px",
+          textAlign: "center",
+          borderTop: "1px solid #E8E2D4",
+          backgroundColor: "#FFFFFF",
+          color: "#6B6254",
+          fontSize: "12px",
+          fontFamily: "var(--font-body), 'Inter', sans-serif",
+        }}
+      >
+        &copy; {new Date().getFullYear()} Vismaya. All rights reserved. Restricted administrative system.
+      </footer>
 
       <style jsx global>{`
         @media (max-width: 640px) {

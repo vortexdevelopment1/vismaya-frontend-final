@@ -10,7 +10,7 @@ import { useAdmin } from "@/lib/admin/AdminContext";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 
-export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
+export default function AdminSidebar({ mobileOpen = false, onCloseMobile, onOpenLogout }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
@@ -183,9 +183,10 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: "8px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: "1 1 auto", overflow: "hidden" }}>
               <div
                 style={{
                   width: "8px",
@@ -196,7 +197,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
                   flexShrink: 0,
                 }}
               />
-              <div style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
                 <span
                   style={{
                     fontSize: "13px",
@@ -204,6 +205,9 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
                     color: "#2B2D2A",
                     lineHeight: 1.25,
                     fontFamily: "var(--font-body), 'Inter', sans-serif",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   Vismaya Desk
@@ -214,6 +218,9 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
                     color: "#5A584F",
                     lineHeight: 1.2,
                     fontFamily: "var(--font-body), 'Inter', sans-serif",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   Operations Console
@@ -234,6 +241,11 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
                 fontWeight: "700",
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
+                whiteSpace: "nowrap",
+                flex: "none",
+                flexShrink: 0,
+                wordBreak: "normal",
+                overflowWrap: "normal",
               }}
             >
               ACTIVE
@@ -421,9 +433,13 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
 
             <button
               type="button"
-              onClick={async (e) => {
+              onClick={(e) => {
                 e.preventDefault();
-                await logout();
+                if (typeof onOpenLogout === "function") {
+                  onOpenLogout();
+                } else {
+                  logout("/admin/login");
+                }
               }}
               title="Logout of Admin Console"
               aria-label="Logout of Admin Console"
@@ -457,7 +473,16 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
           background: #E8E2D4;
           border-radius: 4px;
         }
-        @media (max-width: 1024px) {
+        @media (max-width: 1366px) and (min-width: 1101px) {
+          .admin-sidebar {
+            width: 240px !important;
+          }
+          :global(.admin-sidebar .admin-nav-item) {
+            padding: 8px 12px !important;
+            font-size: 13px !important;
+          }
+        }
+        @media (max-width: 1100px) {
           .admin-sidebar {
             transform: translateX(-105%) !important;
             visibility: hidden !important;
@@ -487,7 +512,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile }) {
             font-size: 14px !important;
           }
         }
-        @media (min-width: 1025px) {
+        @media (min-width: 1101px) {
           .mobile-close-btn {
             display: none !important;
           }

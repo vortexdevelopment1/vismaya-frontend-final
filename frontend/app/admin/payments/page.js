@@ -186,6 +186,8 @@ export default function AdminPaymentsPage() {
     {
       key: "type",
       label: "Fee / Service Type",
+      minWidth: "220px",
+      nowrap: true,
       render: (val, row) => {
         let label = row.typeLabel || val;
         if (val === "talent_registration") {
@@ -207,7 +209,12 @@ export default function AdminPaymentsPage() {
               backgroundColor: "#F3EFE6",
               color: "#6E5420",
               border: "1px solid #E8E2D4",
-              display: "inline-block",
+              display: "inline-flex",
+              alignItems: "center",
+              whiteSpace: "nowrap",
+              wordBreak: "normal",
+              overflowWrap: "normal",
+              flexShrink: 0,
             }}
           >
             {label}
@@ -218,8 +225,10 @@ export default function AdminPaymentsPage() {
     {
       key: "amount",
       label: "Amount (INR)",
+      minWidth: "120px",
+      nowrap: true,
       render: (val) => (
-        <span style={{ fontSize: "15px", fontWeight: 700, color: "#2B2D2A", fontVariantNumeric: "tabular-nums" }}>
+        <span style={{ fontSize: "15px", fontWeight: 700, color: "#2B2D2A", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
           ₹{(val || 0).toLocaleString()}
         </span>
       ),
@@ -227,6 +236,8 @@ export default function AdminPaymentsPage() {
     {
       key: "status",
       label: "Payment Status",
+      minWidth: "130px",
+      nowrap: true,
       render: (val) => (
         <span
           style={{
@@ -237,7 +248,12 @@ export default function AdminPaymentsPage() {
             backgroundColor: val === "Successful" ? "#F3EFE6" : "rgba(180, 35, 24, 0.08)",
             color: val === "Successful" ? "#8A6B2E" : "#B42318",
             border: `1px solid ${val === "Successful" ? "#E8E2D4" : "rgba(180, 35, 24, 0.25)"}`,
-            display: "inline-block",
+            display: "inline-flex",
+            alignItems: "center",
+            whiteSpace: "nowrap",
+            wordBreak: "normal",
+            overflowWrap: "normal",
+            flexShrink: 0,
           }}
         >
           {val}
@@ -247,8 +263,10 @@ export default function AdminPaymentsPage() {
     {
       key: "date",
       label: "Transaction Date",
+      minWidth: "130px",
+      nowrap: true,
       render: (val) => (
-        <span style={{ fontSize: "13px", color: "#5A584F" }}>
+        <span style={{ fontSize: "13px", color: "#5A584F", whiteSpace: "nowrap" }}>
           {val || "—"}
         </span>
       ),
@@ -256,12 +274,13 @@ export default function AdminPaymentsPage() {
     {
       key: "invoiceNumber",
       label: "Invoice & Receipt",
+      minWidth: "160px",
       render: (val, row) => (
         <div>
-          <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#2B2D2A", fontFamily: "monospace" }}>
+          <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#2B2D2A", fontFamily: "monospace", whiteSpace: "nowrap" }}>
             {val || "Pending"}
           </div>
-          <div style={{ fontSize: "11px", color: row.status === "Successful" ? "#8A6B2E" : "#B42318" }}>
+          <div style={{ fontSize: "11px", color: row.status === "Successful" ? "#8A6B2E" : "#B42318", whiteSpace: "nowrap" }}>
             {row.status === "Successful" ? "Digital Receipt Sent" : "Payment Pending"}
           </div>
         </div>
@@ -270,6 +289,8 @@ export default function AdminPaymentsPage() {
     {
       key: "actions",
       label: "Receipt",
+      minWidth: "130px",
+      nowrap: true,
       render: (_, row) => (
         <button
           onClick={() => setSelectedReceipt(row)}
@@ -288,10 +309,15 @@ export default function AdminPaymentsPage() {
             alignItems: "center",
             gap: "5px",
             transition: "all 0.16s ease",
+            whiteSpace: "nowrap",
+            wordBreak: "normal",
+            overflowWrap: "normal",
+            flexShrink: 0,
           }}
           className="action-icon-btn"
         >
-          <FileText size={13} /> View Invoice
+          <FileText size={13} style={{ flexShrink: 0 }} />
+          <span style={{ whiteSpace: "nowrap" }}>View Invoice</span>
         </button>
       ),
     },

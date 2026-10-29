@@ -3,8 +3,7 @@
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import PublicNav from "@/components/PublicNav";
-import PublicFooter from "@/components/PublicFooter";
+import Logo from "@/components/Logo";
 import PasswordInput from "@/components/PasswordInput";
 import AuthSubmitButton from "@/components/auth/AuthSubmitButton";
 import AuthStatus from "@/components/auth/AuthStatus";
@@ -528,7 +527,36 @@ export default function AdminLoginPage() {
         backgroundColor: "var(--bg-primary, #FAF9F7)",
       }}
     >
-      <PublicNav />
+      {/* Admin Auth Header */}
+      <header
+        style={{
+          height: "64px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingInline: "clamp(16px, 4vw, 40px)",
+          borderBottom: "1px solid #E8E2D4",
+          backgroundColor: "#FFFFFF",
+        }}
+      >
+        <Logo variant="dark" size="sm" href="/admin/login" />
+        <div
+          style={{
+            fontSize: "11px",
+            fontWeight: 700,
+            color: "#8A6B2E",
+            backgroundColor: "#F3EFE6",
+            border: "1px solid #E8E2D4",
+            padding: "4px 10px",
+            borderRadius: "999px",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
+          }}
+        >
+          Operations Console
+        </div>
+      </header>
 
       {/* Hero Section with Centered Glass Card */}
       <section
@@ -569,7 +597,20 @@ export default function AdminLoginPage() {
         </div>
       </section>
 
-      <PublicFooter />
+      {/* Admin Security Footer */}
+      <footer
+        style={{
+          padding: "20px 16px",
+          textAlign: "center",
+          borderTop: "1px solid #E8E2D4",
+          backgroundColor: "#FFFFFF",
+          color: "#6B6254",
+          fontSize: "12px",
+          fontFamily: "var(--font-body), 'Inter', sans-serif",
+        }}
+      >
+        &copy; {new Date().getFullYear()} Vismaya. All rights reserved. Restricted administrative system.
+      </footer>
     </div>
   );
 }

@@ -79,7 +79,7 @@ export default function RecruiterTopbar({ onOpenMobile }) {
           <Menu size={20} />
         </button>
 
-        <div className="recruiter-topbar-title-wrap" style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+        <div className="recruiter-topbar-title-wrap" style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: "1 1 auto" }}>
           <div
             role="heading"
             aria-level={2}
@@ -95,7 +95,7 @@ export default function RecruiterTopbar({ onOpenMobile }) {
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
-              maxWidth: "clamp(130px, 30vw, 360px)",
+              minWidth: 0,
             }}
           >
             {getPageTitle()}
@@ -284,14 +284,16 @@ export default function RecruiterTopbar({ onOpenMobile }) {
       </div>
 
       <style jsx>{`
-        @media (max-width: 1023.98px) {
+        @media (max-width: 1366px) {
+          .topbar-subtitle, .topbar-divider {
+            display: none !important;
+          }
+        }
+        @media (max-width: 1100px) {
           .recruiter-hamburger-btn {
             display: flex !important;
             min-width: 44px;
             min-height: 44px;
-          }
-          .topbar-subtitle, .topbar-divider {
-            display: none !important;
           }
         }
         @media (max-width: 767.98px) {

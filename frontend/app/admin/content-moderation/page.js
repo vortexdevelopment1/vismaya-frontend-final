@@ -425,7 +425,7 @@ export default function ContentModerationPage() {
       <PageHeader
         title="Content Moderation"
         subtitle="Review uploaded headshots, showreels, and external links against platform policy rules: photo standards, link validation, copyright disputes, and Featured Work selection."
-        badge={`${mediaCounts.pending + openReportsCount} Needing Action`}
+        badge={`${(Number(mediaCounts?.pending) || 0) + (Number(openReportsCount) || 0)} Needing Action`}
       />
 
       {/* Spec Policy Guidance Card */}

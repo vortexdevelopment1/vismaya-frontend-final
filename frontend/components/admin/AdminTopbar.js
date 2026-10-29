@@ -19,12 +19,20 @@ import {
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { adminService } from "@/lib/api/services/adminService";
+import { useAdmin } from "@/lib/admin/AdminContext";
 
 export default function AdminTopbar({ onOpenMobile }) {
   const pathname = usePathname();
   const router = useRouter();
   const { notifications = [], markNotificationRead } = useWorkflow();
+  const adminCtx = useAdmin();
   const [showNotifMenu, setShowNotifMenu] = useState(false);
+  const notifRef = useRef(null);
+
+  // Export State
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [exportingType, setExportingType] = useState(null);
+  const exportRef = useRef(null);
 
   // Global Search State
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,39 +41,97 @@ export default function AdminTopbar({ onOpenMobile }) {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchContainerRef = useRef(null);
+  const directoryCacheRef = useRef({ talents: null, organizations: null, opportunities: null });
 
-  // Export State
-  const [showExportMenu, setShowExportMenu] = useState(false);
-  const [exportingType, setExportingType] = useState(null);
-  const exportRef = useRef(null);
-
-  // Debounced Search
+  // Clear search on route change
   useEffect(() => {
-    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+    setSearchQuery("");
+    setSearchResults(null);
+    setShowSearchDropdown(false);
+    setMobileSearchOpen(false);
+  }, [pathname]);
+
+  // Debounced Search (300ms, min 2 chars) using existing services
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed || trimmed.length < 2) {
       setSearchResults(null);
       setIsSearching(false);
+      setShowSearchDropdown(false);
       return;
     }
 
+    setIsSearching(true);
+    setShowSearchDropdown(true);
+
     const timer = setTimeout(async () => {
-      setIsSearching(true);
       try {
-        const res = await adminService.globalSearch(searchQuery.trim());
-        if (res && res.data) {
-          setSearchResults(res.data);
-          setShowSearchDropdown(true);
+        let talents = adminCtx?.talents?.length ? adminCtx.talents : directoryCacheRef.current.talents;
+        let orgs = adminCtx?.recruiters?.length ? adminCtx.recruiters : directoryCacheRef.current.organizations;
+        let opps = directoryCacheRef.current.opportunities;
+
+        if (!talents || !orgs || !opps) {
+          const [tRes, oRes, oppRes] = await Promise.allSettled([
+            !talents ? adminService.getTalentDirectory() : Promise.resolve({ data: talents }),
+            !orgs ? adminService.getOrganizationDirectory() : Promise.resolve({ data: orgs }),
+            !opps ? adminService.getAllOpportunities() : Promise.resolve({ data: opps }),
+          ]);
+          if (tRes.status === "fulfilled" && tRes.value?.data) {
+            talents = Array.isArray(tRes.value.data) ? tRes.value.data : [];
+            directoryCacheRef.current.talents = talents;
+          }
+          if (oRes.status === "fulfilled" && oRes.value?.data) {
+            orgs = Array.isArray(oRes.value.data) ? oRes.value.data : [];
+            directoryCacheRef.current.organizations = orgs;
+          }
+          if (oppRes.status === "fulfilled" && oppRes.value?.data) {
+            opps = Array.isArray(oppRes.value.data) ? oppRes.value.data : [];
+            directoryCacheRef.current.opportunities = opps;
+          }
         }
+
+        const q = trimmed.toLowerCase();
+
+        // 1. Talent match (name, stageName, title, studio, role)
+        const matchedTalents = (talents || []).filter((t) => {
+          const name = `${t.stageName || ""} ${t.firstName || ""} ${t.lastName || ""} ${t.fullName || ""} ${t.name || ""}`.toLowerCase();
+          const role = (t.primaryRole || t.title || t.category || "").toLowerCase();
+          const studio = (t.studio || "").toLowerCase();
+          return name.includes(q) || role.includes(q) || studio.includes(q);
+        }).slice(0, 5);
+
+        // 2. Organization match (organizationName, name, companyName, studio, industry)
+        const matchedOrgs = (orgs || []).filter((o) => {
+          const name = `${o.organizationName || ""} ${o.name || ""} ${o.companyName || ""}`.toLowerCase();
+          const type = (o.organizationType || o.industry || o.type || "").toLowerCase();
+          const studio = (o.studio || "").toLowerCase();
+          return name.includes(q) || type.includes(q) || studio.includes(q);
+        }).slice(0, 5);
+
+        // 3. Opportunities match (title, opportunityTitle, role, studio, projectName, organizationName)
+        const matchedOpps = (opps || []).filter((opp) => {
+          const title = `${opp.title || ""} ${opp.opportunityTitle || ""}`.toLowerCase();
+          const role = (opp.role || "").toLowerCase();
+          const studio = `${opp.studio || ""} ${opp.projectName || ""} ${opp.organizationName || ""}`.toLowerCase();
+          return title.includes(q) || role.includes(q) || studio.includes(q);
+        }).slice(0, 5);
+
+        setSearchResults({
+          talents: matchedTalents,
+          organizations: matchedOrgs,
+          opportunities: matchedOpps,
+        });
       } catch (err) {
-        console.error("Global search error:", err);
+        console.error("Search error:", err);
       } finally {
         setIsSearching(false);
       }
-    }, 280);
+    }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, adminCtx?.talents, adminCtx?.recruiters]);
 
-  // Click outside listener
+  // Click outside listener and Escape key listener
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
@@ -74,15 +140,63 @@ export default function AdminTopbar({ onOpenMobile }) {
       if (exportRef.current && !exportRef.current.contains(e.target)) {
         setShowExportMenu(false);
       }
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setShowNotifMenu(false);
+      }
+    };
+    const handleGlobalKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowSearchDropdown(false);
+        setMobileSearchOpen(false);
+        setShowExportMenu(false);
+        setShowNotifMenu(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleGlobalKeyDown);
+    };
   }, []);
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Escape") {
+      setShowSearchDropdown(false);
+      setMobileSearchOpen(false);
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const tCount = searchResults?.talents?.length || 0;
+      const oCount = searchResults?.organizations?.length || 0;
+      const oppCount = searchResults?.opportunities?.length || 0;
+      const totalCount = tCount + oCount + oppCount;
+
+      if (totalCount === 0) {
+        // If no results, keep dropdown open
+        setShowSearchDropdown(true);
+        return;
+      }
+
+      // Enter with no result selected goes to most relevant list page
+      let targetUrl = `/admin/talent-management?search=${encodeURIComponent(searchQuery.trim())}`;
+      if (oCount > tCount && oCount >= oppCount) {
+        targetUrl = `/admin/recruiter-management?search=${encodeURIComponent(searchQuery.trim())}`;
+      } else if (oppCount > tCount && oppCount > oCount) {
+        targetUrl = `/admin/opportunities?search=${encodeURIComponent(searchQuery.trim())}`;
+      }
+      setShowSearchDropdown(false);
+      setMobileSearchOpen(false);
+      router.push(targetUrl);
+    }
+  };
 
   const handleExport = async (type) => {
     setExportingType(type);
     try {
-      const res = await adminService.exportAdminData(type);
+      const exportFn = adminService.exportAdminData || adminService.exportData;
+      const res = await exportFn.call(adminService, type);
       if (typeof window !== "undefined") {
         const blob = new Blob([typeof res === "string" ? res : JSON.stringify(res)], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
@@ -178,12 +292,12 @@ export default function AdminTopbar({ onOpenMobile }) {
         </button>
 
         {/* Page Title & Subtitle */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "12px", minWidth: 0, flex: "1 1 auto" }}>
           <h1
             className="admin-topbar-title"
             style={{
               fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
-              fontSize: "20px",
+              fontSize: "clamp(16px, 1.8vw, 20px)",
               lineHeight: "26px",
               fontWeight: 600,
               color: "#2B2D2A",
@@ -192,6 +306,7 @@ export default function AdminTopbar({ onOpenMobile }) {
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
+              minWidth: 0,
             }}
           >
             <span className="admin-title-desktop">{getPageTitle()}</span>
@@ -220,9 +335,9 @@ export default function AdminTopbar({ onOpenMobile }) {
       <div
         ref={searchContainerRef}
         style={{
-          flex: "1 1 auto",
-          maxWidth: "460px",
-          minWidth: "180px",
+          flex: "1 1 240px",
+          maxWidth: "420px",
+          minWidth: "160px",
           position: "relative",
         }}
         className={`admin-global-search-container ${mobileSearchOpen ? "mobile-search-active" : ""}`}
@@ -230,65 +345,103 @@ export default function AdminTopbar({ onOpenMobile }) {
         <div
           className="admin-global-search-inner"
           style={{
+            position: "relative",
             display: "flex",
             alignItems: "center",
-            backgroundColor: "#F8F6F2",
-            border: "1px solid #E8E2D4",
-            borderRadius: "12px",
-            padding: "0 12px",
-            height: "40px",
-            transition: "all 0.15s ease",
             width: "100%",
-            boxSizing: "border-box",
           }}
         >
           {isSearching ? (
-            <Loader2 size={16} className="animate-spin" style={{ color: "#8A6B2E", flexShrink: 0 }} />
+            <Loader2
+              size={18}
+              className="animate-spin"
+              style={{
+                position: "absolute",
+                left: "14px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#8A6B2E",
+                pointerEvents: "none",
+                zIndex: 2,
+              }}
+            />
           ) : (
-            <Search size={16} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+            <Search
+              size={18}
+              style={{
+                position: "absolute",
+                left: "14px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#8A6B2E",
+                pointerEvents: "none",
+                zIndex: 2,
+              }}
+            />
           )}
+
           <input
             type="text"
-            placeholder="Global search users, orgs, opportunities..."
+            placeholder="Search talent, orgs, opportunities..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              setShowSearchDropdown(true);
+              if (e.target.value.trim().length >= 2) {
+                setShowSearchDropdown(true);
+              }
             }}
             onFocus={() => {
-              if (searchResults) setShowSearchDropdown(true);
+              if (searchQuery.trim().length >= 2) {
+                setShowSearchDropdown(true);
+              }
             }}
+            onKeyDown={handleSearchKeyDown}
+            className="admin-global-search-input"
             style={{
-              border: "none",
-              backgroundColor: "transparent",
-              outline: "none",
               width: "100%",
-              fontSize: "13px",
+              height: "44px",
+              paddingLeft: "42px",
+              paddingRight: mobileSearchOpen ? "64px" : "38px",
+              border: "1px solid #D9D1BF",
+              borderRadius: "10px",
+              backgroundColor: "#FFFFFF",
+              color: "#2A241A",
               fontFamily: "var(--font-body), 'Inter', sans-serif",
-              color: "#2B2D2A",
-              paddingLeft: "8px",
+              fontSize: "14px",
+              boxSizing: "border-box",
+              transition: "border-color 0.15s ease, box-shadow 0.15s ease",
             }}
           />
+
           {searchQuery && (
             <button
+              type="button"
               onClick={() => {
                 setSearchQuery("");
                 setSearchResults(null);
                 setShowSearchDropdown(false);
               }}
               style={{
+                position: "absolute",
+                right: mobileSearchOpen ? "38px" : "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
                 border: "none",
                 background: "transparent",
-                color: "#5A584F",
+                color: "#8A8170",
                 cursor: "pointer",
-                padding: "2px",
+                padding: "4px",
                 display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 2,
               }}
               aria-label="Clear search"
             >
-              <X size={14} />
+              <X size={15} />
             </button>
           )}
+
           {mobileSearchOpen && (
             <button
               type="button"
@@ -297,182 +450,304 @@ export default function AdminTopbar({ onOpenMobile }) {
                 setShowSearchDropdown(false);
               }}
               style={{
+                position: "absolute",
+                right: "10px",
+                top: "50%",
+                transform: "translateY(-50%)",
                 border: "none",
                 background: "transparent",
                 color: "#5A584F",
                 cursor: "pointer",
                 padding: "4px",
                 display: "flex",
-                marginLeft: "6px",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 2,
               }}
-              aria-label="Close search"
+              aria-label="Close modal search"
             >
-              <X size={18} />
+              <X size={20} />
             </button>
           )}
         </div>
 
         {/* Global Search Results Dropdown */}
-        {showSearchDropdown && searchResults && (
+        {showSearchDropdown && (
           <div
+            className="admin-search-dropdown-menu"
             style={{
               position: "absolute",
-              top: "46px",
+              top: "calc(100% + 6px)",
               left: 0,
               right: 0,
               backgroundColor: "#FFFFFF",
-              border: "1px solid #E8E2D4",
-              borderRadius: "14px",
-              boxShadow: "0 12px 32px rgba(43, 45, 42, 0.12)",
-              maxHeight: "380px",
+              border: "1px solid #D9D1BF",
+              borderRadius: "10px",
+              boxShadow: "0 12px 32px rgba(42, 36, 26, 0.14)",
+              maxHeight: "420px",
               overflowY: "auto",
-              padding: "12px",
-              zIndex: 60,
+              padding: "8px",
+              zIndex: 100,
               display: "flex",
               flexDirection: "column",
-              gap: "10px",
+              gap: "8px",
             }}
           >
-            {/* Talent Profiles */}
-            {(searchResults.talentProfiles || []).length > 0 && (
-              <div>
-                <div style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", marginBottom: "6px", letterSpacing: "0.05em" }}>
-                  Talent Profiles
-                </div>
-                {searchResults.talentProfiles.map((tp) => (
-                  <Link
-                    key={tp._id}
-                    href={`/admin/talent-management?search=${encodeURIComponent(tp.vismayaId || tp.stageName || "")}`}
-                    onClick={() => setShowSearchDropdown(false)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "8px 10px",
-                      borderRadius: "8px",
-                      backgroundColor: "#FAF9F7",
-                      border: "1px solid #F0EEEA",
-                      textDecoration: "none",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <User size={14} style={{ color: "#8A6B2E" }} />
-                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A" }}>
-                        {tp.stageName || `${tp.firstName || ""} ${tp.lastName || ""}`.trim() || "Talent"}
-                      </span>
+            {isSearching ? (
+              <div
+                style={{
+                  padding: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  fontSize: "13px",
+                  color: "#8A6B2E",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
+                }}
+              >
+                <Loader2 size={16} className="animate-spin" />
+                <span>Searching records...</span>
+              </div>
+            ) : searchResults ? (
+              <>
+                {/* Talent Section */}
+                {(searchResults.talents || []).length > 0 && (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        color: "#8A6B2E",
+                        textTransform: "uppercase",
+                        padding: "4px 8px 6px",
+                        letterSpacing: "0.06em",
+                      }}
+                    >
+                      Talent ({searchResults.talents.length})
                     </div>
-                  </Link>
-                ))}
-              </div>
-            )}
+                    {searchResults.talents.map((t, idx) => {
+                      const name = t.stageName || `${t.firstName || ""} ${t.lastName || ""}`.trim() || t.name || "Talent";
+                      const subtitle = t.primaryRole || t.title || t.category || "Talent Profile";
+                      return (
+                        <Link
+                          key={`talent-${idx}`}
+                          href={`/admin/talent-management?search=${encodeURIComponent(name)}`}
+                          onClick={() => {
+                            setShowSearchDropdown(false);
+                            setMobileSearchOpen(false);
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "8px 10px",
+                            borderRadius: "8px",
+                            backgroundColor: "#FAF9F7",
+                            border: "1px solid #F0EEEA",
+                            textDecoration: "none",
+                            marginBottom: "4px",
+                            transition: "background 0.12s ease",
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F3EFE6")}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#FAF9F7")}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                            <User size={14} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                            <span
+                              style={{
+                                fontSize: "13px",
+                                fontWeight: "600",
+                                color: "#2B2D2A",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {name}
+                            </span>
+                          </div>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              color: "#8A8170",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                              marginLeft: "8px",
+                            }}
+                          >
+                            {subtitle}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
 
-            {/* Organizations */}
-            {(searchResults.organizations || []).length > 0 && (
-              <div>
-                <div style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", marginBottom: "6px", letterSpacing: "0.05em" }}>
-                  Organizations
-                </div>
-                {searchResults.organizations.map((org) => (
-                  <Link
-                    key={org._id}
-                    href={`/admin/recruiter-management?search=${encodeURIComponent(org.organizationName || "")}`}
-                    onClick={() => setShowSearchDropdown(false)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      padding: "8px 10px",
-                      borderRadius: "8px",
-                      backgroundColor: "#FAF9F7",
-                      border: "1px solid #F0EEEA",
-                      textDecoration: "none",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    <Building2 size={14} style={{ color: "#8A6B2E" }} />
-                    <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A" }}>
-                      {org.organizationName}
-                    </span>
-                    <span style={{ fontSize: "11px", color: "#5A584F" }}>({org.organizationType || "Org"})</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {/* Opportunities */}
-            {(searchResults.opportunities || []).length > 0 && (
-              <div>
-                <div style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", marginBottom: "6px", letterSpacing: "0.05em" }}>
-                  Opportunities
-                </div>
-                {searchResults.opportunities.map((opp) => (
-                  <Link
-                    key={opp._id}
-                    href={`/admin/opportunities?search=${encodeURIComponent(opp.title || "")}`}
-                    onClick={() => setShowSearchDropdown(false)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "8px 10px",
-                      borderRadius: "8px",
-                      backgroundColor: "#FAF9F7",
-                      border: "1px solid #F0EEEA",
-                      textDecoration: "none",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <Briefcase size={14} style={{ color: "#8A6B2E" }} />
-                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A" }}>
-                        {opp.title}
-                      </span>
+                {/* Organizations Section */}
+                {(searchResults.organizations || []).length > 0 && (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        color: "#8A6B2E",
+                        textTransform: "uppercase",
+                        padding: "4px 8px 6px",
+                        letterSpacing: "0.06em",
+                      }}
+                    >
+                      Organizations ({searchResults.organizations.length})
                     </div>
-                    <span style={{ fontSize: "11px", color: "#5A584F" }}>{opp.role}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
+                    {searchResults.organizations.map((org, idx) => {
+                      const name = org.organizationName || org.name || org.companyName || "Organization";
+                      const subtitle = org.organizationType || org.industry || org.type || "Organization";
+                      return (
+                        <Link
+                          key={`org-${idx}`}
+                          href={`/admin/recruiter-management?search=${encodeURIComponent(name)}`}
+                          onClick={() => {
+                            setShowSearchDropdown(false);
+                            setMobileSearchOpen(false);
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "8px 10px",
+                            borderRadius: "8px",
+                            backgroundColor: "#FAF9F7",
+                            border: "1px solid #F0EEEA",
+                            textDecoration: "none",
+                            marginBottom: "4px",
+                            transition: "background 0.12s ease",
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F3EFE6")}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#FAF9F7")}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                            <Building2 size={14} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                            <span
+                              style={{
+                                fontSize: "13px",
+                                fontWeight: "600",
+                                color: "#2B2D2A",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {name}
+                            </span>
+                          </div>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              color: "#8A8170",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                              marginLeft: "8px",
+                            }}
+                          >
+                            {subtitle}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
 
-            {/* Users */}
-            {(searchResults.users || []).length > 0 && (
-              <div>
-                <div style={{ fontSize: "11px", fontWeight: "700", color: "#8A6B2E", textTransform: "uppercase", marginBottom: "6px", letterSpacing: "0.05em" }}>
-                  Users
-                </div>
-                {searchResults.users.map((u) => (
-                  <Link
-                    key={u._id}
-                    href={`/admin/${u.role === "organization" ? "recruiter-management" : "talent-management"}?search=${encodeURIComponent(u.email || u.name || "")}`}
-                    onClick={() => setShowSearchDropdown(false)}
+                {/* Opportunities Section */}
+                {(searchResults.opportunities || []).length > 0 && (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        color: "#8A6B2E",
+                        textTransform: "uppercase",
+                        padding: "4px 8px 6px",
+                        letterSpacing: "0.06em",
+                      }}
+                    >
+                      Opportunities ({searchResults.opportunities.length})
+                    </div>
+                    {searchResults.opportunities.map((opp, idx) => {
+                      const title = opp.title || opp.opportunityTitle || opp.role || "Opportunity";
+                      const subtitle = opp.role || opp.projectName || opp.organizationName || "Opportunity";
+                      return (
+                        <Link
+                          key={`opp-${idx}`}
+                          href={`/admin/opportunities?search=${encodeURIComponent(title)}`}
+                          onClick={() => {
+                            setShowSearchDropdown(false);
+                            setMobileSearchOpen(false);
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "8px 10px",
+                            borderRadius: "8px",
+                            backgroundColor: "#FAF9F7",
+                            border: "1px solid #F0EEEA",
+                            textDecoration: "none",
+                            marginBottom: "4px",
+                            transition: "background 0.12s ease",
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F3EFE6")}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#FAF9F7")}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                            <Briefcase size={14} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                            <span
+                              style={{
+                                fontSize: "13px",
+                                fontWeight: "600",
+                                color: "#2B2D2A",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {title}
+                            </span>
+                          </div>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              color: "#8A8170",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                              marginLeft: "8px",
+                            }}
+                          >
+                            {subtitle}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {(!searchResults.talents?.length &&
+                  !searchResults.organizations?.length &&
+                  !searchResults.opportunities?.length) && (
+                  <div
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "8px 10px",
-                      borderRadius: "8px",
-                      backgroundColor: "#FAF9F7",
-                      border: "1px solid #F0EEEA",
-                      textDecoration: "none",
-                      marginBottom: "4px",
+                      padding: "16px",
+                      textAlign: "center",
+                      fontSize: "13px",
+                      color: "#8A8170",
+                      fontFamily: "var(--font-body), 'Inter', sans-serif",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <User size={14} style={{ color: "#5A584F" }} />
-                      <span style={{ fontSize: "13px", color: "#2B2D2A" }}>{u.name || u.email}</span>
-                    </div>
-                    <span style={{ fontSize: "11px", color: "#8A6B2E", textTransform: "capitalize" }}>{u.role}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {(!searchResults.talentProfiles?.length && !searchResults.organizations?.length && !searchResults.opportunities?.length && !searchResults.users?.length) && (
-              <div style={{ padding: "16px", textAlign: "center", fontSize: "13px", color: "#5A584F" }}>
-                No records found matching &ldquo;{searchQuery}&rdquo;.
-              </div>
-            )}
+                    No results for &ldquo;{searchQuery}&rdquo;
+                  </div>
+                )}
+              </>
+            ) : null}
           </div>
         )}
       </div>
@@ -483,6 +758,8 @@ export default function AdminTopbar({ onOpenMobile }) {
         <div ref={exportRef} style={{ position: "relative" }} className="admin-export-wrapper">
           <button
             onClick={() => setShowExportMenu(!showExportMenu)}
+            aria-label="Export CSV Reports"
+            className="admin-export-btn"
             style={{
               height: "36px",
               paddingInline: "12px",
@@ -607,7 +884,7 @@ export default function AdminTopbar({ onOpenMobile }) {
         </button>
 
         {/* Notifications Dropdown */}
-        <div style={{ position: "relative" }}>
+        <div ref={notifRef} style={{ position: "relative" }}>
           <button
             onClick={() => setShowNotifMenu(!showNotifMenu)}
             aria-label="View system alerts"
@@ -766,12 +1043,43 @@ export default function AdminTopbar({ onOpenMobile }) {
           display: none !important;
         }
 
-        @media (max-width: 1024px) {
-          .admin-hamburger-btn {
-            display: flex !important;
-          }
+        @media (max-width: 1400px) {
           .admin-desktop-subtitle {
             display: none !important;
+          }
+        }
+
+        @media (max-width: 1366px) {
+          .admin-export-btn-text {
+            display: none !important;
+          }
+          .admin-export-btn {
+            padding: 0 10px !important;
+            gap: 0 !important;
+          }
+        }
+
+        @media (max-width: 1279px) {
+          .admin-global-search-container:not(.mobile-search-active) {
+            display: none !important;
+          }
+          .admin-mobile-search-btn {
+            display: flex !important;
+          }
+          .admin-status-chip span:last-child {
+            display: none !important;
+          }
+          .admin-status-chip {
+            padding-inline: 0 !important;
+            width: 26px !important;
+            height: 26px !important;
+            justify-content: center !important;
+          }
+        }
+
+        @media (max-width: 1100px) {
+          .admin-hamburger-btn {
+            display: flex !important;
           }
         }
 
@@ -819,6 +1127,14 @@ export default function AdminTopbar({ onOpenMobile }) {
             overflow: hidden !important;
             text-overflow: ellipsis !important;
           }
+          .admin-global-search-input:focus {
+            outline: none !important;
+            border-color: #8A6B2E !important;
+            box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
+          }
+          .admin-global-search-input::placeholder {
+            color: #8A8170 !important;
+          }
           .admin-global-search-container:not(.mobile-search-active) {
             display: none !important;
           }
@@ -839,13 +1155,14 @@ export default function AdminTopbar({ onOpenMobile }) {
             box-sizing: border-box !important;
           }
           .admin-global-search-container.mobile-search-active .admin-global-search-inner {
-            height: 44px !important;
             width: 100% !important;
-            border-radius: 10px !important;
-            background: #F8F6F2 !important;
           }
-          .admin-global-search-container.mobile-search-active input {
+          .admin-global-search-container.mobile-search-active .admin-global-search-input {
+            height: 48px !important;
             font-size: 16px !important;
+            border-radius: 10px !important;
+            background: #FFFFFF !important;
+            border: 1px solid #D9D1BF !important;
           }
           .admin-topbar-right {
             display: flex !important;

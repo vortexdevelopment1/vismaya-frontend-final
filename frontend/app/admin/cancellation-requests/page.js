@@ -320,7 +320,7 @@ export default function AdminCancellationRequestsPage() {
       <PageHeader
         title="Opportunity Cancellation Requests"
         subtitle="Review formal opportunity withdrawal requests submitted by organizations and manage applicant notifications."
-        badge={`${statusCounts.Pending} PENDING REVIEW`}
+        badge={`${statusCounts?.Pending ?? 0} PENDING REVIEW`}
         breadcrumbs={[
           { label: "Dashboard", href: "/admin/dashboard" },
           { label: "Cancellation Requests" },
@@ -393,10 +393,10 @@ export default function AdminCancellationRequestsPage() {
 
       {/* Compact Toolbar Row with Search */}
       <div className="cancel-toolbar-row">
-        <div className="cancel-search-wrap">
+        <div className="cancel-search-wrap vismaya-search-wrap">
           <Search
             size={18}
-            className="cancel-search-icon"
+            className="cancel-search-icon vismaya-search-icon"
             style={{
               position: "absolute",
               left: "14px",
@@ -413,14 +413,14 @@ export default function AdminCancellationRequestsPage() {
             placeholder={isMobileScreen ? "Search requests" : "Search cancellation reason, opportunity, studio..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="cancel-search-input"
+            className="cancel-search-input vismaya-search-input"
             aria-label="Search cancellation requests"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="cancel-search-clear-btn"
+              className="cancel-search-clear-btn vismaya-search-clear-btn"
               aria-label="Clear search"
             >
               <X size={14} />
@@ -990,22 +990,25 @@ export default function AdminCancellationRequestsPage() {
           min-height: 44px;
           padding-left: 42px;
           padding-right: 38px;
-          border: 1px solid #D9D2C0;
+          border: 1px solid #D9D1BF;
           background-color: #FFFFFF;
           border-radius: 10px;
-          color: "#2B2D2A";
+          color: #2A241A;
           font-size: 14px;
           font-family: var(--font-body), 'Inter', sans-serif;
           outline: none;
           box-sizing: border-box;
           transition: border-color 0.16s ease, box-shadow 0.16s ease;
         }
+        .cancel-search-input:hover {
+          border-color: #C2B8A3;
+        }
         .cancel-search-input:focus {
           border-color: #8A6B2E !important;
           box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
         }
         .cancel-search-input::placeholder {
-          color: #6B6A63;
+          color: #8A8170;
         }
 
         .cancel-search-clear-btn {

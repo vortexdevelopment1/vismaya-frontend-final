@@ -176,7 +176,7 @@ const DOMAIN_STORAGE_KEYS = [
     }
   }, [saveSession]);
 
-  const logout = useCallback(async () => {
+  const logout = useCallback(async (customRedirect) => {
     setIsLoggingOut(true);
     setIsLoading(true);
     try {
@@ -187,7 +187,7 @@ const DOMAIN_STORAGE_KEYS = [
       clearSession();
       setIsLoading(false);
       if (typeof window !== "undefined") {
-        router.replace("/");
+        router.replace(customRedirect || "/");
       }
       setTimeout(() => {
         setIsLoggingOut(false);

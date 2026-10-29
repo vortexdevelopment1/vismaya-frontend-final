@@ -5,10 +5,14 @@ import { RecruiterProvider, useRecruiter } from "@/lib/recruiter/RecruiterContex
 import RecruiterSidebar from "@/components/recruiter/RecruiterSidebar";
 import RecruiterTopbar from "@/components/recruiter/RecruiterTopbar";
 import ToastContainer from "@/components/shared/Toast";
+import { useAuth } from "@/context/AuthContext";
+import LogoutConfirmModal from "@/components/shared/LogoutConfirmModal";
 
 function RecruiterLayoutContent({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const { toasts, removeToast } = useRecruiter();
+  const { logout } = useAuth();
 
   React.useEffect(() => {
     if (typeof document !== "undefined") {
@@ -37,6 +41,7 @@ function RecruiterLayoutContent({ children }) {
         <RecruiterSidebar
           mobileOpen={mobileOpen}
           onCloseMobile={() => setMobileOpen(false)}
+          onOpenLogout={() => setLogoutModalOpen(true)}
         />
       </Suspense>
 
@@ -78,12 +83,26 @@ function RecruiterLayoutContent({ children }) {
       {/* Shared Toasts */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
+      {/* Logout Confirmation Modal */}
+      <LogoutConfirmModal
+        isOpen={logoutModalOpen}
+        onClose={() => setLogoutModalOpen(false)}
+        onConfirm={async () => {
+          await logout();
+        }}
+      />
+
       <style jsx global>{`
         :root {
           --sidebar-width: 280px;
           --topbar-height: 72px;
         }
-        @media (max-width: 1023.98px) {
+        @media (max-width: 1366px) {
+          :root {
+            --sidebar-width: 240px;
+          }
+        }
+        @media (max-width: 1100px) {
           .recruiter-main-container {
             margin-left: 0 !important;
             width: 100% !important;

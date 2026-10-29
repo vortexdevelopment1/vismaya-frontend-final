@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import StatusBadge from "./StatusBadge";
 import EmptyState from "./EmptyState";
@@ -17,9 +17,28 @@ export default function DataTable({
   emptyDescription = "There are no entries matching your query.",
   renderMobileCard,
   minWidth = "960px",
+  initialSearch = "",
 }) {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(() => {
+    if (initialSearch) return initialSearch;
+    if (typeof window !== "undefined") {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("search") || "";
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
   const [currentPage, setCurrentPage] = useState(1);
+
+  React.useEffect(() => {
+    if (initialSearch) {
+      setSearchTerm(initialSearch);
+      setCurrentPage(1);
+    }
+  }, [initialSearch]);
 
   const filteredData = data.filter((row) => {
     if (!searchTerm) return true;
@@ -91,20 +110,30 @@ export default function DataTable({
           >
             {searchable && (
               <div
-                className="data-table-search-wrap"
+                className="data-table-search-wrap vismaya-search-wrap"
                 style={{
                   position: "relative",
                   display: "flex",
                   alignItems: "center",
+                  flex: "1 1 200px",
+                  maxWidth: "320px",
+                  minWidth: "180px",
+                  border: "none",
+                  background: "transparent",
+                  padding: 0,
                 }}
               >
                 <Search
                   size={16}
+                  className="vismaya-search-icon"
                   style={{
                     position: "absolute",
                     left: "14px",
-                    color: "#5A584F",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "#8A8170",
                     pointerEvents: "none",
+                    zIndex: 2,
                   }}
                 />
                 <input
@@ -115,17 +144,18 @@ export default function DataTable({
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="data-table-search-input"
+                  className="data-table-search-input vismaya-search-input"
                   style={{
                     backgroundColor: "#FFFFFF",
-                    border: "1px solid #D9D2C0",
+                    border: "1px solid #D9D1BF",
                     borderRadius: "10px",
-                    padding: "0 14px 0 38px",
+                    padding: "0 14px 0 42px",
                     fontSize: "14px",
                     fontFamily: "var(--font-body), 'Inter', sans-serif",
-                    color: "#2B2D2A",
+                    color: "#2A241A",
                     outline: "none",
-                    width: "260px",
+                    width: "100%",
+                    minWidth: "180px",
                     height: "44px",
                     minHeight: "44px",
                     boxSizing: "border-box",
@@ -191,9 +221,12 @@ export default function DataTable({
                         letterSpacing: "0.14em",
                         borderBottom: "1px solid #E8E2D4",
                         whiteSpace: "nowrap",
+                        wordBreak: "normal",
+                        overflowWrap: "normal",
                         minWidth: col.minWidth || "auto",
                         width: col.width || "auto",
                         verticalAlign: "middle",
+                        textAlign: col.align || (col.key === "actions" || col.key === "action" ? "right" : "left"),
                         fontFamily: "var(--font-body), 'Inter', sans-serif",
                       }}
                     >
@@ -216,6 +249,16 @@ export default function DataTable({
                   >
                     {columns.map((col) => {
                       const minW = col.minWidth || "auto";
+                      const isNowrapCol =
+                        col.nowrap ||
+                        col.key === "actions" ||
+                        col.key === "action" ||
+                        col.key === "status" ||
+                        col.key === "date" ||
+                        col.key === "joinedDate" ||
+                        col.key === "createdAt" ||
+                        col.key === "ageGender" ||
+                        col.type === "badge";
 
                       if (col.render) {
                         return (
@@ -227,6 +270,10 @@ export default function DataTable({
                               color: "#2B2D2A",
                               verticalAlign: "middle",
                               minWidth: minW,
+                              whiteSpace: isNowrapCol ? "nowrap" : "normal",
+                              wordBreak: "normal",
+                              overflowWrap: "normal",
+                              textAlign: col.align || (col.key === "actions" || col.key === "action" ? "right" : "left"),
                             }}
                           >
                             {col.render(row[col.key], row)}
@@ -246,6 +293,8 @@ export default function DataTable({
                               verticalAlign: "middle",
                               minWidth: minW,
                               whiteSpace: "nowrap",
+                              wordBreak: "normal",
+                              overflowWrap: "normal",
                             }}
                           >
                             <StatusBadge status={value} size="xs" />
@@ -261,9 +310,12 @@ export default function DataTable({
                             color: col.primary ? "#2B2D2A" : "#5A584F",
                             fontSize: col.primary ? "15px" : "14px",
                             fontWeight: col.primary ? "600" : "normal",
-                            whiteSpace: "nowrap",
+                            whiteSpace: isNowrapCol ? "nowrap" : "normal",
+                            wordBreak: "normal",
+                            overflowWrap: "normal",
                             verticalAlign: "middle",
                             minWidth: minW,
+                            textAlign: col.align || (col.key === "actions" || col.key === "action" ? "right" : "left"),
                           }}
                         >
                           {value !== undefined && value !== null ? String(value) : "—"}

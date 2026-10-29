@@ -1032,10 +1032,10 @@ export default function ShortlistAuditionsPage() {
           {/* Toolbar: Search + Filter Chips */}
           <div className="v-toolbar-card">
             <div className="v-toolbar-top">
-              <div className="v-search-box">
-                <Search size={16} className="v-search-icon" />
+              <div className="v-search-box vismaya-search-wrap">
+                <Search size={18} className="v-search-icon vismaya-search-icon" />
                 <input
-                  className="v-search-input"
+                  className="v-search-input vismaya-search-input"
                   type="text"
                   placeholder="Search candidates by name, role or city..."
                   value={searchQuery}
@@ -2250,6 +2250,11 @@ export default function ShortlistAuditionsPage() {
           border: 1px solid rgba(138, 107, 46, 0.22);
           border-radius: 6px;
           padding: 3px 8px;
+          white-space: nowrap !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          line-height: 1 !important;
+          flex: none !important;
         }
         .v-opp-status-pill {
           font-size: 11px;
@@ -2341,6 +2346,9 @@ export default function ShortlistAuditionsPage() {
           align-items: center;
           justify-content: center;
           gap: 8px;
+          white-space: nowrap;
+          word-break: normal;
+          overflow-wrap: normal;
           cursor: pointer;
           transition: all 0.18s ease;
           font-family: var(--font-body), 'Inter', sans-serif;
@@ -2434,25 +2442,28 @@ export default function ShortlistAuditionsPage() {
         .v-search-icon {
           position: absolute;
           left: 14px;
-          color: #5A584F;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #8A8170;
           pointer-events: none;
+          z-index: 2;
         }
         .v-search-input {
           width: 100%;
-          height: 42px;
+          height: 44px;
           border-radius: 10px;
-          border: 1px solid #E8E2D4;
+          border: 1px solid #D9D1BF;
           background-color: #FFFFFF;
-          color: #2B2D2A;
+          color: #2A241A;
           font-size: 14px;
-          padding: 0 14px 0 40px;
+          padding: 0 14px 0 42px;
           outline: none;
           font-family: var(--font-body), 'Inter', sans-serif;
           transition: border-color 0.18s ease, box-shadow 0.18s ease;
         }
         .v-search-input:focus {
-          border-color: #8A6B2E;
-          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18);
+          border-color: #8A6B2E !important;
+          box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
         }
 
         .v-tabs-row {
@@ -3284,6 +3295,9 @@ export default function ShortlistAuditionsPage() {
             box-sizing: border-box !important;
             padding: 0 8px !important;
             border-radius: 8px !important;
+            white-space: nowrap !important;
+            word-break: normal !important;
+            overflow-wrap: normal !important;
           }
 
           /* LEVEL 2: Summary Boxes Mobile */

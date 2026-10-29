@@ -11,7 +11,7 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useAuth } from "@/context/AuthContext";
 import StatusBadge from "@/components/shared/StatusBadge";
 
-export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) {
+export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile, onOpenLogout }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
@@ -332,9 +332,13 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
 
             <button
               type="button"
-              onClick={async (e) => {
+              onClick={(e) => {
                 e.preventDefault();
-                await logout();
+                if (typeof onOpenLogout === "function") {
+                  onOpenLogout();
+                } else {
+                  logout();
+                }
               }}
               title="Logout of Organization Portal"
               aria-label="Logout of Organization Portal"
@@ -361,7 +365,16 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
       </aside>
 
       <style jsx global>{`
-        @media (max-width: 1023.98px) {
+        @media (max-width: 1366px) and (min-width: 1101px) {
+          .recruiter-sidebar {
+            width: 240px !important;
+          }
+          :global(.recruiter-sidebar .recruiter-nav-item) {
+            padding: 8px 12px !important;
+            font-size: 13px !important;
+          }
+        }
+        @media (max-width: 1100px) {
           .recruiter-sidebar:not(.sidebar-open) {
             transform: translateX(-115%) !important;
             left: -320px !important;
@@ -382,7 +395,7 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile }) 
             display: flex !important;
           }
         }
-        @media (min-width: 1024px) {
+        @media (min-width: 1101px) {
           .mobile-close-btn {
             display: none !important;
           }

@@ -30,7 +30,7 @@ export default function Tabs({
         alignItems: "center",
         gap: "8px",
         overflowX: "auto",
-        flexWrap: "wrap",
+        flexWrap: "nowrap",
         WebkitOverflowScrolling: "touch",
         scrollbarWidth: "none",
         msOverflowStyle: "none",
@@ -117,17 +117,20 @@ export default function Tabs({
               boxShadow: isActive ? "0 2px 8px rgba(138, 107, 46, 0.22)" : "none",
               transition: "all 0.16s ease",
               whiteSpace: "nowrap",
+              wordBreak: "normal",
+              overflowWrap: "normal",
               cursor: "pointer",
               flexShrink: 0,
+              flex: "none",
             }}
           >
             {Icon && <Icon size={15} style={{ color: isActive ? "#FFFFFF" : "#5A584F", flexShrink: 0 }} />}
-            <span>{tab.label}</span>
+            <span style={{ whiteSpace: "nowrap", lineHeight: "1", display: "inline-block", verticalAlign: "middle" }}>{tab.label}</span>
             {tab.count !== undefined && (
               <span
                 style={{
-                  height: "22px",
-                  minWidth: "22px",
+                  height: "20px",
+                  minWidth: "20px",
                   fontSize: "12px",
                   fontWeight: "700",
                   padding: "0 6px",
@@ -138,6 +141,9 @@ export default function Tabs({
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
+                  whiteSpace: "nowrap",
+                  lineHeight: "1",
+                  verticalAlign: "middle",
                 }}
               >
                 {tab.count}

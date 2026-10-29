@@ -265,7 +265,7 @@ export default function VerificationQueuesPage() {
         <PageHeader
           title="Department-Specific Verification Queues"
           subtitle="Review identity submissions (Government ID + Live Selfie) and professional credentials (Credits + Portfolio Evidence)."
-          badge={`${pendingCount} Awaiting Action`}
+          badge={`${pendingCount ?? 0} Awaiting Action`}
         />
 
         {/* Status Tabs */}

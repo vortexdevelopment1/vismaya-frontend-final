@@ -10,10 +10,14 @@ import { adminService } from "@/lib/api/services/adminService";
 import { getAuthToken, removeAuthToken } from "@/lib/api/client";
 import { USE_MOCK } from "@/lib/api/config";
 import RoleGateLoader from "@/components/auth/RoleGateLoader";
+import { useAuth } from "@/context/AuthContext";
+import LogoutConfirmModal from "@/components/shared/LogoutConfirmModal";
 
 function AdminLayoutContent({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const { toasts, removeToast } = useAdmin();
+  const { logout } = useAuth();
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -40,6 +44,7 @@ function AdminLayoutContent({ children }) {
       <AdminSidebar
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
+        onOpenLogout={() => setLogoutModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -80,12 +85,26 @@ function AdminLayoutContent({ children }) {
       {/* Shared Toasts */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
+      {/* Logout Confirmation Modal */}
+      <LogoutConfirmModal
+        isOpen={logoutModalOpen}
+        onClose={() => setLogoutModalOpen(false)}
+        onConfirm={async () => {
+          await logout("/admin/login");
+        }}
+      />
+
       <style jsx global>{`
         :root {
           --sidebar-width: 280px;
           --topbar-height: 72px;
         }
-        @media (max-width: 1024px) {
+        @media (max-width: 1366px) {
+          :root {
+            --sidebar-width: 240px;
+          }
+        }
+        @media (max-width: 1100px) {
           .admin-main-container {
             margin-left: 0 !important;
             width: 100% !important;

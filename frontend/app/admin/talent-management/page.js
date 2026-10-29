@@ -474,7 +474,7 @@ export default function TalentManagementPage() {
       <PageHeader
         title="Talent Management"
         subtitle="Verify artist profiles, evaluate comp-cards, review minor guardian consent, and moderate roster status."
-        badge={`${talents.length} Registered Artists`}
+        badge={`${talents?.length ?? 0} Registered Artists`}
       />
 
       {/* Filter Tabs */}

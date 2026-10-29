@@ -80,12 +80,13 @@ export default function PageHeader({
             <h1
               style={{
                 fontFamily: "var(--font-heading), 'Playfair Display', serif",
-                fontSize: "26px",
+                fontSize: "clamp(28px, 2.2vw, 40px)",
                 lineHeight: 1.25,
                 fontWeight: "700",
                 color: "var(--text-primary, #2B2D2A)",
                 letterSpacing: "-0.015em",
                 margin: 0,
+                minWidth: 0,
               }}
             >
               {title}
@@ -103,6 +104,8 @@ export default function PageHeader({
                   border: "1px solid rgba(138, 107, 46, 0.28)",
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
+                  whiteSpace: "nowrap",
+                  flex: "none",
                 }}
               >
                 {badge}

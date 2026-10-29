@@ -471,42 +471,61 @@ export default function OpportunityApplicantsPage() {
       >
         {/* Search Input */}
         <div
+          className="vismaya-search-wrap"
           style={{
             flex: "1 1 240px",
+            position: "relative",
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-            backgroundColor: "rgba(255, 255, 255, 0.06)",
-            border: "1px solid rgba(255, 255, 255, 0.14)",
-            borderRadius: "10px",
-            padding: "8px 14px",
-            height: "38px",
+            border: "none",
+            background: "transparent",
+            padding: 0,
           }}
         >
-          <Search size={16} style={{ color: "#a3acc2" }} />
+          <Search size={18} className="vismaya-search-icon" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#8A8170", pointerEvents: "none", zIndex: 2 }} />
           <input
             type="text"
             placeholder="Search candidate name, role, skills, city..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="vismaya-search-input"
             style={{
-              border: "none",
-              background: "transparent",
-              outline: "none",
-              fontSize: "0.875rem",
-              color: "#eceaf5",
               width: "100%",
+              height: "44px",
+              minHeight: "44px",
+              paddingLeft: "42px",
+              paddingRight: searchQuery ? "38px" : "14px",
+              borderRadius: "10px",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #D9D1BF",
+              color: "#2A241A",
+              fontSize: "14px",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+              outline: "none",
+              boxSizing: "border-box",
+              transition: "border-color 0.16s ease, box-shadow 0.16s ease",
             }}
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
+              className="vismaya-search-clear-btn"
+              aria-label="Clear search"
               style={{
-                border: "none",
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
                 background: "transparent",
-                color: "#a3acc2",
+                border: "none",
+                color: "#8A8170",
                 cursor: "pointer",
-                fontSize: "0.8rem",
+                padding: "4px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "50%",
+                zIndex: 2,
               }}
             >
               ✕
@@ -627,7 +646,7 @@ export default function OpportunityApplicantsPage() {
           className="applicants-table-card"
         >
           <div style={{ overflowX: "auto" }} className="desktop-applicants-table">
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem", minWidth: "960px", tableLayout: "auto" }}>
               <thead style={{ position: "sticky", top: 0, zIndex: 2, backgroundColor: "#FAF9F7" }}>
                 <tr
                   style={{
@@ -639,13 +658,13 @@ export default function OpportunityApplicantsPage() {
                     letterSpacing: "0.04em",
                   }}
                 >
-                  <th style={{ padding: "16px 20px" }}>Talent / Candidate</th>
-                  <th style={{ padding: "16px 20px" }}>Applied Role</th>
-                  <th style={{ padding: "16px 20px" }}>Age & Location</th>
-                  <th style={{ padding: "16px 20px" }}>Applied Date</th>
-                  <th style={{ padding: "16px 20px" }}>Audition / Media</th>
-                  <th style={{ padding: "16px 20px" }}>Status</th>
-                  <th style={{ padding: "16px 20px", textAlign: "right" }}>Action</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "200px" }}>Talent / Candidate</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "150px" }}>Applied Role</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "140px" }}>Age &amp; Location</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "120px" }}>Applied Date</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "150px" }}>Audition / Media</th>
+                  <th style={{ padding: "16px 20px", whiteSpace: "nowrap", minWidth: "110px" }}>Status</th>
+                  <th style={{ padding: "16px 20px", textAlign: "right", whiteSpace: "nowrap", minWidth: "100px" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
