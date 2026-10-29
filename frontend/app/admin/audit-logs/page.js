@@ -151,14 +151,29 @@ export default function AdminAuditLogsPage() {
           gap: "12px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1, minWidth: "240px" }}>
-          <Search size={16} style={{ color: "#8A6B2E" }} />
+        <div className="vismaya-search-wrap" style={{ position: "relative", display: "flex", alignItems: "center", flex: 1, minWidth: "240px", maxWidth: "420px" }}>
+          <Search size={18} className="vismaya-search-icon" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#8A8170", pointerEvents: "none", zIndex: 2 }} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by action, admin email or entity..."
-            style={{ width: "100%", border: "none", outline: "none", fontSize: "13px", color: "#2B2D2A" }}
+            className="vismaya-search-input"
+            style={{
+              width: "100%",
+              height: "44px",
+              paddingLeft: "42px",
+              paddingRight: "14px",
+              borderRadius: "10px",
+              border: "1px solid #D9D1BF",
+              backgroundColor: "#FFFFFF",
+              color: "#2A241A",
+              fontSize: "14px",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+              outline: "none",
+              boxSizing: "border-box",
+              transition: "border-color 0.16s ease, box-shadow 0.16s ease",
+            }}
           />
         </div>
 

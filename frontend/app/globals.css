@@ -1715,6 +1715,86 @@ td[class*="actions"] > span {
   }
 }
 
+/* =========================================================================
+   6. Standardized Search Input Design Tokens System
+   Height 44px (48px mobile), radius 10px, border 1px #D9D1BF, background #fff,
+   text #2A241A, placeholder #8A8170, font Inter 14px (16px mobile).
+   On focus: ONE gold ring (border-color #8A6B2E + 3px rgba(138,107,46,.18) shadow).
+   Icon: Left 14px, vertically centered, input padding-left 42px.
+   ========================================================================= */
+.vismaya-search-wrap,
+.data-table-search-wrap {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
 
+.vismaya-search-icon,
+.data-table-search-wrap > svg:first-of-type,
+.data-table-search-wrap svg.lucide-search {
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: #8A8170 !important;
+  stroke: #8A8170 !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+  flex-shrink: 0 !important;
+}
 
+.vismaya-search-input,
+.data-table-search-input {
+  width: 100% !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding-left: 42px !important;
+  padding-right: 14px !important;
+  border: 1px solid #D9D1BF !important;
+  background-color: #FFFFFF !important;
+  border-radius: 10px !important;
+  color: #2A241A !important;
+  font-size: 14px !important;
+  font-family: var(--font-body), "Inter", sans-serif !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease !important;
+}
 
+.vismaya-search-input::placeholder,
+.data-table-search-input::placeholder {
+  color: #8A8170 !important;
+}
+
+.vismaya-search-input:hover,
+.data-table-search-input:hover {
+  border-color: #C2B8A3 !important;
+}
+
+.vismaya-search-input:focus,
+.vismaya-search-input:focus-visible,
+.data-table-search-input:focus,
+.data-table-search-input:focus-visible {
+  border-color: #8A6B2E !important;
+  box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
+  outline: none !important;
+}
+
+.vismaya-search-clear-btn:hover {
+  color: #2A241A !important;
+  background-color: #F3EFE6 !important;
+}
+
+@media (max-width: 640px) {
+  .vismaya-search-input,
+  .data-table-search-input {
+    height: 48px !important;
+    min-height: 48px !important;
+    font-size: 16px !important;
+    padding-left: 42px !important;
+  }
+}

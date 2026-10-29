@@ -123,7 +123,9 @@ export default function PageHeader({
                   fontFamily: "var(--font-body), 'Inter', sans-serif",
                 }}
               >
-                {badge}
+                {typeof badge === "string"
+                  ? badge.replace(/\b(undefined|NaN|null)\b/gi, "0")
+                  : badge}
               </span>
             )}
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import StatusBadge from "./StatusBadge";
 import EmptyState from "./EmptyState";
@@ -17,9 +17,28 @@ export default function DataTable({
   emptyDescription = "There are no entries matching your query.",
   renderMobileCard,
   minWidth = "960px",
+  initialSearch = "",
 }) {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(() => {
+    if (initialSearch) return initialSearch;
+    if (typeof window !== "undefined") {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("search") || "";
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
   const [currentPage, setCurrentPage] = useState(1);
+
+  React.useEffect(() => {
+    if (initialSearch) {
+      setSearchTerm(initialSearch);
+      setCurrentPage(1);
+    }
+  }, [initialSearch]);
 
   const filteredData = data.filter((row) => {
     if (!searchTerm) return true;
@@ -91,7 +110,7 @@ export default function DataTable({
           >
             {searchable && (
               <div
-                className="data-table-search-wrap"
+                className="data-table-search-wrap vismaya-search-wrap"
                 style={{
                   position: "relative",
                   display: "flex",
@@ -99,15 +118,22 @@ export default function DataTable({
                   flex: "1 1 200px",
                   maxWidth: "320px",
                   minWidth: "180px",
+                  border: "none",
+                  background: "transparent",
+                  padding: 0,
                 }}
               >
                 <Search
                   size={16}
+                  className="vismaya-search-icon"
                   style={{
                     position: "absolute",
                     left: "14px",
-                    color: "#5A584F",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "#8A8170",
                     pointerEvents: "none",
+                    zIndex: 2,
                   }}
                 />
                 <input
@@ -118,15 +144,15 @@ export default function DataTable({
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="data-table-search-input"
+                  className="data-table-search-input vismaya-search-input"
                   style={{
                     backgroundColor: "#FFFFFF",
-                    border: "1px solid #D9D2C0",
+                    border: "1px solid #D9D1BF",
                     borderRadius: "10px",
-                    padding: "0 14px 0 38px",
+                    padding: "0 14px 0 42px",
                     fontSize: "14px",
                     fontFamily: "var(--font-body), 'Inter', sans-serif",
-                    color: "#2B2D2A",
+                    color: "#2A241A",
                     outline: "none",
                     width: "100%",
                     minWidth: "180px",

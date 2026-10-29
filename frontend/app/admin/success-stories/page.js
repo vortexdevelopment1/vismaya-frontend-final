@@ -236,7 +236,7 @@ export default function SuccessStoriesApprovalPage() {
       <PageHeader
         title="Success Stories Approval"
         subtitle="Review, publish, unpublish, and manage casting success testimonials."
-        badge={`${counts.pending} Pending Approval`}
+        badge={`${counts?.pending ?? 0} Pending Approval`}
       />
 
       {/* Tabs */}

@@ -371,17 +371,20 @@ export default function MyOpportunitiesPage() {
             display: "flex",
             alignItems: "center",
           }}
-          className="v-search-wrapper mo-filter-search"
+          className="v-search-wrapper mo-filter-search vismaya-search-wrap"
         >
           <Search
-            size={16}
+            size={18}
             style={{
               position: "absolute",
               left: "14px",
-              color: "#5A584F",
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#8A8170",
               pointerEvents: "none",
+              zIndex: 2,
             }}
-            className="mo-search-icon"
+            className="mo-search-icon vismaya-search-icon"
           />
           <input
             type="text"
@@ -393,15 +396,15 @@ export default function MyOpportunitiesPage() {
               height: "44px",
               borderRadius: "10px",
               backgroundColor: "#FFFFFF",
-              border: "1px solid #E8E2D4",
-              color: "#2B2D2A",
+              border: "1px solid #D9D1BF",
+              color: "#2A241A",
               fontSize: "14px",
-              padding: "0 14px 0 40px",
+              padding: "0 14px 0 42px",
               outline: "none",
               fontFamily: "var(--font-body), 'Inter', sans-serif",
               transition: "border-color 0.18s ease, box-shadow 0.18s ease",
             }}
-            className="v-search-field mo-search-input"
+            className="v-search-field mo-search-input vismaya-search-input"
           />
         </div>
       </div>

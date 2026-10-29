@@ -168,22 +168,28 @@ export default function OrganizationProjectsPage() {
         </div>
 
         {/* Search Input */}
-        <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "1 1 200px", maxWidth: "280px" }} className="projects-search-box">
-          <Search size={15} style={{ position: "absolute", left: "12px", color: "var(--text-muted)" }} />
+        <div style={{ position: "relative", display: "flex", alignItems: "center", flex: "1 1 200px", maxWidth: "320px" }} className="projects-search-box vismaya-search-wrap">
+          <Search size={18} className="vismaya-search-icon" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#8A8170", pointerEvents: "none", zIndex: 2 }} />
           <input
             type="text"
             placeholder="Search projects..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="vismaya-search-input"
             style={{
-              padding: "8px 14px 8px 34px",
-              borderRadius: "12px",
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.14)",
-              color: "var(--text-primary)",
-              fontSize: "0.825rem",
+              padding: "0 14px 0 42px",
+              height: "44px",
+              minHeight: "44px",
+              borderRadius: "10px",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #D9D1BF",
+              color: "#2A241A",
+              fontSize: "14px",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
               width: "100%",
               outline: "none",
+              boxSizing: "border-box",
+              transition: "border-color 0.16s ease, box-shadow 0.16s ease",
             }}
           />
         </div>

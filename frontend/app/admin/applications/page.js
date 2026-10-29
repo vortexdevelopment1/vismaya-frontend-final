@@ -19,6 +19,7 @@ import {
   XCircle,
   AlertCircle,
   Video,
+  X,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
@@ -274,36 +275,80 @@ export default function AdminApplicationsOverviewPage() {
         }}
       >
         <div
-          className="admin-app-search-wrap"
+          className="admin-app-search-wrap vismaya-search-wrap"
           style={{
             flex: "1 1 260px",
+            position: "relative",
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D9D2C0",
-            borderRadius: "10px",
-            padding: "0 14px",
-            height: "44px",
+            border: "none",
+            background: "transparent",
+            padding: 0,
           }}
         >
-          <Search size={16} style={{ color: "#5A584F" }} />
+          <Search
+            size={18}
+            className="vismaya-search-icon"
+            style={{
+              position: "absolute",
+              left: "14px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#8A8170",
+              stroke: "#8A8170",
+              pointerEvents: "none",
+              zIndex: 2,
+            }}
+          />
           <input
             type="text"
-            className="admin-app-search-input"
+            className="admin-app-search-input vismaya-search-input"
             placeholder="Search candidate name, role, city..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
-              border: "none",
-              background: "transparent",
-              outline: "none",
-              fontSize: "14px",
-              color: "#2B2D2A",
               width: "100%",
-              fontFamily: "Inter, sans-serif",
+              height: "44px",
+              minHeight: "44px",
+              paddingLeft: "42px",
+              paddingRight: searchQuery ? "38px" : "14px",
+              border: "1px solid #D9D1BF",
+              borderRadius: "10px",
+              backgroundColor: "#FFFFFF",
+              color: "#2A241A",
+              fontSize: "14px",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+              outline: "none",
+              boxSizing: "border-box",
+              transition: "border-color 0.16s ease, box-shadow 0.16s ease",
             }}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="vismaya-search-clear-btn"
+              aria-label="Clear search"
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "#8A8170",
+                padding: "4px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "50%",
+                zIndex: 2,
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
         <div className="admin-app-selects-row" style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
@@ -886,15 +931,26 @@ export default function AdminApplicationsOverviewPage() {
           }
           .admin-app-search-wrap {
             width: 100% !important;
-            height: 44px !important;
-            min-height: 44px !important;
-            max-height: 44px !important;
+            height: 48px !important;
+            min-height: 48px !important;
             box-sizing: border-box !important;
             flex: none !important;
+            border: none !important;
+            background: transparent !important;
+            padding: 0 !important;
           }
           .admin-app-search-input {
+            height: 48px !important;
+            min-height: 48px !important;
             font-size: 16px !important;
-            height: 100% !important;
+            padding-left: 42px !important;
+            border: 1px solid #D9D1BF !important;
+            border-radius: 10px !important;
+            background-color: #FFFFFF !important;
+          }
+          .admin-app-search-input:focus {
+            border-color: #8A6B2E !important;
+            box-shadow: 0 0 0 3px rgba(138, 107, 46, 0.18) !important;
           }
           .admin-app-selects-row {
             width: 100% !important;

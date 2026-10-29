@@ -292,14 +292,18 @@ export default function TalentOpportunitiesPage() {
       >
         {/* Top Search Input & Mobile Filter Trigger */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%" }}>
-          <div style={{ position: "relative", display: "flex", alignItems: "center", flex: 1 }}>
+          <div className="vismaya-search-wrap" style={{ position: "relative", display: "flex", alignItems: "center", flex: 1 }}>
             <Search
               size={18}
+              className="vismaya-search-icon"
               style={{
                 position: "absolute",
                 left: "14px",
-                color: "var(--text-muted, #777970)",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#8A8170",
                 pointerEvents: "none",
+                zIndex: 2,
               }}
             />
             <input
@@ -307,32 +311,48 @@ export default function TalentOpportunitiesPage() {
               placeholder="Search opportunity title, project, role, location..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              className="vismaya-search-input"
               style={{
                 width: "100%",
-                padding: "12px 16px 12px 42px",
-                backgroundColor: "var(--bg-surface, #FFFFFF)",
-                border: "1px solid var(--border-color, #E4E1D9)",
-                borderRadius: "var(--radius-input, 4px)",
-                color: "var(--text-primary, #292C29)",
-                fontSize: "0.925rem",
-                outline: "none",
+                height: "44px",
                 minHeight: "44px",
+                paddingLeft: "42px",
+                paddingRight: searchQuery ? "38px" : "14px",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D1BF",
+                borderRadius: "10px",
+                color: "#2A241A",
+                fontSize: "14px",
+                fontFamily: "var(--font-body), 'Inter', sans-serif",
+                outline: "none",
+                boxSizing: "border-box",
+                transition: "border-color 0.16s ease, box-shadow 0.16s ease",
               }}
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery("")}
+                className="vismaya-search-clear-btn"
+                aria-label="Clear search"
                 style={{
                   position: "absolute",
                   right: "12px",
-                  color: "var(--text-muted, #777970)",
-                  cursor: "pointer",
-                  padding: "4px",
-                  background: "none",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "transparent",
                   border: "none",
+                  cursor: "pointer",
+                  color: "#8A8170",
+                  padding: "4px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "50%",
+                  zIndex: 2,
                 }}
               >
-                <X size={16} />
+                <X size={14} />
               </button>
             )}
           </div>

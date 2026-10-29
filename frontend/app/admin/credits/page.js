@@ -386,15 +386,30 @@ export default function AdminCreditsPage() {
       {activeTab === "ledger" && (
         <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #E8E2D4", borderRadius: "12px", padding: "20px", boxShadow: "0 2px 8px rgba(43,45,42,0.02)" }}>
           {/* Filters & Search */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
-            <div style={{ position: "relative", minWidth: "240px", flex: 1 }}>
-              <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#5A584F" }} />
+          <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
+            <div className="vismaya-search-wrap" style={{ position: "relative", minWidth: "240px", flex: 1 }}>
+              <Search size={18} className="vismaya-search-icon" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#8A8170", pointerEvents: "none", zIndex: 2 }} />
               <input
                 type="text"
                 placeholder="Search studio name, notes, reference..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ width: "100%", height: "38px", paddingLeft: "36px", borderRadius: "6px", border: "1px solid #E8E2D4", fontSize: "13px" }}
+                className="vismaya-search-input"
+                style={{
+                  width: "100%",
+                  height: "44px",
+                  paddingLeft: "42px",
+                  paddingRight: "14px",
+                  borderRadius: "10px",
+                  border: "1px solid #D9D1BF",
+                  backgroundColor: "#FFFFFF",
+                  color: "#2A241A",
+                  fontSize: "14px",
+                  fontFamily: "var(--font-body), 'Inter', sans-serif",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  transition: "border-color 0.16s ease, box-shadow 0.16s ease",
+                }}
               />
             </div>
 

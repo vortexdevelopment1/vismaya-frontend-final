@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Megaphone,
   Users,
+  X,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
@@ -144,7 +145,7 @@ export default function AdminProjectsPage() {
       <PageHeader
         title="Projects Directory"
         subtitle="Overview of production titles, web series, TVCs, and feature films across accredited organizations."
-        badge={`${projects.length} Total Projects`}
+        badge={`${projects?.length ?? 0} Total Projects`}
         breadcrumbs={[
           { label: "Dashboard", href: "/admin/dashboard" },
           { label: "Projects" },
@@ -168,37 +169,81 @@ export default function AdminProjectsPage() {
         }}
       >
         <div
-          className="admin-projects-search-wrap"
+          className="admin-projects-search-wrap vismaya-search-wrap"
           style={{
             flex: "1 1 280px",
             minWidth: "200px",
+            position: "relative",
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D9D2C0",
-            borderRadius: "10px",
-            padding: "0 14px",
-            height: "44px",
+            border: "none",
+            background: "transparent",
+            padding: 0,
           }}
         >
-          <Search size={16} style={{ color: "#5A584F" }} />
+          <Search
+            size={18}
+            className="vismaya-search-icon"
+            style={{
+              position: "absolute",
+              left: "14px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#8A8170",
+              stroke: "#8A8170",
+              pointerEvents: "none",
+              zIndex: 2,
+            }}
+          />
           <input
             type="text"
             placeholder="Search project title, format, studio..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="admin-projects-search-input"
+            className="admin-projects-search-input vismaya-search-input"
             style={{
-              border: "none",
-              background: "transparent",
-              outline: "none",
-              fontSize: "14px",
-              color: "#2B2D2A",
               width: "100%",
-              fontFamily: "Inter, sans-serif",
+              height: "44px",
+              minHeight: "44px",
+              paddingLeft: "42px",
+              paddingRight: searchQuery ? "38px" : "14px",
+              border: "1px solid #D9D1BF",
+              borderRadius: "10px",
+              backgroundColor: "#FFFFFF",
+              color: "#2A241A",
+              fontSize: "14px",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+              outline: "none",
+              boxSizing: "border-box",
+              transition: "border-color 0.16s ease, box-shadow 0.16s ease",
             }}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="vismaya-search-clear-btn"
+              aria-label="Clear search"
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "#8A8170",
+                padding: "4px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "50%",
+                zIndex: 2,
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
         <div className="admin-projects-selects-group" style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
