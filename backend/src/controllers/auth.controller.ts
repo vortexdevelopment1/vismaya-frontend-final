@@ -556,7 +556,7 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: "Invalid email or password"
+                message: "This email is not registered with us."
             });
         }
 
@@ -1214,9 +1214,11 @@ export const forgotPassword = async (req: Request, res: Response): Promise<any> 
         }
 
         if (!user) {
-            return res.status(200).json({
-                success: true,
-                message: "If your account is registered, you will receive a password reset code."
+            return res.status(404).json({
+                success: false,
+                message: normalizedEmail
+                    ? "This email address is not registered."
+                    : "This mobile number is not registered."
             });
         }
 

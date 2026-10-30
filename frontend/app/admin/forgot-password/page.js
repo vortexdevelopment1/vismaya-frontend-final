@@ -85,18 +85,17 @@ function AdminForgotPasswordContent() {
     setFormError("");
 
     try {
-      await adminService.adminForgotPassword({ email: email.trim() });
-      // Always advance to step 2 with the generic message per specification
-      setGenericNotice("If this email is registered, a code was sent. Check your inbox.");
+      const res = await adminService.adminForgotPassword({ email: email.trim() });
+      if (res && res.success === false) {
+        setFormError(res.message || "This email address is not registered.");
+        return;
+      }
+      setGenericNotice(res?.message || "A 6-digit verification code has been sent. Check your inbox.");
       setStep(2);
       setCountdown(60);
       setCanResend(false);
     } catch (err) {
-      // Even if API errors unexpectedly, show safe user-facing message and move forward
-      setGenericNotice("If this email is registered, a code was sent. Check your inbox.");
-      setStep(2);
-      setCountdown(60);
-      setCanResend(false);
+      setFormError(err.message || "This email address is not registered.");
     } finally {
       setIsSubmitting(false);
     }

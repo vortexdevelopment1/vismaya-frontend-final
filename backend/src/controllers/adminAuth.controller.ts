@@ -292,7 +292,10 @@ export const adminForgotPassword = async (req: Request, res: Response): Promise<
         // Only target active administrators
         const user = await User.findOne({ email: normalizedEmail, role: "admin", status: "active" });
         if (!user) {
-            return res.status(200).json(genericResponse);
+            return res.status(404).json({
+                success: false,
+                message: "This email address is not registered."
+            });
         }
 
         // 60-second resend cooldown check

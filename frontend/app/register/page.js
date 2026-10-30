@@ -730,15 +730,7 @@ function RegisterPageContent() {
   const handleBasicIdentitySubmit = (e) => {
     e.preventDefault();
     if (selectedRole === "talent") {
-      // Photo is strictly mandatory before payment
-      if (!photoUrl) {
-        setFormError("Please add a profile photo to continue.");
-        return;
-      }
-      if (!phone || !city) {
-        setFormError("Please enter your mobile phone and current city.");
-        return;
-      }
+      // Photo, Age and City are optional - can be completed later in profile
       setFormError("");
       setCurrentStep(4); // Payment step for Talent
       saveDraft({ step: 4 });
@@ -1774,15 +1766,15 @@ function RegisterPageContent() {
                       style={{
                         fontSize: "10.5px",
                         fontWeight: "600",
-                        color: "#8A6B2E",
-                        backgroundColor: "#F3EFE6",
-                        border: "1px solid #E8E2D4",
+                        color: "#777970",
+                        backgroundColor: "#F0EEE7",
+                        border: "1px solid #E4E1D9",
                         borderRadius: "10px",
                         padding: "1px 7px",
                         letterSpacing: "0.02em",
                       }}
                     >
-                      Required
+                      Optional
                     </span>
                   </div>
 
@@ -2028,7 +2020,6 @@ function RegisterPageContent() {
                       autoComplete="off"
                       value={age}
                       onChange={(e) => setAge(e.target.value)}
-                      required
                       style={{ width: "100%", height: "42px", borderRadius: "6px", border: "1px solid #E8E2D4", boxSizing: "border-box" }}
                     />
                   </div>
@@ -2052,7 +2043,6 @@ function RegisterPageContent() {
                       autoComplete="address-level2"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      required
                       style={{ width: "100%", height: "42px", borderRadius: "6px", border: "1px solid #E8E2D4", boxSizing: "border-box" }}
                     />
                   </div>

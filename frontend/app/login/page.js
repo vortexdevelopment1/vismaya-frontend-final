@@ -11,7 +11,7 @@ import GoogleAuthButton from "@/components/GoogleAuthButton";
 import AuthSubmitButton from "@/components/auth/AuthSubmitButton";
 import AuthStatus from "@/components/auth/AuthStatus";
 import { useAuth } from "@/context/AuthContext";
-import { ArrowRight, Lock, Mail, Sparkles, AlertCircle } from "lucide-react";
+import { ArrowRight, ArrowLeft, Lock, Mail, AlertCircle } from "lucide-react";
 import { isRealMode } from "@/lib/api/config";
 
 function LoginFormContent() {
@@ -92,52 +92,7 @@ function LoginFormContent() {
     }
   };
 
-  const handleQuickDemo = async (targetRole) => {
-    if (isBusy) return;
-    setAuthStatus("submitting");
-    setFormError("");
-
-    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
-    slowTimerRef.current = setTimeout(() => {
-      setAuthStatus("slow");
-    }, 4000);
-
-    try {
-      const emailMap = {
-        talent: "aanya.sharma@vismaya.io",
-        recruiter: "recruiter@zee.com",
-        admin: "admin@vismaya.io",
-      };
-      const pathMap = {
-        talent: "/talent/dashboard",
-        recruiter: "/recruiter/dashboard",
-        admin: "/admin/dashboard",
-      };
-      const passwordMap = {
-        talent: "password123",
-        recruiter: "password123",
-        admin: "Admin@Vismaya2026!",
-      };
-      await login({
-        email: emailMap[targetRole] || "aanya.sharma@vismaya.io",
-        password: passwordMap[targetRole] || "password123",
-      });
-      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
-      setAuthStatus("success");
-      router.push(pathMap[targetRole] || "/talent/dashboard");
-    } catch {
-      const pathMap = {
-        talent: "/talent/dashboard",
-        recruiter: "/recruiter/dashboard",
-        admin: "/admin/dashboard",
-      };
-      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
-      setAuthStatus("success");
-      router.push(pathMap[targetRole] || "/talent/dashboard");
-    }
-  };
-
-  return (
+return (
     <div
       className="glass login-glass-card"
       style={{
@@ -173,97 +128,6 @@ function LoginFormContent() {
           Access your talent portfolio, organization briefs, or admin desk.
         </p>
       </div>
-
-      {/* Fast Demo Access (mock mode only) */}
-      {!isRealMode("auth") && (
-        <div
-          style={{
-            backgroundColor: "var(--bg-alt, #F0EEE7)",
-            border: "1px solid var(--border-color, #E4E1D9)",
-            borderRadius: "var(--radius-card, 6px)",
-            padding: "14px",
-            marginBottom: "24px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Sparkles size={13} style={{ color: "var(--gold)" }} />
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: "600",
-                color: "var(--gold)",
-                textTransform: "uppercase",
-                letterSpacing: "0.10em",
-              }}
-            >
-              Quick Demo Workspace
-            </span>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-            <Link
-              href="/talent/dashboard"
-              onClick={(e) => {
-                if (isBusy) e.preventDefault();
-              }}
-              style={{
-                fontSize: "11px",
-                textAlign: "center",
-                padding: "6px 4px",
-                borderRadius: "var(--radius-btn, 4px)",
-                backgroundColor: "var(--bg-surface, #FFFFFF)",
-                border: "1px solid var(--border-color, #E4E1D9)",
-                color: isBusy ? "#8A8170" : "var(--text-primary, #292C29)",
-                fontWeight: "600",
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-                textDecoration: "none",
-                minHeight: "36px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "all 0.18s ease",
-                pointerEvents: isBusy ? "none" : undefined,
-                opacity: isBusy ? 0.6 : 1,
-              }}
-              className="demo-btn"
-            >
-              Talent
-            </Link>
-            <Link
-              href="/recruiter/dashboard"
-              onClick={(e) => {
-                if (isBusy) e.preventDefault();
-              }}
-              style={{
-                fontSize: "11px",
-                textAlign: "center",
-                padding: "6px 4px",
-                borderRadius: "var(--radius-btn, 4px)",
-                backgroundColor: "var(--bg-surface, #FFFFFF)",
-                border: "1px solid var(--border-color, #E4E1D9)",
-                color: isBusy ? "#8A8170" : "var(--text-primary, #292C29)",
-                fontWeight: "600",
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-                textDecoration: "none",
-                minHeight: "36px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "all 0.18s ease",
-                pointerEvents: isBusy ? "none" : undefined,
-                opacity: isBusy ? 0.6 : 1,
-              }}
-              className="demo-btn"
-            >
-              Studio
-            </Link>
-          </div>
-        </div>
-      )}
 
       {formError && (
         <div
@@ -388,9 +252,7 @@ function LoginFormContent() {
 export default function LoginPage() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", width: "100%", backgroundColor: "var(--bg-primary)" }}>
-      <PublicNav />
-
-      {/* Full-Height Hero Background with Centered Glass Card */}
+      {/* Full-Height Centered Section with Back Button and Login Card */}
       <section
         style={{
           position: "relative",
@@ -398,8 +260,8 @@ export default function LoginPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          paddingTop: "clamp(36px, 5vh, 64px)",
-          paddingBottom: "clamp(48px, 6vw, 80px)",
+          paddingTop: "clamp(28px, 4vh, 52px)",
+          paddingBottom: "clamp(36px, 5vw, 64px)",
           overflow: "hidden",
         }}
       >
@@ -414,14 +276,33 @@ export default function LoginPage() {
           }}
         />
 
-        <div className="public-container" style={{ position: "relative", zIndex: 5, display: "flex", justifyContent: "center", width: "100%" }}>
+        <div className="public-container" style={{ position: "relative", zIndex: 5, display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+          {/* Back to Home Button */}
+          <div style={{ width: "100%", maxWidth: "460px", marginBottom: "16px" }}>
+            <Link
+              href="/"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                color: "var(--text-secondary, #777970)",
+                textDecoration: "none",
+                fontSize: "13.5px",
+                fontWeight: "500",
+                padding: "6px 0",
+                transition: "color 0.18s ease",
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>Back to Home</span>
+            </Link>
+          </div>
+
           <Suspense fallback={null}>
             <LoginFormContent />
           </Suspense>
         </div>
       </section>
-
-      <PublicFooter />
 
       <style jsx>{`
         :global(.demo-btn:hover) {

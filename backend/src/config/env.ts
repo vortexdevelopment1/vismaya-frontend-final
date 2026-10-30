@@ -53,6 +53,9 @@ export const env = {
     get RAZORPAY_WEBHOOK_SECRET(): string | undefined {
         return process.env.RAZORPAY_WEBHOOK_SECRET;
     },
+    get BREVO_API_KEY(): string | undefined {
+        return process.env.BREVO_API_KEY;
+    },
     get SMTP_HOST(): string | undefined {
         return process.env.SMTP_HOST;
     },

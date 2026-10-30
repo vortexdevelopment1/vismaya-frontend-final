@@ -63,12 +63,25 @@ export const authService = {
    */
   async verifyRegistration({ email, otp }) {
     if (!isRealMode("auth")) {
-      return {
-        success: true,
-        message: "Email verified successfully (Mock)",
-        token: "mock_jwt_verified",
-        user: { id: "usr_mock", email, status: "active" },
-      };
+      try {
+        const res = await fetch("/api/verify-registration-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, otp }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          return {
+            success: true,
+            message: data.message || "Verified successfully",
+            token: data.token,
+            user: data.user,
+          };
+        }
+        return { success: false, message: data.message || "Invalid verification code." };
+      } catch (err) {
+        return { success: false, message: err.message };
+      }
     }
     const res = await apiClient.post("/api/auth/verify-registration", { email, otp });
     return {
@@ -85,7 +98,17 @@ export const authService = {
    */
   async resendRegistrationOtp({ email }) {
     if (!isRealMode("auth")) {
-      return { success: true, message: "Verification OTP resent (Mock)" };
+      try {
+        const res = await fetch("/api/send-registration-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        return data;
+      } catch (err) {
+        return { success: false, message: err.message };
+      }
     }
     return apiClient.post("/api/auth/resend-registration-otp", { email });
   },
@@ -139,20 +162,39 @@ export const authService = {
    */
   async login({ email, password }) {
     if (!isRealMode("auth")) {
-      let role = "talent";
-      if (email?.includes("recruiter") || email?.includes("org") || email?.includes("zee") || email?.includes("dharma")) {
-        role = "organization";
-      } else if (email?.includes("admin")) {
-        role = "admin";
+      const registeredMockUsers = {
+        "aanya.sharma@vismaya.io": { role: "talent", name: "Aanya Sharma", password: "password123" },
+        "aarav.sharma@gmail.com": { role: "talent", name: "Aarav Sharma", password: "password123" },
+        "recruiter@zee.com": { role: "organization", name: "Zee Films Recruiter", password: "password123" },
+        "vikram@zeefilms.com": { role: "organization", name: "Vikram Malhotra", password: "password123" },
+        "admin@vismaya.io": { role: "admin", name: "Admin User", password: "Admin@Vismaya2026!" },
+        "superadmin@example.com": { role: "admin", name: "SuperAdmin User", password: "AdminSuperSecure2026!" },
+      };
+
+      const normalized = email?.toLowerCase().trim();
+      const mockUser = registeredMockUsers[normalized];
+
+      if (!mockUser) {
+        return {
+          success: false,
+          message: "This email is not registered with us.",
+        };
+      }
+
+      if (password && password !== mockUser.password && password !== "password123") {
+        return {
+          success: false,
+          message: "Invalid email or password.",
+        };
       }
 
       return {
         success: true,
         user: {
-          id: "usr_mock_" + role,
-          email,
-          role,
-          name: role === "admin" ? "Admin User" : role === "organization" ? "Zee Films Recruiter" : "Aarav Sharma",
+          id: "usr_mock_" + mockUser.role,
+          email: normalized,
+          role: mockUser.role,
+          name: mockUser.name,
           status: "active",
         },
         token: "mock_jwt_token_auth",
@@ -177,6 +219,20 @@ export const authService = {
    */
   async forgotPassword({ email }) {
     if (!isRealMode("auth")) {
+      const registeredMockEmails = [
+        "aarav.sharma@gmail.com",
+        "aanya.sharma@vismaya.io",
+        "vikram@zeefilms.com",
+        "vikram.malhotra@zeefilms.com",
+        "casting@dharmamovies.com",
+        "superadmin@example.com",
+        "admin@vismaya.com",
+        "vortexcubesdevelopment@gmail.com",
+      ];
+      const normalized = email?.toLowerCase().trim();
+      if (!registeredMockEmails.includes(normalized)) {
+        return { success: false, message: "This email address is not registered." };
+      }
       return { success: true, message: "OTP sent to your email (Mock)" };
     }
     return apiClient.post("/api/auth/forgot-password", { email });
@@ -418,8 +474,8 @@ export const authService = {
     } catch {
       return {
         success: true,
-        demoMode: process.env.NEXT_PUBLIC_OTP_DEMO_MODE === "true",
-        demoCode: process.env.NEXT_PUBLIC_OTP_DEMO_MODE === "true" ? "123456" : null,
+        demoMode: false,
+        demoCode: null,
       };
     }
   },

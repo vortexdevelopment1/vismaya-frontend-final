@@ -151,7 +151,11 @@ export const validateLoginInput = (data: any): { isValid: boolean; errors: strin
     const { email, password } = data || {};
     const errors: string[] = [];
 
-    if (!email) errors.push("Email is required");
+    if (!email) {
+        errors.push("Email is required");
+    } else if (!isValidEmail(sanitizeEmail(email))) {
+        errors.push("Please enter a valid email address");
+    }
     if (!password) errors.push("Password is required");
 
     return {

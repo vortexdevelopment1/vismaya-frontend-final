@@ -1340,6 +1340,18 @@ export const adminService = {
    * Request 6-digit email OTP for Admin Password Recovery
    */
   async adminForgotPassword({ email }) {
+    if (!isRealMode("admin")) {
+      const registeredAdminEmails = [
+        "superadmin@example.com",
+        "admin@vismaya.com",
+        "vortexcubesdevelopment@gmail.com",
+      ];
+      const normalized = email?.toLowerCase().trim();
+      if (!registeredAdminEmails.includes(normalized)) {
+        return { success: false, message: "This email address is not registered." };
+      }
+      return { success: true, message: "Verification code sent (Mock)" };
+    }
     const res = await apiClient.post("/api/admin/auth/forgot-password", { email });
     return res?.data || res;
   },

@@ -69,6 +69,44 @@ export const sendEmail = async ({
             };
         }
 
+        // Brevo REST API Integration
+        const brevoApiKey = process.env.BREVO_API_KEY;
+        if (brevoApiKey) {
+            try {
+                const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+                    method: "POST",
+                    headers: {
+                        "api-key": brevoApiKey,
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({
+                        sender: {
+                            name: process.env.EMAIL_FROM_NAME || "Vismaya Studios",
+                            email: process.env.EMAIL_FROM || "vortexcubesdevelopment@gmail.com"
+                        },
+                        to: [{ email: to }],
+                        subject,
+                        textContent: text || "",
+                        htmlContent: html || (text ? text.replace(/\n/g, "<br>") : "")
+                    })
+                });
+
+                if (response.ok) {
+                    const data: any = await response.json();
+                    return {
+                        success: true,
+                        messageId: data?.messageId || "brevo_" + Date.now()
+                    };
+                } else {
+                    const errText = await response.text();
+                    console.warn(`[EmailService] Brevo API error (${response.status}): ${errText}`);
+                }
+            } catch (brevoErr: any) {
+                console.warn(`[EmailService] Brevo API request failed: ${brevoErr?.message || brevoErr}`);
+            }
+        }
+
         const transport = getTransporter();
         if (transport) {
             const info = await transport.sendMail(emailPayload);

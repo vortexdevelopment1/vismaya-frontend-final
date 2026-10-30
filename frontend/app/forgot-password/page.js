@@ -33,14 +33,14 @@ export default function ForgotPasswordPage() {
 
     try {
       const res = await authService.forgotPassword({ email });
-      if (res.success) {
+      if (res && res.success) {
         setSuccessMessage("Verification OTP sent to your email.");
         setStep(2);
       } else {
-        setErrorMessage(res.message || "Could not send OTP. Please verify your email.");
+        setErrorMessage(res?.message || "This email address is not registered.");
       }
     } catch (err) {
-      setErrorMessage(err.message || "Failed to send reset code. Please try again.");
+      setErrorMessage(err.message || "This email address is not registered.");
     } finally {
       setIsSubmitting(false);
     }
