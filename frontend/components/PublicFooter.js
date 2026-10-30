@@ -3,19 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
-import PublicFooterOld from "./PublicFooter.old";
 import "./PublicFooter.css";
-
-// Switch between new light footer trial and backup old design
-const USE_NEW_FOOTER = true;
 
 export default function PublicFooter() {
   const pathname = usePathname();
-
-  // Switch to backup old footer if toggle is false
-  if (!USE_NEW_FOOTER) {
-    return <PublicFooterOld />;
-  }
 
   const companyLinks = [
     { label: "Home", href: "/" },

@@ -5,12 +5,9 @@ import Hero from "@/components/home/Hero";
 import BrandsMarquee from "@/components/home/BrandsMarquee";
 import StatsStudioStrip from "@/components/home/StatsStudioStrip";
 import TalentRosterSection from "@/components/home/TalentRosterSection";
-import TalentRosterSectionOld from "@/components/home/TalentRosterSection.old";
 import WorkflowSection from "@/components/home/WorkflowSection";
 import SuccessStoriesSection from "@/components/home/SuccessStoriesSection";
 
-// Switch between new light roster trial and backup old design
-const USE_NEW_ROSTER = true;
 import CtaBannerSection from "@/components/home/CtaBannerSection";
 import HomePricingSection from "@/components/home/HomePricingSection";
 import PublicFooter from "@/components/PublicFooter";
@@ -31,7 +28,7 @@ export default function Home() {
       <BrandsMarquee />
 
       {/* 4. Elite Talent Roster */}
-      {USE_NEW_ROSTER ? <TalentRosterSection /> : <TalentRosterSectionOld />}
+      <TalentRosterSection />
 
       {/* 5. How Vismaya Works (4-Step Workflow) */}
       <WorkflowSection />
