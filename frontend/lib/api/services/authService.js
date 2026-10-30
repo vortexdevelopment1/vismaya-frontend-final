@@ -64,13 +64,17 @@ export const authService = {
   async verifyRegistration({ email, otp }) {
     if (!isRealMode("auth")) {
       try {
+        const token = typeof window !== "undefined" ? sessionStorage.getItem("vismaya_reg_otp_token") : null;
         const res = await fetch("/api/verify-registration-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, otp }),
+          body: JSON.stringify({ email, otp, token }),
         });
         const data = await res.json();
         if (data.success) {
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("vismaya_reg_otp_token");
+          }
           return {
             success: true,
             message: data.message || "Verified successfully",
@@ -105,6 +109,9 @@ export const authService = {
           body: JSON.stringify({ email }),
         });
         const data = await res.json();
+        if (data?.token && typeof window !== "undefined") {
+          sessionStorage.setItem("vismaya_reg_otp_token", data.token);
+        }
         return data;
       } catch (err) {
         return { success: false, message: err.message };

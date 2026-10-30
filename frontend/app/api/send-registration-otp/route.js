@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 
-// In-memory OTP storage for registration session verification
+const OTP_SECRET = process.env.OTP_SECRET || "vismaya_registration_otp_secret_key_2026";
 const OTP_STORE = global.__REG_OTP_STORE__ || new Map();
 global.__REG_OTP_STORE__ = OTP_STORE;
 
@@ -14,16 +15,25 @@ export async function POST(req) {
     const normalizedEmail = email.toLowerCase().trim();
     // Generate secure 6-digit numeric OTP code
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
 
+    // Save in memory
     OTP_STORE.set(normalizedEmail, {
       code: otpCode,
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes expiry
+      expiresAt,
     });
+
+    // Generate stateless signature for serverless resilience
+    const signature = crypto
+      .createHmac("sha256", OTP_SECRET)
+      .update(`${normalizedEmail}:${otpCode}:${expiresAt}`)
+      .digest("hex");
+    const token = `${expiresAt}.${signature}`;
 
     const apiKey = process.env.BREVO_API_KEY;
     if (!apiKey) {
-      console.error("[send-registration-otp] Missing BREVO_API_KEY in environment variables");
-      return NextResponse.json({ success: false, message: "Email service not configured" }, { status: 500 });
+      console.error("[send-registration-otp] Missing BREVO_API_KEY. Please add BREVO_API_KEY to your Vercel Environment Variables.");
+      return NextResponse.json({ success: false, message: "Email service not configured. Please add BREVO_API_KEY in Vercel settings." }, { status: 500 });
     }
     const senderEmail = process.env.EMAIL_FROM || "vortexcubesdevelopment@gmail.com";
     const senderName = process.env.EMAIL_FROM_NAME || "Vismaya Studios";
@@ -69,7 +79,20 @@ export async function POST(req) {
     });
 
     if (res.ok) {
-      return NextResponse.json({ success: true, message: "Verification code sent to your email" });
+      const response = NextResponse.json({
+        success: true,
+        message: "Verification code sent to your email",
+        token,
+      });
+
+      response.cookies.set("vismaya_reg_otp", `${normalizedEmail}.${token}`, {
+        httpOnly: false,
+        maxAge: 600,
+        path: "/",
+        sameSite: "lax",
+      });
+
+      return response;
     } else {
       const errText = await res.text();
       console.error("[send-registration-otp] Brevo error:", errText);
