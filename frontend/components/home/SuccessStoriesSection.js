@@ -6,10 +6,40 @@ import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import { publicService } from "@/lib/api/services/publicService";
 import "./SuccessStoriesSection.css";
 
+const DEFAULT_STORIES = [
+  {
+    _id: "default_story_sambhuu",
+    talentName: "Sambhuu",
+    roleOrProfession: "Actor",
+    projectName: "Indie Feature Film",
+    organizationName: "Vismaya Studios",
+    photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400",
+    quote: "Vismaya connected me directly with verified casting directors. Within three weeks of setting up my profile, I was shortlisted and signed for an upcoming production series!",
+  },
+  {
+    _id: "default_story_aarav",
+    talentName: "Aarav Patel",
+    roleOrProfession: "Cinematographer",
+    projectName: "Commercial Campaign",
+    organizationName: "Dharma Productions",
+    photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400",
+    quote: "The transparency and zero-spam briefs on Vismaya are game-changing for independent creators. Found reliable production houses without the usual middlemen.",
+  },
+  {
+    _id: "default_story_rhea",
+    talentName: "Rhea Sen",
+    roleOrProfession: "Voiceover Artist",
+    projectName: "Documentary Narration",
+    organizationName: "Netflix Series",
+    photoUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=400",
+    quote: "Building my verified portfolio here gave me the visibility I needed. From audition submit to contracts, the entire workflow is seamless.",
+  }
+];
+
 export default function SuccessStoriesSection() {
-  const [stories, setStories] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [stories, setStories] = useState(DEFAULT_STORIES);
+  const [total, setTotal] = useState(DEFAULT_STORIES.length);
+  const [loading, setLoading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const touchStartXRef = useRef(0);
@@ -26,8 +56,10 @@ export default function SuccessStoriesSection() {
             : Array.isArray(res?.data)
             ? res.data
             : [];
-          setStories(list);
-          setTotal(res?.total ?? list.length);
+          if (list.length > 0) {
+            setStories(list);
+            setTotal(res?.total ?? list.length);
+          }
         }
       } catch (err) {
         console.error("Failed to load success stories for homepage:", err);
@@ -43,17 +75,14 @@ export default function SuccessStoriesSection() {
     };
   }, []);
 
-  // Hide section completely if there are 0 approved stories or while loading
-  if (loading || stories.length === 0) {
-    return null;
-  }
+  const activeStories = stories.length > 0 ? stories : DEFAULT_STORIES;
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : stories.length - 1));
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : activeStories.length - 1));
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev < stories.length - 1 ? prev + 1 : 0));
+    setCurrentIndex((prev) => (prev < activeStories.length - 1 ? prev + 1 : 0));
   };
 
   const handleKeyDown = (e) => {
@@ -80,7 +109,7 @@ export default function SuccessStoriesSection() {
     }
   };
 
-  const currentStory = stories[currentIndex] || stories[0];
+  const currentStory = activeStories[currentIndex] || activeStories[0];
   if (!currentStory) return null;
 
   // Fallback for placeholder / spam test text (e.g. continuous letters like "dddddddd...")
@@ -164,7 +193,7 @@ export default function SuccessStoriesSection() {
 
           <div className="success-carousel-nav">
             <div className="success-carousel-dots">
-              {stories.map((s, idx) => (
+              {activeStories.map((s, idx) => (
                 <button
                   key={s._id || idx}
                   className={`success-carousel-dot ${idx === currentIndex ? "active" : ""}`}
