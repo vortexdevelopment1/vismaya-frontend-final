@@ -4,8 +4,6 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import PublicNav from "@/components/PublicNav";
-import PublicFooter from "@/components/PublicFooter";
 import PasswordInput from "@/components/PasswordInput";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
 import PaymentCard from "@/components/payment/PaymentCard";
@@ -994,8 +992,6 @@ function RegisterPageContent() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", width: "100%", backgroundColor: "var(--bg-primary)" }}>
-      <PublicNav />
-
       {/* Main Full-Height Section */}
       <section
         style={{
@@ -1021,6 +1017,27 @@ function RegisterPageContent() {
         />
 
         <div className="public-container" style={{ position: "relative", zIndex: 5, display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+          {/* Back to Home Button */}
+          <div style={{ width: "100%", maxWidth: "520px", marginBottom: "14px" }}>
+            <Link
+              href="/"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                color: "var(--text-secondary, #777970)",
+                textDecoration: "none",
+                fontSize: "13.5px",
+                fontWeight: "500",
+                padding: "6px 0",
+                transition: "color 0.18s ease",
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>Back to Home</span>
+            </Link>
+          </div>
+
           {/* Restart option when past step 1 */}
           {!isRegistrationComplete && currentStep > 1 && (
             <div style={{ width: "100%", maxWidth: "520px", display: "flex", justifyContent: "flex-end", marginBottom: "8px" }}>
@@ -2710,7 +2727,6 @@ function RegisterPageContent() {
         </div>
       </section>
 
-      <PublicFooter />
       <style jsx>{`
         @media (max-width: 640px) {
           :global(.register-glass-card) {
