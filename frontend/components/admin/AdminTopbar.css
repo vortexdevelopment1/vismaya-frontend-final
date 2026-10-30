@@ -172,11 +172,11 @@
 }
 
 /* --------------------------------------------------------------------------
-   Tablets (640px to 970px): 2 Rows
+   Tablets (640px to 860px): 2 Rows
    Row 1: [menu] [title] [actions]
-   Row 2: [search] (shifted below on <= 970px)
+   Row 2: [search] (shifted below on <= 860px)
    -------------------------------------------------------------------------- */
-@media (min-width: 640px) and (max-width: 970px) {
+@media (min-width: 640px) and (max-width: 860px) {
   .admin-topbar-header {
     display: grid !important;
     grid-template-areas:
@@ -286,10 +286,10 @@
 }
 
 /* --------------------------------------------------------------------------
-   Desktop / Wide Screens (971px and Above): Single Row
+   Desktop / Wide Screens (861px and Above): Single Row
    Search bar stays on top row (Row 1)
    -------------------------------------------------------------------------- */
-@media (min-width: 971px) {
+@media (min-width: 861px) {
   .admin-topbar-header {
     display: grid !important;
     grid-template-areas: "menu title search actions" !important;
@@ -298,7 +298,7 @@
     align-items: center !important;
     column-gap: 16px !important;
     row-gap: 0 !important;
-    padding: 14px 24px !important;
+    padding: 14px 20px !important;
     height: 72px !important;
     min-height: 72px !important;
   }
@@ -382,6 +382,18 @@
     min-width: 40px !important;
     min-height: 40px !important;
     border-radius: 50% !important;
+  }
+}
+
+/* On medium desktop/tablet (861px - 1024px), make export button compact icon so title has maximum breathing room */
+@media (min-width: 861px) and (max-width: 1024px) {
+  .admin-export-btn-text {
+    display: none !important;
+  }
+  .admin-export-btn {
+    width: 40px !important;
+    padding: 0 !important;
+    justify-content: center !important;
   }
 }
 
