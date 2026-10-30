@@ -78,7 +78,16 @@ export default function AdminProjectsPage() {
 
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [orgFilter, setOrgFilter] = useState("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return new URLSearchParams(window.location.search).get("search") || "";
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
 
   // Read-only Drawer/Modal state
   const [selectedProject, setSelectedProject] = useState(null);

@@ -14,8 +14,10 @@ import {
   User,
   Building2,
   Briefcase,
+  FolderKanban,
+  ClipboardCheck,
 } from "lucide-react";
-import { useWorkflow } from "@/lib/shared/workflowStore";
+import { useWorkflow, initialProjects } from "@/lib/shared/workflowStore";
 import { adminService } from "@/lib/api/services/adminService";
 import { useAdmin } from "@/lib/admin/AdminContext";
 import { useAuth } from "@/context/AuthContext";
@@ -39,6 +41,8 @@ export default function AdminTopbar({ onOpenMobile }) {
     markNotificationRead,
     opportunities: workflowOpps = [],
     organizations: workflowOrgs = [],
+    projects: workflowProjects = [],
+    cancellationRequests: workflowCanc = [],
   } = useWorkflow();
   const adminCtx = useAdmin();
 
@@ -57,7 +61,13 @@ export default function AdminTopbar({ onOpenMobile }) {
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const searchContainerRef = useRef(null);
-  const directoryCacheRef = useRef({ talents: null, organizations: null, opportunities: null });
+  const directoryCacheRef = useRef({
+    talents: null,
+    organizations: null,
+    opportunities: null,
+    projects: null,
+    verifications: null,
+  });
 
   // Clear search on route change
   useEffect(() => {
@@ -66,7 +76,7 @@ export default function AdminTopbar({ onOpenMobile }) {
     setShowSearchDropdown(false);
   }, [pathname]);
 
-  // Debounced Search (300ms, min 2 chars)
+  // Debounced Search (250ms, min 2 chars) across: Talents, Organizations, Projects, Opportunities, Reviews
   useEffect(() => {
     const trimmed = searchQuery.trim();
     if (!trimmed || trimmed.length < 2) {
@@ -88,13 +98,21 @@ export default function AdminTopbar({ onOpenMobile }) {
         let opps = workflowOpps?.length
           ? workflowOpps
           : (directoryCacheRef.current.opportunities || (adminCtx?.requirementRequests?.length ? adminCtx.requirementRequests : initialRequirementRequests) || []);
+        let projects = workflowProjects?.length
+          ? workflowProjects
+          : (directoryCacheRef.current.projects || initialProjects || []);
+        let verifs = adminCtx?.verifications?.length
+          ? adminCtx.verifications
+          : (directoryCacheRef.current.verifications || []);
 
-        if (!directoryCacheRef.current.talents || !directoryCacheRef.current.organizations || !directoryCacheRef.current.opportunities) {
+        if (!directoryCacheRef.current.talents || !directoryCacheRef.current.organizations || !directoryCacheRef.current.opportunities || !directoryCacheRef.current.projects) {
           try {
-            const [tRes, oRes, oppRes] = await Promise.allSettled([
+            const [tRes, oRes, oppRes, pRes, vRes] = await Promise.allSettled([
               adminService.getTalentDirectory(),
               adminService.getOrganizationDirectory(),
               adminService.getAllOpportunities(),
+              adminService.getAllProjects ? adminService.getAllProjects() : Promise.resolve({ data: initialProjects }),
+              adminService.getPendingVerifications ? adminService.getPendingVerifications() : Promise.resolve({ data: [] }),
             ]);
             if (tRes.status === "fulfilled" && Array.isArray(tRes.value?.data) && tRes.value.data.length) {
               talents = tRes.value.data;
@@ -108,20 +126,29 @@ export default function AdminTopbar({ onOpenMobile }) {
               opps = oppRes.value.data;
               directoryCacheRef.current.opportunities = opps;
             }
+            if (pRes.status === "fulfilled" && Array.isArray(pRes.value?.data) && pRes.value.data.length) {
+              projects = pRes.value.data;
+              directoryCacheRef.current.projects = projects;
+            }
+            if (vRes.status === "fulfilled" && Array.isArray(vRes.value?.data) && vRes.value.data.length) {
+              verifs = vRes.value.data;
+              directoryCacheRef.current.verifications = verifs;
+            }
           } catch {}
         }
 
         const q = trimmed.toLowerCase();
 
-        // 1. Talent match
+        // 1. Registered Talents match
         const matchedTalents = (talents || []).filter((t) => {
           const name = `${t.stageName || ""} ${t.firstName || ""} ${t.lastName || ""} ${t.fullName || ""} ${t.name || ""}`.toLowerCase();
           const role = `${t.primaryRole || ""} ${t.title || ""} ${t.category || ""} ${t.profession || ""}`.toLowerCase();
           const studio = `${t.studio || ""} ${t.city || ""} ${t.location || ""}`.toLowerCase();
-          return name.includes(q) || role.includes(q) || studio.includes(q);
+          const skills = Array.isArray(t.skills) ? t.skills.join(" ").toLowerCase() : "";
+          return name.includes(q) || role.includes(q) || studio.includes(q) || skills.includes(q);
         }).slice(0, 5);
 
-        // 2. Organization match
+        // 2. Organizations match
         const matchedOrgs = (orgs || []).filter((o) => {
           const name = `${o.organizationName || ""} ${o.company || ""} ${o.companyName || ""} ${o.name || ""} ${o.contactPerson || ""}`.toLowerCase();
           const type = `${o.organizationType || ""} ${o.companyType || ""} ${o.industry || ""} ${o.type || ""}`.toLowerCase();
@@ -129,7 +156,15 @@ export default function AdminTopbar({ onOpenMobile }) {
           return name.includes(q) || type.includes(q) || studio.includes(q);
         }).slice(0, 5);
 
-        // 3. Opportunities match
+        // 3. Projects match
+        const matchedProjects = (projects || []).filter((p) => {
+          const title = `${p.title || ""} ${p.name || ""} ${p.projectName || ""}`.toLowerCase();
+          const type = `${p.type || ""} ${p.projectType || ""}`.toLowerCase();
+          const desc = `${p.description || ""} ${p.status || ""}`.toLowerCase();
+          return title.includes(q) || type.includes(q) || desc.includes(q);
+        }).slice(0, 5);
+
+        // 4. Opportunities match
         const matchedOpps = (opps || []).filter((opp) => {
           const rolesText = Array.isArray(opp.roles) ? opp.roles.map((r) => r.roleName || "").join(" ") : "";
           const title = `${opp.title || ""} ${opp.projectTitle || ""} ${opp.opportunityTitle || ""}`.toLowerCase();
@@ -138,10 +173,44 @@ export default function AdminTopbar({ onOpenMobile }) {
           return title.includes(q) || role.includes(q) || studio.includes(q);
         }).slice(0, 5);
 
+        // 5. Reviews & Moderation Queues match
+        const reviewItems = [];
+        (opps || []).filter((o) => ["Submitted", "Pending", "Under Review", "Changes Requested"].includes(o.status)).forEach((o) => {
+          const title = o.title || o.projectTitle || o.opportunityTitle || "Opportunity";
+          reviewItems.push({
+            title: `Review: ${title}`,
+            subtitle: `Opportunity Review • ${o.status || "Pending"}`,
+            href: `/admin/opportunity-review?search=${encodeURIComponent(title)}`,
+            searchKey: `${title} ${o.opportunityType || ""} ${o.role || ""}`.toLowerCase(),
+          });
+        });
+        (verifs || []).forEach((v) => {
+          const name = v.userName || v.name || v.talentName || "Verification";
+          reviewItems.push({
+            title: `Verify: ${name}`,
+            subtitle: `Verification Queue • ${v.verificationType || v.type || "Identity"}`,
+            href: `/admin/verifications?search=${encodeURIComponent(name)}`,
+            searchKey: `${name} ${v.verificationType || ""} ${v.status || ""}`.toLowerCase(),
+          });
+        });
+        (workflowCanc || adminCtx?.cancellationRequests || []).forEach((c) => {
+          const title = c.opportunityTitle || c.title || "Cancellation";
+          reviewItems.push({
+            title: `Cancellation: ${title}`,
+            subtitle: `Cancellation Queue • ${c.status || "Pending"}`,
+            href: `/admin/cancellation-requests?search=${encodeURIComponent(title)}`,
+            searchKey: `${title} ${c.reason || ""}`.toLowerCase(),
+          });
+        });
+
+        const matchedReviews = reviewItems.filter((r) => r.searchKey.includes(q) || r.title.toLowerCase().includes(q)).slice(0, 5);
+
         setSearchResults({
           talents: matchedTalents,
           organizations: matchedOrgs,
+          projects: matchedProjects,
           opportunities: matchedOpps,
+          reviews: matchedReviews,
         });
       } catch (err) {
         console.error("Search error:", err);
@@ -151,7 +220,7 @@ export default function AdminTopbar({ onOpenMobile }) {
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, adminCtx?.talents, adminCtx?.recruiters, workflowOpps, workflowOrgs]);
+  }, [searchQuery, adminCtx?.talents, adminCtx?.recruiters, adminCtx?.verifications, workflowOpps, workflowOrgs, workflowProjects, workflowCanc]);
 
   // Click outside listener and Escape key dismiss
   useEffect(() => {
@@ -190,20 +259,28 @@ export default function AdminTopbar({ onOpenMobile }) {
       e.preventDefault();
       const tCount = searchResults?.talents?.length || 0;
       const oCount = searchResults?.organizations?.length || 0;
+      const pCount = searchResults?.projects?.length || 0;
       const oppCount = searchResults?.opportunities?.length || 0;
-      const totalCount = tCount + oCount + oppCount;
+      const rCount = searchResults?.reviews?.length || 0;
+      const totalCount = tCount + oCount + pCount + oppCount + rCount;
 
       if (totalCount === 0) {
         setShowSearchDropdown(true);
         return;
       }
 
-      let targetUrl = `/admin/talent-management?search=${encodeURIComponent(searchQuery.trim())}`;
-      if (oCount > tCount && oCount >= oppCount) {
-        targetUrl = `/admin/recruiter-management?search=${encodeURIComponent(searchQuery.trim())}`;
-      } else if (oppCount > tCount && oppCount > oCount) {
-        targetUrl = `/admin/opportunities?search=${encodeURIComponent(searchQuery.trim())}`;
-      }
+      const q = encodeURIComponent(searchQuery.trim());
+      const categories = [
+        { count: tCount, url: `/admin/talent-management?search=${q}` },
+        { count: oCount, url: `/admin/recruiter-management?search=${q}` },
+        { count: pCount, url: `/admin/projects?search=${q}` },
+        { count: oppCount, url: `/admin/opportunities?search=${q}` },
+        { count: rCount, url: searchResults?.reviews?.[0]?.href || `/admin/opportunity-review?search=${q}` },
+      ];
+
+      categories.sort((a, b) => b.count - a.count);
+      const targetUrl = categories[0].count > 0 ? categories[0].url : `/admin/talent-management?search=${q}`;
+
       setShowSearchDropdown(false);
       router.push(targetUrl);
     }
@@ -302,11 +379,8 @@ export default function AdminTopbar({ onOpenMobile }) {
         style={{
           display: "flex",
           alignItems: "center",
-          minHeight: "40px",
-          height: "40px",
           gap: "10px",
-          minWidth: 0,
-          overflow: "hidden",
+          flexShrink: 0,
         }}
       >
         <h1
@@ -321,12 +395,9 @@ export default function AdminTopbar({ onOpenMobile }) {
             padding: 0,
             letterSpacing: "-0.01em",
             whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            minWidth: 0,
             display: "flex",
             alignItems: "center",
-            height: "100%",
+            flexShrink: 0,
           }}
         >
           {getPageTitle()}
@@ -649,6 +720,76 @@ export default function AdminTopbar({ onOpenMobile }) {
                   </div>
                 )}
 
+                {/* Projects Section */}
+                {(searchResults.projects || []).length > 0 && (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        color: "#8A6B2E",
+                        textTransform: "uppercase",
+                        padding: "4px 8px 6px",
+                        letterSpacing: "0.06em",
+                        fontFamily: "var(--font-body), 'Inter', sans-serif",
+                      }}
+                    >
+                      Projects ({searchResults.projects.length})
+                    </div>
+                    {searchResults.projects.map((proj, idx) => {
+                      const title = proj.title || proj.name || proj.projectName || "Project";
+                      const subtitle = proj.type || proj.projectType || proj.status || "Production";
+                      return (
+                        <Link
+                          key={`proj-${idx}`}
+                          href={`/admin/projects?search=${encodeURIComponent(title)}`}
+                          onClick={() => setShowSearchDropdown(false)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "8px 10px",
+                            borderRadius: "8px",
+                            backgroundColor: "#FAF9F7",
+                            border: "1px solid #F0EEEA",
+                            textDecoration: "none",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                            <FolderKanban size={14} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                            <span
+                              style={{
+                                fontSize: "13px",
+                                fontWeight: "600",
+                                color: "#2B2D2A",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                fontFamily: "var(--font-body), 'Inter', sans-serif",
+                              }}
+                            >
+                              {title}
+                            </span>
+                          </div>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              color: "#8A8170",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                              marginLeft: "8px",
+                              fontFamily: "var(--font-body), 'Inter', sans-serif",
+                            }}
+                          >
+                            {subtitle}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {/* Opportunities Section */}
                 {(searchResults.opportunities || []).length > 0 && (
                   <div>
@@ -719,10 +860,78 @@ export default function AdminTopbar({ onOpenMobile }) {
                   </div>
                 )}
 
+                {/* Reviews & Queues Section */}
+                {(searchResults.reviews || []).length > 0 && (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        color: "#8A6B2E",
+                        textTransform: "uppercase",
+                        padding: "4px 8px 6px",
+                        letterSpacing: "0.06em",
+                        fontFamily: "var(--font-body), 'Inter', sans-serif",
+                      }}
+                    >
+                      Reviews & Queues ({searchResults.reviews.length})
+                    </div>
+                    {searchResults.reviews.map((rev, idx) => (
+                      <Link
+                        key={`rev-${idx}`}
+                        href={rev.href}
+                        onClick={() => setShowSearchDropdown(false)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "8px 10px",
+                          borderRadius: "8px",
+                          backgroundColor: "#FAF9F7",
+                          border: "1px solid #F0EEEA",
+                          textDecoration: "none",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                          <ClipboardCheck size={14} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                          <span
+                            style={{
+                              fontSize: "13px",
+                              fontWeight: "600",
+                              color: "#2B2D2A",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              fontFamily: "var(--font-body), 'Inter', sans-serif",
+                            }}
+                          >
+                            {rev.title}
+                          </span>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            color: "#8A8170",
+                            whiteSpace: "nowrap",
+                            flexShrink: 0,
+                            marginLeft: "8px",
+                            fontFamily: "var(--font-body), 'Inter', sans-serif",
+                          }}
+                        >
+                          {rev.subtitle}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
                 {/* Empty State */}
                 {!searchResults.talents?.length &&
                   !searchResults.organizations?.length &&
-                  !searchResults.opportunities?.length && (
+                  !searchResults.projects?.length &&
+                  !searchResults.opportunities?.length &&
+                  !searchResults.reviews?.length && (
                     <div
                       style={{
                         padding: "16px",

@@ -89,7 +89,16 @@ export default function OpportunityReviewPage() {
 
   // Tab State: "All" is the default first tab
   const [filterTab, setFilterTab] = useState("All"); // All | Submitted | Changes Requested | Rejected
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return new URLSearchParams(window.location.search).get("search") || "";
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
   const [selectedOppId, setSelectedOppId] = useState(null);
   const [previewTab, setPreviewTab] = useState("public"); // public | loggedIn
   const [showMobileDetail, setShowMobileDetail] = useState(false);
