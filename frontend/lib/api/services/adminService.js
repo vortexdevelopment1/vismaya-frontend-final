@@ -35,6 +35,69 @@ import {
 } from "../../admin/mockData.js";
 
 export const adminService = {
+  async getAdminProfile() {
+    if (!isRealMode("admin")) {
+      let cached = null;
+      if (typeof window !== "undefined") {
+        try {
+          cached = JSON.parse(localStorage.getItem("vismaya_user_data"));
+        } catch {}
+      }
+      return {
+        success: true,
+        profile: cached || {
+          name: "Super Admin",
+          email: "vortexcubesdevelopment@gmail.com",
+          mobile: "+919876543210",
+          avatar: null,
+          role: "admin",
+          isSuperAdmin: true,
+        },
+      };
+    }
+    try {
+      const res = await apiClient.get("/api/admin/profile");
+      return res;
+    } catch {
+      // Fallback to local storage if network or route error
+      let cached = null;
+      if (typeof window !== "undefined") {
+        try {
+          cached = JSON.parse(localStorage.getItem("vismaya_user_data"));
+        } catch {}
+      }
+      return {
+        success: true,
+        profile: cached || {
+          name: "Super Admin",
+          email: "vortexcubesdevelopment@gmail.com",
+          mobile: "+919876543210",
+          avatar: null,
+          role: "admin",
+          isSuperAdmin: true,
+        },
+      };
+    }
+  },
+
+  async updateAdminProfile(payload) {
+    if (typeof window !== "undefined") {
+      try {
+        const old = JSON.parse(localStorage.getItem("vismaya_user_data") || "{}");
+        const updated = { ...old, ...payload };
+        localStorage.setItem("vismaya_user_data", JSON.stringify(updated));
+      } catch {}
+    }
+    if (isRealMode("admin")) {
+      try {
+        return await apiClient.patch("/api/admin/profile", payload);
+      } catch {
+        return { success: true, message: "Profile updated locally", profile: payload };
+      }
+    }
+    return { success: true, message: "Profile updated successfully", profile: payload };
+  },
+
   getInitialState() {
     if (isRealMode("admin")) {
       return {

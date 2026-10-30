@@ -8,6 +8,7 @@ export interface IUser extends Document {
     googleId?: string;
     authProvider: "local" | "google";
     role: "talent" | "organization" | "admin";
+    avatar?: string | null;
     status: "pending" | "active" | "restricted" | "suspended" | "rejected" | "banned" | "deletion_requested" | "deleted";
     isEmailVerified: boolean;
     twoFactorEnabled: boolean;
@@ -62,6 +63,12 @@ const userSchema = new Schema<IUser>(
                 },
                 message: "Mobile number must be a valid 10-digit Indian number (e.g. +91XXXXXXXXXX or 9876543210)"
             }
+        },
+
+        avatar: {
+            type: String,
+            trim: true,
+            default: null
         },
 
         password: {

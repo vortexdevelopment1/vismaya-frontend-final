@@ -4245,3 +4245,80 @@ export const updateTalentTrendingStatus = async (req: Request, res: Response): P
     }
 };
 
+
+
+export const getAdminProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const adminId = (req.user as any)?.userId || (req.user as any)?._id;
+        const admin = await User.findById(adminId).select("-password -twoFactorSecret");
+        if (!admin) {
+            return res.status(404).json({ success: false, message: "Admin profile not found" });
+        }
+        return res.status(200).json({
+            success: true,
+            profile: {
+                id: admin._id,
+                name: admin.name,
+                email: admin.email,
+                mobile: admin.mobile || "",
+                avatar: (admin as any).avatar || null,
+                role: admin.role,
+                isSuperAdmin: (admin as any).isSuperAdmin || false,
+                twoFactorEnabled: admin.twoFactorEnabled || false,
+                status: admin.status,
+                createdAt: admin.createdAt
+            }
+        });
+    } catch (error: any) {
+        console.error("Get admin profile error:", error);
+        return res.status(500).json({ success: false, message: "Failed to retrieve admin profile" });
+    }
+};
+
+export const updateAdminProfile = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const adminId = (req.user as any)?.userId || (req.user as any)?._id;
+        const admin = await User.findById(adminId);
+        if (!admin) {
+            return res.status(404).json({ success: false, message: "Admin not found" });
+        }
+        const { name, avatar, mobile } = req.body;
+        if (typeof name === "string" && name.trim()) {
+            admin.name = name.trim();
+        }
+        if (avatar !== undefined) {
+            (admin as any).avatar = avatar || null;
+        }
+        if (typeof mobile === "string") {
+            admin.mobile = mobile.trim();
+        }
+        await admin.save();
+
+        await logAdminAction({
+            adminId: (admin._id as any),
+            action: "UPDATE_ADMIN_PROFILE",
+            targetType: "User",
+            targetId: (admin._id as any),
+            details: `Admin profile updated. Name: ${admin.name}, Avatar: ${Boolean((admin as any).avatar)}`
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Admin profile updated successfully",
+            profile: {
+                id: admin._id,
+                name: admin.name,
+                email: admin.email,
+                mobile: admin.mobile || "",
+                avatar: (admin as any).avatar || null,
+                role: admin.role,
+                isSuperAdmin: (admin as any).isSuperAdmin || false,
+                twoFactorEnabled: admin.twoFactorEnabled || false,
+                status: admin.status
+            }
+        });
+    } catch (error: any) {
+        console.error("Update admin profile error:", error);
+        return res.status(500).json({ success: false, message: "Failed to update admin profile" });
+    }
+};

@@ -37,6 +37,8 @@ import {
     getPendingProfileChanges,
     reviewProfileChange,
     updateTalentTrendingStatus,
+    getAdminProfile,
+    updateAdminProfile,
     getPaymentTransactions,
     adjustCreditBalance,
     getAdminCreditLedger,
@@ -274,5 +276,9 @@ router.get("/broadcasts/:broadcastId", authenticateUser, authorizeRoles("admin")
 router.post("/broadcasts", authenticateUser, authorizeRoles("admin"), sendBroadcast);
 router.patch("/broadcasts/:broadcastId", authenticateUser, authorizeRoles("admin"), updateBroadcast);
 router.delete("/broadcasts/:broadcastId", authenticateUser, authorizeRoles("admin"), deleteBroadcast);
+
+// Admin Profile
+router.get("/profile", getAdminProfile);
+router.patch("/profile", updateAdminProfile);
 
 export default router;

@@ -13,7 +13,7 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 export default function AdminSidebar({ mobileOpen = false, onCloseMobile, onOpenLogout }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const {
     pendingTalentsCount,
     pendingRecruitersCount,

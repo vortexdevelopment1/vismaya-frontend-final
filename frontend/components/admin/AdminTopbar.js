@@ -20,10 +20,18 @@ import {
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { adminService } from "@/lib/api/services/adminService";
 import { useAdmin } from "@/lib/admin/AdminContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function AdminTopbar({ onOpenMobile }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
+  const getInitials = (str) => {
+    if (!str) return "SA";
+    const parts = str.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return str.slice(0, 2).toUpperCase();
+  };
   const { notifications = [], markNotificationRead } = useWorkflow();
   const adminCtx = useAdmin();
   const [showNotifMenu, setShowNotifMenu] = useState(false);
@@ -223,6 +231,7 @@ export default function AdminTopbar({ onOpenMobile }) {
 
   const getPageTitle = () => {
     if (pathname === "/admin/dashboard" || pathname === "/admin") return "Dashboard";
+    if (pathname === "/admin/profile") return "Admin Profile";
     if (pathname === "/admin/talent-management") return "Talent Management";
     if (pathname === "/admin/recruiter-management") return "Organization Management";
     if (pathname === "/admin/informational-profiles") return "Informational Profiles";
@@ -1006,14 +1015,15 @@ export default function AdminTopbar({ onOpenMobile }) {
           )}
         </div>
 
-        {/* User Avatar with SA initial */}
-        <div
+        {/* User Avatar with SA initial linking to Admin Profile */}
+        <Link
+          href="/admin/profile"
           style={{
             width: "38px",
             height: "38px",
             borderRadius: "50%",
             backgroundColor: "#F3EFE6",
-            border: "1.5px solid #E8E2D4",
+            border: pathname === "/admin/profile" ? "2px solid #8A6B2E" : "1.5px solid #E8E2D4",
             color: "#8A6B2E",
             display: "flex",
             alignItems: "center",
@@ -1024,12 +1034,24 @@ export default function AdminTopbar({ onOpenMobile }) {
             cursor: "pointer",
             userSelect: "none",
             letterSpacing: "0.02em",
+            textDecoration: "none",
+            overflow: "hidden",
+            flexShrink: 0,
+            transition: "all 0.15s ease",
           }}
-          title="Super Admin (SA)"
+          title="Super Admin Profile"
           className="admin-avatar-btn"
         >
-          SA
-        </div>
+          {user?.avatar ? (
+            <img
+              src={user.avatar}
+              alt={user?.name || "Admin"}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            getInitials(user?.name)
+          )}
+        </Link>
       </div>
 
       <style jsx>{`
