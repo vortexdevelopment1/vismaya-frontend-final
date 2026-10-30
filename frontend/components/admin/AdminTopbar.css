@@ -172,11 +172,11 @@
 }
 
 /* --------------------------------------------------------------------------
-   Tablets (640px to 1023px): 2 Rows
+   Tablets (640px to 970px): 2 Rows
    Row 1: [menu] [title] [actions]
-   Row 2: [search]
+   Row 2: [search] (shifted below on <= 970px)
    -------------------------------------------------------------------------- */
-@media (min-width: 640px) and (max-width: 1023px) {
+@media (min-width: 640px) and (max-width: 970px) {
   .admin-topbar-header {
     display: grid !important;
     grid-template-areas:
@@ -286,10 +286,10 @@
 }
 
 /* --------------------------------------------------------------------------
-   Desktop (1024px and Above): Single Row
-   [menu] [title] [search, max-width 420px] [actions pushed right]
+   Desktop / Wide Screens (971px and Above): Single Row
+   Search bar stays on top row (Row 1)
    -------------------------------------------------------------------------- */
-@media (min-width: 1024px) {
+@media (min-width: 971px) {
   .admin-topbar-header {
     display: grid !important;
     grid-template-areas: "menu title search actions" !important;
