@@ -113,11 +113,13 @@ export const adminLogin = async (req: Request, res: Response): Promise<any> => {
             expiresAt
         });
 
-        // Send 2FA email
-        await sendEmail({
+        // Send 2FA email asynchronously so the client is not blocked by SMTP/network latency
+        sendEmail({
             to: user.email,
             subject: "Vismaya Admin Portal - Two-Factor Authentication Code",
             text: `Hello ${user.name},\n\nYour 6-digit two-factor authentication code for the Vismaya Admin Portal is: ${otpCode}\n\nThis code expires in 5 minutes. Do not share this code with anyone.\n\nBest regards,\nVismaya Security Team`
+        }).catch(err => {
+            console.error("[AdminAuth] Failed to send 2FA email in background:", err);
         });
 
         // Issue 5-minute single-purpose token for 2FA verification step
