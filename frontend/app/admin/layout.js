@@ -108,10 +108,18 @@ function AdminLayoutContent({ children }) {
           .admin-main-container {
             margin-left: 0 !important;
             width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            overflow-x: hidden !important;
           }
           .admin-page-main {
             padding-inline: 16px !important;
             padding-block: 20px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
           }
         }
         @media (max-width: 640px) {

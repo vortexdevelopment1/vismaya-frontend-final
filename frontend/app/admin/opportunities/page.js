@@ -330,7 +330,7 @@ export default function AdminOpportunitiesPage() {
       />
 
       {/* Filter Tabs */}
-      <div className="admin-opp-tabs-wrap" style={{ display: "flex", gap: "8px", overflowX: "auto", flexWrap: "nowrap", WebkitOverflowScrolling: "touch", paddingBottom: "4px" }}>
+      <div className="admin-opp-tabs-wrap" style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", width: "100%", maxWidth: "100%" }}>
         {[
           { key: "ALL", label: "All Opportunities", count: statusCounts.ALL },
           { key: "Published", label: "Published Live", count: statusCounts.Published },
@@ -544,6 +544,9 @@ export default function AdminOpportunitiesPage() {
               WebkitOverflowScrolling: "touch",
               boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
               width: "100%",
+              maxWidth: "100%",
+              minWidth: 0,
+              boxSizing: "border-box",
             }}
           >
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px", minWidth: "960px", tableLayout: "auto" }}>
@@ -1470,24 +1473,46 @@ export default function AdminOpportunitiesPage() {
       )}
 
       <style jsx>{`
+        .admin-opp-page {
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
+          overflow-x: hidden;
+        }
         .admin-opp-desktop-layout {
           display: flex;
           flex-direction: column;
           gap: 24px;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
         }
         .admin-opp-mobile-layout {
           display: none;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
+        }
+        .admin-opp-tabs-wrap {
+          display: flex !important;
+          flex-wrap: wrap !important;
+          gap: 8px !important;
+          align-items: center !important;
+          width: 100% !important;
+          max-width: 100% !important;
         }
         .admin-opp-chip-row {
-          display: flex;
-          flex-wrap: nowrap;
-          gap: 8px;
-          overflow-x: auto;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-          margin: 0 -16px;
-          padding: 0 16px;
-          -webkit-overflow-scrolling: touch;
+          display: flex !important;
+          flex-wrap: wrap !important;
+          gap: 8px !important;
+          align-items: center !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
         .admin-opp-chip-row::-webkit-scrollbar {
           display: none;
