@@ -19,6 +19,7 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import { adminService } from "@/lib/api/services/adminService";
 import { useAdmin } from "@/lib/admin/AdminContext";
 import { useAuth } from "@/context/AuthContext";
+import { initialTalents, initialRecruiters, initialRequirementRequests } from "@/lib/admin/mockData";
 import "./AdminTopbar.css";
 
 export default function AdminTopbar({ onOpenMobile }) {
@@ -33,7 +34,12 @@ export default function AdminTopbar({ onOpenMobile }) {
     return str.slice(0, 2).toUpperCase();
   };
 
-  const { notifications = [], markNotificationRead } = useWorkflow();
+  const {
+    notifications = [],
+    markNotificationRead,
+    opportunities: workflowOpps = [],
+    organizations: workflowOrgs = [],
+  } = useWorkflow();
   const adminCtx = useAdmin();
 
   // Notifications State
@@ -75,28 +81,34 @@ export default function AdminTopbar({ onOpenMobile }) {
 
     const timer = setTimeout(async () => {
       try {
-        let talents = adminCtx?.talents?.length ? adminCtx.talents : directoryCacheRef.current.talents;
-        let orgs = adminCtx?.recruiters?.length ? adminCtx.recruiters : directoryCacheRef.current.organizations;
-        let opps = directoryCacheRef.current.opportunities;
+        let talents = adminCtx?.talents?.length ? adminCtx.talents : (directoryCacheRef.current.talents || initialTalents || []);
+        let orgs = adminCtx?.recruiters?.length
+          ? adminCtx.recruiters
+          : (directoryCacheRef.current.organizations || (workflowOrgs?.length ? workflowOrgs : initialRecruiters) || []);
+        let opps = workflowOpps?.length
+          ? workflowOpps
+          : (directoryCacheRef.current.opportunities || (adminCtx?.requirementRequests?.length ? adminCtx.requirementRequests : initialRequirementRequests) || []);
 
-        if (!talents || !orgs || !opps) {
-          const [tRes, oRes, oppRes] = await Promise.allSettled([
-            !talents ? adminService.getTalentDirectory() : Promise.resolve({ data: talents }),
-            !orgs ? adminService.getOrganizationDirectory() : Promise.resolve({ data: orgs }),
-            !opps ? adminService.getAllOpportunities() : Promise.resolve({ data: opps }),
-          ]);
-          if (tRes.status === "fulfilled" && tRes.value?.data) {
-            talents = Array.isArray(tRes.value.data) ? tRes.value.data : [];
-            directoryCacheRef.current.talents = talents;
-          }
-          if (oRes.status === "fulfilled" && oRes.value?.data) {
-            orgs = Array.isArray(oRes.value.data) ? oRes.value.data : [];
-            directoryCacheRef.current.organizations = orgs;
-          }
-          if (oppRes.status === "fulfilled" && oppRes.value?.data) {
-            opps = Array.isArray(oppRes.value.data) ? oppRes.value.data : [];
-            directoryCacheRef.current.opportunities = opps;
-          }
+        if (!directoryCacheRef.current.talents || !directoryCacheRef.current.organizations || !directoryCacheRef.current.opportunities) {
+          try {
+            const [tRes, oRes, oppRes] = await Promise.allSettled([
+              adminService.getTalentDirectory(),
+              adminService.getOrganizationDirectory(),
+              adminService.getAllOpportunities(),
+            ]);
+            if (tRes.status === "fulfilled" && Array.isArray(tRes.value?.data) && tRes.value.data.length) {
+              talents = tRes.value.data;
+              directoryCacheRef.current.talents = talents;
+            }
+            if (oRes.status === "fulfilled" && Array.isArray(oRes.value?.data) && oRes.value.data.length) {
+              orgs = oRes.value.data;
+              directoryCacheRef.current.organizations = orgs;
+            }
+            if (oppRes.status === "fulfilled" && Array.isArray(oppRes.value?.data) && oppRes.value.data.length) {
+              opps = oppRes.value.data;
+              directoryCacheRef.current.opportunities = opps;
+            }
+          } catch {}
         }
 
         const q = trimmed.toLowerCase();
@@ -104,24 +116,25 @@ export default function AdminTopbar({ onOpenMobile }) {
         // 1. Talent match
         const matchedTalents = (talents || []).filter((t) => {
           const name = `${t.stageName || ""} ${t.firstName || ""} ${t.lastName || ""} ${t.fullName || ""} ${t.name || ""}`.toLowerCase();
-          const role = (t.primaryRole || t.title || t.category || "").toLowerCase();
-          const studio = (t.studio || "").toLowerCase();
+          const role = `${t.primaryRole || ""} ${t.title || ""} ${t.category || ""} ${t.profession || ""}`.toLowerCase();
+          const studio = `${t.studio || ""} ${t.city || ""} ${t.location || ""}`.toLowerCase();
           return name.includes(q) || role.includes(q) || studio.includes(q);
         }).slice(0, 5);
 
         // 2. Organization match
         const matchedOrgs = (orgs || []).filter((o) => {
-          const name = `${o.organizationName || ""} ${o.name || ""} ${o.companyName || ""}`.toLowerCase();
-          const type = (o.organizationType || o.industry || o.type || "").toLowerCase();
-          const studio = (o.studio || "").toLowerCase();
+          const name = `${o.organizationName || ""} ${o.company || ""} ${o.companyName || ""} ${o.name || ""} ${o.contactPerson || ""}`.toLowerCase();
+          const type = `${o.organizationType || ""} ${o.companyType || ""} ${o.industry || ""} ${o.type || ""}`.toLowerCase();
+          const studio = `${o.studio || ""} ${o.city || ""} ${o.location || ""}`.toLowerCase();
           return name.includes(q) || type.includes(q) || studio.includes(q);
         }).slice(0, 5);
 
         // 3. Opportunities match
         const matchedOpps = (opps || []).filter((opp) => {
-          const title = `${opp.title || ""} ${opp.opportunityTitle || ""}`.toLowerCase();
-          const role = (opp.role || "").toLowerCase();
-          const studio = `${opp.studio || ""} ${opp.projectName || ""} ${opp.organizationName || ""}`.toLowerCase();
+          const rolesText = Array.isArray(opp.roles) ? opp.roles.map((r) => r.roleName || "").join(" ") : "";
+          const title = `${opp.title || ""} ${opp.projectTitle || ""} ${opp.opportunityTitle || ""}`.toLowerCase();
+          const role = `${opp.role || ""} ${rolesText}`.toLowerCase();
+          const studio = `${opp.studio || ""} ${opp.projectName || ""} ${opp.organizationName || ""} ${opp.company || ""} ${opp.recruiterName || ""} ${opp.location || ""}`.toLowerCase();
           return title.includes(q) || role.includes(q) || studio.includes(q);
         }).slice(0, 5);
 
@@ -135,10 +148,10 @@ export default function AdminTopbar({ onOpenMobile }) {
       } finally {
         setIsSearching(false);
       }
-    }, 300);
+    }, 250);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, adminCtx?.talents, adminCtx?.recruiters]);
+  }, [searchQuery, adminCtx?.talents, adminCtx?.recruiters, workflowOpps, workflowOrgs]);
 
   // Click outside listener and Escape key dismiss
   useEffect(() => {
