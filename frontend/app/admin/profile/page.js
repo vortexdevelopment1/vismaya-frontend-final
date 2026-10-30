@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   User,
   Mail,
@@ -20,6 +21,7 @@ import { adminService } from "@/lib/api/services/adminService";
 import { useAdmin } from "@/lib/admin/AdminContext";
 
 export default function AdminProfilePage() {
+  const router = useRouter();
   const { user, updateUser } = useAuth();
   const { addToast } = useAdmin();
 
@@ -140,7 +142,11 @@ export default function AdminProfilePage() {
       }
 
       if (typeof addToast === "function") {
-        addToast("Profile photo removed successfully", "info");
+        addToast({
+          type: "info",
+          title: "Photo Removed",
+          message: "Profile photo removed successfully",
+        });
       }
     } catch (err) {
       setErrorMessage(err.message || "Failed to remove photo.");
@@ -181,12 +187,17 @@ export default function AdminProfilePage() {
 
       setSaveSuccess(true);
       if (typeof addToast === "function") {
-        addToast("Admin profile updated successfully", "success");
+        addToast({
+          type: "success",
+          title: "Profile Saved",
+          message: "Admin profile updated successfully!",
+        });
       }
 
+      // Navigate to Dashboard after save
       setTimeout(() => {
-        setSaveSuccess(false);
-      }, 4000);
+        router.push("/admin/dashboard");
+      }, 800);
     } catch (err) {
       setErrorMessage(err.message || "Failed to save profile changes.");
     } finally {
