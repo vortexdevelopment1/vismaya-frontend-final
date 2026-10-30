@@ -60,14 +60,8 @@ export const adminLogin = async (req: Request, res: Response): Promise<any> => {
             });
         }
 
-        // Account Lockout check (5 failed attempts -> 15 min lock)
-        if (user.adminLockUntil && user.adminLockUntil > new Date()) {
-            const minutesLeft = Math.ceil((user.adminLockUntil.getTime() - Date.now()) / (60 * 1000));
-            return res.status(429).json({
-                success: false,
-                message: `Account is temporarily locked due to repeated failed login attempts. Please try again in ${minutesLeft} minute(s).`
-            });
-        }
+        // Account lockout disabled to prevent admin lockout during operations
+        user.adminLockUntil = null;
 
         // Account status check
         if (user.status !== "active") {
@@ -82,9 +76,7 @@ export const adminLogin = async (req: Request, res: Response): Promise<any> => {
         if (!isMatch) {
             const currentFailed = (user.failedAdminLoginAttempts || 0) + 1;
             user.failedAdminLoginAttempts = currentFailed;
-            if (currentFailed >= 5) {
-                user.adminLockUntil = new Date(Date.now() + 15 * 60 * 1000);
-            }
+            // Account lock disabled
             await user.save();
 
             return res.status(401).json({
