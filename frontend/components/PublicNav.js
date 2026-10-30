@@ -3,43 +3,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import { ArrowRight } from "lucide-react";
 import "./PublicNav.css";
 
 export default function PublicNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const navRef = useRef(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  
-  // Safe auth consumption
-  let user = null;
-  let logout = null;
-  let getDashboardPath = () => "/talent/dashboard";
-  try {
-    const auth = useAuth();
-    if (auth) {
-      user = auth.user;
-      logout = auth.logout;
-      if (typeof auth.getDashboardPath === "function") {
-        getDashboardPath = auth.getDashboardPath;
-      }
-    }
-  } catch {
-    // Fallback if rendered outside AuthProvider
-  }
-
-  const handleLogout = async () => {
-    if (typeof logout === "function") {
-      await logout("/");
-    }
-  };
 
   // Scroll listener to toggle compact floating style with blur
   useEffect(() => {
@@ -69,6 +39,7 @@ export default function PublicNav() {
       window.addEventListener("keydown", handleKeyDown);
       document.addEventListener("mousedown", handleClickOutside);
     }
+
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("mousedown", handleClickOutside);
@@ -96,33 +67,17 @@ export default function PublicNav() {
     if (routeHref === "/register") {
       return pathname.startsWith("/register");
     }
-    if (routeHref.includes("dashboard")) {
-      return (
-        pathname.startsWith("/talent") ||
-        pathname.startsWith("/recruiter") ||
-        pathname.startsWith("/admin")
-      );
-    }
     return pathname === routeHref;
   };
 
-  const isLoggedIn = mounted && Boolean(user);
-  const dashboardUrl = isLoggedIn ? (getDashboardPath() || "/talent/dashboard") : "/talent/dashboard";
-
-  // Navigation Links definition
-  // When logged out: Home, About, Pricing, Contact, Login, Register
-  // When logged in: Home, About, Pricing, Contact (Right CTA button handles Dashboard, avoiding duplicate 'Dashboard' links)
+  // Navigation Links definition - permanent public links
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
     { label: "Pricing", href: "/pricing" },
     { label: "Contact", href: "/contact" },
-    ...(!isLoggedIn
-      ? [
-          { label: "Login", href: "/login" },
-          { label: "Register", href: "/register" },
-        ]
-      : []),
+    { label: "Login", href: "/login" },
+    { label: "Register", href: "/register" },
   ];
 
   return (
@@ -161,26 +116,6 @@ export default function PublicNav() {
 
         {/* 3. Right: Action Buttons (Desktop) */}
         <div className="public-nav-actions">
-          {isLoggedIn && (
-            <div className="public-nav-user-actions">
-              <Link
-                href={dashboardUrl}
-                className="public-nav-cta"
-              >
-                <span>Dashboard</span>
-                <ArrowRight size={14} className="public-nav-cta-arrow" />
-              </Link>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="public-nav-logout-btn"
-                title="Log out of account"
-              >
-                Logout
-              </button>
-            </div>
-          )}
-
           {/* Mobile Hamburger Toggle (44x44px touch target) */}
           <button
             type="button"
@@ -213,40 +148,6 @@ export default function PublicNav() {
                 </Link>
               );
             })}
-
-            {isLoggedIn && (
-              <>
-                <div className="public-nav-mobile-divider" />
-                <Link
-                  href={dashboardUrl}
-                  className="public-nav-mobile-cta"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span>Go to Dashboard</span>
-                  <ArrowRight size={15} />
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="public-nav-mobile-link"
-                  style={{
-                    textAlign: "left",
-                    width: "100%",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#BA3C3C",
-                    fontWeight: 600,
-                    padding: "12px 16px"
-                  }}
-                >
-                  Logout
-                </button>
-              </>
-            )}
           </div>
         )}
       </div>
