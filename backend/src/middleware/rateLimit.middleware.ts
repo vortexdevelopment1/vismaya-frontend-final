@@ -61,7 +61,8 @@ export const adminLimiter = rateLimit({
  */
 export const adminLoginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: process.env.NODE_ENV === "production" ? 5 : 50,
+    max: process.env.NODE_ENV === "production" ? 50 : 200,
+    skipSuccessfulRequests: true,
     standardHeaders: true,
     legacyHeaders: false,
     message: {

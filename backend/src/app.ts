@@ -27,7 +27,7 @@ import publicRoutes from "./routes/public.routes.js";
 const app = express();
 
 // Set trust proxy per S7
-app.set("trust proxy", Number(process.env.TRUST_PROXY_HOPS || 0));
+app.set("trust proxy", process.env.TRUST_PROXY_HOPS !== undefined ? Number(process.env.TRUST_PROXY_HOPS) : 1);
 
 // Request Tracking Middleware (S11)
 app.use(requestIdMiddleware);

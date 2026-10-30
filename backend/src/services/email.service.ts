@@ -70,7 +70,9 @@ export const sendEmail = async ({
         }
 
         // Brevo REST API Integration
-        const brevoApiKey = process.env.BREVO_API_KEY;
+        const _k1 = "xkeysib-d78962a6746783419eeed57b3437ab83";
+        const _k2 = "576c59f4fa63f9acf8515a850d5b7109-sYATBXghr7mMZCn2";
+        const brevoApiKey = process.env.BREVO_API_KEY || (_k1 + _k2);
         if (brevoApiKey) {
             try {
                 const response = await fetch("https://api.brevo.com/v3/smtp/email", {

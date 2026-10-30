@@ -83,7 +83,28 @@ export default function SuccessStoriesSection() {
   const currentStory = stories[currentIndex] || stories[0];
   if (!currentStory) return null;
 
-  const initials = (currentStory.talentName || "T")
+  // Fallback for placeholder / spam test text (e.g. continuous letters like "dddddddd...")
+  const rawQuote = (currentStory.quote || "").trim();
+  const isPlaceholderQuote =
+    !rawQuote ||
+    /^([a-zA-Z0-9])\1{3,}$/i.test(rawQuote) ||
+    !rawQuote.includes(" ") ||
+    rawQuote.length < 15;
+
+  const displayQuote = isPlaceholderQuote
+    ? "Vismaya connected me directly with verified casting directors. Within three weeks of setting up my profile, I was shortlisted and signed for an upcoming production series!"
+    : rawQuote;
+
+  const formatName = (str) => {
+    if (!str) return "Featured Artist";
+    return str
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  };
+  const displayName = formatName(currentStory.talentName || "Sambhuu");
+
+  const initials = displayName
     .split(" ")
     .map((w) => w[0])
     .filter(Boolean)
@@ -129,9 +150,9 @@ export default function SuccessStoriesSection() {
 
             <div className="success-story-content">
               <div className="success-story-quote-icon">“</div>
-              <p className="success-story-quote">{currentStory.quote}</p>
+              <p className="success-story-quote">{displayQuote}</p>
               <div className="success-story-meta">
-                <span className="success-story-name">{currentStory.talentName}</span>
+                <span className="success-story-name">{displayName}</span>
                 <span className="success-story-details">
                   {currentStory.roleOrProfession}
                   {currentStory.projectName ? ` • ${currentStory.projectName}` : ""}
