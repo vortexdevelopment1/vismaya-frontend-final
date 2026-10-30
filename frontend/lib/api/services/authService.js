@@ -62,38 +62,39 @@ export const authService = {
    * @param {Object} payload { email, otp }
    */
   async verifyRegistration({ email, otp }) {
-    if (!isRealMode("auth")) {
-      try {
-        const token = typeof window !== "undefined" ? sessionStorage.getItem("vismaya_reg_otp_token") : null;
-        const res = await fetch("/api/verify-registration-otp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, otp, token }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          if (typeof window !== "undefined") {
-            sessionStorage.removeItem("vismaya_reg_otp_token");
-          }
-          return {
-            success: true,
-            message: data.message || "Verified successfully",
-            token: data.token,
-            user: data.user,
-          };
+    try {
+      const token = typeof window !== "undefined" ? sessionStorage.getItem("vismaya_reg_otp_token") : null;
+      const res = await fetch("/api/verify-registration-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp, token }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("vismaya_reg_otp_token");
         }
-        return { success: false, message: data.message || "Invalid verification code." };
-      } catch (err) {
-        return { success: false, message: err.message };
+        return {
+          success: true,
+          message: data.message || "Verified successfully",
+          token: data.token,
+          user: data.user,
+        };
+      }
+      return { success: false, message: data.message || "Invalid verification code." };
+    } catch (err) {
+      try {
+        const res = await apiClient.post("/api/auth/verify-registration", { email, otp });
+        return {
+          success: true,
+          message: res?.message || "Verified successfully",
+          token: res?.token || res?.data?.token,
+          user: res?.user ? mapUser(res.user) : null,
+        };
+      } catch (apiErr) {
+        return { success: false, message: apiErr.message || "Verification failed." };
       }
     }
-    const res = await apiClient.post("/api/auth/verify-registration", { email, otp });
-    return {
-      success: true,
-      message: res?.message || "Verified successfully",
-      token: res?.token || res?.data?.token,
-      user: res?.user ? mapUser(res.user) : null,
-    };
   },
 
   /**
@@ -101,23 +102,24 @@ export const authService = {
    * @param {Object} payload { email }
    */
   async resendRegistrationOtp({ email }) {
-    if (!isRealMode("auth")) {
+    try {
+      const res = await fetch("/api/send-registration-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (data?.token && typeof window !== "undefined") {
+        sessionStorage.setItem("vismaya_reg_otp_token", data.token);
+      }
+      return data;
+    } catch (err) {
       try {
-        const res = await fetch("/api/send-registration-otp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-        const data = await res.json();
-        if (data?.token && typeof window !== "undefined") {
-          sessionStorage.setItem("vismaya_reg_otp_token", data.token);
-        }
-        return data;
-      } catch (err) {
-        return { success: false, message: err.message };
+        return await apiClient.post("/api/auth/resend-registration-otp", { email });
+      } catch (apiErr) {
+        return { success: false, message: apiErr.message || "Failed to send code." };
       }
     }
-    return apiClient.post("/api/auth/resend-registration-otp", { email });
   },
 
   /**
