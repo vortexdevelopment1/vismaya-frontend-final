@@ -1,0 +1,363 @@
+/* ==========================================================================
+   Admin Topbar Responsive CSS
+   Vismaya Operations Console Header
+   ========================================================================== */
+
+.admin-topbar-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid #E8E2D4;
+}
+
+/* --------------------------------------------------------------------------
+   Mobile (< 640px): 2 Rows
+   Row 1: [menu] [title] [actions]
+   Row 2: [search]
+   -------------------------------------------------------------------------- */
+@media (max-width: 639px) {
+  .admin-topbar-header {
+    display: grid !important;
+    grid-template-areas:
+      "menu title actions"
+      "search search search" !important;
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto !important;
+    row-gap: 10px !important;
+    column-gap: 8px !important;
+    padding: 10px 14px !important;
+    height: auto !important;
+    min-height: unset !important;
+  }
+
+  .admin-topbar-menu-area {
+    grid-area: menu;
+    display: flex;
+    align-items: center;
+  }
+
+  .admin-hamburger-btn {
+    display: flex !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 10px !important;
+  }
+
+  .admin-topbar-title-area {
+    grid-area: title;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .admin-topbar-title {
+    font-size: 17px !important;
+  }
+
+  .admin-desktop-subtitle {
+    display: none !important;
+  }
+
+  .admin-topbar-search-area {
+    grid-area: search;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .admin-global-search-input {
+    height: 40px !important;
+    font-size: 13.5px !important;
+  }
+
+  .admin-topbar-actions-area {
+    grid-area: actions;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .admin-export-btn-text {
+    display: none !important;
+  }
+
+  .admin-export-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    border-radius: 10px !important;
+  }
+
+  .admin-notif-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 10px !important;
+  }
+
+  .admin-avatar-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 50% !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Small Mobile (< 380px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 379px) {
+  .admin-topbar-header {
+    padding: 8px 10px !important;
+    row-gap: 8px !important;
+    column-gap: 6px !important;
+  }
+
+  .admin-topbar-title {
+    font-size: 15px !important;
+  }
+
+  .admin-topbar-actions-area {
+    gap: 6px !important;
+  }
+
+  .admin-hamburger-btn,
+  .admin-export-btn,
+  .admin-notif-btn,
+  .admin-avatar-btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+  }
+
+  .admin-global-search-input {
+    height: 38px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Tablets (640px to 1023px): 2 Rows
+   Row 1: [menu] [title] [actions]
+   Row 2: [search]
+   -------------------------------------------------------------------------- */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .admin-topbar-header {
+    display: grid !important;
+    grid-template-areas:
+      "menu title actions"
+      "search search search" !important;
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto !important;
+    row-gap: 12px !important;
+    column-gap: 12px !important;
+    padding: 12px 24px !important;
+    height: auto !important;
+    min-height: unset !important;
+  }
+
+  .admin-topbar-menu-area {
+    grid-area: menu;
+    display: flex;
+    align-items: center;
+  }
+
+  .admin-hamburger-btn {
+    display: flex !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 10px !important;
+  }
+
+  .admin-topbar-title-area {
+    grid-area: title;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .admin-topbar-title {
+    font-size: 19px !important;
+  }
+
+  .admin-desktop-subtitle {
+    display: none !important;
+  }
+
+  .admin-topbar-search-area {
+    grid-area: search;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .admin-global-search-input {
+    height: 42px !important;
+  }
+
+  .admin-topbar-actions-area {
+    grid-area: actions;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .admin-export-btn-text {
+    display: none !important;
+  }
+
+  .admin-export-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    border-radius: 10px !important;
+  }
+
+  .admin-notif-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 10px !important;
+  }
+
+  .admin-avatar-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 50% !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Desktop (1024px and Above): Single Row
+   [menu] [title] [search, max-width 420px] [actions pushed right]
+   -------------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+  .admin-topbar-header {
+    display: grid !important;
+    grid-template-areas: "menu title search actions" !important;
+    grid-template-columns: auto minmax(0, 1fr) minmax(240px, 420px) auto !important;
+    grid-template-rows: auto !important;
+    align-items: center !important;
+    column-gap: 16px !important;
+    row-gap: 0 !important;
+    padding: 14px 32px !important;
+    height: 72px !important;
+    min-height: 72px !important;
+  }
+
+  .admin-topbar-menu-area {
+    grid-area: menu;
+    display: flex;
+    align-items: center;
+  }
+
+  .admin-topbar-title-area {
+    grid-area: title;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .admin-topbar-title {
+    font-size: 20px !important;
+  }
+
+  .admin-desktop-subtitle {
+    display: inline !important;
+  }
+
+  .admin-topbar-search-area {
+    grid-area: search;
+    width: 100% !important;
+    max-width: 420px !important;
+  }
+
+  .admin-global-search-input {
+    height: 42px !important;
+  }
+
+  .admin-topbar-actions-area {
+    grid-area: actions;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .admin-export-btn-text {
+    display: inline !important;
+  }
+
+  .admin-export-btn {
+    width: auto !important;
+    height: 40px !important;
+    padding: 0 14px !important;
+    gap: 6px !important;
+    border-radius: 10px !important;
+  }
+
+  .admin-notif-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 10px !important;
+  }
+
+  .admin-avatar-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 50% !important;
+  }
+}
+
+/* Sidebar toggle visibility */
+@media (min-width: 1101px) {
+  .admin-hamburger-btn {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  .admin-hamburger-btn {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 1240px) {
+  .admin-desktop-subtitle {
+    display: none !important;
+  }
+}
