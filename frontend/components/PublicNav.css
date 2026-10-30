@@ -526,3 +526,37 @@
     transform: none !important;
   }
 }
+
+/* User actions wrapper & logout button in navbar */
+.public-nav-user-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.public-nav-logout-btn {
+  background: transparent;
+  border: 1px solid #D6D1C4;
+  color: #6E6B60;
+  border-radius: 8px;
+  height: 42px;
+  padding: 0 14px;
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 200ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.public-nav-logout-btn:hover {
+  background-color: #F5F1E8;
+  color: #BA3C3C;
+  border-color: #BA3C3C;
+}
+
+.public-nav-logout-btn:active {
+  transform: scale(0.97);
+}

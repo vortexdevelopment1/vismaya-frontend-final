@@ -10,39 +10,7 @@ import { USE_MOCK, isRealMode } from "@/lib/api/config";
 const AuthContext = createContext(null);
 
 const STORAGE_USER_KEY = "vismaya_user_data";
-
-export function AuthProvider({ children }) {
-  const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [error, setError] = useState(null);
-
-  // Restore session on mount (SSR safe)
-  useEffect(() => {
-    try {
-      const storedToken = getAuthToken();
-      const rawUser = typeof window !== "undefined" ? localStorage.getItem(STORAGE_USER_KEY) : null;
-      
-      if (storedToken) {
-        setToken(storedToken);
-      }
-
-      if (rawUser) {
-        try {
-          const parsed = JSON.parse(rawUser);
-          setUser(parsed);
-        } catch {
-          // ignore corrupted JSON
-        }
-      }
-    } catch {
-      // Storage unavailable
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+const CURRENT_APP_VERSION = "2.1.0-prod";
 
 const DOMAIN_STORAGE_KEYS = [
   STORAGE_USER_KEY,
@@ -59,6 +27,64 @@ const DOMAIN_STORAGE_KEYS = [
   "vismaya_draft_token",
   "vismaya_reg_session_active"
 ];
+
+export function AuthProvider({ children }) {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Restore session on mount (SSR safe) & auto-flush stale browser cache from older deployments
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const savedVersion = localStorage.getItem("vismaya_app_version");
+        if (savedVersion !== CURRENT_APP_VERSION) {
+          // Flush obsolete cached keys from prior releases/demo logins
+          DOMAIN_STORAGE_KEYS.forEach(k => {
+            try {
+              localStorage.removeItem(k);
+              sessionStorage.removeItem(k);
+            } catch {}
+          });
+          localStorage.setItem("vismaya_app_version", CURRENT_APP_VERSION);
+          removeAuthToken();
+          setUser(null);
+          setToken(null);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      const storedToken = getAuthToken();
+      const rawUser = typeof window !== "undefined" ? localStorage.getItem(STORAGE_USER_KEY) : null;
+      
+      // Both token and user must exist to be considered valid; otherwise clear ghost session
+      if (storedToken && rawUser) {
+        try {
+          const parsed = JSON.parse(rawUser);
+          if (parsed && (parsed.id || parsed._id)) {
+            setToken(storedToken);
+            setUser(parsed);
+          } else {
+            removeAuthToken();
+            if (typeof window !== "undefined") localStorage.removeItem(STORAGE_USER_KEY);
+          }
+        } catch {
+          removeAuthToken();
+          if (typeof window !== "undefined") localStorage.removeItem(STORAGE_USER_KEY);
+        }
+      } else if (rawUser && !storedToken) {
+        if (typeof window !== "undefined") localStorage.removeItem(STORAGE_USER_KEY);
+      }
+    } catch {
+      // Storage unavailable
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const saveSession = useCallback((newUser, newToken) => {
     setUser(newUser);

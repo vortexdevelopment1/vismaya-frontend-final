@@ -20,11 +20,13 @@ export default function PublicNav() {
   
   // Safe auth consumption
   let user = null;
+  let logout = null;
   let getDashboardPath = () => "/talent/dashboard";
   try {
     const auth = useAuth();
     if (auth) {
       user = auth.user;
+      logout = auth.logout;
       if (typeof auth.getDashboardPath === "function") {
         getDashboardPath = auth.getDashboardPath;
       }
@@ -32,6 +34,12 @@ export default function PublicNav() {
   } catch {
     // Fallback if rendered outside AuthProvider
   }
+
+  const handleLogout = async () => {
+    if (typeof logout === "function") {
+      await logout("/");
+    }
+  };
 
   // Scroll listener to toggle compact floating style with blur
   useEffect(() => {
@@ -154,13 +162,23 @@ export default function PublicNav() {
         {/* 3. Right: Action Buttons (Desktop) */}
         <div className="public-nav-actions">
           {isLoggedIn && (
-            <Link
-              href={dashboardUrl}
-              className="public-nav-cta"
-            >
-              <span>Dashboard</span>
-              <ArrowRight size={14} className="public-nav-cta-arrow" />
-            </Link>
+            <div className="public-nav-user-actions">
+              <Link
+                href={dashboardUrl}
+                className="public-nav-cta"
+              >
+                <span>Dashboard</span>
+                <ArrowRight size={14} className="public-nav-cta-arrow" />
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="public-nav-logout-btn"
+                title="Log out of account"
+              >
+                Logout
+              </button>
+            </div>
           )}
 
           {/* Mobile Hamburger Toggle (44x44px touch target) */}
@@ -207,6 +225,26 @@ export default function PublicNav() {
                   <span>Go to Dashboard</span>
                   <ArrowRight size={15} />
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="public-nav-mobile-link"
+                  style={{
+                    textAlign: "left",
+                    width: "100%",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#BA3C3C",
+                    fontWeight: 600,
+                    padding: "12px 16px"
+                  }}
+                >
+                  Logout
+                </button>
               </>
             )}
           </div>
