@@ -293,12 +293,12 @@
   .admin-topbar-header {
     display: grid !important;
     grid-template-areas: "menu title search actions" !important;
-    grid-template-columns: auto minmax(0, 1fr) minmax(240px, 420px) auto !important;
+    grid-template-columns: auto auto 1fr auto !important;
     grid-template-rows: auto !important;
     align-items: center !important;
     column-gap: 16px !important;
     row-gap: 0 !important;
-    padding: 14px 32px !important;
+    padding: 14px 24px !important;
     height: 72px !important;
     min-height: 72px !important;
   }
@@ -317,6 +317,7 @@
     height: 40px !important;
     gap: 10px;
     min-width: 0;
+    max-width: max-content;
     overflow: hidden;
   }
 
@@ -327,6 +328,7 @@
     padding: 0 !important;
     display: flex !important;
     align-items: center !important;
+    white-space: nowrap !important;
   }
 
   .admin-desktop-subtitle {
@@ -336,7 +338,8 @@
   .admin-topbar-search-area {
     grid-area: search;
     width: 100% !important;
-    max-width: 420px !important;
+    max-width: 380px !important;
+    justify-self: end !important;
   }
 
   .admin-global-search-input {
@@ -382,10 +385,30 @@
   }
 }
 
-/* Sidebar toggle visibility */
+/* Sidebar toggle visibility & Grid adjust when sidebar is permanently visible */
 @media (min-width: 1101px) {
+  .admin-topbar-header {
+    grid-template-areas: "title search actions" !important;
+    grid-template-columns: auto 1fr auto !important;
+    padding: 14px 28px !important;
+  }
+
+  .admin-topbar-menu-area {
+    display: none !important;
+  }
+
   .admin-hamburger-btn {
     display: none !important;
+  }
+}
+
+@media (min-width: 1400px) {
+  .admin-topbar-header {
+    padding: 14px 32px !important;
+  }
+
+  .admin-topbar-search-area {
+    max-width: 420px !important;
   }
 }
 
