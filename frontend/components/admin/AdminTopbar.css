@@ -28,6 +28,7 @@
       "search search search" !important;
     grid-template-columns: auto minmax(0, 1fr) auto !important;
     grid-template-rows: auto auto !important;
+    align-items: center !important;
     row-gap: 10px !important;
     column-gap: 8px !important;
     padding: 10px 14px !important;
@@ -37,8 +38,11 @@
 
   .admin-topbar-menu-area {
     grid-area: menu;
-    display: flex;
-    align-items: center;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 40px !important;
+    height: 40px !important;
   }
 
   .admin-hamburger-btn {
@@ -48,18 +52,26 @@
     min-width: 40px !important;
     min-height: 40px !important;
     border-radius: 10px !important;
+    margin: 0 !important;
   }
 
   .admin-topbar-title-area {
     grid-area: title;
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    overflow: hidden;
+    display: flex !important;
+    align-items: center !important;
+    min-height: 40px !important;
+    height: 40px !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
   }
 
   .admin-topbar-title {
     font-size: 17px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
   }
 
   .admin-desktop-subtitle {
@@ -126,10 +138,18 @@
     padding: 8px 10px !important;
     row-gap: 8px !important;
     column-gap: 6px !important;
+    align-items: center !important;
+  }
+
+  .admin-topbar-menu-area,
+  .admin-topbar-title-area {
+    min-height: 38px !important;
+    height: 38px !important;
   }
 
   .admin-topbar-title {
     font-size: 15px !important;
+    line-height: 1 !important;
   }
 
   .admin-topbar-actions-area {
@@ -164,6 +184,7 @@
       "search search search" !important;
     grid-template-columns: auto minmax(0, 1fr) auto !important;
     grid-template-rows: auto auto !important;
+    align-items: center !important;
     row-gap: 12px !important;
     column-gap: 12px !important;
     padding: 12px 24px !important;
@@ -173,8 +194,11 @@
 
   .admin-topbar-menu-area {
     grid-area: menu;
-    display: flex;
-    align-items: center;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 40px !important;
+    height: 40px !important;
   }
 
   .admin-hamburger-btn {
@@ -184,18 +208,26 @@
     min-width: 40px !important;
     min-height: 40px !important;
     border-radius: 10px !important;
+    margin: 0 !important;
   }
 
   .admin-topbar-title-area {
     grid-area: title;
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    overflow: hidden;
+    display: flex !important;
+    align-items: center !important;
+    min-height: 40px !important;
+    height: 40px !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
   }
 
   .admin-topbar-title {
     font-size: 19px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
   }
 
   .admin-desktop-subtitle {
@@ -279,8 +311,10 @@
 
   .admin-topbar-title-area {
     grid-area: title;
-    display: flex;
-    align-items: baseline;
+    display: flex !important;
+    align-items: center !important;
+    min-height: 40px !important;
+    height: 40px !important;
     gap: 10px;
     min-width: 0;
     overflow: hidden;
@@ -288,6 +322,11 @@
 
   .admin-topbar-title {
     font-size: 20px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
   }
 
   .admin-desktop-subtitle {

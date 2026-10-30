@@ -255,7 +255,7 @@ export default function AdminTopbar({ onOpenMobile }) {
   return (
     <header className="admin-topbar-header">
       {/* 1. Grid Area: menu */}
-      <div className="admin-topbar-menu-area" style={{ display: "flex", alignItems: "center" }}>
+      <div className="admin-topbar-menu-area" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "40px", height: "40px" }}>
         <button
           type="button"
           onClick={onOpenMobile}
@@ -275,6 +275,8 @@ export default function AdminTopbar({ onOpenMobile }) {
             justifyContent: "center",
             cursor: "pointer",
             flexShrink: 0,
+            margin: 0,
+            padding: 0,
           }}
         >
           <Menu size={20} />
@@ -286,7 +288,9 @@ export default function AdminTopbar({ onOpenMobile }) {
         className="admin-topbar-title-area"
         style={{
           display: "flex",
-          alignItems: "baseline",
+          alignItems: "center",
+          minHeight: "40px",
+          height: "40px",
           gap: "10px",
           minWidth: 0,
           overflow: "hidden",
@@ -297,15 +301,19 @@ export default function AdminTopbar({ onOpenMobile }) {
           title={getPageTitle()}
           style={{
             fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
-            lineHeight: 1.25,
+            lineHeight: 1,
             fontWeight: 600,
             color: "#2B2D2A",
             margin: 0,
+            padding: 0,
             letterSpacing: "-0.01em",
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
             minWidth: 0,
+            display: "flex",
+            alignItems: "center",
+            height: "100%",
           }}
         >
           {getPageTitle()}
@@ -321,6 +329,9 @@ export default function AdminTopbar({ onOpenMobile }) {
             textTransform: "uppercase",
             whiteSpace: "nowrap",
             flexShrink: 0,
+            lineHeight: 1,
+            display: "inline-flex",
+            alignItems: "center",
           }}
         >
           Super-Admin &bull; Vismaya
