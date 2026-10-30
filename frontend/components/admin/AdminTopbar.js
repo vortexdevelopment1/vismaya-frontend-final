@@ -537,9 +537,33 @@ export default function AdminTopbar({ onOpenMobile }) {
           )}
         </div>
 
-        {/* User Avatar with SA initial linking to Admin Profile */}
+        {/* User Avatar Circular Button linking to Admin Profile */}
         <Link
           href="/admin/profile"
+          style={{
+            width: "40px",
+            height: "40px",
+            minWidth: "40px",
+            minHeight: "40px",
+            borderRadius: "50%",
+            backgroundColor: "#F3EFE6",
+            border: pathname === "/admin/profile" ? "2px solid #8A6B2E" : "1.5px solid #E8E2D4",
+            color: "#8A6B2E",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "var(--font-body), 'Inter', sans-serif",
+            fontSize: "13px",
+            fontWeight: "700",
+            cursor: "pointer",
+            userSelect: "none",
+            letterSpacing: "0.02em",
+            textDecoration: "none",
+            overflow: "hidden",
+            flexShrink: 0,
+            boxSizing: "border-box",
+            transition: "all 0.15s ease",
+          }}
           className={`admin-avatar-btn ${pathname === "/admin/profile" ? "active" : ""}`}
           title={`${user?.name || "Super Admin"} (Admin Profile)`}
         >
@@ -547,10 +571,10 @@ export default function AdminTopbar({ onOpenMobile }) {
             <img
               src={user.avatar}
               alt={user?.name || "Admin"}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
             />
           ) : (
-            getInitials(user?.name)
+            <span>{getInitials(user?.name)}</span>
           )}
         </Link>
       </div>
@@ -559,6 +583,32 @@ export default function AdminTopbar({ onOpenMobile }) {
         /* ==========================================================================
            Admin Topbar Responsive Grid System
            ========================================================================== */
+        :global(.admin-avatar-btn) {
+          width: 40px !important;
+          height: 40px !important;
+          min-width: 40px !important;
+          min-height: 40px !important;
+          border-radius: 50% !important;
+          background-color: #F3EFE6 !important;
+          border: 1.5px solid #E8E2D4 !important;
+          color: #8A6B2E !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          font-family: var(--font-body), 'Inter', sans-serif !important;
+          font-size: 13px !important;
+          font-weight: 700 !important;
+          text-decoration: none !important;
+          overflow: hidden !important;
+          flex-shrink: 0 !important;
+          box-sizing: border-box !important;
+          user-select: none !important;
+        }
+        :global(.admin-avatar-btn:hover),
+        :global(.admin-avatar-btn.active) {
+          border-color: #8A6B2E !important;
+          box-shadow: 0 0 0 2px rgba(138, 107, 46, 0.25) !important;
+        }
 
         /* 1) Below 640px (Mobile) */
         @media (max-width: 639px) {
