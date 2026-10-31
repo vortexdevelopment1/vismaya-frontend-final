@@ -35,6 +35,76 @@ const AVAILABLE_PACKAGES = [
   { id: "credit_bundle_25_2000", label: "Bulk Pack 25 Profile Views (₹2,000)" },
 ];
 
+const SIMULATION_PACKAGES = [
+  {
+    id: "talent_annual_999",
+    name: "Talent Annual Registration",
+    category: "Talent Platform",
+    basePrice: 999,
+  },
+  {
+    id: "industry_annual_4999",
+    name: "Studio / Organization Annual",
+    category: "Studio Platform",
+    basePrice: 4999,
+  },
+  {
+    id: "credit_bundle_25_2000",
+    name: "Bulk Pack 25 Profile Views",
+    category: "Credits",
+    basePrice: 2000,
+  },
+  {
+    id: "credit_single_100",
+    name: "Single Profile View Credit",
+    category: "Credits",
+    basePrice: 100,
+  },
+];
+
+const getPackageSimulation = (coupon) => {
+  if (!coupon) return [];
+  const val = Number(coupon.discountValue ?? coupon.discountPercent ?? 0);
+  const type = coupon.discountType || "percentage";
+  const maxCap = coupon.maxDiscountAmount ? Number(coupon.maxDiscountAmount) : null;
+  const minOrder = Number(coupon.minOrderAmount || 0);
+  const packagesList = Array.isArray(coupon.applicablePackages) ? coupon.applicablePackages : [];
+
+  return SIMULATION_PACKAGES.map((pkg) => {
+    const isPackageAllowed = packagesList.length === 0 || packagesList.includes(pkg.id);
+    const meetsMinOrder = pkg.basePrice >= minOrder;
+    const isEligible = isPackageAllowed && meetsMinOrder;
+
+    let discount = 0;
+    if (isEligible) {
+      if (type === "percentage") {
+        discount = Math.round((pkg.basePrice * val) / 100);
+        if (maxCap && discount > maxCap) {
+          discount = maxCap;
+        }
+      } else {
+        discount = Math.min(val, pkg.basePrice);
+      }
+    }
+
+    const finalPayable = Math.max(0, pkg.basePrice - discount);
+    let ineligibleReason = "";
+    if (!isPackageAllowed) {
+      ineligibleReason = "Not applicable for this package";
+    } else if (!meetsMinOrder) {
+      ineligibleReason = `Requires min order of ₹${minOrder.toLocaleString("en-IN")}`;
+    }
+
+    return {
+      ...pkg,
+      isEligible,
+      ineligibleReason,
+      discount,
+      finalPayable,
+    };
+  });
+};
+
 export default function AdminCouponsPage() {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1170,8 +1240,8 @@ export default function AdminCouponsPage() {
           isOpen={!!viewingCoupon}
           onClose={() => setViewingCoupon(null)}
           title={`Coupon Details: ${viewingCoupon.code}`}
-          subtitle="Detailed overview of usage, limitations, and eligibility rules."
-          maxWidth="560px"
+          subtitle="Detailed overview of usage, limitations, and package price simulations."
+          maxWidth="640px"
         >
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "#F3EFE6", padding: "14px 18px", borderRadius: "10px", border: "1px solid #E8E2D4" }}>
@@ -1230,18 +1300,103 @@ export default function AdminCouponsPage() {
               </div>
             </div>
 
+            {/* Applicable Packages Tag List */}
             <div style={{ backgroundColor: "#FAF9F7", padding: "12px", borderRadius: "8px", border: "1px solid #E8E2D4", fontSize: "13px" }}>
               <strong style={{ display: "block", color: "#5A584F", fontSize: "11.5px", marginBottom: "4px" }}>APPLICABLE PACKAGES</strong>
               <div style={{ color: "#2B2D2A" }}>
                 {Array.isArray(viewingCoupon.applicablePackages) && viewingCoupon.applicablePackages.length > 0 ? (
                   viewingCoupon.applicablePackages.map((p) => (
-                    <span key={p} style={{ display: "inline-block", backgroundColor: "#E8E2D4", padding: "2px 8px", borderRadius: "4px", margin: "2px 4px 2px 0", fontSize: "12px" }}>
-                      {p}
+                    <span key={p} style={{ display: "inline-block", backgroundColor: "#E8E2D4", padding: "2px 8px", borderRadius: "4px", margin: "2px 4px 2px 0", fontSize: "12px", fontWeight: "600" }}>
+                      {p === "talent_annual_999" ? "Talent Annual (₹999)" : p === "industry_annual_4999" ? "Studio Annual (₹4,999)" : p === "credit_bundle_25_2000" ? "Bulk Pack 25 Views (₹2,000)" : p === "credit_single_100" ? "Single View (₹100)" : p}
                     </span>
                   ))
                 ) : (
-                  <span>All packages eligible (Talent, Organization, Credits)</span>
+                  <span style={{ color: "#2E7D32", fontWeight: "600" }}>All packages eligible (Talent, Organization/Studio, and View Credits)</span>
                 )}
+              </div>
+            </div>
+
+            {/* Net Payable Amount After Coupon Applied (Simulation for Talent, Studio, etc.) */}
+            <div style={{ backgroundColor: "#FAF9F7", padding: "14px 16px", borderRadius: "10px", border: "1px solid #E8E2D4" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <strong style={{ color: "#5A584F", fontSize: "11.5px", textTransform: "uppercase", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Sparkles size={14} style={{ color: "#8A6B2E" }} />
+                  Net Payable Amount After Coupon (Simulation)
+                </strong>
+                <span style={{ fontSize: "11px", color: "#8A6B2E", fontWeight: "700", backgroundColor: "rgba(138, 107, 46, 0.12)", padding: "3px 8px", borderRadius: "4px" }}>
+                  {viewingCoupon.discountType === "percentage" ? `${viewingCoupon.discountValue}% Discount` : `₹${viewingCoupon.discountValue} Flat Discount`}
+                  {viewingCoupon.maxDiscountAmount ? ` (Cap: ₹${viewingCoupon.maxDiscountAmount})` : ""}
+                </span>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {getPackageSimulation(viewingCoupon).map((sim) => (
+                  <div
+                    key={sim.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "10px 14px",
+                      borderRadius: "8px",
+                      backgroundColor: sim.isEligible ? "#FFFFFF" : "#F5F3EF",
+                      border: `1px solid ${sim.isEligible ? "#E8E2D4" : "#E2DFD7"}`,
+                    }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontWeight: "700", color: sim.isEligible ? "#2B2D2A" : "#8A8170", fontSize: "13.5px" }}>
+                          {sim.name}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            fontWeight: "700",
+                            color: "#8A6B2E",
+                            backgroundColor: "#F3EFE6",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            letterSpacing: "0.04em",
+                          }}
+                        >
+                          {sim.category}
+                        </span>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "4px", fontSize: "12px" }}>
+                        <span style={{ color: "#8A8170" }}>
+                          Original: <strong style={{ textDecoration: sim.isEligible ? "line-through" : "none", color: "#5A584F" }}>₹{sim.basePrice.toLocaleString("en-IN")}</strong>
+                        </span>
+                        {sim.isEligible ? (
+                          <span style={{ color: "#2E7D32", fontWeight: "600" }}>
+                            Discount: -₹{sim.discount.toLocaleString("en-IN")} ({viewingCoupon.discountType === "percentage" ? `${viewingCoupon.discountValue}%` : "Flat"})
+                          </span>
+                        ) : (
+                          <span style={{ color: "#C53030", fontStyle: "italic", fontSize: "11px" }}>
+                            ({sim.ineligibleReason})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: "right", flexShrink: 0, paddingLeft: "14px" }}>
+                      <div style={{ fontSize: "10px", fontWeight: "700", textTransform: "uppercase", color: sim.isEligible ? "#2E7D32" : "#8A8170", letterSpacing: "0.05em" }}>
+                        {sim.isEligible ? "User Will Pay" : "Full Price"}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "18px",
+                          fontWeight: "700",
+                          color: sim.isEligible ? "#2E7D32" : "#5A584F",
+                          fontFamily: "var(--font-heading), Georgia, serif",
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        ₹{sim.finalPayable.toLocaleString("en-IN")}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
