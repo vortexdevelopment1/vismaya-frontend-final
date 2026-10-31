@@ -80,7 +80,12 @@ app.use(cors({
         // Allow requests with no origin (like mobile apps, curl, server-to-server)
         if (!origin) return callback(null, true);
         const normalizedOrigin = origin.replace(/\/+$/, "");
-        if (allowedOrigins.includes(normalizedOrigin) || allowedOrigins.includes("*")) {
+        if (
+            allowedOrigins.includes(normalizedOrigin) ||
+            allowedOrigins.includes("*") ||
+            /\.vercel\.app$/.test(normalizedOrigin) ||
+            normalizedOrigin.startsWith("https://vismaya-frontend-final")
+        ) {
             return callback(null, true);
         }
         return callback(new Error("CORS policy violation: Origin not allowed"), false);

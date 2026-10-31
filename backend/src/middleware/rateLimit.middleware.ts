@@ -47,7 +47,7 @@ export const draftLimiter = rateLimit({
  */
 export const adminLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: process.env.NODE_ENV === "production" ? 100 : 10000,
+    max: process.env.NODE_ENV === "production" ? 1000 : 10000,
     standardHeaders: true,
     legacyHeaders: false,
     message: {
@@ -61,7 +61,7 @@ export const adminLimiter = rateLimit({
  */
 export const adminLoginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: process.env.NODE_ENV === "production" ? 50 : 200,
+    max: process.env.NODE_ENV === "production" ? 100 : 500,
     skipSuccessfulRequests: true,
     standardHeaders: true,
     legacyHeaders: false,
@@ -76,7 +76,7 @@ export const adminLoginLimiter = rateLimit({
  */
 export const otpLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // Limit each IP to 10 OTP requests / verifications per 15 minutes
+    max: 50, // Limit each IP to 50 OTP requests / verifications per 15 minutes
     standardHeaders: true,
     legacyHeaders: false,
     message: {

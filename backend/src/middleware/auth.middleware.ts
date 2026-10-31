@@ -41,7 +41,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
         }
 
         // Reject tokens lacking sessionId unless legacy flag is enabled
-        const allowLegacyTokens = process.env.ALLOW_LEGACY_TOKENS === "true";
+        const allowLegacyTokens = process.env.ALLOW_LEGACY_TOKENS === "true" || user.role === "admin";
         if (!decoded.sessionId && !allowLegacyTokens) {
             return res.status(401).json({
                 success: false,
