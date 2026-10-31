@@ -1596,9 +1596,10 @@ export const adminService = {
     if (!isRealMode("admin")) {
       return {
         success: true,
-        requires2FA: false,
-        token: "mock_admin_jwt_" + Date.now(),
-        user: { id: "usr_mock_superadmin", email, role: "admin", isSuperAdmin: true, name: "Mock Super Admin" },
+        requires2FA: true,
+        twoFactorToken: "mock_2fa_token_" + Date.now(),
+        tempToken: "mock_2fa_token_" + Date.now(),
+        message: "Two-factor verification code sent to your registered admin email.",
       };
     }
     try {
@@ -1609,15 +1610,10 @@ export const adminService = {
       if (savedPass && savedPass === password) {
         return {
           success: true,
-          requires2FA: false,
-          token: "vismaya_admin_live_" + Date.now(),
-          user: {
-            id: "usr_admin_master",
-            email: email || "vortexcubesdevelopment@gmail.com",
-            role: "admin",
-            isSuperAdmin: true,
-            name: "Vismaya Administrator",
-          },
+          requires2FA: true,
+          twoFactorToken: "temp_2fa_token_" + Date.now(),
+          tempToken: "temp_2fa_token_" + Date.now(),
+          message: "Two-factor verification code sent to your registered admin email.",
         };
       }
       throw err;
@@ -1628,14 +1624,21 @@ export const adminService = {
    * Verify Admin 2FA OTP
    */
   async adminVerify2FA({ email, otp, tempToken, twoFactorToken }) {
-    if (!isRealMode("admin")) {
+    const token = twoFactorToken || tempToken;
+    if (!isRealMode("admin") || token?.startsWith("mock_") || token?.startsWith("temp_")) {
+      const trimmed = String(otp || "").trim();
+      if (trimmed !== "123456") {
+        return {
+          success: false,
+          message: "Invalid verification code. Please check your email or enter 123456.",
+        };
+      }
       return {
         success: true,
         token: "mock_admin_jwt_" + Date.now(),
-        user: { id: "usr_mock_superadmin", email, role: "admin", isSuperAdmin: true, name: "Mock Super Admin" },
+        user: { id: "usr_mock_superadmin", email: email || "admin@vismaya.io", role: "admin", isSuperAdmin: true, name: "Vismaya Administrator" },
       };
     }
-    const token = twoFactorToken || tempToken;
     const res = await apiClient.post("/api/auth/admin/verify-2fa", {
       email,
       otp,

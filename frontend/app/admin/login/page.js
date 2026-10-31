@@ -36,20 +36,10 @@ function AdminLoginFormContent() {
   const isBusy = authStatus !== "idle";
 
   useEffect(() => {
-    const token = getAuthToken();
-    let userData = null;
-    if (typeof window !== "undefined") {
-      try {
-        userData = JSON.parse(localStorage.getItem("vismaya_user_data") || "null");
-      } catch {}
-    }
-    if (token && userData && (userData.role === "admin" || userData.isSuperAdmin)) {
-      router.replace("/admin/dashboard");
-    }
     return () => {
       if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
     };
-  }, [router]);
+  }, []);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -76,9 +66,8 @@ function AdminLoginFormContent() {
         setRequires2FA(true);
         const token = res.twoFactorToken || res.tempToken;
         setTempToken(token);
-        if (res.debugOtp) {
-          setOtpCode(res.debugOtp);
-        }
+        // OTP must be entered by user
+        setOtpCode("");
         setFormError("");
       } else if (res.token && res.user) {
         if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
