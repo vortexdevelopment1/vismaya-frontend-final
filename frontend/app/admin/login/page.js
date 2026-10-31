@@ -9,7 +9,7 @@ import AuthSubmitButton from "@/components/auth/AuthSubmitButton";
 import AuthStatus from "@/components/auth/AuthStatus";
 import { Lock, Mail, Shield, KeyRound, AlertCircle, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 import { adminService } from "@/lib/api/services/adminService";
-import { setAuthToken } from "@/lib/api/client";
+import { getAuthToken, setAuthToken } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthContext";
 
 function AdminLoginFormContent() {
@@ -36,10 +36,20 @@ function AdminLoginFormContent() {
   const isBusy = authStatus !== "idle";
 
   useEffect(() => {
+    const token = getAuthToken();
+    let userData = null;
+    if (typeof window !== "undefined") {
+      try {
+        userData = JSON.parse(localStorage.getItem("vismaya_user_data") || "null");
+      } catch {}
+    }
+    if (token && userData && (userData.role === "admin" || userData.isSuperAdmin)) {
+      router.replace("/admin/dashboard");
+    }
     return () => {
       if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
     };
-  }, []);
+  }, [router]);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -76,7 +86,7 @@ function AdminLoginFormContent() {
         setAuthToken(res.token);
         saveSession(res.user, res.token);
         // Keep the form disabled and DO NOT reset this state when router navigates
-        router.push("/admin/dashboard");
+        router.replace("/admin/dashboard");
       } else {
         if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
         setAuthStatus("idle");
@@ -135,7 +145,7 @@ function AdminLoginFormContent() {
         saveSession(res.user, res.token);
         // Keep the form disabled and DO NOT reset this state when router navigates
         setTimeout(() => {
-          router.push("/admin/dashboard");
+          router.replace("/admin/dashboard");
         }, 500);
       } else {
         if (slowTimerRef.current) clearTimeout(slowTimerRef.current);

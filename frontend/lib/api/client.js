@@ -35,9 +35,11 @@ let memoryAuthToken = null;
  */
 export function isTokenExpired(token) {
   if (!token || typeof token !== "string") return true;
+  // Non-JWT tokens (e.g. mock or dev session tokens) do not carry a standard exp claim and should not be auto-expired
+  if (!token.includes(".")) return false;
   try {
     const parts = token.split(".");
-    if (parts.length !== 3) return true;
+    if (parts.length !== 3) return false;
     const base64Url = parts[1];
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
     const jsonPayload = decodeURIComponent(
@@ -147,6 +149,7 @@ export async function apiFetch(endpoint, options = {}) {
     headers = {},
     body,
     signal: customSignal,
+    skipAuthRedirect = false,
     ...fetchOptions
   } = options;
 
@@ -232,7 +235,7 @@ export async function apiFetch(endpoint, options = {}) {
 
     // Handle HTTP error statuses
     if (!response.ok) {
-      if (response.status === 401) {
+      if (response.status === 401 && !skipAuthRedirect) {
         handle401Unauthorized();
       }
 

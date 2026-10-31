@@ -154,12 +154,14 @@ function AdminLayoutContent({ children }) {
 
 function VerifiedAdminGuard({ children }) {
   const router = useRouter();
+  const [hasMounted, setHasMounted] = useState(false);
   const [authStatus, setAuthStatus] = useState("verifying");
   const [isWakingUp, setIsWakingUp] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
+    setHasMounted(true);
     // 1. Fast path: token and admin session check in browser storage
     const token = getAuthToken();
     let userData = null;
@@ -175,51 +177,27 @@ function VerifiedAdminGuard({ children }) {
       return;
     }
 
+    setAuthStatus("authorized");
+
     let isMounted = true;
-    setErrorMessage(null);
-    setIsWakingUp(false);
-    setAuthStatus("verifying");
-
-    // 8-second wake-up hint timer
-    const wakeTimer = setTimeout(() => {
-      if (isMounted) {
-        setIsWakingUp(true);
-      }
-    }, 8000);
-
     async function checkServerSession() {
       try {
         const res = await adminService.verifyAdminSession();
         if (!isMounted) return;
 
-        if (res.success && res.isAdmin) {
-          clearTimeout(wakeTimer);
-          setAuthStatus("authorized");
-        } else {
-          // Explicit unauthorized response (401, 403 or non-admin)
-          if (res.status === 401 || res.status === 403 || res.isAdmin === false) {
-            clearTimeout(wakeTimer);
-            removeAuthToken();
-            setAuthStatus("unauthorized");
-            router.replace("/admin/login");
-          } else {
-            // Network error / server unreachable
-            clearTimeout(wakeTimer);
-            setAuthStatus("error");
-            setErrorMessage("Could not reach the server. Please check your connection.");
-          }
+        // Revoke only if server explicitly rejected with 401/403 or non-admin
+        if (res.isAdmin === false && (res.status === 401 || res.status === 403)) {
+          removeAuthToken();
+          setAuthStatus("unauthorized");
+          router.replace("/admin/login");
         }
       } catch (err) {
         if (!isMounted) return;
-        clearTimeout(wakeTimer);
         const status = err?.status;
         if (status === 401 || status === 403) {
           removeAuthToken();
           setAuthStatus("unauthorized");
           router.replace("/admin/login");
-        } else {
-          setAuthStatus("error");
-          setErrorMessage("Could not reach the server. Please check your connection.");
         }
       }
     }
@@ -228,17 +206,11 @@ function VerifiedAdminGuard({ children }) {
 
     return () => {
       isMounted = false;
-      clearTimeout(wakeTimer);
     };
   }, [router, retryNonce]);
 
-  // Fast-path redirecting for unauthenticated visitors
-  if (authStatus === "unauthorized") {
-    return null;
-  }
-
-  // While verifying with server, show shared RoleGateLoader
-  if (authStatus === "verifying") {
+  // While mounting or verifying initial mount (matches SSR render exactly)
+  if (!hasMounted || authStatus === "verifying") {
     return (
       <RoleGateLoader
         theme="admin"
@@ -246,6 +218,11 @@ function VerifiedAdminGuard({ children }) {
         isWakingUp={isWakingUp}
       />
     );
+  }
+
+  // Fast-path redirecting for unauthenticated visitors
+  if (authStatus === "unauthorized") {
+    return null;
   }
 
   // Network / server connection error state with retry button

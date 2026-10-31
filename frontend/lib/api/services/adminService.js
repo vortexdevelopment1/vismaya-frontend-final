@@ -1714,8 +1714,8 @@ export const adminService = {
       };
     }
     try {
-      // Calling /api/admin/dashboard tests both JWT validity AND authorizeRoles('admin')
-      const res = await apiClient.get("/api/admin/dashboard");
+      // Calling /api/admin/profile tests both JWT validity AND authorizeRoles('admin')
+      const res = await apiClient.get("/api/admin/profile", { skipAuthRedirect: true });
       return {
         success: true,
         isAdmin: true,
