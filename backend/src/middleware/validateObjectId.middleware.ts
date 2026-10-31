@@ -9,8 +9,8 @@ export const validateObjectId = (paramName = "id"): RequestHandler => {
     return (req: Request, res: Response, next: NextFunction): any => {
         const idValue = req.params[paramName];
         if (idValue && !mongoose.Types.ObjectId.isValid(String(idValue))) {
-            // Allow Vismaya custom IDs (e.g., VIS-123456) for user, talent, or profile parameters
-            if (["userId", "talentId", "profileId"].includes(paramName) && typeof idValue === "string" && idValue.startsWith("VIS-")) {
+            // Allow Vismaya custom IDs or string identifiers for user, talent, org, or profile parameters
+            if (["userId", "talentId", "profileId", "id", "orgId"].includes(paramName) && typeof idValue === "string" && idValue.trim().length > 0) {
                 return next();
             }
             return res.status(400).json({
@@ -27,8 +27,8 @@ export const validateObjectId = (paramName = "id"): RequestHandler => {
  */
 export const validateObjectIdParam = (req: Request, res: Response, next: NextFunction, val: string, name: string): any => {
     if (val && !mongoose.Types.ObjectId.isValid(val)) {
-        // Allow Vismaya custom IDs (e.g., VIS-123456) for user, talent, or profile parameters
-        if (["userId", "talentId", "profileId"].includes(name) && typeof val === "string" && val.startsWith("VIS-")) {
+        // Allow Vismaya custom IDs or string identifiers for user, talent, org, or profile parameters
+        if (["userId", "talentId", "profileId", "id", "orgId"].includes(name) && typeof val === "string" && val.trim().length > 0) {
             return next();
         }
         return res.status(400).json({

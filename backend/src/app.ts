@@ -132,6 +132,16 @@ app.use("/api/taxonomy", taxonomyRoutes);
 app.use("/api/success-stories", successStoryRoutes);
 app.use("/api", publicRoutes);
 
+// Root welcome route
+app.get("/", (req: Request, res: Response) => {
+    res.json({
+        success: true,
+        message: "Vismaya Backend API is running",
+        health: "/health",
+        environment: process.env.NODE_ENV || "development"
+    });
+});
+
 // 7. 404 Route Handler
 app.use((req: Request, res: Response) => {
     res.status(404).json({

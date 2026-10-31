@@ -85,7 +85,7 @@ export const sendEmail = async ({
                     body: JSON.stringify({
                         sender: {
                             name: process.env.EMAIL_FROM_NAME || "Vismaya Studios",
-                            email: process.env.EMAIL_FROM || "vortexcubesdevelopment@gmail.com"
+                            email: process.env.BREVO_SENDER_EMAIL || "vortexcubesdevelopment@gmail.com"
                         },
                         to: [{ email: to }],
                         subject,

@@ -1058,6 +1058,29 @@ export const paymentService = {
           }
         }
 
+        if (orgMap.size === 0) {
+          try {
+            const orgsRes = await apiClient.get("/api/admin/organizations");
+            const orgDocs = Array.isArray(orgsRes?.data) ? orgsRes.data : Array.isArray(orgsRes?.organizations) ? orgsRes.organizations : [];
+            for (const org of orgDocs) {
+              const orgId = String(org._id || org.id || "");
+              if (!orgId) continue;
+              orgMap.set(orgId, {
+                orgId,
+                orgName: org.organizationName || org.companyName || org.name || `Organization (${orgId.slice(-6)})`,
+                contactPerson: org.contactPerson || org.name || "Studio Desk",
+                contactEmail: org.email || "-",
+                currentBalance: org.credits || 100,
+                includedCredits: 100,
+                purchasedCredits: 0,
+                consumedCredits: 0,
+                status: "Active",
+                lastActivity: org.updatedAt || org.createdAt || new Date().toISOString(),
+              });
+            }
+          } catch {}
+        }
+
         const mappedLedger = rawLedger.map((row) => mapAdminCreditLedgerRow(row));
 
         return {

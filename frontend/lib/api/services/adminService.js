@@ -373,6 +373,69 @@ export const adminService = {
   },
 
   /**
+   * Approve a talent profile
+   * @param {string} talentId
+   * @param {Object} payload
+   */
+  async approveTalentProfile(talentId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Talent approved (Mock)" };
+    }
+    try {
+      return await apiClient.patch(`/api/admin/talents/${talentId}/approve`, payload);
+    } catch {
+      return await apiClient.patch(`/api/admin/users/${talentId}/approve`, payload);
+    }
+  },
+
+  /**
+   * Reject a talent profile
+   * @param {string} talentId
+   * @param {Object} payload { reason }
+   */
+  async rejectTalentProfile(talentId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Talent rejected (Mock)" };
+    }
+    try {
+      return await apiClient.patch(`/api/admin/talents/${talentId}/reject`, payload);
+    } catch {
+      return await apiClient.patch(`/api/admin/users/${talentId}/reject`, payload);
+    }
+  },
+
+  /**
+   * Suspend a talent profile
+   * @param {string} talentId
+   * @param {Object} payload { reason }
+   */
+  async suspendTalentProfile(talentId, payload = {}) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Talent suspended (Mock)" };
+    }
+    try {
+      return await apiClient.patch(`/api/admin/talents/${talentId}/suspend`, payload);
+    } catch {
+      return await apiClient.patch(`/api/admin/users/${talentId}/suspend`, payload);
+    }
+  },
+
+  /**
+   * Reactivate a talent profile
+   * @param {string} talentId
+   */
+  async reactivateTalentProfile(talentId) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Talent reactivated (Mock)" };
+    }
+    try {
+      return await apiClient.patch(`/api/admin/talents/${talentId}/reactivate`);
+    } catch {
+      return await apiClient.patch(`/api/admin/users/${talentId}/reactivate`);
+    }
+  },
+
+  /**
    * Fetch organization directory (Admin view)
    */
   async getOrganizationDirectory(params = {}) {

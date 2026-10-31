@@ -145,9 +145,11 @@ export function AdminProvider({ children }) {
   // TALENT MANAGEMENT ACTIONS
   // ----------------------------------------------------
   const approveTalent = async (id) => {
+    const target = talents.find((t) => t.id === id || t._id === id || t.userId === id);
+    const targetId = target?._id || target?.id || id;
     if (isRealMode("admin")) {
       try {
-        await adminService.approveUser(id);
+        await adminService.approveTalentProfile(targetId);
       } catch (err) {
         addToast({
           type: "danger",
@@ -158,7 +160,6 @@ export function AdminProvider({ children }) {
       }
     }
 
-    const target = talents.find((t) => t.id === id || t._id === id || t.userId === id);
     setTalents((prev) =>
       prev.map((t) => (t.id === id || t._id === id || t.userId === id ? { ...t, status: "Approved", isProfileApproved: true, statusReason: null } : t))
     );
@@ -182,9 +183,11 @@ export function AdminProvider({ children }) {
   };
 
   const rejectTalent = async (id, reason) => {
+    const target = talents.find((t) => t.id === id || t._id === id || t.userId === id);
+    const targetId = target?._id || target?.id || id;
     if (isRealMode("admin")) {
       try {
-        await adminService.rejectUser(id, { reason });
+        await adminService.rejectTalentProfile(targetId, { reason });
       } catch (err) {
         addToast({
           type: "danger",
@@ -195,7 +198,6 @@ export function AdminProvider({ children }) {
       }
     }
 
-    const target = talents.find((t) => t.id === id || t._id === id || t.userId === id);
     setTalents((prev) =>
       prev.map((t) => (t.id === id || t._id === id || t.userId === id ? { ...t, status: "Rejected", statusReason: reason } : t))
     );
@@ -219,9 +221,11 @@ export function AdminProvider({ children }) {
   };
 
   const suspendTalent = async (id, reason) => {
+    const target = talents.find((t) => t.id === id || t._id === id || t.userId === id);
+    const targetId = target?._id || target?.id || id;
     if (isRealMode("admin")) {
       try {
-        await adminService.suspendUser(id, { reason });
+        await adminService.suspendTalentProfile(targetId, { reason });
       } catch (err) {
         addToast({
           type: "danger",
@@ -232,9 +236,8 @@ export function AdminProvider({ children }) {
       }
     }
 
-    const target = talents.find((t) => t.id === id);
     setTalents((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "Suspended", statusReason: reason } : t))
+      prev.map((t) => (t.id === id || t._id === id || t.userId === id ? { ...t, status: "Suspended", statusReason: reason } : t))
     );
 
     addToast({
@@ -245,9 +248,11 @@ export function AdminProvider({ children }) {
   };
 
   const reactivateTalent = async (id) => {
+    const target = talents.find((t) => t.id === id || t._id === id || t.userId === id);
+    const targetId = target?._id || target?.id || id;
     if (isRealMode("admin")) {
       try {
-        await adminService.reactivateUser(id);
+        await adminService.reactivateTalentProfile(targetId);
       } catch (err) {
         addToast({
           type: "danger",
@@ -258,9 +263,8 @@ export function AdminProvider({ children }) {
       }
     }
 
-    const target = talents.find((t) => t.id === id);
     setTalents((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "Approved", statusReason: null } : t))
+      prev.map((t) => (t.id === id || t._id === id || t.userId === id ? { ...t, status: "Approved", statusReason: null } : t))
     );
 
     addToast({
@@ -274,9 +278,11 @@ export function AdminProvider({ children }) {
   // RECRUITER MANAGEMENT ACTIONS
   // ----------------------------------------------------
   const verifyRecruiter = async (id) => {
+    const target = recruiters.find((r) => r.id === id || r._id === id || r.userId === id);
+    const targetId = target?.userId || target?._id || target?.id || id;
     if (isRealMode("admin")) {
       try {
-        await adminService.approveUser(id);
+        await adminService.approveUser(targetId);
       } catch (err) {
         addToast({
           type: "danger",
@@ -287,9 +293,8 @@ export function AdminProvider({ children }) {
       }
     }
 
-    const target = recruiters.find((r) => r.id === id);
     setRecruiters((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "Verified", statusReason: null } : r))
+      prev.map((r) => (r.id === id || r._id === id || r.userId === id ? { ...r, status: "Verified", statusReason: null } : r))
     );
 
     setActivities((prev) => [
@@ -311,9 +316,11 @@ export function AdminProvider({ children }) {
   };
 
   const rejectRecruiter = async (id, reason) => {
+    const target = recruiters.find((r) => r.id === id || r._id === id || r.userId === id);
+    const targetId = target?.userId || target?._id || target?.id || id;
     if (isRealMode("admin")) {
       try {
-        await adminService.rejectUser(id, { reason });
+        await adminService.rejectUser(targetId, { reason });
       } catch (err) {
         addToast({
           type: "danger",
@@ -324,9 +331,8 @@ export function AdminProvider({ children }) {
       }
     }
 
-    const target = recruiters.find((r) => r.id === id);
     setRecruiters((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "Rejected", statusReason: reason } : r))
+      prev.map((r) => (r.id === id || r._id === id || r.userId === id ? { ...r, status: "Rejected", statusReason: reason } : r))
     );
 
     addToast({
@@ -337,9 +343,11 @@ export function AdminProvider({ children }) {
   };
 
   const suspendRecruiter = async (id, reason) => {
+    const target = recruiters.find((r) => r.id === id || r._id === id || r.userId === id);
+    const targetId = target?.userId || target?._id || target?.id || id;
     if (isRealMode("admin")) {
       try {
-        await adminService.suspendUser(id, { reason });
+        await adminService.suspendUser(targetId, { reason });
       } catch (err) {
         addToast({
           type: "danger",
@@ -350,9 +358,8 @@ export function AdminProvider({ children }) {
       }
     }
 
-    const target = recruiters.find((r) => r.id === id);
     setRecruiters((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "Suspended", statusReason: reason } : r))
+      prev.map((r) => (r.id === id || r._id === id || r.userId === id ? { ...r, status: "Suspended", statusReason: reason } : r))
     );
 
     addToast({
@@ -363,9 +370,11 @@ export function AdminProvider({ children }) {
   };
 
   const reactivateRecruiter = async (id) => {
+    const target = recruiters.find((r) => r.id === id || r._id === id || r.userId === id);
+    const targetId = target?.userId || target?._id || target?.id || id;
     if (isRealMode("admin")) {
       try {
-        await adminService.reactivateUser(id);
+        await adminService.reactivateUser(targetId);
       } catch (err) {
         addToast({
           type: "danger",
@@ -376,9 +385,8 @@ export function AdminProvider({ children }) {
       }
     }
 
-    const target = recruiters.find((r) => r.id === id);
     setRecruiters((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "Verified", statusReason: null } : r))
+      prev.map((r) => (r.id === id || r._id === id || r.userId === id ? { ...r, status: "Verified", statusReason: null } : r))
     );
 
     addToast({

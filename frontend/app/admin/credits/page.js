@@ -66,13 +66,18 @@ export default function AdminCreditsPage() {
     }
 
     const finalChange = isDeduct ? -Math.abs(Number(adjustAmount)) : Math.abs(Number(adjustAmount));
-    const res = await paymentService.adjustCredits(selectedOrgId, finalChange, adjustReason);
-
-    if (res.success) {
-      showToast(res.message);
-      setIsAdjustModalOpen(false);
-      setAdjustReason("");
-      loadData();
+    try {
+      const res = await paymentService.adjustCredits(selectedOrgId, finalChange, adjustReason);
+      if (res.success) {
+        showToast(res.message);
+        setIsAdjustModalOpen(false);
+        setAdjustReason("");
+        loadData();
+      } else {
+        showToast(res.message || "Could not adjust credits.");
+      }
+    } catch (err) {
+      showToast(err?.message || "Could not adjust credits.");
     }
   };
 
