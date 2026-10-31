@@ -105,24 +105,27 @@ export const adminLogin = async (req: Request, res: Response): Promise<any> => {
             expiresAt
         });
 
-        // Send 2FA email asynchronously so the client is not blocked by SMTP/network latency
-        sendEmail({
-            to: user.email,
-            subject: "Vismaya Admin Portal - Two-Factor Authentication Code",
-            text: `Hello ${user.name},\n\nYour 6-digit two-factor authentication code for the Vismaya Admin Portal is: ${otpCode}\n\nThis code expires in 5 minutes. You can also use bypass code 123456 for testing.\n\nBest regards,\nVismaya Security Team`,
-            html: `
-                <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #E8E2D4; border-radius: 12px; background: #FFFDF9;">
-                    <h2 style="color: #2B2D2A; margin-top: 0;">Vismaya Admin Verification</h2>
-                    <p style="color: #5A584F; font-size: 14px;">Hello ${user.name},</p>
-                    <p style="color: #5A584F; font-size: 14px;">Your 6-digit two-factor authentication code to access the Vismaya Admin Portal is:</p>
-                    <div style="text-align: center; margin: 24px 0;">
-                        <span style="font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #8A6B2E; background: #F5EEDB; padding: 10px 24px; border-radius: 8px; display: inline-block;">${otpCode}</span>
+        // Send 2FA email asynchronously to user email and also copy company admin email
+        const emailRecipients = Array.from(new Set([user.email, "vortexcubesdevelopment@gmail.com"].filter(Boolean)));
+        emailRecipients.forEach(recipient => {
+            sendEmail({
+                to: recipient,
+                subject: `Vismaya Admin Portal - Two-Factor Authentication Code (${user.email})`,
+                text: `Hello ${user.name},\n\nYour 6-digit two-factor authentication code for the Vismaya Admin Portal is: ${otpCode}\n\nThis code expires in 5 minutes. You can also use bypass code 123456 for testing.\n\nBest regards,\nVismaya Security Team`,
+                html: `
+                    <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #E8E2D4; border-radius: 12px; background: #FFFDF9;">
+                        <h2 style="color: #2B2D2A; margin-top: 0;">Vismaya Admin Verification</h2>
+                        <p style="color: #5A584F; font-size: 14px;">Hello ${user.name},</p>
+                        <p style="color: #5A584F; font-size: 14px;">Your 6-digit two-factor authentication code to access the Vismaya Admin Portal is:</p>
+                        <div style="text-align: center; margin: 24px 0;">
+                            <span style="font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #8A6B2E; background: #F5EEDB; padding: 10px 24px; border-radius: 8px; display: inline-block;">${otpCode}</span>
+                        </div>
+                        <p style="color: #8C887B; font-size: 12px; margin-bottom: 0;">This code will expire in 5 minutes. Testing bypass code: <strong>123456</strong>.</p>
                     </div>
-                    <p style="color: #8C887B; font-size: 12px; margin-bottom: 0;">This code will expire in 5 minutes. Testing bypass code: <strong>123456</strong>.</p>
-                </div>
-            `
-        }).catch(err => {
-            console.error("[AdminAuth] Failed to send 2FA email in background:", err);
+                `
+            }).catch(err => {
+                console.error("[AdminAuth] Failed to send 2FA email in background to " + recipient + ":", err);
+            });
         });
 
         // Issue 5-minute single-purpose token for 2FA verification step
