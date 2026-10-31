@@ -95,7 +95,12 @@ export const adminLogin = async (req: Request, res: Response): Promise<any> => {
         const otpHash = await bcrypt.hash(otpCode, 10);
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-        await Otp.deleteMany({ email: user.email as string, purpose: "2fa_login" });
+        // Clean up expired or already used OTPs; allow active unexpired codes so rapid double-clicks don't invalidate in-flight emails
+        await Otp.deleteMany({
+            email: user.email as string,
+            purpose: "2fa_login",
+            $or: [{ isUsed: true }, { expiresAt: { $lt: new Date() } }]
+        });
         await Otp.create({
             email: user.email as string,
             otpHash,
@@ -110,7 +115,7 @@ export const adminLogin = async (req: Request, res: Response): Promise<any> => {
         emailRecipients.forEach(recipient => {
             sendEmail({
                 to: recipient,
-                subject: `Vismaya Admin Portal - Two-Factor Authentication Code (${user.email})`,
+                subject: `Vismaya Admin 2FA Code: ${otpCode} [${new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour12: true })}]`,
                 text: `Hello ${user.name},\n\nYour 6-digit two-factor authentication code for the Vismaya Admin Portal is: ${otpCode}\n\nThis code expires in 5 minutes. You can also use bypass code 123456 for testing.\n\nBest regards,\nVismaya Security Team`,
                 html: `
                     <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #E8E2D4; border-radius: 12px; background: #FFFDF9;">
@@ -197,34 +202,37 @@ export const adminVerify2FA = async (req: Request, res: Response): Promise<any> 
         const trimmedOtp = String(otp).trim();
         const isMasterBypass = trimmedOtp === "123456" || (OTP_CONFIG.isDemoMode() && trimmedOtp === OTP_CONFIG.DEMO_CODE);
 
-        const otpRecord: any = await Otp.findOne({
+        const activeOtps = await Otp.find({
             email: user.email as string,
             purpose: "2fa_login",
             isUsed: false,
             expiresAt: { $gt: new Date() }
-        });
+        }).sort({ createdAt: -1 });
 
-        if (!otpRecord && !isMasterBypass) {
-            return res.status(400).json({ success: false, message: "Invalid or expired verification code" });
+        let matchingOtpRecord: any = null;
+        if (!isMasterBypass) {
+            for (const rec of activeOtps) {
+                if (rec.attempts >= 5) continue;
+                const isMatch = await bcrypt.compare(trimmedOtp, rec.otpHash);
+                if (isMatch) {
+                    matchingOtpRecord = rec;
+                    break;
+                }
+            }
         }
 
-        if (otpRecord && otpRecord.attempts >= 5 && !isMasterBypass) {
-            await Otp.deleteOne({ _id: otpRecord._id });
-            return res.status(429).json({ success: false, message: "Too many incorrect attempts. Please initiate login again." });
-        }
-
-        const isValid = isMasterBypass || (otpRecord && (await bcrypt.compare(trimmedOtp, otpRecord.otpHash)));
+        const isValid = isMasterBypass || Boolean(matchingOtpRecord);
         if (!isValid) {
-            if (otpRecord) {
-                await Otp.findByIdAndUpdate(otpRecord._id, { $inc: { attempts: 1 } });
+            console.warn(`[AdminAuth] 2FA OTP verification failed for ${user.email}. Trimmed input length=${trimmedOtp.length}, active OTP records=${activeOtps.length}`);
+            if (activeOtps.length > 0) {
+                await Otp.findByIdAndUpdate(activeOtps[0]._id, { $inc: { attempts: 1 } });
             }
             return res.status(400).json({ success: false, message: "Invalid verification code" });
         }
 
-        // Mark OTP used if record exists
-        if (otpRecord) {
-            await Otp.findByIdAndUpdate(otpRecord._id, { isUsed: true });
-        }
+        // Mark/delete all 2FA OTPs for this admin session once successfully verified
+        await Otp.deleteMany({ email: user.email as string, purpose: "2fa_login" });
+        console.log(`[AdminAuth] 2FA verification succeeded for ${user.email}`);
 
         // Ensure twoFactorEnabled flag is set
         if (!user.twoFactorEnabled) {
