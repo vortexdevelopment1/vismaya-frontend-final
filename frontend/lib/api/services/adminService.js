@@ -1691,6 +1691,21 @@ export const adminService = {
    * Verified Server-Side Admin Session Check
    */
   async verifyAdminSession() {
+    let cached = null;
+    if (typeof window !== "undefined") {
+      try {
+        cached = JSON.parse(localStorage.getItem("vismaya_user_data") || "null");
+      } catch {}
+    }
+    if (!cached || (cached.role !== "admin" && !cached.isSuperAdmin)) {
+      return {
+        success: false,
+        isAdmin: false,
+        status: 401,
+        message: "No active administrator session found",
+      };
+    }
+
     if (!isRealMode("admin")) {
       return {
         success: true,

@@ -154,17 +154,22 @@ function AdminLayoutContent({ children }) {
 
 function VerifiedAdminGuard({ children }) {
   const router = useRouter();
-  const [authStatus, setAuthStatus] = useState(USE_MOCK ? "authorized" : "verifying");
+  const [authStatus, setAuthStatus] = useState("verifying");
   const [isWakingUp, setIsWakingUp] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
-    if (USE_MOCK) return;
-
-    // Fast path: if no stored auth token exists, immediately redirect to /admin/login without backend call
+    // 1. Fast path: token and admin session check in browser storage
     const token = getAuthToken();
-    if (!token) {
+    let userData = null;
+    if (typeof window !== "undefined") {
+      try {
+        userData = JSON.parse(localStorage.getItem("vismaya_user_data") || "null");
+      } catch {}
+    }
+
+    if (!token || !userData || (userData.role !== "admin" && !userData.isSuperAdmin)) {
       setAuthStatus("unauthorized");
       router.replace("/admin/login");
       return;
@@ -226,15 +231,6 @@ function VerifiedAdminGuard({ children }) {
       clearTimeout(wakeTimer);
     };
   }, [router, retryNonce]);
-
-  // In mock mode, render immediately
-  if (USE_MOCK) {
-    return (
-      <AdminProvider>
-        <AdminLayoutContent>{children}</AdminLayoutContent>
-      </AdminProvider>
-    );
-  }
 
   // Fast-path redirecting for unauthenticated visitors
   if (authStatus === "unauthorized") {
