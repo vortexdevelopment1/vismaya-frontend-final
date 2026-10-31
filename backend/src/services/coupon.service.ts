@@ -16,6 +16,8 @@ export const validateAndApplyCoupon = async ({
     discountAmount: number;
     finalAmount: number;
     couponCode?: string;
+    discountType?: "percentage" | "fixed" | string;
+    discountValue?: number;
     couponId?: any;
     message: string;
 }> => {
@@ -111,6 +113,8 @@ export const validateAndApplyCoupon = async ({
     return {
         isValid: true,
         couponCode: cleanCode,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
         discountAmount,
         finalAmount,
         couponId: coupon._id,

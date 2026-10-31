@@ -99,7 +99,16 @@ export default function PaymentCard({
 
     setIsApplyingCoupon(false);
     if (res.success) {
-      setAppliedCoupon(res.data);
+      const payload = res.data || res;
+      setAppliedCoupon({
+        code: payload.code || payload.couponCode || couponCode.trim().toUpperCase(),
+        couponCode: payload.couponCode || payload.code || couponCode.trim().toUpperCase(),
+        discountType: payload.discountType || (payload.percent ? "percentage" : "fixed"),
+        discountValue: payload.discountValue || payload.percent || payload.flat || 0,
+        discountAmount: payload.discountAmount || 0,
+        finalAmount: payload.finalAmount || Math.max(0, base - (payload.discountAmount || 0)),
+        description: payload.description || payload.message || "",
+      });
       setCouponError("");
     } else {
       setAppliedCoupon(null);
@@ -569,20 +578,27 @@ export default function PaymentCard({
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-              <span style={{ color: "#5A584F" }}>Base Fee</span>
+              <span style={{ color: "#5A584F" }}>Original Package Price</span>
               <span style={{ fontWeight: "600", color: "#2B2D2A" }}>₹{baseAmount.toLocaleString()}</span>
             </div>
 
             {appliedCoupon && (
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", color: "#8A6B2E" }}>
-                <span>Coupon ({appliedCoupon.code})</span>
+                <span>
+                  Coupon Applied ({appliedCoupon.code || appliedCoupon.couponCode})
+                  {appliedCoupon.discountValue ? (
+                    <span style={{ fontSize: "12px", marginLeft: "4px", color: "#8A6B2E", fontWeight: "500" }}>
+                      ({appliedCoupon.discountType === "percentage" ? `${appliedCoupon.discountValue}% off` : `₹${appliedCoupon.discountValue} off`})
+                    </span>
+                  ) : null}
+                </span>
                 <span style={{ fontWeight: "600" }}>-₹{discount.toLocaleString()}</span>
               </div>
             )}
 
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#5A584F" }}>
               <span>Applicable GST (18%)</span>
-              <span>₹{taxAmount.toLocaleString()} (Included)</span>
+              <span>₹{taxAmount.toLocaleString()} (Included in price)</span>
             </div>
 
             <div
@@ -595,7 +611,7 @@ export default function PaymentCard({
               }}
             >
               <div>
-                <span style={{ fontSize: "14px", fontWeight: "600", color: "#2B2D2A" }}>Total Payable</span>
+                <span style={{ fontSize: "14px", fontWeight: "600", color: "#2B2D2A" }}>Final Payable Amount</span>
                 <div style={{ fontSize: "11px", color: "#5A584F" }}>One-time payment • No auto-renewal</div>
               </div>
               <span

@@ -344,6 +344,9 @@ export const paymentService = {
       success: true,
       data: {
         code: coupon.code,
+        couponCode: coupon.code,
+        discountType: coupon.percent ? "percentage" : "fixed",
+        discountValue: coupon.percent || coupon.flat || 0,
         description: coupon.description,
         discountAmount,
         finalAmount,

@@ -69,6 +69,9 @@ export const applyCoupon = async (req: Request, res: Response): Promise<any> => 
         res.status(200).json({
             success: true,
             couponCode: couponResult.couponCode,
+            code: couponResult.couponCode,
+            discountType: (couponResult as any).discountType,
+            discountValue: (couponResult as any).discountValue,
             originalAmount: pkg.amount,
             discountAmount: couponResult.discountAmount,
             finalAmount: couponResult.finalAmount,
