@@ -4,6 +4,7 @@ import {  authenticateUser  } from "../middleware/auth.middleware.js";
 
 import { 
     applyCoupon,
+    getBestEligibleCoupon,
     createPaymentOrder,
     verifyPayment,
     handlePaymentWebhook,
@@ -25,7 +26,7 @@ const optionalAuthForRegistration = async (req: Request, res: Response, next: Ne
     }
     const pkg = req.body?.packageType;
     const isRegistrationPkg = pkg === "talent_annual_999" || pkg === "industry_annual_4999";
-    if (isRegistrationPkg || req.path === "/verify" || req.path === "/mock-confirm") {
+    if (isRegistrationPkg || req.path === "/verify" || req.path === "/mock-confirm" || req.path === "/best-coupon") {
         return next();
     }
     return res.status(401).json({
@@ -39,6 +40,12 @@ router.post(
     "/apply-coupon",
     optionalAuthForRegistration,
     applyCoupon
+);
+
+router.get(
+    "/best-coupon",
+    optionalAuthForRegistration,
+    getBestEligibleCoupon
 );
 
 // Order creation & verification

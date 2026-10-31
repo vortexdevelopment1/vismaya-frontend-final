@@ -3,7 +3,7 @@ import crypto from "crypto";
 import Razorpay from "razorpay";
 import PaymentTransaction from "../models/paymentTransaction.model.js";
 import Organization from "../models/organization.model.js";
-import { validateAndApplyCoupon } from "../services/coupon.service.js";
+import { validateAndApplyCoupon, findBestEligibleCoupon } from "../services/coupon.service.js";
 import { fulfilTransaction, PACKAGE_CONFIG } from "../services/paymentFulfillment.service.js";
 
 /**
@@ -91,6 +91,59 @@ export const applyCoupon = async (req: Request, res: Response): Promise<any> => 
  * Create a new payment order
  * POST /api/payments/create-order
  */
+/**
+ * Automatically fetch the single best eligible coupon for a given package and user
+ * GET /api/payments/best-coupon?packageType=...
+ */
+export const getBestEligibleCoupon = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { packageType } = req.query;
+        const userId = req.user?.userId;
+        const emailInput = (req.query.email as string) || (req.query.userEmail as string) || req.user?.email;
+
+        if (!packageType) {
+            return res.status(400).json({
+                success: false,
+                message: "packageType is required"
+            });
+        }
+
+        const pkg = (PACKAGE_CONFIG as Record<string, any>)[String(packageType)];
+        if (!pkg) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid package type"
+            });
+        }
+
+        const bestCoupon = await findBestEligibleCoupon({
+            packageType: String(packageType),
+            orderAmount: pkg.amount,
+            userId: userId ? String(userId) : undefined,
+            email: emailInput ? String(emailInput).trim().toLowerCase() : undefined
+        });
+
+        if (!bestCoupon) {
+            return res.status(200).json({
+                success: true,
+                coupon: null,
+                message: "No eligible coupon found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            coupon: bestCoupon
+        });
+    } catch (error) {
+        console.error("Get best coupon error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Something went wrong while evaluating eligible coupons"
+        });
+    }
+};
+
 export const createPaymentOrder = async (req: Request, res: Response): Promise<any> => {
     try {
         const userId = req.user?.userId;

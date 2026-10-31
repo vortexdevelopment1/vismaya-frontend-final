@@ -16,6 +16,7 @@ import {
   Sparkles,
   UserCheck,
   History,
+  Ticket,
 } from "lucide-react";
 
 export const adminNavSections = [
@@ -134,6 +135,12 @@ export const adminNavSections = [
         label: "Credits",
         href: "/admin/credits",
         icon: CreditCard,
+      },
+      {
+        title: "Coupon Management",
+        label: "Coupons",
+        href: "/admin/coupons",
+        icon: Ticket,
       },
       {
         title: "Audit Trail",

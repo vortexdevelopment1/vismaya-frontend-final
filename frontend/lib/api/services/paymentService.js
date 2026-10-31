@@ -355,6 +355,86 @@ export const paymentService = {
   },
 
   /**
+   * Find and return the single best eligible coupon providing the highest discount
+   * @param {string} packageType
+   * @param {Object} options { baseAmount, userEmail, userId }
+   */
+  async getBestCoupon(packageType, { baseAmount = 0, userEmail = "", userId = "" } = {}) {
+    const normalizedPackageType = PACKAGE_TYPE_MAP[packageType] || packageType;
+    if (isRealMode("payments") && getAuthToken()) {
+      try {
+        const res = await apiClient.get("/api/payments/best-coupon", {
+          params: {
+            packageType: normalizedPackageType,
+            baseAmount,
+            userEmail,
+          },
+        });
+        if (res?.success && res.data) {
+          return { success: true, data: res.data };
+        }
+      } catch (err) {}
+    }
+
+    try {
+      const { adminService } = await import("./adminService.js");
+      const couponsRes = await adminService.getCoupons();
+      const allCoupons = couponsRes?.data || [];
+      const now = new Date();
+
+      let bestCoupon = null;
+      let highestDiscount = 0;
+
+      for (const c of allCoupons) {
+        if (!c.isActive) continue;
+        if (c.validUntil && new Date(c.validUntil) < now) continue;
+        if (c.validFrom && new Date(c.validFrom) > now) continue;
+        if (c.maxUses && c.usedCount >= c.maxUses) continue;
+        if (c.minOrderAmount && baseAmount < c.minOrderAmount) continue;
+
+        if (Array.isArray(c.applicablePackages) && c.applicablePackages.length > 0) {
+          if (!c.applicablePackages.includes(normalizedPackageType)) continue;
+        }
+
+        if (c.userEligibility === "limited" && Array.isArray(c.applicableUsers) && c.applicableUsers.length > 0) {
+          const userIdentifier = (userEmail || "").toLowerCase().trim();
+          const matches = c.applicableUsers.some((u) => u.toLowerCase().trim() === userIdentifier);
+          if (!matches) continue;
+        }
+
+        let discount = 0;
+        if (c.discountType === "percentage") {
+          discount = Math.round((baseAmount * c.discountValue) / 100);
+          if (c.maxDiscountAmount && discount > c.maxDiscountAmount) {
+            discount = c.maxDiscountAmount;
+          }
+        } else {
+          discount = Math.min(c.discountValue, baseAmount);
+        }
+
+        if (discount > highestDiscount) {
+          highestDiscount = discount;
+          bestCoupon = {
+            code: c.code,
+            couponCode: c.code,
+            discountType: c.discountType,
+            discountValue: c.discountValue,
+            discountAmount: discount,
+            finalAmount: Math.max(0, baseAmount - discount),
+            description: c.description || (c.discountValue + (c.discountType === "percentage" ? "%" : "₹") + " Off"),
+          };
+        }
+      }
+
+      if (bestCoupon) {
+        return { success: true, data: bestCoupon };
+      }
+    } catch {}
+
+    return { success: false, message: "No eligible coupon found" };
+  },
+
+  /**
    * Create an order for payment checkout
    * @param {string} type 'talent_registration' | 'organization_registration' | 'single_view' | 'bundle_views'
    * @param {Object} metadata Extra data like couponCode, userId, etc.

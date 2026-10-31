@@ -7,7 +7,10 @@ export interface ICoupon extends Document {
     minOrderAmount: number;
     maxDiscountAmount?: number;
     applicablePackages: Array<"talent_annual_999" | "industry_annual_4999" | "credit_single_100" | "credit_bundle_25_2000">;
+    userEligibility?: "all" | "limited";
+    applicableUsers?: string[];
     maxUses: number;
+    maxUsesPerUser?: number;
     currentUses: number;
     validFrom: Date;
     validUntil?: Date;
@@ -54,9 +57,24 @@ const couponSchema = new Schema<ICoupon>(
                 "credit_bundle_25_2000"
             ]
         }],
+        userEligibility: {
+            type: String,
+            enum: ["all", "limited"],
+            default: "all"
+        },
+        applicableUsers: [{
+            type: String,
+            trim: true,
+            lowercase: true
+        }],
         maxUses: {
             type: Number,
             default: 100,
+            min: 1
+        },
+        maxUsesPerUser: {
+            type: Number,
+            default: 1,
             min: 1
         },
         currentUses: {

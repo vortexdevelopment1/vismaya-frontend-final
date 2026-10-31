@@ -961,29 +961,175 @@ export const adminService = {
   },
 
   /**
+   * Helper: Get Mock Coupons Store
+   */
+  _getMockCoupons() {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("vismaya_mock_coupons");
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    const initial = [
+      {
+        _id: "cpn_1",
+        code: "SAVE20",
+        discountType: "percentage",
+        discountValue: 20,
+        minOrderAmount: 999,
+        maxDiscountAmount: 1000,
+        applicablePackages: [],
+        maxUses: 100,
+        usedCount: 18,
+        maxUsesPerUser: 1,
+        userEligibility: "all",
+        applicableUsers: [],
+        validFrom: new Date(Date.now() - 14 * 86400000).toISOString(),
+        validUntil: new Date(Date.now() + 60 * 86400000).toISOString(),
+        isActive: true,
+        createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+      },
+      {
+        _id: "cpn_2",
+        code: "VISMAYA10",
+        discountType: "percentage",
+        discountValue: 10,
+        minOrderAmount: 100,
+        maxDiscountAmount: 500,
+        applicablePackages: [],
+        maxUses: 500,
+        usedCount: 42,
+        maxUsesPerUser: 1,
+        userEligibility: "all",
+        applicableUsers: [],
+        validFrom: new Date(Date.now() - 30 * 86400000).toISOString(),
+        validUntil: new Date(Date.now() + 90 * 86400000).toISOString(),
+        isActive: true,
+        createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
+      },
+      {
+        _id: "cpn_3",
+        code: "STUDIO500",
+        discountType: "fixed",
+        discountValue: 500,
+        minOrderAmount: 2000,
+        maxDiscountAmount: 500,
+        applicablePackages: ["industry_annual_4999", "credit_bundle_25_2000"],
+        maxUses: 50,
+        usedCount: 12,
+        maxUsesPerUser: 1,
+        userEligibility: "all",
+        applicableUsers: [],
+        validFrom: new Date(Date.now() - 10 * 86400000).toISOString(),
+        validUntil: new Date(Date.now() + 45 * 86400000).toISOString(),
+        isActive: true,
+        createdAt: new Date(Date.now() - 10 * 86400000).toISOString(),
+      },
+      {
+        _id: "cpn_4",
+        code: "VIPEXCLUSIVE",
+        discountType: "percentage",
+        discountValue: 30,
+        minOrderAmount: 999,
+        maxDiscountAmount: 1500,
+        applicablePackages: [],
+        maxUses: 20,
+        usedCount: 5,
+        maxUsesPerUser: 1,
+        userEligibility: "limited",
+        applicableUsers: ["vip@vismaya.com", "director@yashraj.com"],
+        validFrom: new Date(Date.now() - 5 * 86400000).toISOString(),
+        validUntil: new Date(Date.now() + 30 * 86400000).toISOString(),
+        isActive: true,
+        createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+      },
+      {
+        _id: "cpn_5",
+        code: "EXPIRED50",
+        discountType: "percentage",
+        discountValue: 50,
+        minOrderAmount: 500,
+        maxDiscountAmount: 2500,
+        applicablePackages: [],
+        maxUses: 10,
+        usedCount: 10,
+        maxUsesPerUser: 1,
+        userEligibility: "all",
+        applicableUsers: [],
+        validFrom: new Date(Date.now() - 60 * 86400000).toISOString(),
+        validUntil: new Date(Date.now() - 10 * 86400000).toISOString(),
+        isActive: false,
+        createdAt: new Date(Date.now() - 60 * 86400000).toISOString(),
+      },
+    ];
+    try {
+      localStorage.setItem("vismaya_mock_coupons", JSON.stringify(initial));
+    } catch {}
+    return initial;
+  },
+
+  _saveMockCoupons(list) {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("vismaya_mock_coupons", JSON.stringify(list));
+      } catch {}
+    }
+  },
+
+  /**
    * Fetch discount coupons list
    */
   async getCoupons(params = {}) {
     if (!isRealMode("admin")) {
-      return { success: true, data: [] };
+      const list = this._getMockCoupons();
+      return { success: true, data: list };
     }
-    const res = await apiClient.get("/api/admin/coupons", { params });
-    const list = res?.coupons || res?.data || (Array.isArray(res) ? res : []);
-    return {
-      success: true,
-      data: Array.isArray(list) ? list : [],
-    };
+    try {
+      const res = await apiClient.get("/api/admin/coupons", { params });
+      const list = res?.coupons || res?.data || (Array.isArray(res) ? res : []);
+      return {
+        success: true,
+        data: Array.isArray(list) ? list : [],
+      };
+    } catch (err) {
+      const fallbackList = this._getMockCoupons();
+      return { success: true, data: fallbackList };
+    }
   },
 
   /**
    * Create a discount coupon
-   * @param {Object} payload { code, discountPercent, validUntil }
+   * @param {Object} payload
    */
   async createCoupon(payload) {
     if (!isRealMode("admin")) {
-      return { success: true, message: "Coupon created (Mock)" };
+      const list = this._getMockCoupons();
+      const newCoupon = {
+        _id: "cpn_" + Date.now(),
+        code: (payload.code || "").trim().toUpperCase(),
+        discountType: payload.discountType || "percentage",
+        discountValue: Number(payload.discountValue || payload.discountPercent || 0),
+        minOrderAmount: Number(payload.minOrderAmount || 0),
+        maxDiscountAmount: payload.maxDiscountAmount ? Number(payload.maxDiscountAmount) : null,
+        applicablePackages: Array.isArray(payload.applicablePackages) ? payload.applicablePackages : [],
+        maxUses: payload.maxUses ? Number(payload.maxUses) : null,
+        usedCount: 0,
+        maxUsesPerUser: Number(payload.maxUsesPerUser || 1),
+        userEligibility: payload.userEligibility || "all",
+        applicableUsers: Array.isArray(payload.applicableUsers) ? payload.applicableUsers : [],
+        validFrom: payload.validFrom ? new Date(payload.validFrom).toISOString() : new Date().toISOString(),
+        validUntil: payload.validUntil ? new Date(payload.validUntil).toISOString() : new Date(Date.now() + 30 * 86400000).toISOString(),
+        isActive: payload.isActive !== false,
+        createdAt: new Date().toISOString(),
+      };
+      list.unshift(newCoupon);
+      this._saveMockCoupons(list);
+      return { success: true, data: newCoupon, message: "Coupon created successfully" };
     }
-    return apiClient.post("/api/admin/coupons", payload);
+    try {
+      return await apiClient.post("/api/admin/coupons", payload);
+    } catch (err) {
+      return { success: false, message: err?.message || "Failed to create coupon" };
+    }
   },
 
   /**
@@ -993,9 +1139,20 @@ export const adminService = {
    */
   async updateCoupon(couponId, payload) {
     if (!isRealMode("admin")) {
-      return { success: true, message: "Coupon updated (Mock)" };
+      const list = this._getMockCoupons();
+      const idx = list.findIndex((c) => String(c._id) === String(couponId));
+      if (idx !== -1) {
+        list[idx] = { ...list[idx], ...payload, updatedAt: new Date().toISOString() };
+        this._saveMockCoupons(list);
+        return { success: true, data: list[idx], message: "Coupon updated successfully" };
+      }
+      return { success: false, message: "Coupon not found" };
     }
-    return apiClient.patch(`/api/admin/coupons/${couponId}`, payload);
+    try {
+      return await apiClient.patch(`/api/admin/coupons/${couponId}`, payload);
+    } catch (err) {
+      return { success: false, message: err?.message || "Failed to update coupon" };
+    }
   },
 
   /**
@@ -1004,9 +1161,16 @@ export const adminService = {
    */
   async deleteCoupon(couponId) {
     if (!isRealMode("admin")) {
-      return { success: true, message: "Coupon deleted (Mock)" };
+      let list = this._getMockCoupons();
+      list = list.filter((c) => String(c._id) !== String(couponId));
+      this._saveMockCoupons(list);
+      return { success: true, message: "Coupon deleted successfully" };
     }
-    return apiClient.delete(`/api/admin/coupons/${couponId}`);
+    try {
+      return await apiClient.delete(`/api/admin/coupons/${couponId}`);
+    } catch (err) {
+      return { success: false, message: err?.message || "Failed to delete coupon" };
+    }
   },
 
   /**

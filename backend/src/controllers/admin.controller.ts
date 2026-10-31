@@ -3712,7 +3712,7 @@ export const createCoupon = async (req: Request, res: Response): Promise<any> =>
             return res.status(400).json({ success: false, message: validation.errors[0] });
         }
 
-        const { code, discountType, discountValue, minOrderAmount, maxDiscountAmount, applicablePackages, maxUses, validUntil } = req.body;
+        const { code, discountType, discountValue, minOrderAmount, maxDiscountAmount, applicablePackages, maxUses, maxUsesPerUser, userEligibility, applicableUsers, validFrom, validUntil, isActive } = req.body;
 
         const cleanCode = String(code).trim().toUpperCase();
         const existing = await Coupon.findOne({ code: cleanCode });
@@ -3727,7 +3727,12 @@ export const createCoupon = async (req: Request, res: Response): Promise<any> =>
             minOrderAmount: minOrderAmount || 0,
             maxDiscountAmount,
             applicablePackages: applicablePackages || [],
+            userEligibility: userEligibility || "all",
+            applicableUsers: Array.isArray(applicableUsers) ? applicableUsers : [],
             maxUses: maxUses || 100,
+            maxUsesPerUser: maxUsesPerUser || 1,
+            validFrom: validFrom ? new Date(validFrom) : new Date(),
+            isActive: isActive !== undefined ? Boolean(isActive) : true,
             validUntil: validUntil ? new Date(validUntil) : undefined,
             createdBy: req.user?.userId
         });
@@ -3755,7 +3760,7 @@ export const updateCoupon = async (req: Request, res: Response): Promise<any> =>
             return res.status(404).json({ success: false, message: "Coupon not found" });
         }
 
-        const allowedFields = ["discountType", "discountValue", "minOrderAmount", "maxDiscountAmount", "applicablePackages", "maxUses", "validUntil", "isActive"];
+        const allowedFields = ["discountType", "discountValue", "minOrderAmount", "maxDiscountAmount", "applicablePackages", "maxUses", "maxUsesPerUser", "userEligibility", "applicableUsers", "validFrom", "validUntil", "isActive"];
         for (const field of allowedFields) {
             if (req.body[field] !== undefined) {
                 (coupon as any)[field] = req.body[field];

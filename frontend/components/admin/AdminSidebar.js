@@ -267,7 +267,7 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile, onOpen
           className="admin-sidebar-scroll"
         >
           {adminNavSections.map((section, sIdx) => (
-            <div key={sIdx} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            <div key={section.group || sIdx} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
               <div
                 style={{
                   fontSize: "11px",
@@ -283,15 +283,15 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile, onOpen
                 {section.group}
               </div>
 
-              {section.items.map((item) => {
+              {section.items.map((item, iIdx) => {
                 const active = activeHref === item.href;
                 const Icon = item.icon;
                 const badgeCount = getBadgeCount(item.badgeKey);
 
                 return (
                   <Link
-                    key={item.href}
-                    href={item.href}
+                    key={item.href ? item.href + '-' + iIdx : 'nav-' + sIdx + '-' + iIdx}
+                    href={item.href || '#'}
                     onClick={onCloseMobile}
                     title={item.label}
                     style={{

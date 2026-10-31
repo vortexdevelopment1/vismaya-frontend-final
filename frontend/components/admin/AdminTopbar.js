@@ -332,6 +332,7 @@ export default function AdminTopbar({ onOpenMobile }) {
     if (pathname === "/admin/media-moderation" || pathname === "/admin/content-moderation") return "Content Moderation";
     if (pathname === "/admin/projects") return "Projects Directory";
     if (pathname === "/admin/payments") return "Escrow & Payments";
+    if (pathname === "/admin/coupons") return "Coupon Management";
     if (pathname === "/admin/credits") return "Organization Credits";
     if (pathname === "/admin/audit-logs") return "Security & Operations Audit Trail";
     if (pathname === "/admin/cancellation-requests") return "Cancellation Requests";
@@ -380,7 +381,7 @@ export default function AdminTopbar({ onOpenMobile }) {
           display: "flex",
           alignItems: "center",
           gap: "10px",
-          flexShrink: 0,
+          minWidth: 0,
         }}
       >
         <h1
@@ -388,16 +389,13 @@ export default function AdminTopbar({ onOpenMobile }) {
           title={getPageTitle()}
           style={{
             fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
-            lineHeight: 1,
+            lineHeight: 1.1,
             fontWeight: 600,
             color: "#2B2D2A",
             margin: 0,
             padding: 0,
             letterSpacing: "-0.01em",
             whiteSpace: "nowrap",
-            display: "flex",
-            alignItems: "center",
-            flexShrink: 0,
           }}
         >
           {getPageTitle()}

@@ -1,4 +1,5 @@
 import Coupon from "../models/coupon.model.js";
+import PaymentTransaction from "../models/paymentTransaction.model.js";
 
 /**
  * Validate coupon code and calculate discount amount
@@ -6,11 +7,15 @@ import Coupon from "../models/coupon.model.js";
 export const validateAndApplyCoupon = async ({
     couponCode,
     packageType,
-    orderAmount
+    orderAmount,
+    userId,
+    email
 }: {
     couponCode?: string | null;
     packageType: any;
     orderAmount: number;
+    userId?: string;
+    email?: string;
 }): Promise<{
     isValid: boolean;
     discountAmount: number;
@@ -75,6 +80,54 @@ export const validateAndApplyCoupon = async ({
         };
     }
 
+    // Check user eligibility (All Users vs Limited Users)
+    if (coupon.userEligibility === "limited" && Array.isArray(coupon.applicableUsers) && coupon.applicableUsers.length > 0) {
+        const normalizedEmail = email ? email.trim().toLowerCase() : "";
+        const uId = userId ? String(userId) : "";
+        const isEligible = coupon.applicableUsers.some((u: string) => {
+            const clean = String(u).trim().toLowerCase();
+            return clean === normalizedEmail || clean === uId;
+        });
+        if (!isEligible) {
+            return {
+                isValid: false,
+                discountAmount: 0,
+                finalAmount: orderAmount,
+                message: "This coupon is reserved for specific accounts"
+            };
+        }
+    }
+
+    // Check per-user redemption limit
+    if (coupon.maxUsesPerUser && (userId || email)) {
+        try {
+            const filter: any = {
+                couponCode: cleanCode,
+                status: "successful"
+            };
+            const orConditions: any[] = [];
+            if (userId) orConditions.push({ userId });
+            if (email) {
+                orConditions.push({ email: email.trim().toLowerCase() });
+                orConditions.push({ customerEmail: email.trim().toLowerCase() });
+            }
+            if (orConditions.length) {
+                filter.$or = orConditions;
+                const userUses = await PaymentTransaction.countDocuments(filter);
+                if (userUses >= coupon.maxUsesPerUser) {
+                    return {
+                        isValid: false,
+                        discountAmount: 0,
+                        finalAmount: orderAmount,
+                        message: `You have reached the redemption limit (${coupon.maxUsesPerUser}) for this coupon`
+                    };
+                }
+            }
+        } catch (txErr) {
+            console.warn("User coupon redemption check warning:", txErr);
+        }
+    }
+
     // Check package eligibility
     if (coupon.applicablePackages && coupon.applicablePackages.length > 0) {
         if (!coupon.applicablePackages.includes(packageType)) {
@@ -137,7 +190,64 @@ export const recordCouponUsage = async (couponCode?: string | null): Promise<voi
     }
 };
 
+/**
+ * Automatically evaluates all active coupons and finds the single best eligible coupon providing the highest discount
+ */
+export const findBestEligibleCoupon = async ({
+    packageType,
+    orderAmount,
+    userId,
+    email
+}: {
+    packageType: any;
+    orderAmount: number;
+    userId?: string;
+    email?: string;
+}): Promise<any> => {
+    try {
+        const now = new Date();
+        const activeCoupons = await Coupon.find({
+            isActive: true,
+            validFrom: { $lte: now },
+            $or: [{ validUntil: { $exists: false } }, { validUntil: null }, { validUntil: { $gte: now } }]
+        }).sort({ createdAt: -1 });
+
+        let bestCouponResult: any = null;
+        let highestDiscount = 0;
+
+        for (const coupon of activeCoupons) {
+            const res = await validateAndApplyCoupon({
+                couponCode: coupon.code,
+                packageType,
+                orderAmount,
+                userId,
+                email
+            });
+
+            if (res.isValid && res.discountAmount > highestDiscount) {
+                highestDiscount = res.discountAmount;
+                bestCouponResult = {
+                    ...res,
+                    code: coupon.code,
+                    couponCode: coupon.code,
+                    discountType: coupon.discountType,
+                    discountValue: coupon.discountValue,
+                    description: coupon.discountType === "percentage"
+                        ? `${coupon.discountValue}% platform discount`
+                        : `₹${coupon.discountValue} promotional discount`
+                };
+            }
+        }
+
+        return bestCouponResult;
+    } catch (err) {
+        console.error("findBestEligibleCoupon error:", err);
+        return null;
+    }
+};
+
 export default {
     validateAndApplyCoupon,
-    recordCouponUsage
+    recordCouponUsage,
+    findBestEligibleCoupon
 };

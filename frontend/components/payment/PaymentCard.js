@@ -75,6 +75,30 @@ export default function PaymentCard({
     }
   };
 
+  // Automatically evaluate and apply best eligible coupon on checkout mount
+  useEffect(() => {
+    let isMounted = true;
+    const autoApplyBestCoupon = async () => {
+      try {
+        const base = type === "organization_registration" ? PRICING_CONFIG.INDUSTRY_FEE : PRICING_CONFIG.TALENT_FEE;
+        const res = await paymentService.getBestCoupon(type, { baseAmount: base, userEmail, userName });
+        if (isMounted && res?.success && res.data) {
+          setAppliedCoupon({
+            code: res.data.code || res.data.couponCode,
+            couponCode: res.data.couponCode || res.data.code,
+            discountType: res.data.discountType,
+            discountValue: res.data.discountValue,
+            discountAmount: res.data.discountAmount,
+            finalAmount: res.data.finalAmount,
+            description: res.data.description,
+          });
+        }
+      } catch {}
+    };
+    autoApplyBestCoupon();
+    return () => { isMounted = false; };
+  }, [type, userEmail, userName]);
+
   // Initialize Order on mount or dependency changes
   useEffect(() => {
     initOrder();
@@ -628,44 +652,7 @@ export default function PaymentCard({
           </div>
 
           {/* Coupon Input Form */}
-          {!appliedCoupon ? (
-            <form onSubmit={handleApplyCoupon} style={{ display: "flex", gap: "8px" }}>
-              <input
-                type="text"
-                placeholder="Coupon code (e.g. VISMAYA10)"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                style={{
-                  flex: 1,
-                  height: "42px",
-                  padding: "0 14px",
-                  borderRadius: "6px",
-                  border: "1px solid #E8E2D4",
-                  fontSize: "14px",
-                  textTransform: "uppercase",
-                  outline: "none",
-                  boxSizing: "border-box",
-                }}
-              />
-              <button
-                type="submit"
-                disabled={isApplyingCoupon || !couponCode.trim()}
-                style={{
-                  height: "42px",
-                  padding: "0 18px",
-                  backgroundColor: "#F3EFE6",
-                  color: "#8A6B2E",
-                  border: "1px solid #E8E2D4",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  cursor: isApplyingCoupon || !couponCode.trim() ? "not-allowed" : "pointer",
-                }}
-              >
-                {isApplyingCoupon ? "Checking..." : "Apply"}
-              </button>
-            </form>
-          ) : (
+          {appliedCoupon && (
             <div
               style={{
                 display: "flex",
@@ -673,28 +660,18 @@ export default function PaymentCard({
                 justifyContent: "space-between",
                 backgroundColor: "#F3EFE6",
                 border: "1px solid #E8E2D4",
-                borderRadius: "6px",
-                padding: "8px 14px",
+                borderRadius: "8px",
+                padding: "10px 14px",
                 fontSize: "13px",
                 color: "#8A6B2E",
               }}
             >
-              <span>Applied: <strong>{appliedCoupon.code}</strong> ({appliedCoupon.description})</span>
-              <button
-                type="button"
-                onClick={handleRemoveCoupon}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#8A6B2E",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                  fontWeight: "600",
-                }}
-              >
-                Remove
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Sparkles size={16} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                <span>
+                  Automatic Discount Applied: <strong>{appliedCoupon.code}</strong> ({appliedCoupon.description || `${appliedCoupon.discountValue}${appliedCoupon.discountType === "percentage" ? "%" : "₹"} Off`})
+                </span>
+              </div>
             </div>
           )}
 
