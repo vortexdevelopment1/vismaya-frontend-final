@@ -28,7 +28,8 @@ Thumbs.db
 # Environment secret files (NEVER commit live secrets)
 .env
 .env.local
-.env.development.local
+.env.development
+*.zip.local
 .env.test.local
 .env.production.local
 .env.*.local
@@ -51,3 +52,4 @@ docs/
 .env.test
 .env.production
 .env.development
+*.zip
