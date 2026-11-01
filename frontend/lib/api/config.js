@@ -72,6 +72,8 @@ export const SUPPORTED_MODULES = [
  * @returns {boolean}
  */
 export function isRealMode(moduleName) {
+  // Admin module must always talk to the real backend for security, credential verification, and data persistence
+  if (moduleName === "admin") return true;
   const currentUseMock = process.env.NEXT_PUBLIC_USE_MOCK;
   const isMock = currentUseMock === undefined || currentUseMock === "" 
     ? true 

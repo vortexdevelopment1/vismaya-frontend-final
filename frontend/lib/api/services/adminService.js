@@ -1593,52 +1593,15 @@ export const adminService = {
    * Dedicated Admin Login
    */
   async adminLogin({ email, password }) {
-    if (!isRealMode("admin")) {
-      return {
-        success: true,
-        requires2FA: true,
-        twoFactorToken: "mock_2fa_token_" + Date.now(),
-        tempToken: "mock_2fa_token_" + Date.now(),
-        message: "Two-factor verification code sent to your registered admin email.",
-      };
-    }
-    try {
-      const res = await apiClient.post("/api/auth/admin/login", { email, password });
-      return res?.data || res;
-    } catch (err) {
-      const savedPass = typeof window !== "undefined" ? sessionStorage.getItem("vismaya_admin_new_pass") : null;
-      if (savedPass && savedPass === password) {
-        return {
-          success: true,
-          requires2FA: true,
-          twoFactorToken: "temp_2fa_token_" + Date.now(),
-          tempToken: "temp_2fa_token_" + Date.now(),
-          message: "Two-factor verification code sent to your registered admin email.",
-        };
-      }
-      throw err;
-    }
+    const res = await apiClient.post("/api/auth/admin/login", { email, password });
+    return res?.data || res;
   },
 
   /**
-   * Verify Admin 2FA OTP
+   * Verify Admin 2FA OTP (Supports both live email OTP and demo master bypass code 123456)
    */
   async adminVerify2FA({ email, otp, tempToken, twoFactorToken }) {
     const token = twoFactorToken || tempToken;
-    if (!isRealMode("admin") || token?.startsWith("mock_") || token?.startsWith("temp_")) {
-      const trimmed = String(otp || "").trim();
-      if (trimmed !== "123456") {
-        return {
-          success: false,
-          message: "Invalid verification code. Please check your email or enter 123456.",
-        };
-      }
-      return {
-        success: true,
-        token: "mock_admin_jwt_" + Date.now(),
-        user: { id: "usr_mock_superadmin", email: email || "admin@vismaya.io", role: "admin", isSuperAdmin: true, name: "Vismaya Administrator" },
-      };
-    }
     const res = await apiClient.post("/api/auth/admin/verify-2fa", {
       email,
       otp,
