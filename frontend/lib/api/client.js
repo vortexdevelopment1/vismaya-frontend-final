@@ -144,7 +144,7 @@ function handle401Unauthorized() {
  */
 export async function apiFetch(endpoint, options = {}) {
   const {
-    timeoutMs = 15000,
+    timeoutMs = 60000,
     params,
     headers = {},
     body,
