@@ -204,14 +204,14 @@ export const sendPaymentInvoiceEmail = async (params: PaymentInvoiceEmailParams)
     </div>
 
     <!-- Status Bar (using table for 100% email client compatibility, no flexbox bug) -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #F3EFE6; border-bottom: 1px solid #E8E2D4; padding: 12px 18px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #F3EFE6; border-bottom: 1px solid #E8E2D4;">
       <tr>
-        <td align="left" style="vertical-align: middle;">
-          <div style="font-size: 10px; color: #777970; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Tax Invoice</div>
+        <td align="left" style="vertical-align: middle; padding: 14px 10px 14px 20px;">
+          <div style="font-size: 10.5px; color: #777970; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Tax Invoice</div>
           <div style="font-size: 15px; font-weight: 700; color: #2B2D2A; word-break: break-all;">${params.invoiceNumber}</div>
         </td>
-        <td align="right" style="vertical-align: middle;">
-          <span style="display: inline-block; background: #2E7D32; color: #FFFFFF; padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; white-space: nowrap;">PAID &amp; VERIFIED</span>
+        <td align="right" style="vertical-align: middle; padding: 14px 20px 14px 10px;">
+          <span style="display: inline-block; background: #2E7D32; color: #FFFFFF; padding: 5px 11px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; white-space: nowrap;">PAID &amp; VERIFIED</span>
         </td>
       </tr>
     </table>
