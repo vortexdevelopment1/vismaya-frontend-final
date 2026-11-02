@@ -243,18 +243,6 @@ export const authService = {
         },
         token: "mock_jwt_token_auth",
       };
-    }
-
-    const res = await apiClient.post("/api/auth/login", { email, password });
-    const data = res?.data || res;
-    const rawUser = res?.user || res?.data?.user || (data?.email ? data : null);
-    const token = res?.token || res?.data?.token || data?.token;
-    return {
-      success: true,
-      user: rawUser ? mapUser(rawUser) : null,
-      token: token || null,
-      sessionId: res?.sessionId || data?.sessionId,
-    };
   },
 
   /**
