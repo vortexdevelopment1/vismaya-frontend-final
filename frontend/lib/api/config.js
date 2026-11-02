@@ -2,22 +2,21 @@
  * API Configuration & Feature Flags
  * 
  * Provides per-module toggles for switching between Mock mode and Real Backend API mode.
- * Mock mode is the DEFAULT (NEXT_PUBLIC_USE_MOCK=true).
+ * In production or deployed environments, Real Backend mode is the default.
  */
 
-// Comma-separated list of enabled modules when USE_MOCK is false (e.g. "auth,public")
-const rawModules = (process.env.NEXT_PUBLIC_API_MODULES || "").toLowerCase().trim();
+// Comma-separated list of enabled modules when USE_MOCK is false (e.g. "auth,public" or "*")
+const rawModules = (process.env.NEXT_PUBLIC_API_MODULES || "*").toLowerCase().trim();
 export const API_MODULES = rawModules
   ? rawModules.split(",").map((m) => m.trim()).filter(Boolean)
-  : [];
+  : ["*"];
 
 const rawUseMock = process.env.NEXT_PUBLIC_USE_MOCK;
-// Default to mock mode (true) if not explicitly set to false, or if no real API modules are configured
+// Default to real mode (false) unless explicitly requested to mock
 export const USE_MOCK =
-  rawUseMock === undefined ||
-  rawUseMock === "" ||
-  String(rawUseMock).toLowerCase() !== "false" ||
-  API_MODULES.length === 0;
+  rawUseMock !== undefined && rawUseMock !== ""
+    ? String(rawUseMock).toLowerCase() === "true"
+    : false;
 
 export const resolveApiUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -62,11 +61,7 @@ export const SUPPORTED_MODULES = [
 
 /**
  * Checks whether a specific feature module should use the real backend API.
- * Returns false if global USE_MOCK is true (default).
- * If USE_MOCK is false, returns true ONLY if:
- *   - NEXT_PUBLIC_API_MODULES is explicitly set to "*" or "all"
- *   - OR the specific module is explicitly listed in NEXT_PUBLIC_API_MODULES
- * An empty or missing NEXT_PUBLIC_API_MODULES means NO module is real.
+ * Returns false ONLY if global USE_MOCK is explicitly true.
  *
  * @param {string} moduleName - e.g. "auth", "public", "talent", "recruiter", "admin", "notifications", "uploads", "media", "payments"
  * @returns {boolean}
@@ -75,23 +70,19 @@ export function isRealMode(moduleName) {
   // Admin module must always talk to the real backend for security, credential verification, and data persistence
   if (moduleName === "admin") return true;
   const currentUseMock = process.env.NEXT_PUBLIC_USE_MOCK;
-  const isMock = currentUseMock === undefined || currentUseMock === "" 
-    ? true 
-    : currentUseMock.toLowerCase() !== "false";
+  const isMock = currentUseMock !== undefined && currentUseMock !== "" 
+    ? String(currentUseMock).toLowerCase() === "true"
+    : false;
 
   if (isMock) return false;
 
-  const currentModules = (process.env.NEXT_PUBLIC_API_MODULES || "").toLowerCase().trim();
+  const currentModules = (process.env.NEXT_PUBLIC_API_MODULES || "*").toLowerCase().trim();
   const modulesList = currentModules
     ? currentModules.split(",").map((m) => m.trim()).filter(Boolean)
-    : [];
+    : ["*"];
 
-  // An empty or missing NEXT_PUBLIC_API_MODULES means NO module is real
-  if (modulesList.length === 0) {
-    return false;
-  }
-
-  if (modulesList.includes("*") || modulesList.includes("all")) {
+  // An empty NEXT_PUBLIC_API_MODULES when not mock means default to real
+  if (modulesList.length === 0 || modulesList.includes("*") || modulesList.includes("all")) {
     return true;
   }
 
