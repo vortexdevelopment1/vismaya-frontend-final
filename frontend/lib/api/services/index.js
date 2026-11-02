@@ -11,3 +11,4 @@ export { notificationService } from "./notificationService.js";
 export { mediaService } from "./mediaService.js";
 export { paymentService } from "./paymentService.js";
 export { verificationService } from "./verificationService.js";
+export { legalService } from "./legalService.js";

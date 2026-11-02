@@ -7,6 +7,7 @@ import {
   Bell,
   CreditCard,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 
 export const recruiterNav = [
@@ -56,6 +57,12 @@ export const recruiterNav = [
     href: "/recruiter/credits",
     icon: CreditCard,
     match: ["/recruiter/credits", "/recruiter/credits/"],
+  },
+  {
+    title: "Verification",
+    href: "/recruiter/verification",
+    icon: ShieldCheck,
+    match: ["/recruiter/verification", "/recruiter/verification/"],
   },
   {
     title: "Settings",

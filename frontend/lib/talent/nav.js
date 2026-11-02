@@ -7,6 +7,7 @@ import {
   Video,
   Bell,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 
 export const talentNav = [
@@ -47,6 +48,11 @@ export const talentNav = [
     href: "/talent/notifications",
     icon: Bell,
     badgeKey: "unreadNotifications",
+  },
+  {
+    title: "KYC Verification",
+    href: "/talent/verification",
+    icon: ShieldCheck,
   },
   {
     title: "Settings",

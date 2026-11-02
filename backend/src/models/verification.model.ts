@@ -41,7 +41,7 @@ export interface IVerification extends Document {
     identityData?: IIdentityData;
     professionalData?: IProfessionalData;
     businessData?: IBusinessData;
-    status: "pending" | "verified" | "rejected" | "suspended";
+    status: "pending" | "under_review" | "additional_info_required" | "verified" | "rejected" | "suspended";
     rejectionReason?: string;
     moreInfoRequested: boolean;
     moreInfoNotes?: string;
@@ -115,6 +115,8 @@ const verificationSchema = new Schema<IVerification>(
             type: String,
             enum: [
                 "pending",
+                "under_review",
+                "additional_info_required",
                 "verified",
                 "rejected",
                 "suspended"

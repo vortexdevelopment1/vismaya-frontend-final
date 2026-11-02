@@ -134,7 +134,32 @@ export const submitProfessionalVerification = async (req: Request, res: Response
 export const submitBusinessVerification = async (req: Request, res: Response): Promise<any> => {
     try {
         const userId = req.user?.userId;
-        const { businessRegType, businessRegNumber, legalEntityName, documentUrl } = req.body;
+        const {
+            businessRegType,
+            businessRegNumber,
+            legalEntityName,
+            documentUrl,
+            businessRegistrationDocUrl,
+            businessRegistrationDocName,
+            gstin,
+            isGstExempt,
+            gstExemptionReason,
+            gstCertificateUrl,
+            gstCertificateDocName,
+            professionalProofType,
+            professionalProofUrl,
+            professionalProofDocUrl,
+            professionalProofDocName,
+            otherEvidenceUrls,
+            otherEvidenceDocNames,
+            responsiblePersonName,
+            responsiblePersonDesignation,
+            website,
+            location,
+            businessDescription
+        } = req.body;
+
+        const effectiveDocUrl = documentUrl || businessRegistrationDocUrl;
 
         const latestVerification = await Verification.findOne({ userId, verificationType: "organization_business" })
             .sort({ createdAt: -1, submittedAt: -1 });
@@ -142,16 +167,36 @@ export const submitBusinessVerification = async (req: Request, res: Response): P
         if (latestVerification && latestVerification.status === "rejected") {
             return res.status(403).json({
                 success: false,
-                message: "Your verification was rejected. Please contact Vismaya support."
+                message: "Your verification was rejected. Please contact Vismaya support at support@vismaya.com."
             });
         }
 
-        if (!businessRegType || !businessRegNumber || !legalEntityName || !documentUrl) {
+        if (!businessRegType || !businessRegNumber || !legalEntityName || !effectiveDocUrl) {
             return res.status(400).json({
                 success: false,
-                message: "Business registration type, number, legal entity name and document URL are required"
+                message: "Business registration type, number, legal entity name and document are required"
             });
         }
+
+        const businessData = {
+            businessRegType,
+            businessRegNumber,
+            legalEntityName,
+            documentUrl: effectiveDocUrl,
+            businessRegistrationDocUrl: effectiveDocUrl,
+            businessRegistrationDocName: businessRegistrationDocName || "Registration_Certificate.pdf",
+            gstin,
+            isGstExempt: Boolean(isGstExempt),
+            gstExemptionReason,
+            gstCertificateUrl,
+            gstCertificateDocName: gstCertificateDocName || "GST_Certificate.pdf",
+            professionalProofType,
+            professionalProofUrl,
+            professionalProofDocUrl,
+            professionalProofDocName,
+            otherEvidenceUrls: Array.isArray(otherEvidenceUrls) ? otherEvidenceUrls : [],
+            otherEvidenceDocNames: Array.isArray(otherEvidenceDocNames) ? otherEvidenceDocNames : []
+        };
 
         let verification = latestVerification;
 
@@ -159,28 +204,40 @@ export const submitBusinessVerification = async (req: Request, res: Response): P
             verification = new Verification({
                 userId,
                 verificationType: "organization_business",
-                businessData: {
-                    businessRegType,
-                    businessRegNumber,
-                    legalEntityName,
-                    documentUrl
-                },
+                businessData,
                 status: "pending",
                 submittedAt: new Date()
             });
         } else {
-            verification.businessData = {
-                businessRegType,
-                businessRegNumber,
-                legalEntityName,
-                documentUrl
-            };
+            verification.businessData = businessData;
             verification.status = "pending";
             verification.moreInfoRequested = false;
             verification.submittedAt = new Date();
         }
 
         await verification.save();
+
+        // Sync with Organization model if exists
+        try {
+            await Organization.findOneAndUpdate(
+                { $or: [{ userId }, { _id: userId }] },
+                {
+                    $set: {
+                        legalBusinessName: legalEntityName,
+                        businessRegNumber,
+                        gstin: gstin || undefined,
+                        verificationState: "pending",
+                        website: website || undefined,
+                        location: location || undefined,
+                        description: businessDescription || undefined,
+                        responsiblePersonName: responsiblePersonName || undefined,
+                        responsiblePersonDesignation: responsiblePersonDesignation || undefined
+                    }
+                }
+            );
+        } catch (orgErr) {
+            console.warn("Could not sync organization details on verification submit:", orgErr);
+        }
 
         res.status(200).json({
             success: true,
@@ -195,6 +252,58 @@ export const submitBusinessVerification = async (req: Request, res: Response): P
             success: false,
             message: "Something went wrong while submitting business verification"
         });
+    }
+};
+
+export const getVerificationDocument = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { verificationId } = req.params;
+        const { docKey = "documentFrontUrl" } = req.query;
+        const userId = req.user?.userId;
+        const userRole = req.user?.role;
+
+        const verification = await Verification.findById(verificationId);
+        if (!verification) {
+            return res.status(404).json({ success: false, message: "Verification record not found" });
+        }
+
+        const isOwner = String(verification.userId) === String(userId);
+        const isAdmin = userRole === "admin";
+
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({
+                success: false,
+                message: "Access Denied. You do not have permission to view this sensitive verification document."
+            });
+        }
+
+        // Extract safe document URL based on requested key
+        let targetUrl: string | undefined;
+        if (verification.identityData) {
+            const idData: any = verification.identityData;
+            targetUrl = idData[String(docKey)];
+        }
+        if (!targetUrl && verification.businessData) {
+            const bizData: any = verification.businessData;
+            targetUrl = bizData[String(docKey)] || bizData.documentUrl || bizData.businessRegistrationDocUrl;
+        }
+        if (!targetUrl && verification.professionalData) {
+            const profData: any = verification.professionalData;
+            targetUrl = profData.supportingDocumentUrls?.[0] || profData.creditsLinks?.[0];
+        }
+
+        if (!targetUrl) {
+            return res.status(404).json({ success: false, message: "Requested document file not found on this record" });
+        }
+
+        res.status(200).json({
+            success: true,
+            documentUrl: targetUrl,
+            verificationType: verification.verificationType
+        });
+    } catch (error) {
+        console.error("Get verification document error:", error);
+        res.status(500).json({ success: false, message: "Failed to access verification document" });
     }
 };
 

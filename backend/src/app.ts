@@ -22,6 +22,7 @@ import creditRoutes from "./routes/credit.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import taxonomyRoutes from "./routes/taxonomy.routes.js";
 import successStoryRoutes from "./routes/successStory.routes.js";
+import legalRoutes from "./routes/legal.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 
 const app = express();
@@ -135,6 +136,7 @@ app.use("/api/credits", creditRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/taxonomy", taxonomyRoutes);
 app.use("/api/success-stories", successStoryRoutes);
+app.use("/api/legal", legalRoutes);
 app.use("/api", publicRoutes);
 
 // Root welcome route
