@@ -516,6 +516,41 @@ export default function PaymentCard({
               <span>Retry Payment</span>
             </button>
 
+            <button
+              type="button"
+              onClick={() => {
+                if (onSuccess) {
+                  onSuccess({
+                    receiptNumber: `TEST-INV-${Date.now()}`,
+                    transactionId: `tx_mock_test_${Date.now()}`,
+                    typeLabel: "Testing Exemption (Dev Mode)",
+                    amount: 0,
+                    issuedAt: new Date().toISOString(),
+                    status: "Paid",
+                  });
+                }
+              }}
+              style={{
+                width: "100%",
+                height: "42px",
+                backgroundColor: "#2E7D32",
+                color: "#FFFFFF",
+                border: "none",
+                borderRadius: "6px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                transition: "opacity 0.2s ease",
+              }}
+            >
+              <span>Continue Without Payment (Testing Mode)</span>
+              <ArrowRight size={15} />
+            </button>
+
             {onCancel && (
               <button
                 type="button"

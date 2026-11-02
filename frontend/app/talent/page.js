@@ -1,5 +1,14 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function TalentRootPage() {
-  redirect("/talent/dashboard");
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/talent/dashboard");
+  }, [router]);
+
+  return null;
 }
