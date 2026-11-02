@@ -142,6 +142,184 @@ export const sendEmail = async ({
     }
 };
 
+
+export interface PaymentInvoiceEmailParams {
+    to: string;
+    name?: string;
+    invoiceNumber: string;
+    orderId: string;
+    paymentId: string;
+    packageName: string;
+    amount: number;
+    originalAmount?: number;
+    discountAmount?: number;
+    couponCode?: string;
+    paidAt?: Date | string;
+    paymentGateway?: string;
+}
+
+export const sendPaymentInvoiceEmail = async (params: PaymentInvoiceEmailParams): Promise<{ success: boolean; message?: string; messageId?: string }> => {
+    const formattedDate = new Date(params.paidAt || Date.now()).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+
+    const origAmt = params.originalAmount || params.amount;
+    const discAmt = params.discountAmount || 0;
+    const finalAmt = params.amount;
+    const gstAmount = Math.round((finalAmt * 18) / 118);
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Vismaya Studios Invoice</title>
+  <style>
+    body, table, td, div, p, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; }
+    @media only screen and (max-width: 480px) {
+      .invoice-wrapper { width: 100% !important; border-radius: 8px !important; }
+      .invoice-body { padding: 18px 12px !important; }
+      .invoice-box { padding: 12px 10px !important; }
+      .cell-label { font-size: 12px !important; width: 40% !important; padding: 6px 2px 6px 0 !important; }
+      .cell-val { font-size: 12px !important; width: 60% !important; padding: 6px 0 6px 4px !important; }
+      .code-val { font-size: 10.5px !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 12px 6px; background-color: #FAF9F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #2B2D2A;">
+  <div class="invoice-wrapper" style="max-width: 560px; margin: 0 auto; background: #FFFFFF; border: 1px solid #E8E2D4; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+    
+    <!-- Brand Header -->
+    <div style="background: #1B1E1A; padding: 24px 20px; text-align: center; color: #FAF9F7;">
+      <h1 style="font-size: 22px; font-weight: 700; letter-spacing: 2px; color: #FAF9F7; margin: 0;">VISMAYA <span style="color: #C5A869;">STUDIOS</span></h1>
+      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #A09E96; margin-top: 4px;">India's Verified Entertainment Platform</div>
+    </div>
+
+    <!-- Status Bar (using table for 100% email client compatibility, no flexbox bug) -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #F3EFE6; border-bottom: 1px solid #E8E2D4; padding: 12px 18px;">
+      <tr>
+        <td align="left" style="vertical-align: middle;">
+          <div style="font-size: 10px; color: #777970; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Tax Invoice</div>
+          <div style="font-size: 15px; font-weight: 700; color: #2B2D2A; word-break: break-all;">${params.invoiceNumber}</div>
+        </td>
+        <td align="right" style="vertical-align: middle;">
+          <span style="display: inline-block; background: #2E7D32; color: #FFFFFF; padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; white-space: nowrap;">PAID &amp; VERIFIED</span>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Main Content -->
+    <div class="invoice-body" style="padding: 24px 18px;">
+      <div style="font-size: 16px; font-weight: 600; margin-bottom: 6px; color: #2B2D2A;">Hello ${params.name || "Valued Artist"},</div>
+      <p style="font-size: 13.5px; line-height: 1.55; color: #5A584F; margin: 0 0 20px;">
+        Thank you for your payment on Vismaya Studios. Your transaction has been successfully confirmed. Below is your official tax receipt.
+      </p>
+      
+      <!-- Invoice Summary Card -->
+      <div class="invoice-box" style="background: #FAF9F7; border: 1px solid #E8E2D4; border-radius: 8px; padding: 14px 14px; margin-bottom: 20px; box-sizing: border-box;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width: 100% !important; max-width: 100% !important; table-layout: fixed !important; border-collapse: collapse;">
+          <tr>
+            <td class="cell-label" style="width: 42%; vertical-align: top; padding: 7px 4px 7px 0; color: #777970; font-size: 12.5px; border-bottom: 1px dashed #E8E2D4; word-break: break-word;">Invoice Number</td>
+            <td class="cell-val" style="width: 58%; vertical-align: top; padding: 7px 0 7px 4px; font-weight: 600; color: #2B2D2A; text-align: right; border-bottom: 1px dashed #E8E2D4; word-break: break-all;">${params.invoiceNumber}</td>
+          </tr>
+          <tr>
+            <td class="cell-label" style="width: 42%; vertical-align: top; padding: 7px 4px 7px 0; color: #777970; font-size: 12.5px; border-bottom: 1px dashed #E8E2D4; word-break: break-word;">Date &amp; Time</td>
+            <td class="cell-val" style="width: 58%; vertical-align: top; padding: 7px 0 7px 4px; font-weight: 600; color: #2B2D2A; text-align: right; border-bottom: 1px dashed #E8E2D4; word-break: break-word;">${formattedDate}</td>
+          </tr>
+          <tr>
+            <td class="cell-label" style="width: 42%; vertical-align: top; padding: 7px 4px 7px 0; color: #777970; font-size: 12.5px; border-bottom: 1px dashed #E8E2D4; word-break: break-word;">Transaction ID</td>
+            <td class="cell-val code-val" style="width: 58%; vertical-align: top; padding: 7px 0 7px 4px; font-family: SFMono-Regular, Consolas, Monaco, monospace; font-size: 11px; line-height: 1.4; color: #2B2D2A; text-align: right; border-bottom: 1px dashed #E8E2D4; word-break: break-all; overflow-wrap: anywhere;">${params.paymentId}</td>
+          </tr>
+          <tr>
+            <td class="cell-label" style="width: 42%; vertical-align: top; padding: 7px 4px 7px 0; color: #777970; font-size: 12.5px; border-bottom: 1px dashed #E8E2D4; word-break: break-word;">Order ID</td>
+            <td class="cell-val code-val" style="width: 58%; vertical-align: top; padding: 7px 0 7px 4px; font-family: SFMono-Regular, Consolas, Monaco, monospace; font-size: 11px; line-height: 1.4; color: #2B2D2A; text-align: right; border-bottom: 1px dashed #E8E2D4; word-break: break-all; overflow-wrap: anywhere;">${params.orderId}</td>
+          </tr>
+          <tr>
+            <td class="cell-label" style="width: 42%; vertical-align: top; padding: 7px 4px 7px 0; color: #777970; font-size: 12.5px; border-bottom: 1px dashed #E8E2D4; word-break: break-word;">Payment Gateway</td>
+            <td class="cell-val" style="width: 58%; vertical-align: top; padding: 7px 0 7px 4px; font-weight: 600; color: #2B2D2A; text-align: right; border-bottom: 1px dashed #E8E2D4; word-break: break-word;">${params.paymentGateway || "Cashfree Payment Gateway"}</td>
+          </tr>
+          <tr>
+            <td class="cell-label" style="width: 42%; vertical-align: top; padding: 7px 4px 7px 0; color: #777970; font-size: 12.5px; border-bottom: 1px dashed #E8E2D4; word-break: break-word;">Package / Plan</td>
+            <td class="cell-val" style="width: 58%; vertical-align: top; padding: 7px 0 7px 4px; font-weight: 600; color: #2B2D2A; text-align: right; border-bottom: 1px dashed #E8E2D4; word-break: break-word;">${params.packageName}</td>
+          </tr>
+          ${discAmt > 0 ? `
+          <tr>
+            <td class="cell-label" style="width: 42%; vertical-align: top; padding: 7px 4px 7px 0; color: #777970; font-size: 12.5px; border-bottom: 1px dashed #E8E2D4; word-break: break-word;">Original Price</td>
+            <td class="cell-val" style="width: 58%; vertical-align: top; padding: 7px 0 7px 4px; color: #7A786E; text-decoration: line-through; text-align: right; border-bottom: 1px dashed #E8E2D4;">₹${origAmt.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td class="cell-label" style="width: 42%; vertical-align: top; padding: 7px 4px 7px 0; color: #2E7D32; font-size: 12.5px; border-bottom: 1px dashed #E8E2D4; word-break: break-word;">Coupon Discount ${params.couponCode ? `<br><span style="font-size: 11px; opacity: 0.9;">(${params.couponCode})</span>` : ""}</td>
+            <td class="cell-val" style="width: 58%; vertical-align: top; padding: 7px 0 7px 4px; font-weight: 700; color: #2E7D32; text-align: right; border-bottom: 1px dashed #E8E2D4;">-₹${discAmt.toLocaleString()}</td>
+          </tr>
+          ` : ""}
+          <tr>
+            <td class="cell-label" style="width: 42%; vertical-align: top; padding: 7px 4px 7px 0; color: #777970; font-size: 12px; border-bottom: 1px dashed #E8E2D4; word-break: break-word;">Applicable GST (18% incl.)</td>
+            <td class="cell-val" style="width: 58%; vertical-align: top; padding: 7px 0 7px 4px; color: #2B2D2A; text-align: right; border-bottom: 1px dashed #E8E2D4;">₹${gstAmount.toLocaleString()}</td>
+          </tr>
+          <tr>
+            <td class="cell-label" style="width: 42%; vertical-align: middle; padding: 12px 4px 4px 0; font-size: 14px; font-weight: 700; color: #2B2D2A;">Total Paid</td>
+            <td class="cell-val" style="width: 58%; vertical-align: middle; padding: 12px 0 4px 4px; font-size: 18px; font-weight: 800; color: #8A6B2E; text-align: right;">₹${finalAmt.toLocaleString()}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Billed to Section -->
+      <div style="font-size: 12.5px; color: #5A584F; line-height: 1.5; background: #FFFFFF; border: 1px solid #F0ECE1; border-radius: 6px; padding: 10px 12px;">
+        <strong style="color: #2B2D2A;">Billed To:</strong><br>
+        Name: ${params.name || "Registered Member"}<br>
+        Email: ${params.to}
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background: #FAF9F7; border-top: 1px solid #E8E2D4; padding: 18px 20px; text-align: center; font-size: 11.5px; color: #777970; line-height: 1.5;">
+      <p style="margin: 0 0 4px;">Questions about your invoice? Reach us at <a href="mailto:vortexcubesdevelopment@gmail.com" style="color: #8A6B2E; font-weight: 600; text-decoration: underline;">support@vismayastudios.com</a></p>
+      <p style="margin: 0; color: #A09E96;">&copy; ${new Date().getFullYear()} Vismaya Studios. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+    const text = `
+VISMAYA STUDIOS - OFFICIAL TAX INVOICE
+========================================
+Invoice Number: ${params.invoiceNumber}
+Date: ${formattedDate}
+Status: PAID & VERIFIED
+
+Billed To: ${params.name || "Member"} (${params.to})
+Package: ${params.packageName}
+${discAmt > 0 ? `Original Price: ₹${origAmt}\nCoupon Discount (${params.couponCode || ""}): -₹${discAmt}\n` : ""}
+Total Amount Paid: ₹${finalAmt} (includes 18% GST)
+
+Transaction ID: ${params.paymentId}
+Order ID: ${params.orderId}
+Gateway: ${params.paymentGateway || "Cashfree Payment Gateway"}
+
+Thank you for your payment. Your membership is now active.
+
+Best regards,
+Vismaya Studios Billing Team
+`;
+
+    return sendEmail({
+        to: params.to,
+        subject: `Vismaya Payment Tax Invoice - ${params.invoiceNumber} (₹${finalAmt})`,
+        text,
+        html,
+    });
+};
+
 export default {
-    sendEmail
+    sendEmail,
+    sendPaymentInvoiceEmail
 };

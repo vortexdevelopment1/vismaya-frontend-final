@@ -492,31 +492,32 @@ export const verifyPayment = async (req: Request, res: Response): Promise<any> =
                         orderStatus: cfVerification.orderStatus,
                     });
                 }
-                transaction.status = "successful";
-                transaction.paymentId = cfVerification.paymentId || "cf_pay_" + Date.now();
-                transaction.paidAt = new Date();
-                transaction.gatewayResponse = cfVerification.raw as any;
-                await transaction.save();
+                const fulfillment = await fulfilTransaction({
+                    orderId: transaction.orderId,
+                    paymentId: cfVerification.paymentId || ("cf_pay_" + Date.now()),
+                    gatewayResponse: cfVerification.raw as Record<string, unknown>,
+                });
 
-                const fulfillment = await fulfilTransaction(transaction);
+                const fulfilledTx = fulfillment.transaction || transaction;
+
                 return res.status(200).json({
                     success: true,
                     message: "Cashfree payment verified and membership activated successfully",
                     mode: "cashfree",
-                    transaction,
+                    transaction: fulfilledTx,
                     fulfillment,
                     receipt: {
-                        receiptNumber: transaction.invoiceNumber || "INV-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
-                        transactionId: transaction.paymentId || orderId,
-                        orderId: transaction.orderId,
-                        amount: transaction.amount,
-                        originalAmount: transaction.originalAmount,
-                        discountAmount: transaction.discountAmount,
-                        couponCode: transaction.couponCode,
-                        currency: transaction.currency,
-                        issuedAt: transaction.paidAt || new Date().toISOString(),
-                        type: transaction.packageType,
-                        typeLabel: (PACKAGE_CONFIG as any)[transaction.packageType]?.name || "Platform Payment",
+                        receiptNumber: fulfilledTx.invoiceNumber || ("INV-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000)),
+                        transactionId: fulfilledTx.paymentId || orderId,
+                        orderId: fulfilledTx.orderId,
+                        amount: fulfilledTx.amount,
+                        originalAmount: fulfilledTx.originalAmount || fulfilledTx.amount,
+                        discountAmount: fulfilledTx.discountAmount || 0,
+                        couponCode: fulfilledTx.couponCode,
+                        currency: fulfilledTx.currency,
+                        issuedAt: fulfilledTx.paidAt || new Date().toISOString(),
+                        type: fulfilledTx.packageType,
+                        typeLabel: (PACKAGE_CONFIG as any)[fulfilledTx.packageType]?.name || "Platform Payment",
                         status: "Paid",
                     }
                 });

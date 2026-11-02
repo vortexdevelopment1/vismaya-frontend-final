@@ -7,7 +7,7 @@ import { getNextInvoiceNumber } from "../models/counter.model.js";
 import { addPurchasedCredits, initializeOrganizationCredits } from "./credit.service.js";
 import { recordCouponUsage } from "./coupon.service.js";
 import { notifyUser } from "./notification.service.js";
-import { sendEmail } from "./email.service.js";
+import { sendEmail, sendPaymentInvoiceEmail } from "./email.service.js";
 
 export interface PackageMeta {
     amount: number;
@@ -183,11 +183,24 @@ export const fulfilTransaction = async ({
                 });
             }
 
-            if (user && user.email) {
-                await sendEmail({
-                    to: user.email,
-                    subject: `Vismaya Payment Receipt - ${invoiceNumber}`,
-                    text: `Hello ${user.name},\n\nThank you for your payment of ₹${transaction.amount} on Vismaya Creative Studios.\n\nInvoice Number: ${invoiceNumber}\nPackage: ${PACKAGE_CONFIG[transaction.packageType]?.name || transaction.packageType}\nOrder ID: ${transaction.orderId}\nPayment ID: ${resolvedPaymentId}\n\nYour account has been activated.\n\nBest regards,\nVismaya Billing Team`
+            const targetEmail = user?.email || transaction.customerEmail || transaction.email;
+            const targetName = user?.name || (transaction.gatewayResponse as any)?.customer_details?.customer_name || "Valued Artist";
+
+            if (targetEmail) {
+                const pkgMeta = PACKAGE_CONFIG[transaction.packageType] || { name: transaction.packageType };
+                await sendPaymentInvoiceEmail({
+                    to: targetEmail,
+                    name: targetName,
+                    invoiceNumber,
+                    orderId: transaction.orderId,
+                    paymentId: resolvedPaymentId,
+                    packageName: pkgMeta.name,
+                    amount: transaction.amount,
+                    originalAmount: transaction.originalAmount || transaction.amount,
+                    discountAmount: transaction.discountAmount || 0,
+                    couponCode: transaction.couponCode,
+                    paidAt: transaction.paidAt || new Date(),
+                    paymentGateway: transaction.paymentGateway === "cashfree" ? "Cashfree Payment Gateway" : "Razorpay"
                 });
             }
         } catch (notifErr: any) {

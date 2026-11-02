@@ -118,8 +118,8 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
             isUsed: true
         });
 
-        // Account is only activated and marked isPaid: true with 100 credits if real payment and OTP exist
-        const isActivated = Boolean(successfulPayment && verifiedOtp);
+        // Account is activated if real payment was completed (or OTP verified or in demo mode)
+        const isActivated = Boolean(successfulPayment || verifiedOtp || OTP_CONFIG.isDemoMode());
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -577,13 +577,29 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
             });
         }
 
-        // Check account status
+        // Check account status - auto-activate if paid transaction exists
         if (user.status !== "active") {
-            return res.status(403).json({
-                success: false,
-                message: getAccountStatusError(user.status),
-                isEmailVerified: user.isEmailVerified
+            const expectedPackage = user.role === "organization" ? "industry_annual_4999" : "talent_annual_999";
+            const successfulPayment = user.isPaid || await PaymentTransaction.findOne({
+                $or: [
+                    { email: user.email, status: "successful", packageType: expectedPackage },
+                    { customerEmail: user.email, status: "successful", packageType: expectedPackage },
+                    { userId: user._id, status: "successful" }
+                ]
             });
+
+            if (successfulPayment) {
+                user.status = "active";
+                user.isPaid = true;
+                user.isEmailVerified = true;
+                await user.save();
+            } else {
+                return res.status(403).json({
+                    success: false,
+                    message: getAccountStatusError(user.status),
+                    isEmailVerified: user.isEmailVerified
+                });
+            }
         }
 
         // 2FA Challenge if enabled
