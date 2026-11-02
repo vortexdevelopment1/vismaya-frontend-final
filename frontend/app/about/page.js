@@ -169,6 +169,9 @@ export default function AboutPage() {
                         gap: "16px",
                         borderRadius: "var(--radius-card, 6px)",
                         minHeight: "220px",
+                        height: "100%",
+                        boxSizing: "border-box",
+                        whiteSpace: "normal",
                       }}
                     >
                       <div
@@ -197,7 +200,17 @@ export default function AboutPage() {
                       >
                         {item.title}
                       </h3>
-                      <p style={{ fontSize: "14px", color: "var(--text-secondary, #777970)", lineHeight: "22px", margin: 0 }}>
+                      <p
+                        style={{
+                          fontSize: "14px",
+                          color: "var(--text-secondary, #777970)",
+                          lineHeight: "22px",
+                          margin: 0,
+                          whiteSpace: "normal",
+                          wordBreak: "normal",
+                          overflowWrap: "break-word",
+                        }}
+                      >
                         {item.desc}
                       </p>
                     </div>
@@ -251,6 +264,30 @@ export default function AboutPage() {
       <PublicFooter />
 
       <style jsx>{`
+        :global(.about-pillar-card) {
+          white-space: normal !important;
+        }
+        :global(.about-pillar-card p) {
+          white-space: normal !important;
+          word-break: normal !important;
+          overflow-wrap: break-word !important;
+        }
+        :global(.about-pillars-header),
+        :global(.about-pillars-heading) {
+          white-space: normal !important;
+        }
+        @media (min-width: 1024px) {
+          :global(.about-pillars-grid) {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 20px !important;
+          }
+        }
+        @media (max-width: 1023px) and (min-width: 641px) {
+          :global(.about-pillars-grid) {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 18px !important;
+          }
+        }
         @media (max-width: 640px) {
           :global(.about-header-section) {
             padding-top: 24px !important;

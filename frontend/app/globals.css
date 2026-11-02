@@ -665,7 +665,7 @@ p, h1, h2, h3, h4, h5, h6 {
   word-break: normal;
 }
 
-td, th, button, .status-badge, [class*="badge"], [class*="pill"] {
+td, th, button, .status-badge, [class*="badge"], .pill, .status-pill, [class*="status-pill"], [class*="badge-pill"], [class*="filter-pill"] {
   overflow-wrap: normal !important;
   word-break: normal !important;
 }
@@ -913,7 +913,11 @@ button,
 .btn-primary,
 .btn-secondary,
 [class*="btn"],
-[class*="pill"],
+.pill,
+.status-pill,
+[class*="status-pill"],
+[class*="badge-pill"],
+[class*="filter-pill"],
 [class*="badge"],
 [class*="chip"] {
   box-sizing: border-box;
@@ -1646,7 +1650,11 @@ td:has(button) {
 .status-badge,
 .status-pill,
 [class*="badge"],
-[class*="pill"],
+.pill,
+.status-pill,
+[class*="status-pill"],
+[class*="badge-pill"],
+[class*="filter-pill"],
 [class*="chip"],
 button,
 a[class*="btn"],
