@@ -222,25 +222,39 @@
    -------------------------------------------------------------------------- */
 
 /* Tablet (768px - 1024px) */
-@media (max-width: 900px) {
+@media (max-width: 900px) and (min-width: 641px) {
   .public-footer-light {
-    padding: 56px 24px 28px;
+    padding: 36px 24px 24px !important;
   }
 
   .public-footer-top-row {
-    flex-direction: column;
-    gap: 40px;
+
+    flex-direction: column !important;
+    gap: 24px !important;
   }
 
   .public-footer-brand-col {
-    max-width: 100%;
+    max-width: 100% !important;
+    flex: none !important;
+    height: auto !important;
+    min-height: auto !important;
+    gap: 12px !important;
   }
 
   .public-footer-nav-grid {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 32px;
+    gap: 24px !important;
+  }
+
+  .public-footer-description {
+    max-width: 620px !important;
+  }
+
+  .public-footer-bottom-bar {
+    margin-top: 24px !important;
+    padding-top: 18px !important;
   }
 }
 
