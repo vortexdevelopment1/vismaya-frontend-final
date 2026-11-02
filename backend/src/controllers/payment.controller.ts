@@ -5,13 +5,17 @@ import PaymentTransaction from "../models/paymentTransaction.model.js";
 import Organization from "../models/organization.model.js";
 import { validateAndApplyCoupon, findBestEligibleCoupon } from "../services/coupon.service.js";
 import { fulfilTransaction, PACKAGE_CONFIG } from "../services/paymentFulfillment.service.js";
+import CashfreeService from "../services/cashfree.service.js";
 
 /**
  * Determine payment mode ('mock' | 'razorpay')
  * Defaults to 'mock' if not set.
  */
-export const getPaymentMode = (): "mock" | "razorpay" => {
-    return (process.env.PAYMENT_MODE as "mock" | "razorpay") || "mock";
+export const getPaymentMode = (): "mock" | "razorpay" | "cashfree" => {
+    if (CashfreeService.isConfigured() || process.env.PAYMENT_MODE === "cashfree") {
+        return "cashfree";
+    }
+    return (process.env.PAYMENT_MODE as any) || "mock";
 };
 
 let razorpayClient: Razorpay | null = null;
@@ -169,14 +173,11 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<a
         const isRegistrationOrder = packageType === "talent_annual_999" || packageType === "industry_annual_4999";
         const emailInput = req.body.email || req.body.userEmail || req.user?.email;
         let normalizedEmail: string | undefined = undefined;
+        let effectiveUserId = userId;
 
-        if (!userId) {
-            if (!isRegistrationOrder) {
-                return res.status(401).json({
-                    success: false,
-                    message: "Authentication is required to purchase credit packs"
-                });
-            }
+        if (isRegistrationOrder) {
+            // For registration orders, the user is newly onboarding.
+            // Do not restrict by existing token role (e.g. if an admin or tester has a stale token in browser).
             if (!emailInput || typeof emailInput !== "string" || !emailInput.includes("@")) {
                 return res.status(400).json({
                     success: false,
@@ -184,6 +185,12 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<a
                 });
             }
             normalizedEmail = emailInput.trim().toLowerCase();
+            effectiveUserId = undefined;
+        } else if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication is required to purchase credit packs"
+            });
         } else {
             if (pkg.allowedRole !== role) {
                 return res.status(403).json({
@@ -228,6 +235,73 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<a
             finalAmount = couponResult.finalAmount;
             discountAmount = couponResult.discountAmount;
             appliedCouponCode = couponResult.couponCode;
+        }
+
+        if (mode === "cashfree") {
+            const uniqueSuffix = Date.now().toString() + "_" + crypto.randomBytes(3).toString("hex");
+            const orderId = "order_vis_" + uniqueSuffix;
+
+            let cfOrder: any;
+            try {
+                cfOrder = await CashfreeService.createOrder({
+                    orderId,
+                    amount: finalAmount,
+                    currency: "INR",
+                    customerEmail: normalizedEmail || "user@vismaya.io",
+                    customerPhone: req.body.phone || req.body.mobile || (req.user as any)?.mobile,
+                    customerName: req.body.userName || req.body.name || (req.user as any)?.name || "Customer",
+                });
+            } catch (cfErr: any) {
+                console.error("[Cashfree] Create order error:", cfErr);
+                return res.status(502).json({
+                    success: false,
+                    message: cfErr?.message || "Failed to create order with Cashfree gateway"
+                });
+            }
+
+            const transaction: any = await PaymentTransaction.create({
+                userId: effectiveUserId || undefined,
+                email: normalizedEmail,
+                customerEmail: normalizedEmail,
+                organizationId: organizationId || undefined,
+                packageType,
+                amount: finalAmount,
+                originalAmount: pkg.amount,
+                discountAmount,
+                couponCode: appliedCouponCode || undefined,
+                currency: "INR",
+                orderId: cfOrder.orderId,
+                status: "created",
+                creditsAwarded: pkg.credits,
+                paymentGateway: "cashfree",
+                gatewayResponse: cfOrder
+            });
+
+            return res.status(201).json({
+                success: true,
+                message: "Cashfree payment order created successfully",
+                mode: "cashfree",
+                gateway: "cashfree",
+                orderId: cfOrder.orderId,
+                paymentSessionId: cfOrder.paymentSessionId,
+                amount: transaction.amount,
+                currency: transaction.currency,
+                cashfreeEnv: CashfreeService.getEnvironment(),
+                order: {
+                    orderId: cfOrder.orderId,
+                    paymentSessionId: cfOrder.paymentSessionId,
+                    gateway: "cashfree",
+                    mode: "cashfree",
+                    amount: transaction.amount,
+                    originalAmount: transaction.originalAmount,
+                    discountAmount: transaction.discountAmount,
+                    couponCode: transaction.couponCode,
+                    currency: transaction.currency,
+                    packageType: transaction.packageType,
+                    packageName: pkg.name,
+                    cashfreeEnv: CashfreeService.getEnvironment(),
+                }
+            });
         }
 
         if (mode === "razorpay") {
@@ -405,6 +479,53 @@ export const verifyPayment = async (req: Request, res: Response): Promise<any> =
                 mode,
                 transaction
             });
+        }
+
+        // Cashfree payment verification
+        if (mode === "cashfree" || transaction.paymentGateway === "cashfree") {
+            try {
+                const cfVerification = await CashfreeService.verifyOrder(orderId);
+                if (!cfVerification.isPaid) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Payment status is " + cfVerification.orderStatus + ". Transaction has not been completed yet.",
+                        orderStatus: cfVerification.orderStatus,
+                    });
+                }
+                transaction.status = "successful";
+                transaction.paymentId = cfVerification.paymentId || "cf_pay_" + Date.now();
+                transaction.paidAt = new Date();
+                transaction.gatewayResponse = cfVerification.raw as any;
+                await transaction.save();
+
+                const fulfillment = await fulfilTransaction(transaction);
+                return res.status(200).json({
+                    success: true,
+                    message: "Cashfree payment verified and membership activated successfully",
+                    mode: "cashfree",
+                    transaction,
+                    fulfillment,
+                    receipt: {
+                        receiptNumber: transaction.invoiceNumber || "INV-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
+                        transactionId: transaction.paymentId || orderId,
+                        orderId: transaction.orderId,
+                        amount: transaction.amount,
+                        originalAmount: transaction.originalAmount,
+                        discountAmount: transaction.discountAmount,
+                        couponCode: transaction.couponCode,
+                        currency: transaction.currency,
+                        issuedAt: transaction.paidAt || new Date().toISOString(),
+                        type: transaction.packageType,
+                        typeLabel: (PACKAGE_CONFIG as any)[transaction.packageType]?.name || "Platform Payment",
+                        status: "Paid",
+                    }
+                });
+            } catch (cfErr: any) {
+                return res.status(500).json({
+                    success: false,
+                    message: cfErr?.message || "Cashfree payment verification failed"
+                });
+            }
         }
 
         // Signature verification

@@ -1,3 +1,79 @@
+let cashfreeScriptPromise = null;
+export function loadCashfreeScript() {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (window.Cashfree) return Promise.resolve(window.Cashfree);
+  if (cashfreeScriptPromise) return cashfreeScriptPromise;
+
+  cashfreeScriptPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[src*="cashfree.js"]');
+    if (existing) {
+      if (window.Cashfree) return resolve(window.Cashfree);
+      existing.addEventListener("load", () => resolve(window.Cashfree));
+      existing.addEventListener("error", () => reject(new Error("Failed to load Cashfree checkout script")));
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+    script.async = true;
+    script.onload = () => resolve(window.Cashfree);
+    script.onerror = () => reject(new Error("Failed to load Cashfree checkout script"));
+    document.head.appendChild(script);
+  });
+  return cashfreeScriptPromise;
+}
+
+export async function openCashfreeCheckout(orderData, options = {}) {
+  await loadCashfreeScript();
+
+  const isProd = process.env.NODE_ENV === "production" && orderData.cashfreeEnv === "production";
+  const cashfree = window.Cashfree({
+    mode: isProd ? "production" : "sandbox",
+  });
+
+  const paymentSessionId = orderData.paymentSessionId || orderData.payment_session_id;
+  if (!paymentSessionId) {
+    throw new Error("Cashfree paymentSessionId is required to start checkout");
+  }
+
+  const orderId = orderData.orderId || orderData.order_id;
+
+  return new Promise((resolve) => {
+    const checkoutOptions = {
+      paymentSessionId,
+      redirectTarget: "_modal",
+    };
+
+    cashfree.checkout(checkoutOptions).then(async (result) => {
+      if (result.error) {
+        const errorMsg = result.error.message || "Payment cancelled or failed";
+        const err = new Error(errorMsg);
+        if (options.onFailure) options.onFailure(err);
+        resolve();
+        return;
+      }
+
+      // Verify payment with backend
+      try {
+        const verifyRes = await apiClient.post("/api/payments/verify", {
+          orderId,
+        });
+        const data = verifyRes?.data || verifyRes;
+        if (options.onSuccess) options.onSuccess(data);
+      } catch (err) {
+        const errorMsg =
+          err?.status === 400 || err?.statusCode === 400 || err?.response?.status === 400
+            ? "Payment verification failed, please retry or contact support"
+            : (err?.message || "Payment verification failed");
+        const customErr = new Error(errorMsg);
+        customErr.status = err?.status || 400;
+        customErr.originalError = err;
+        if (options.onFailure) options.onFailure(customErr);
+      }
+      resolve();
+    });
+  });
+}
+
 /**
  * Payments & Credits API Service
  * Handles one-time registration fees, credit purchases, profile view unlocks,
@@ -456,7 +532,8 @@ export const paymentService = {
         body.couponCode = metadata.couponCode;
       }
       try {
-        const res = await apiClient.post("/api/payments/create-order", body);
+        const requestOptions = isRegistration ? { headers: { Authorization: "" } } : {};
+        const res = await apiClient.post("/api/payments/create-order", body, requestOptions);
         const raw = res?.data || res;
         const orderInfo = raw?.order || {};
         const orderId = raw?.orderId || orderInfo.orderId || raw?.razorpayOrderId;
@@ -470,6 +547,9 @@ export const paymentService = {
           razorpayOrderId,
           keyId,
           mode,
+          gateway: raw?.gateway || orderInfo.gateway || (mode === "cashfree" ? "cashfree" : undefined),
+          paymentSessionId: raw?.paymentSessionId || orderInfo.paymentSessionId,
+          cashfreeEnv: raw?.cashfreeEnv || orderInfo.cashfreeEnv || "sandbox",
           type,
           packageType: orderInfo.packageType || packageType,
           label: orderInfo.packageName || (type === "organization_registration" ? "Organization Registration" : "Talent Registration"),
@@ -493,7 +573,7 @@ export const paymentService = {
         };
       } catch (err) {
         console.warn("API create-order notice:", err?.message);
-        if (!isRegistration) throw err;
+        if (isRealMode("payments") || !isRegistration) throw err;
       }
     }
 
@@ -1219,6 +1299,8 @@ export const paymentService = {
   },
 
   openRazorpayCheckout,
+  openCashfreeCheckout,
+  loadCashfreeScript,
   verifyPayment,
 };
 

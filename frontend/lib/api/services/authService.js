@@ -173,7 +173,7 @@ export const authService = {
     // If running in live deployment or real mode is enabled, authenticate directly with real backend API
     const isLive = typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1");
     if (isRealMode("auth") || isLive) {
-      const res = await apiClient.post("/api/auth/login", { email, password });
+      const res = await apiClient.post("/api/auth/login", { email, password }, { skipAuthRedirect: true });
       const data = res?.data || res;
       const rawUser = res?.user || res?.data?.user || (data?.email ? data : null);
       const token = res?.token || res?.data?.token || data?.token;
@@ -200,7 +200,7 @@ export const authService = {
       if (!mockUser) {
         // Fall back to real backend in case the user registered in MongoDB
         try {
-          const res = await apiClient.post("/api/auth/login", { email, password });
+          const res = await apiClient.post("/api/auth/login", { email, password }, { skipAuthRedirect: true });
           const data = res?.data || res;
           const rawUser = res?.user || res?.data?.user || (data?.email ? data : null);
           const token = res?.token || res?.data?.token || data?.token;

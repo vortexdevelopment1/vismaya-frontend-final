@@ -166,6 +166,57 @@ export default function PaymentCard({
 
     const mode = order.mode || (isRealMode("payments") ? "razorpay" : "mock");
 
+    // Cashfree Mode
+    if (mode === "cashfree" || order.gateway === "cashfree" || order.paymentSessionId) {
+      try {
+        await paymentService.openCashfreeCheckout(
+          {
+            orderId: order.orderId,
+            paymentSessionId: order.paymentSessionId,
+            cashfreeEnv: order.cashfreeEnv,
+            amount: order.finalAmount || order.amount,
+            userName,
+            userEmail,
+          },
+          {
+            onSuccess: (verifyRes) => {
+              const tx = verifyRes?.transaction || {};
+              const r = verifyRes?.receipt || {};
+              const baseAmt = r.originalAmount || tx.originalAmount || order.baseAmount || 999;
+              const paidAmt = r.amount || tx.amount || order.finalAmount || 899;
+              const discAmt = r.discountAmount || tx.discountAmount || order.discountAmount || (baseAmt > paidAmt ? baseAmt - paidAmt : 0);
+              const coupon = r.couponCode || tx.couponCode || order.couponCode || appliedCoupon?.code || "";
+
+              const receiptData = {
+                receiptNumber: r.receiptNumber || tx.invoiceNumber || `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+                transactionId: r.transactionId || tx.paymentId || tx.orderId || order.orderId,
+                typeLabel: r.typeLabel || order.label || "Platform Payment",
+                amount: paidAmt,
+                originalAmount: baseAmt,
+                discountAmount: discAmt,
+                couponCode: coupon,
+                issuedAt: r.issuedAt || tx.paidAt || tx.createdAt || new Date().toISOString(),
+              };
+              setReceipt(receiptData);
+              setPaymentState("success");
+            },
+            onFailure: (err) => {
+              setPaymentState("failed");
+              setErrorMessage(err?.message || "Payment verification failed, please retry or contact support");
+            },
+            onDismiss: () => {
+              setPaymentState("failed");
+              setErrorMessage("Payment was cancelled. You can retry whenever you are ready.");
+            },
+          }
+        );
+      } catch (err) {
+        setPaymentState("failed");
+        setErrorMessage(err?.message || "Failed to initialize Cashfree gateway.");
+      }
+      return;
+    }
+
     // Real Razorpay Mode
     if (mode === "razorpay") {
       try {
@@ -362,8 +413,26 @@ export default function PaymentCard({
               <span style={{ color: "#5A584F" }}>Description</span>
               <span style={{ fontWeight: "500", color: "#2B2D2A" }}>{receipt.typeLabel}</span>
             </div>
+            {Boolean(receipt.discountAmount && receipt.discountAmount > 0) && (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#5A584F" }}>Original Package Price</span>
+                  <span style={{ color: "#7A786E", textDecoration: "line-through" }}>
+                    ₹{(receipt.originalAmount || (receipt.amount + receipt.discountAmount)).toLocaleString()}
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#2E7D32" }}>
+                    Coupon Discount {receipt.couponCode ? `(${receipt.couponCode})` : ""}
+                  </span>
+                  <span style={{ fontWeight: "600", color: "#2E7D32" }}>
+                    -₹{receipt.discountAmount.toLocaleString()}
+                  </span>
+                </div>
+              </>
+            )}
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#5A584F" }}>Amount Paid</span>
+              <span style={{ color: "#5A584F" }}>Final Amount Paid</span>
               <span style={{ fontWeight: "700", color: "#8A6B2E", fontSize: "16px" }}>
                 ₹{receipt.amount.toLocaleString()}
               </span>

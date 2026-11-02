@@ -13,6 +13,7 @@ import AuthStatus from "@/components/auth/AuthStatus";
 import { useAuth } from "@/context/AuthContext";
 import { ArrowRight, ArrowLeft, Lock, Mail, AlertCircle } from "lucide-react";
 import { isRealMode } from "@/lib/api/config";
+import { toFrontendRole, getDashboardPath as resolveDashboardPath } from "@/lib/api/roles";
 
 function LoginFormContent() {
   const router = useRouter();
@@ -61,11 +62,27 @@ function LoginFormContent() {
         setAuthStatus("success");
         // Keep the form disabled and DO NOT reset this state when the router navigates;
         // the state disappears naturally when the new page mounts.
+        const userRole = toFrontendRole(res.user.role);
+        const defaultDashboard = resolveDashboardPath(res.user.role);
+
+        let finalDestination = defaultDashboard;
         if (redirectPath) {
-          router.push(redirectPath);
-        } else {
-          router.push(getDashboardPath());
+          const isTargetAdmin = redirectPath.startsWith("/admin");
+          const isTargetRecruiter = redirectPath.startsWith("/recruiter");
+          const isTargetTalent = redirectPath.startsWith("/talent");
+
+          if (userRole === "admin" && isTargetAdmin) {
+            finalDestination = redirectPath;
+          } else if (userRole === "recruiter" && isTargetRecruiter) {
+            finalDestination = redirectPath;
+          } else if (userRole === "talent" && isTargetTalent) {
+            finalDestination = redirectPath;
+          } else if (!isTargetAdmin && !isTargetRecruiter && !isTargetTalent) {
+            finalDestination = redirectPath;
+          }
         }
+
+        router.replace(finalDestination);
       } else {
         if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
         setAuthStatus("idle");

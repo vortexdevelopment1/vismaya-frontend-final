@@ -652,6 +652,10 @@ function RegisterPageContent() {
       return;
     }
 
+    if (typeof window !== "undefined" && password) {
+      sessionStorage.setItem("vismaya_reg_pwd", password);
+    }
+
     const normalizedMobile = normalizeIndianMobile(currentMobile);
     if (selectedRole === "organization") {
       setOrgPhone(normalizedMobile);
@@ -834,10 +838,11 @@ function RegisterPageContent() {
       const rawContact = selectedRole === "organization" ? orgPhone : phone;
       const cleanContact = normalizeIndianMobile(rawContact);
       const effectiveWebsite = professionalProofUrl.trim() || (website ? website.trim() : undefined);
+      const effectivePassword = password || (typeof window !== "undefined" ? sessionStorage.getItem("vismaya_reg_pwd") : "") || "";
       const payload = {
         role: selectedRole === "organization" ? "organization" : "talent",
         email: email.trim(),
-        password,
+        password: effectivePassword,
         name: name.trim(),
         studioName: selectedRole === "organization" ? name.trim() : undefined,
         city: city || "Mumbai",
@@ -880,6 +885,7 @@ function RegisterPageContent() {
             try {
               sessionStorage.removeItem("vismaya_draft_token");
               sessionStorage.removeItem("vismaya_reg_session_active");
+              sessionStorage.removeItem("vismaya_reg_pwd");
               localStorage.removeItem("vismaya_registration_draft");
             } catch (e) {}
           }
