@@ -170,8 +170,22 @@ export const authService = {
    * @param {Object} credentials { email, password }
    */
   async login({ email, password }) {
-    if (!isRealMode("auth")) {
-      const registeredMockUsers = {
+    // If running in live deployment or real mode is enabled, authenticate directly with real backend API
+    const isLive = typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1");
+    if (isRealMode("auth") || isLive) {
+      const res = await apiClient.post("/api/auth/login", { email, password });
+      const data = res?.data || res;
+      const rawUser = res?.user || res?.data?.user || (data?.email ? data : null);
+      const token = res?.token || res?.data?.token || data?.token;
+      return {
+        success: true,
+        user: rawUser ? mapUser(rawUser) : null,
+        token: token || null,
+        sessionId: res?.sessionId || data?.sessionId,
+      };
+    }
+
+    const registeredMockUsers = {
         "aanya.sharma@vismaya.io": { role: "talent", name: "Aanya Sharma", password: "password123" },
         "aarav.sharma@gmail.com": { role: "talent", name: "Aarav Sharma", password: "password123" },
         "recruiter@zee.com": { role: "organization", name: "Zee Films Recruiter", password: "password123" },
@@ -184,6 +198,27 @@ export const authService = {
       const mockUser = registeredMockUsers[normalized];
 
       if (!mockUser) {
+        // Fall back to real backend in case the user registered in MongoDB
+        try {
+          const res = await apiClient.post("/api/auth/login", { email, password });
+          const data = res?.data || res;
+          const rawUser = res?.user || res?.data?.user || (data?.email ? data : null);
+          const token = res?.token || res?.data?.token || data?.token;
+          if (res?.success && rawUser) {
+            return {
+              success: true,
+              user: mapUser(rawUser),
+              token: token || null,
+              sessionId: res?.sessionId || data?.sessionId,
+            };
+          }
+        } catch (apiErr) {
+          const msg = apiErr?.response?.data?.message || apiErr?.message;
+          if (msg && !msg.toLowerCase().includes("network")) {
+            return { success: false, message: msg };
+          }
+        }
+
         return {
           success: false,
           message: "This email is not registered with us.",

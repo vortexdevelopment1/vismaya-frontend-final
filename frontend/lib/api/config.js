@@ -2,7 +2,7 @@
  * API Configuration & Feature Flags
  * 
  * Provides per-module toggles for switching between Mock mode and Real Backend API mode.
- * In production or deployed environments, Real Backend mode is the default.
+ * On deployed environments (like vercel.app), Real Backend mode is ALWAYS enforced.
  */
 
 // Comma-separated list of enabled modules when USE_MOCK is false (e.g. "auth,public" or "*")
@@ -12,11 +12,23 @@ export const API_MODULES = rawModules
   : ["*"];
 
 const rawUseMock = process.env.NEXT_PUBLIC_USE_MOCK;
-// Default to real mode (false) unless explicitly requested to mock
+
+// Check if code is running in a live deployed browser (not localhost)
+export const isLiveDeployment = () => {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname.toLowerCase();
+    return !host.includes("localhost") && !host.includes("127.0.0.1") && host !== "";
+  }
+  return process.env.NODE_ENV === "production";
+};
+
+// Default to real mode (false) on live deployments or unless explicitly requested to mock
 export const USE_MOCK =
-  rawUseMock !== undefined && rawUseMock !== ""
-    ? String(rawUseMock).toLowerCase() === "true"
-    : false;
+  typeof window !== "undefined" && isLiveDeployment()
+    ? false
+    : (rawUseMock !== undefined && rawUseMock !== ""
+        ? String(rawUseMock).toLowerCase() === "true"
+        : false);
 
 export const resolveApiUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -61,14 +73,20 @@ export const SUPPORTED_MODULES = [
 
 /**
  * Checks whether a specific feature module should use the real backend API.
- * Returns false ONLY if global USE_MOCK is explicitly true.
+ * On live deployments (e.g. vercel.app), this ALWAYS returns true to ensure database connectivity.
  *
  * @param {string} moduleName - e.g. "auth", "public", "talent", "recruiter", "admin", "notifications", "uploads", "media", "payments"
  * @returns {boolean}
  */
 export function isRealMode(moduleName) {
+  // Always use real backend API on live deployed sites (vercel.app, onrender.com, etc.)
+  if (isLiveDeployment()) {
+    return true;
+  }
+
   // Admin module must always talk to the real backend for security, credential verification, and data persistence
   if (moduleName === "admin") return true;
+
   const currentUseMock = process.env.NEXT_PUBLIC_USE_MOCK;
   const isMock = currentUseMock !== undefined && currentUseMock !== "" 
     ? String(currentUseMock).toLowerCase() === "true"
