@@ -162,7 +162,13 @@ export default function OrganizationDashboardPage() {
       <PageHeader
         title="Organization Overview"
         subtitle="Manage casting projects, post verified opportunities, screen talent submissions, and track audition self-tapes."
-        badge={orgProfile?.companyName ? `${orgProfile.companyName} • Verified Production House` : "Verified Production House"}
+        badge={
+          orgProfile?.isVerified
+            ? `${orgProfile?.companyName || "Organization"} • Verified Production House`
+            : orgProfile?.verificationStatus === "pending"
+            ? "Verification Pending Review"
+            : "Organization Portal"
+        }
         action={
           <div className="recruiter-dash-header-actions" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <button
@@ -175,16 +181,95 @@ export default function OrganizationDashboardPage() {
               <span>{credits.balance} Credits</span>
             </button>
             <Link
+              href="/recruiter/projects"
+              className="btn-secondary dash-action-btn"
+              style={{ fontSize: "13px", fontWeight: "600", height: "36px", padding: "0 14px", gap: "6px", borderRadius: "10px", textDecoration: "none" }}
+            >
+              <Users size={15} />
+              <span>Find Talent</span>
+            </Link>
+            <Link
               href="/recruiter/opportunities/new"
               className="btn-primary dash-action-btn"
               style={{ fontSize: "13px", fontWeight: "600", height: "36px", padding: "0 18px", gap: "6px", borderRadius: "10px" }}
             >
               <PlusCircle size={15} />
-              <span>Post Opportunity</span>
+              <span>Submit Opportunity</span>
             </Link>
           </div>
         }
       />
+
+      {/* Verification Status Widget (Spec §1 & §35 - displayed ONLY while verification is pending) */}
+      {(orgProfile?.verificationStatus === "pending" || (!orgProfile?.isVerified && orgProfile !== null)) && (
+        <div
+          style={{
+            backgroundColor: "rgba(255, 188, 0, 0.08)",
+            border: "1px solid rgba(255, 188, 0, 0.35)",
+            borderRadius: "14px",
+            padding: "16px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "16px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0, flex: "1 1 auto" }}>
+            <div
+              style={{
+                width: "42px",
+                height: "42px",
+                borderRadius: "12px",
+                backgroundColor: "rgba(255, 188, 0, 0.15)",
+                color: "#8A6B2E",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <ShieldCheck size={22} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <strong style={{ fontSize: "0.95rem", color: "#2B2D2A" }}>
+                  Organization Verification Under Review
+                </strong>
+                <span
+                  style={{
+                    fontSize: "0.725rem",
+                    fontWeight: 700,
+                    color: "#8A6B2E",
+                    backgroundColor: "#F3EFE6",
+                    padding: "2px 8px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  Pending Compliance
+                </span>
+              </div>
+              <p style={{ fontSize: "0.825rem", color: "#5A584F", margin: "3px 0 0 0", lineHeight: "1.4" }}>
+                Your production profile is being vetted by Vismaya Casting Desk. You can explore talent and draft projects while compliance documents are verified.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/recruiter/settings"
+            className="btn-secondary"
+            style={{
+              height: "36px",
+              padding: "0 16px",
+              fontSize: "12.5px",
+              fontWeight: 600,
+              borderRadius: "8px",
+              textDecoration: "none",
+            }}
+          >
+            <span>View Verification Status</span>
+          </Link>
+        </div>
+      )}
 
       {/* Organization Credits Overview Card */}
       <div
@@ -259,9 +344,13 @@ export default function OrganizationDashboardPage() {
               fontWeight: "600",
               borderRadius: "8px",
               textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
             }}
           >
-            <span>View Ledger &amp; History</span>
+            <Eye size={15} />
+            <span>Recently Viewed Talent</span>
           </Link>
           <button
             type="button"

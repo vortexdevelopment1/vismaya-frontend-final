@@ -5,7 +5,10 @@ import Opportunity from "../models/opportunity.model.js";
 import Project from "../models/project.model.js";
 import Organization from "../models/organization.model.js";
 import TalentProfile from "../models/talentProfile.model.js";
+import CreditLedger from "../models/creditLedger.model.js";
 import CreditViewHistory from "../models/creditViewHistory.model.js";
+import { consumeProfileViewCredit } from "../services/credit.service.js";
+import { recordProfileView } from "../services/analytics.service.js";
 import ProjectShortlist from "../models/projectShortlist.model.js";
 import MediaItem from "../models/mediaItem.model.js";
 import Verification from "../models/verification.model.js";
@@ -658,17 +661,17 @@ export const getOpportunityApplications = async (req: Request, res: Response): P
 };
 
 /**
- * Get Applicant Portfolio
- * Full applicant portfolio view under Section 39 privacy rules:
- * - Public and Industry-only items returned; Private items NEVER.
- * - Disputed/hidden items NEVER.
- * - Strips forbidden contact info (email, phone, guardian) and hidden attributes (physical, remuneration).
- * - Direct applicant viewing from own opportunity does NOT consume a profile-view credit.
+ * Get Applicant Portfolio & Profile View
+ * Enforces Vismaya Master Spec v2.0 (Sections 4, 5, 29 & 39):
+ * 1. Limited preview is FREE (displaying basic profile, verified badges, profession, career stage, application details).
+ * 2. Opening FULL profile consumes 1 profile-view credit, unless the organization has an active 7-day repeat view exemption.
+ * 3. Never exposes private email, mobile, remuneration, or private physical attributes.
  */
 export const getApplicantPortfolio = async (req: Request, res: Response): Promise<any> => {
     try {
         const userId = req.user?.userId;
         const { applicationId } = req.params;
+        const unlockRequested = req.query.unlock === "true" || req.body?.unlock === true;
 
         const application = await Application.findById(String(applicationId));
         if (!application) {
@@ -691,6 +694,53 @@ export const getApplicantPortfolio = async (req: Request, res: Response): Promis
         if (!profile) {
             return res.status(404).json({ success: false, message: "Talent profile not found for this applicant" });
         }
+
+        // 7-Day Repeat View Exemption Check
+        const now = new Date();
+        const activeExemption = await CreditViewHistory.findOne({
+            organizationId: organization._id,
+            talentId: application.talentId,
+            exemptionExpiresAt: { $gt: now }
+        });
+
+        let isUnlocked = Boolean(activeExemption);
+        let creditConsumed = false;
+        let isExempt = Boolean(activeExemption);
+        let exemptionExpiresAt = activeExemption?.exemptionExpiresAt;
+
+        // If not already unlocked and full unlock was requested by organization
+        if (!isUnlocked && unlockRequested) {
+            const creditResult = await consumeProfileViewCredit(organization._id, application.talentId);
+            if (!creditResult.allowed) {
+                return res.status(402).json({
+                    success: false,
+                    errorCode: "INSUFFICIENT_CREDITS",
+                    message: creditResult.message || "Insufficient profile-view credits to unlock full talent profile.",
+                    currentBalance: creditResult.balance ?? 0,
+                    buyMoreViews: (creditResult.balance ?? 0) === 0,
+                    purchaseOptions: [
+                        { name: "Single Profile View", priceINR: 100, credits: 1 },
+                        { name: "25 Profile Views Bundle", priceINR: 2000, credits: 25 }
+                    ]
+                });
+            }
+            isUnlocked = true;
+            creditConsumed = creditResult.consumed;
+            isExempt = creditResult.isExempt || false;
+            exemptionExpiresAt = creditResult.exemptionExpiresAt;
+
+            // Record view analytics
+            recordProfileView({
+                talentId: application.talentId,
+                viewerId: userId,
+                viewerRole: "organization",
+                isFullProfile: true
+            });
+        }
+
+        // Current credit ledger balance
+        const ledger = await CreditLedger.findOne({ organizationId: organization._id });
+        const remainingCredits = ledger?.balance ?? 0;
 
         // Verification Badges
         const verifications = await Verification.find({
@@ -752,7 +802,11 @@ export const getApplicantPortfolio = async (req: Request, res: Response): Promis
             workingCities: profile.workingCities || [],
             skills: profile.skills || [],
             languages: profile.languages || [],
-            credits: (profile.credits || []).map((c: any) => ({
+            verificationBadges,
+            profileCompletionPercentage: profile.profileCompletionPercentage,
+            isUnlocked,
+            // Full details locked until credit is consumed / 7-day exemption is active
+            credits: isUnlocked ? (profile.credits || []).map((c: any) => ({
                 _id: c._id,
                 projectTitle: c.projectTitle,
                 projectType: c.projectType,
@@ -763,19 +817,24 @@ export const getApplicantPortfolio = async (req: Request, res: Response): Promis
                 characterName: c.characterName,
                 referenceLink: c.referenceLink,
                 isVerifiedCredit: c.isVerifiedCredit
-            })),
-            training: profile.training || [],
-            awards: profile.awards || [],
-            verificationBadges,
+            })) : [],
+            training: isUnlocked ? (profile.training || []) : [],
+            awards: isUnlocked ? (profile.awards || []) : [],
             media: {
-                photos,
-                videos,
-                documents,
-                externalLinks
+                photos: isUnlocked ? photos : photos.slice(0, 1),
+                videos: isUnlocked ? videos : [],
+                documents: isUnlocked ? documents : [],
+                externalLinks: isUnlocked ? externalLinks : []
             },
-            profileCompletionPercentage: profile.profileCompletionPercentage,
-            creditConsumed: false,
-            creditExemptReason: "Direct application to organization opportunity"
+            creditInfo: {
+                isUnlocked,
+                consumed: creditConsumed,
+                isExempt,
+                remainingCredits,
+                exemptionExpiresAt,
+                lowBalanceWarning: remainingCredits < 10,
+                buyMoreViews: remainingCredits === 0
+            }
         };
 
         const effectiveAppRole = application.roleName || (opportunity.roles && opportunity.roles[0]?.roleName) || opportunity.role || "—";
@@ -798,6 +857,7 @@ export const getApplicantPortfolio = async (req: Request, res: Response): Promis
 
         res.status(200).json({
             success: true,
+            isUnlocked,
             application: applicationDetails,
             portfolio: safePortfolio
         });
@@ -805,6 +865,15 @@ export const getApplicantPortfolio = async (req: Request, res: Response): Promis
         console.error("Get applicant portfolio error:", error);
         res.status(500).json({ success: false, message: "Failed to retrieve applicant portfolio" });
     }
+};
+
+/**
+ * POST /api/applications/:applicationId/unlock-profile
+ * Explicit unlock endpoint for candidate's full profile
+ */
+export const unlockApplicantProfile = async (req: Request, res: Response): Promise<any> => {
+    req.query.unlock = "true";
+    return getApplicantPortfolio(req, res);
 };
 
 export const markApplicationUnderReview = async (req: Request, res: Response): Promise<any> => {

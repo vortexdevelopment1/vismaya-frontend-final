@@ -430,7 +430,7 @@ export const recruiterService = {
    * Direct applicant viewing from own opportunity does NOT consume a profile-view credit.
    * @param {string} applicationId
    */
-  async getApplicantPortfolio(applicationId) {
+  async getApplicantPortfolio(applicationId, options = {}) {
     if (!isRealMode("applications") || !isMongoId(String(applicationId || ""))) {
       const mockApp = mockApplications.find((a) => a.id === applicationId || a._id === applicationId) || {
         _id: applicationId,
@@ -477,7 +477,12 @@ export const recruiterService = {
       };
     }
 
-    const res = await apiClient.get(`/api/applications/${applicationId}/portfolio`);
+    const endpoint = options?.unlock
+      ? `/api/applications/${applicationId}/unlock-profile`
+      : `/api/applications/${applicationId}/portfolio`;
+    const res = options?.unlock
+      ? await apiClient.post(endpoint, {})
+      : await apiClient.get(endpoint);
     return {
       success: true,
       data: res?.data || res

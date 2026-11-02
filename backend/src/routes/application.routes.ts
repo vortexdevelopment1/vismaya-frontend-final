@@ -15,6 +15,7 @@ import {
     requestReapplication,
     getOpportunityApplications,
     getApplicantPortfolio,
+    unlockApplicantProfile,
     markApplicationUnderReview,
     shortlistApplication,
     selectApplication,
@@ -89,6 +90,13 @@ router.get(
     authenticateUser,
     authorizeRoles("organization"),
     getApplicantPortfolio
+);
+
+router.post(
+    "/:applicationId/unlock-profile",
+    authenticateUser,
+    authorizeRoles("organization"),
+    unlockApplicantProfile
 );
 
 router.patch(

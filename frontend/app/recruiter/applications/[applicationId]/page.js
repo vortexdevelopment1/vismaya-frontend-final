@@ -30,6 +30,7 @@ import {
   ChevronRight,
   ExternalLink,
   FileText,
+  Eye,
 } from "lucide-react";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import PageHeader from "@/components/shared/PageHeader";
@@ -90,6 +91,9 @@ export default function ApplicationDetailPage() {
         if (portfolioRes?.data) {
           const appRaw = portfolioRes.data.application || {};
           const portRaw = portfolioRes.data.portfolio || {};
+          const unlocked = Boolean(portRaw.isUnlocked);
+          setIsUnlocked(unlocked);
+          setCreditStatus(portRaw.creditInfo || { isUnlocked: unlocked });
           const mappedApp = {
             id: String(appRaw._id || appRaw.id || applicationId),
             _id: String(appRaw._id || appRaw.id || applicationId),
@@ -211,24 +215,75 @@ export default function ApplicationDetailPage() {
   const [isSelectedModalOpen, setIsSelectedModalOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState("");
 
-  // Credits gating state
+  // Credits gating state (Vismaya Spec v2.0 - Section 4 & 5)
   const [creditStatus, setCreditStatus] = useState(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
   const [showLowBalanceModal, setShowLowBalanceModal] = useState(false);
   const [showZeroCreditsModal, setShowZeroCreditsModal] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
 
   const checkProfileAccess = async (confirmed = false) => {
-    // Opening applicant's profile from own opportunity does NOT consume a profile-view credit (Spec §39 & Round 28)
-    setCreditStatus({ allowed: true, exempt: true, reason: "applicant_consent" });
-    setShowLowBalanceModal(false);
-    setShowZeroCreditsModal(false);
+    if (isUnlocked) return;
+
+    let remaining = creditStatus?.remainingCredits;
+    if (remaining === undefined) {
+      try {
+        const credRes = await paymentService.getCredits();
+        remaining = credRes?.balance ?? 0;
+      } catch (e) {
+        remaining = 0;
+      }
+    }
+
+    if (remaining === 0) {
+      setShowZeroCreditsModal(true);
+      return;
+    }
+
+    if (remaining < 10 && !confirmed) {
+      setShowLowBalanceModal(true);
+      return;
+    }
+
+    await performUnlock();
   };
 
-  useEffect(() => {
-    if (application) {
-      checkProfileAccess(false);
+  const performUnlock = async () => {
+    setIsUnlocking(true);
+    try {
+      const res = await recruiterService.getApplicantPortfolio(applicationId, { unlock: true });
+      if (res?.data?.portfolio) {
+        const portRaw = res.data.portfolio;
+        setIsUnlocked(true);
+        setCreditStatus(portRaw.creditInfo || { isUnlocked: true });
+        setShowLowBalanceModal(false);
+        setRealApplication((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            talentProfile: {
+              ...portRaw,
+              avatar: portRaw.profilePhoto,
+              skills: Array.isArray(portRaw.skills)
+                ? portRaw.skills.map((s) => (typeof s === "string" ? s : s.name || s.skillName || ""))
+                : [],
+              city: portRaw.currentCity || "Mumbai",
+            },
+          };
+        });
+      }
+    } catch (err) {
+      if (err?.response?.status === 402) {
+        setShowZeroCreditsModal(true);
+      } else {
+        alert(err?.response?.data?.message || err?.message || "Failed to unlock candidate full profile");
+      }
+    } finally {
+      setIsUnlocking(false);
+      setShowLowBalanceModal(false);
     }
-  }, [application?.id]);
+  };
 
   // Action Handlers
   const handleShortlist = async () => {
@@ -896,13 +951,124 @@ export default function ApplicationDetailPage() {
             </span>
           </div>
         )}
+
+        {/* Profile-View Credit Access Status (Spec §4 & §5) */}
+        {!isUnlocked ? (
+          <div
+            style={{
+              backgroundColor: "rgba(255, 188, 0, 0.08)",
+              border: "1px solid rgba(255, 188, 0, 0.35)",
+              borderRadius: "14px",
+              padding: "16px 20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "16px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: "1 1 auto" }}>
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "10px",
+                  backgroundColor: "rgba(255, 188, 0, 0.15)",
+                  color: "var(--gold)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Lock size={20} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <strong style={{ fontSize: "0.9rem", color: "#eceaf5", display: "block" }}>
+                  Limited Profile Preview Active
+                </strong>
+                <p style={{ fontSize: "0.825rem", color: "#a3acc2", margin: "3px 0 0 0", lineHeight: "1.4" }}>
+                  Application details &amp; candidate overview are free. Unlocking the full profile (full portfolio, verified work credits, and showreels) consumes 1 credit and grants 7 days of unlimited repeat access.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <span style={{ fontSize: "0.8rem", color: "#a3acc2", whiteSpace: "nowrap" }}>
+                Balance: <strong style={{ color: "var(--gold)" }}>{creditStatus?.remainingCredits ?? creditStatus?.balance ?? 0} credits</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => checkProfileAccess(false)}
+                disabled={isUnlocking}
+                className="btn-primary"
+                style={{
+                  height: "38px",
+                  padding: "0 18px",
+                  fontSize: "13px",
+                  fontWeight: "700",
+                  borderRadius: "10px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  cursor: isUnlocking ? "wait" : "pointer",
+                }}
+              >
+                <Eye size={15} />
+                <span>{isUnlocking ? "Unlocking..." : "Unlock Full Profile (1 Credit)"}</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              backgroundColor: "rgba(52, 211, 153, 0.08)",
+              border: "1px solid rgba(52, 211, 153, 0.35)",
+              borderRadius: "14px",
+              padding: "14px 18px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "14px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <CheckCircle2 size={20} style={{ color: "#34d399", flexShrink: 0 }} />
+              <div>
+                <strong style={{ fontSize: "0.875rem", color: "#eceaf5" }}>
+                  Full Candidate Profile Unlocked
+                </strong>
+                <p style={{ fontSize: "0.8rem", color: "#a3acc2", margin: "2px 0 0 0" }}>
+                  7-day unlimited repeat review access active for your organization{creditStatus?.exemptionExpiresAt ? ` (valid until ${new Date(creditStatus.exemptionExpiresAt).toLocaleDateString()})` : ""}. Re-opening within 7 days consumes 0 credits.
+                </p>
+              </div>
+            </div>
+            <span
+              style={{
+                fontSize: "0.75rem",
+                fontWeight: "700",
+                color: "#34d399",
+                backgroundColor: "rgba(52, 211, 153, 0.15)",
+                border: "1px solid rgba(52, 211, 153, 0.3)",
+                padding: "4px 10px",
+                borderRadius: "8px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              <CheckCircle2 size={12} /> Active Access
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Grid: Profile Details (1fr) + Auditions / History (360px) */}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 360px", gap: "24px", width: "100%" }} className="applicant-profile-grid">
-        {/* Left Column: Details, Physical, Skills, Bio, Portfolio */}
+        {/* Left Column: Details, Credentials, Skills, Bio, Portfolio */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Physical Attributes Card */}
+          {/* Verified Talent Credentials & Specs (Spec §4 Compliant - Private Physical Attributes Excluded) */}
           <div
             style={{
               backgroundColor: "var(--bg-glass)",
@@ -925,7 +1091,7 @@ export default function ApplicationDetailPage() {
               }}
             >
               <User size={18} style={{ color: "var(--gold)" }} />
-              <span>Physical Attributes & Specs</span>
+              <span>Artist Credentials &amp; Verification</span>
             </h2>
 
             <div
@@ -936,28 +1102,32 @@ export default function ApplicationDetailPage() {
               }}
             >
               <div style={{ backgroundColor: "rgba(255, 255, 255, 0.04)", padding: "12px 14px", borderRadius: "12px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
-                <span style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block" }}>Height</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>5'9" (175 cm)</strong>
+                <span style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block" }}>Vismaya ID</span>
+                <strong style={{ fontSize: "0.9rem", color: "var(--gold)" }}>{prof.vismayaId || "VIS-TAL-8291"}</strong>
               </div>
               <div style={{ backgroundColor: "rgba(255, 255, 255, 0.04)", padding: "12px 14px", borderRadius: "12px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
-                <span style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block" }}>Weight</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>64 kg</strong>
+                <span style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block" }}>Primary Profession</span>
+                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>{prof.primaryProfession || prof.role || "Actor / Performer"}</strong>
               </div>
               <div style={{ backgroundColor: "rgba(255, 255, 255, 0.04)", padding: "12px 14px", borderRadius: "12px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
-                <span style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block" }}>Eye Color</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>Dark Brown</strong>
+                <span style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block" }}>Career Stage</span>
+                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>{prof.careerStage || "Professional"}</strong>
               </div>
               <div style={{ backgroundColor: "rgba(255, 255, 255, 0.04)", padding: "12px 14px", borderRadius: "12px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
-                <span style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block" }}>Hair Color / Style</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>Black / Wavy</strong>
+                <span style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block" }}>Primary Base</span>
+                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>{prof.city || prof.currentCity || "Mumbai"}, India</strong>
               </div>
               <div style={{ backgroundColor: "rgba(255, 255, 255, 0.04)", padding: "12px 14px", borderRadius: "12px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
-                <span style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block" }}>Complexion</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>Fair / Wheatish</strong>
+                <span style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block" }}>Identity Verification</span>
+                <strong style={{ fontSize: "0.9rem", color: "#34d399", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  <CheckCircle2 size={14} /> KYC Verified
+                </strong>
               </div>
               <div style={{ backgroundColor: "rgba(255, 255, 255, 0.04)", padding: "12px 14px", borderRadius: "12px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
-                <span style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block" }}>Body Type</span>
-                <strong style={{ fontSize: "0.9rem", color: "#eceaf5" }}>Athletic / Fit</strong>
+                <span style={{ fontSize: "0.75rem", color: "#a3acc2", display: "block" }}>Profile Status</span>
+                <strong style={{ fontSize: "0.9rem", color: "var(--gold)" }}>
+                  {prof.profileCompletionPercentage ? `${prof.profileCompletionPercentage}% Complete` : "Fully Verified"}
+                </strong>
               </div>
             </div>
           </div>
@@ -1134,9 +1304,9 @@ export default function ApplicationDetailPage() {
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
               {[
-                { title: "Frontal Headshot", tag: "Studio Neutral" },
-                { title: "Profile / Side", tag: "Cinematic Lighting" },
-                { title: "Full Body Shot", tag: "Natural Light" },
+                { title: "Frontal Headshot", tag: "Studio Neutral", locked: false },
+                { title: "Profile / Side", tag: "Cinematic Lighting", locked: !isUnlocked },
+                { title: "Full Body Shot", tag: "Natural Light", locked: !isUnlocked },
               ].map((shot, idx) => (
                 <div
                   key={idx}
@@ -1147,6 +1317,7 @@ export default function ApplicationDetailPage() {
                     overflow: "hidden",
                     display: "flex",
                     flexDirection: "column",
+                    position: "relative",
                   }}
                 >
                   <div
@@ -1158,6 +1329,7 @@ export default function ApplicationDetailPage() {
                       justifyContent: "center",
                       color: "#eceaf5",
                       position: "relative",
+                      filter: shot.locked ? "blur(3px)" : "none",
                     }}
                   >
                     <span
@@ -1176,6 +1348,28 @@ export default function ApplicationDetailPage() {
                       {shot.tag}
                     </span>
                   </div>
+                  {shot.locked && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        backgroundColor: "rgba(10, 15, 26, 0.7)",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        color: "var(--gold)",
+                        padding: "8px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <Lock size={18} />
+                      <span style={{ fontSize: "0.7rem", fontWeight: "600", color: "#eceaf5" }}>
+                        Locked in Preview
+                      </span>
+                    </div>
+                  )}
                   <div style={{ padding: "8px 12px" }}>
                     <span style={{ fontSize: "0.775rem", fontWeight: "600", color: "#eceaf5" }}>
                       {shot.title}
@@ -1184,6 +1378,45 @@ export default function ApplicationDetailPage() {
                 </div>
               ))}
             </div>
+
+            {!isUnlocked && (
+              <div
+                style={{
+                  marginTop: "14px",
+                  padding: "12px 14px",
+                  borderRadius: "10px",
+                  backgroundColor: "rgba(255, 188, 0, 0.08)",
+                  border: "1px solid rgba(255, 188, 0, 0.25)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "10px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Lock size={15} style={{ color: "var(--gold)" }} />
+                  <span style={{ fontSize: "0.8rem", color: "#eceaf5" }}>
+                    High-resolution portfolio &amp; showreels require unlocking full profile
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => checkProfileAccess(false)}
+                  disabled={isUnlocking}
+                  className="btn-primary"
+                  style={{
+                    height: "32px",
+                    padding: "0 14px",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    borderRadius: "8px",
+                  }}
+                >
+                  {isUnlocking ? "Unlocking..." : "Unlock Full Profile"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1746,14 +1979,14 @@ export default function ApplicationDetailPage() {
       {showZeroCreditsModal && (
         <Modal
           isOpen={showZeroCreditsModal}
-          onClose={() => router.back()}
+          onClose={() => setShowZeroCreditsModal(false)}
           title="Credits Exhausted (0 Remaining)"
-          subtitle="Unlocking candidate full profile, contact, and showreels requires 1 credit"
+          subtitle="Unlocking candidate full profile, verified work credits, and showreels requires 1 credit"
           maxWidth="480px"
           footer={
             <div style={{ display: "flex", gap: "10px", width: "100%", justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => router.back()} className="btn-secondary" style={{ padding: "0 16px", height: "40px" }}>
-                Return to Applicants
+              <button type="button" onClick={() => setShowZeroCreditsModal(false)} className="btn-secondary" style={{ padding: "0 16px", height: "40px" }}>
+                Stay on Preview
               </button>
               <Link
                 href="/recruiter/credits"
@@ -1765,7 +1998,7 @@ export default function ApplicationDetailPage() {
                   padding: "0 18px",
                   height: "40px",
                   textDecoration: "none",
-                  borderRadius: "4px"
+                  borderRadius: "10px"
                 }}
               >
                 <span>Buy More Views</span>
@@ -1774,10 +2007,10 @@ export default function ApplicationDetailPage() {
           }
         >
           <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "8px 0" }}>
-            <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
-              Your studio has used all available profile-view credits. To access verified candidate showreels, high-resolution comp-cards, and contact channels, please top up your studio balance.
+            <p style={{ fontSize: "14px", color: "#eceaf5", margin: 0, lineHeight: 1.5 }}>
+              Your organization has used all available profile-view credits. To access verified candidate showreels, high-resolution media, and full work credits, please top up your studio balance.
             </p>
-            <div style={{ backgroundColor: "#FAF9F7", border: "1px solid #E8E2D4", borderRadius: "8px", padding: "12px 14px", fontSize: "12.5px", color: "#8A6B2E" }}>
+            <div style={{ backgroundColor: "rgba(255, 188, 0, 0.1)", border: "1px solid rgba(255, 188, 0, 0.3)", borderRadius: "8px", padding: "12px 14px", fontSize: "12.5px", color: "var(--gold)" }}>
               ⭐ Once unlocked, profiles remain 100% free for repeat reviews for 7 days.
             </div>
           </div>
@@ -1788,31 +2021,32 @@ export default function ApplicationDetailPage() {
       {showLowBalanceModal && (
         <Modal
           isOpen={showLowBalanceModal}
-          onClose={() => router.back()}
+          onClose={() => setShowLowBalanceModal(false)}
           title="Confirm Profile Unlock"
-          subtitle={`You have ${creditStatus?.balance} credits remaining`}
+          subtitle={`You have ${creditStatus?.remainingCredits ?? creditStatus?.balance ?? 0} credits remaining`}
           maxWidth="480px"
           footer={
             <div style={{ display: "flex", gap: "10px", width: "100%", justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => router.back()} className="btn-secondary" style={{ padding: "0 16px", height: "40px" }}>
+              <button type="button" onClick={() => setShowLowBalanceModal(false)} className="btn-secondary" style={{ padding: "0 16px", height: "40px" }}>
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={() => checkProfileAccess(true)}
+                disabled={isUnlocking}
                 className="btn-primary"
                 style={{ padding: "0 18px", height: "40px" }}
               >
-                <span>Confirm &amp; Deduct 1 Credit</span>
+                <span>{isUnlocking ? "Unlocking..." : "Confirm & Deduct 1 Credit"}</span>
               </button>
             </div>
           }
         >
           <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "8px 0" }}>
-            <p style={{ fontSize: "14px", color: "#5A584F", margin: 0, lineHeight: 1.5 }}>
-              Unlocking <strong>{application?.talentName}</strong>&apos;s full profile will consume <strong>1 credit</strong> from your remaining balance of <strong>{creditStatus?.balance} credits</strong>.
+            <p style={{ fontSize: "14px", color: "#eceaf5", margin: 0, lineHeight: 1.5 }}>
+              Unlocking <strong>{application?.talentName}</strong>&apos;s full profile will consume <strong>1 credit</strong> from your remaining balance of <strong>{creditStatus?.remainingCredits ?? creditStatus?.balance ?? 0} credits</strong>.
             </p>
-            <div style={{ backgroundColor: "#FAF9F7", border: "1px solid #E8E2D4", borderRadius: "8px", padding: "12px 14px", fontSize: "12.5px", color: "#8A6B2E" }}>
+            <div style={{ backgroundColor: "rgba(255, 188, 0, 0.1)", border: "1px solid rgba(255, 188, 0, 0.3)", borderRadius: "8px", padding: "12px 14px", fontSize: "12.5px", color: "var(--gold)" }}>
               ✓ You will have unlimited free repeat access to this artist&apos;s profile for the next 7 days.
             </div>
           </div>
