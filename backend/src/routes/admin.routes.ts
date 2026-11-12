@@ -65,7 +65,11 @@ import {
     getInformationalProfiles,
     updateInformationalProfile,
     archiveInformationalProfile,
-    restoreInformationalProfile
+    restoreInformationalProfile,
+    getContactInquiries,
+    updateContactInquiryStatus,
+    deleteContactInquiry,
+    replyToContactInquiry
  } from "../controllers/admin.controller.js";
 
 import {
@@ -256,6 +260,12 @@ router.get("/coupons", authenticateUser, authorizeRoles("admin"), getCoupons);
 router.post("/coupons", authenticateUser, authorizeRoles("admin"), createCoupon);
 router.patch("/coupons/:couponId", authenticateUser, authorizeRoles("admin"), updateCoupon);
 router.delete("/coupons/:couponId", authenticateUser, authorizeRoles("admin"), deleteCoupon);
+
+// Contact Inquiries / Helpdesk Desk Messages
+router.get("/contact-inquiries", authenticateUser, authorizeRoles("admin"), getContactInquiries);
+router.patch("/contact-inquiries/:id", authenticateUser, authorizeRoles("admin"), updateContactInquiryStatus);
+router.delete("/contact-inquiries/:id", authenticateUser, authorizeRoles("admin"), deleteContactInquiry);
+router.post("/contact-inquiries/:id/reply", authenticateUser, authorizeRoles("admin"), replyToContactInquiry);
 
 // Dashboard Metrics
 router.get("/dashboard", authenticateUser, authorizeRoles("admin"), getDashboardMetrics);

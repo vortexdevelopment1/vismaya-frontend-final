@@ -130,6 +130,7 @@ export const getBestEligibleCoupon = async (req: Request, res: Response): Promis
         if (!bestCoupon) {
             return res.status(200).json({
                 success: true,
+                data: null,
                 coupon: null,
                 message: "No eligible coupon found"
             });
@@ -137,6 +138,7 @@ export const getBestEligibleCoupon = async (req: Request, res: Response): Promis
 
         res.status(200).json({
             success: true,
+            data: bestCoupon,
             coupon: bestCoupon
         });
     } catch (error) {

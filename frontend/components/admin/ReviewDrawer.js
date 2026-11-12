@@ -141,13 +141,13 @@ export default function ReviewDrawer({
 
             <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                <h2 style={{ fontSize: "1.15rem", fontFamily: "var(--font-playfair), serif", fontWeight: "700", color: "#2B2D2A", margin: 0 }}>
+                <h2 style={{ fontSize: "1.15rem", fontFamily: "var(--font-playfair), serif", fontWeight: "700", color: "#2B2D2A", margin: 0, textTransform: "capitalize" }}>
                   {isTalent ? data.name : data.companyName}
                 </h2>
                 <StatusBadge status={data.status} size="xs" />
               </div>
 
-              <span style={{ fontSize: "13px", color: "#5A584F" }}>
+              <span style={{ fontSize: "13px", color: "#5A584F", textTransform: "capitalize" }}>
                 {isTalent
                   ? `${data.category || data.profession || "Performer"} • ${data.currentCity || data.city || data.personal?.city || "Mumbai"}, ${data.currentState || data.state || data.personal?.state || "Maharashtra"}`
                   : `${data.companyType || "Agency"} • ${data.city || "Mumbai"}`}
@@ -219,7 +219,7 @@ export default function ReviewDrawer({
 
           {/* TALENT PROFILE DETAILS */}
           {isTalent && (() => {
-            const isMinor = Boolean(data.isUnder18 || (data.age !== undefined && data.age !== null && Number(data.age) < 18) || (data.personal?.age !== undefined && data.personal?.age !== null && Number(data.personal.age) < 18));
+            const isMinor = Boolean(data.isUnder18 || (Number(data.age) > 0 && Number(data.age) < 18) || (Number(data.personal?.age) > 0 && Number(data.personal?.age) < 18));
             const primaryProf = data.primaryProfession || data.profession || data.personal?.primaryRole || "Not provided";
             const secProfs = Array.isArray(data.secondaryProfessions) && data.secondaryProfessions.length > 0
               ? data.secondaryProfessions.join(", ")
@@ -320,7 +320,7 @@ export default function ReviewDrawer({
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
                     <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
                       <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Stage Name</span>
-                      <strong style={{ fontSize: "13px", color: "#2B2D2A" }}>{stageNameVal}</strong>
+                      <strong style={{ fontSize: "13px", color: "#2B2D2A", textTransform: "capitalize" }}>{stageNameVal}</strong>
                     </div>
                     <div style={{ backgroundColor: "#FFFFFF", padding: "10px 12px", borderRadius: "12px", border: "1px solid #E8E2D4" }}>
                       <span style={{ fontSize: "11px", color: "#5A584F", display: "block" }}>Category</span>
@@ -639,7 +639,7 @@ export default function ReviewDrawer({
                 <div style={{ backgroundColor: "#FFFFFF", padding: "14px", borderRadius: "14px", border: "1px solid #E8E2D4", display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Executive Name:</span>
-                    <strong style={{ color: "#2B2D2A" }}>{data.contactPerson || data.name || "Not provided"}</strong>
+                    <strong style={{ color: "#2B2D2A", textTransform: "capitalize" }}>{data.contactPerson || data.name || "Not provided"}</strong>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#5A584F" }}>Phone:</span>

@@ -163,12 +163,12 @@ export default function SupportPage() {
         style={{
           backgroundColor: "#F0EEE7",
           borderBottom: "1px solid #E4E1D9",
-          padding: "clamp(36px, 5vw, 56px) 24px",
+          padding: "clamp(36px, 5vw, 56px) 0",
           position: "relative",
           overflow: "hidden",
         }}
       >
-        <div style={{ maxWidth: "1120px", margin: "0 auto" }}>
+        <div className="public-container">
           <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", color: "#8A6B2E", fontSize: "12px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "12px" }}>
             <Sparkles size={14} />
             <span>Vismaya Help &amp; Support Center</span>
@@ -192,7 +192,8 @@ export default function SupportPage() {
       </section>
 
       {/* Main Support Grid */}
-      <section style={{ maxWidth: "1120px", margin: "0 auto", padding: "clamp(32px, 4vw, 56px) 24px", width: "100%", flex: 1 }}>
+      <section style={{ width: "100%", flex: 1, padding: "clamp(32px, 4vw, 56px) 0" }}>
+        <div className="public-container">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "32px", alignItems: "start" }}>
           {/* Left: Topic Selector List */}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -440,6 +441,7 @@ export default function SupportPage() {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </section>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { RecruiterProvider, useRecruiter } from "@/lib/recruiter/RecruiterContext";
 import RecruiterSidebar from "@/components/recruiter/RecruiterSidebar";
 import RecruiterTopbar from "@/components/recruiter/RecruiterTopbar";
@@ -9,6 +10,9 @@ import { useAuth } from "@/context/AuthContext";
 import LogoutConfirmModal from "@/components/shared/LogoutConfirmModal";
 
 function RecruiterLayoutContent({ children }) {
+  const searchParams = useSearchParams();
+  const isOnboarding = searchParams?.get("onboarding") === "true";
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const { toasts, removeToast } = useRecruiter();
@@ -24,6 +28,30 @@ function RecruiterLayoutContent({ children }) {
       }
     };
   }, [mobileOpen]);
+
+  // When in standalone onboarding mode, render a clean, balanced container matching modern desktop layouts
+  if (isOnboarding) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "#FAF9F7",
+          color: "#2B2D2A",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          padding: "clamp(24px, 3vw, 44px) clamp(16px, 3vw, 32px)",
+          boxSizing: "border-box",
+          position: "relative",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: "1080px", margin: "0 auto" }}>
+          {children}
+        </div>
+        <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -212,7 +240,9 @@ export default function RecruiterLayout({ children }) {
   return (
     <RequireRole allowedRoles={["recruiter", "organization"]}>
       <RecruiterProvider>
-        <RecruiterLayoutContent>{children}</RecruiterLayoutContent>
+        <Suspense fallback={<div style={{ minHeight: "100vh", backgroundColor: "#FAF9F7" }} />}>
+          <RecruiterLayoutContent>{children}</RecruiterLayoutContent>
+        </Suspense>
       </RecruiterProvider>
     </RequireRole>
   );

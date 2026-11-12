@@ -115,7 +115,7 @@ export default function ProfileView({ onEditStep }) {
     : (() => {
         const items = [];
         if (!primaryProf || !profile.category) items.push("Step 1: Set Talent Category and Primary Profession.");
-        if (!profile.bio || profile.bio.trim().length < 200) items.push("Step 1: Add a Professional Bio between 200 and 1000 characters.");
+        if (!profile.bio || !profile.bio.trim()) items.push("Step 1: Add a Professional Bio (up to 1,000 characters).");
         if (!currentCity) items.push("Step 1: Provide your current City.");
         if (!profile.skills || profile.skills.length === 0 || !profile.languages || profile.languages.length === 0) {
           items.push("Step 1: Add at least 1 Performing Skill and 1 Language.");
@@ -203,6 +203,46 @@ export default function ProfileView({ onEditStep }) {
                   {displayName}
                 </h1>
                 <StatusBadge status={profile.status || "approved"} />
+                {Boolean(profile.isVerified || profile.verificationBadges?.identityVerified) ? (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      padding: "3px 9px",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      fontWeight: "700",
+                      backgroundColor: "#DCFCE7",
+                      color: "#15803D",
+                      border: "1px solid #BBF7D0",
+                    }}
+                  >
+                    <CheckCircle2 size={13} />
+                    <span>Verified</span>
+                  </span>
+                ) : (
+                  <Link
+                    href="/talent/verification"
+                    title="Click to complete Aadhaar KYC verification"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      padding: "3px 9px",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      backgroundColor: "#FFF9E6",
+                      color: "#8A6B2E",
+                      border: "1px solid #F0D078",
+                      textDecoration: "none",
+                    }}
+                  >
+                    <ShieldCheck size={13} />
+                    <span>KYC Pending</span>
+                  </Link>
+                )}
               </div>
 
               {/* Category/Profession */}
@@ -299,6 +339,136 @@ export default function ProfileView({ onEditStep }) {
             </span>
           </div>
           <ProgressBar value={profileStrength} progress={profileStrength} />
+        </div>
+      </div>
+
+      
+      {/* Aadhaar KYC Identity Verification Card */}
+      <div
+        style={{
+          ...cardStyle,
+          backgroundColor: Boolean(profile.isVerified || profile.verificationBadges?.identityVerified) ? "#F0FDF4" : "#FFFFFF",
+          border: Boolean(profile.isVerified || profile.verificationBadges?.identityVerified) ? "1px solid #BBF7D0" : "1px solid #E8E2D4",
+          borderLeft: Boolean(profile.isVerified || profile.verificationBadges?.identityVerified) ? "4px solid #10B981" : "4px solid #8A6B2E",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "16px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", flex: 1, minWidth: "260px" }}>
+          <div
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "10px",
+              backgroundColor: Boolean(profile.isVerified || profile.verificationBadges?.identityVerified) ? "#DCFCE7" : "#F3EFE6",
+              color: Boolean(profile.isVerified || profile.verificationBadges?.identityVerified) ? "#10B981" : "#8A6B2E",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <ShieldCheck size={22} />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "14.5px", fontWeight: "700", color: "#2B2D2A" }}>
+                Aadhaar Identity Verification (KYC)
+              </span>
+              {Boolean(profile.isVerified || profile.verificationBadges?.identityVerified) ? (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    fontSize: "11.5px",
+                    fontWeight: "700",
+                    backgroundColor: "#DCFCE7",
+                    color: "#15803D",
+                    border: "1px solid #BBF7D0",
+                  }}
+                >
+                  <CheckCircle2 size={12} />
+                  <span>Verified</span>
+                </span>
+              ) : (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    fontSize: "11.5px",
+                    fontWeight: "700",
+                    backgroundColor: "#FFF9E6",
+                    color: "#8A6B2E",
+                    border: "1px solid #F0D078",
+                  }}
+                >
+                  <AlertCircle size={12} />
+                  <span>KYC Pending</span>
+                </span>
+              )}
+            </div>
+
+            <div style={{ fontSize: "13px", color: "#5A584F", lineHeight: "19px" }}>
+              {Boolean(profile.isVerified || profile.verificationBadges?.identityVerified)
+                ? "Your identity has been authenticated via Aadhaar verification. Your Verified Badge is active on your profile."
+                : "Aadhaar verification is optional. Verify your identity in 60 seconds to earn the Verified Badge and increase casting trust."}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          {Boolean(profile.isVerified || profile.verificationBadges?.identityVerified) ? (
+            <Link
+              href="/talent/verification"
+              className="btn-secondary"
+              style={{
+                padding: "0 16px",
+                height: "38px",
+                fontSize: "13px",
+                fontWeight: "600",
+                borderRadius: "8px",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                backgroundColor: "#FAF9F6",
+              }}
+            >
+              <span>Manage Verification</span>
+            </Link>
+          ) : (
+            <Link
+              href="/talent/verification"
+              className="btn-primary"
+              style={{
+                padding: "0 18px",
+                height: "38px",
+                fontSize: "13px",
+                fontWeight: "700",
+                borderRadius: "8px",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                whiteSpace: "nowrap",
+                backgroundColor: "#8A6B2E",
+                color: "#FFFFFF",
+              }}
+            >
+              <ShieldCheck size={15} />
+              <span>Verify KYC Now</span>
+            </Link>
+          )}
         </div>
       </div>
 

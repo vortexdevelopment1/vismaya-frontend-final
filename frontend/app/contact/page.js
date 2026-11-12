@@ -1,11 +1,55 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
-import { Mail, Phone, MapPin, Send, MessageSquare, Sparkles } from "lucide-react";
+import { Mail, Phone, MapPin, Send, MessageSquare, Sparkles, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { publicService } from "@/lib/api/services/publicService";
 
 export default function ContactPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState(null); // { type: 'success' | 'error', message: string }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      setStatus({ type: "error", message: "Please fill in all fields (Name, Email, Message)." });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setStatus(null);
+      const res = await publicService.submitContactForm({
+        name: name.trim(),
+        email: email.trim(),
+        message: message.trim(),
+      });
+
+      if (res?.success) {
+        setStatus({
+          type: "success",
+          message: res.message || "Thank you for reaching out! Our operations team has received your inquiry and will respond within 24 hours.",
+        });
+        setName("");
+        setEmail("");
+        setMessage("");
+      } else {
+        setStatus({ type: "error", message: res?.message || "Failed to submit message. Please try again." });
+      }
+    } catch (err) {
+      setStatus({
+        type: "error",
+        message: err?.response?.data?.message || err?.message || "Something went wrong. Please try again later.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", width: "100%", backgroundColor: "var(--bg-primary)" }}>
       <PublicNav />
@@ -259,13 +303,40 @@ export default function ContactPage() {
                 </p>
               </div>
 
-              <form onSubmit={(e) => e.preventDefault()} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+              {status && (
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    borderRadius: "10px",
+                    backgroundColor: status.type === "success" ? "#ECFDF5" : "#FEF2F2",
+                    border: `1px solid ${status.type === "success" ? "#A7F3D0" : "#FECACA"}`,
+                    color: status.type === "success" ? "#065F46" : "#991B1B",
+                    fontSize: "13.5px",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "10px",
+                    lineHeight: "1.45",
+                  }}
+                >
+                  {status.type === "success" ? (
+                    <CheckCircle2 size={18} style={{ flexShrink: 0, marginTop: "1px" }} />
+                  ) : (
+                    <AlertCircle size={18} style={{ flexShrink: 0, marginTop: "1px" }} />
+                  )}
+                  <span>{status.message}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
                 <div>
                   <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#2B2D2A", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    Your Name
+                    Your Name *
                   </label>
                   <input
                     type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Rahul Kapoor"
                     style={{
                       width: "100%",
@@ -285,10 +356,13 @@ export default function ContactPage() {
 
                 <div>
                   <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#2B2D2A", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    Email Address
+                    Email Address *
                   </label>
                   <input
                     type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@domain.com"
                     style={{
                       width: "100%",
@@ -308,10 +382,13 @@ export default function ContactPage() {
 
                 <div>
                   <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#2B2D2A", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    Message
+                    Message *
                   </label>
                   <textarea
                     rows={4}
+                    required
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
                     placeholder="How can our casting desk help you?"
                     style={{
                       width: "100%",
@@ -331,7 +408,8 @@ export default function ContactPage() {
                 </div>
 
                 <button
-                  type="button"
+                  type="submit"
+                  disabled={isSubmitting}
                   style={{
                     width: "100%",
                     height: "44px",
@@ -341,19 +419,28 @@ export default function ContactPage() {
                     justifyContent: "center",
                     gap: "8px",
                     borderRadius: "10px",
-                    backgroundColor: "#8A6B2E",
+                    backgroundColor: isSubmitting ? "#B39868" : "#8A6B2E",
                     color: "#FFFFFF",
                     fontSize: "14px",
                     fontWeight: 600,
                     border: "none",
-                    cursor: "pointer",
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
                     boxShadow: "0 2px 8px rgba(138, 107, 46, 0.25)",
                     transition: "background-color 0.15s ease",
                   }}
                   className="contact-submit-btn"
                 >
-                  <span>Submit Message</span>
-                  <Send size={15} />
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Submitting Message...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Submit Message</span>
+                      <Send size={15} />
+                    </>
+                  )}
                 </button>
               </form>
             </div>

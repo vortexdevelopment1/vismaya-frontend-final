@@ -57,6 +57,27 @@ const getVerificationBadgesMap = async (userIds: any[]): Promise<Record<string, 
     return map;
 };
 
+const syncUserMediaToProfile = async (profile: any, targetUserId: any): Promise<void> => {
+    if (!profile || !targetUserId) return;
+    try {
+        const userMedia: any = await (MediaItem as any).find({ owner: targetUserId, moderationState: { $ne: "rejected" } });
+        if (!Array.isArray(userMedia)) return;
+        const mediaPhotos = userMedia.filter((m: any) => m.mediaType === "photo" && !m.isMainProfilePhoto).map((m: any) => m.url);
+        const mediaVideos = userMedia.filter((m: any) => m.mediaType === "video").map((m: any) => m.url);
+        const mainPhotoItem = userMedia.find((m: any) => m.isMainProfilePhoto);
+
+        if (mainPhotoItem && !profile.profilePhoto) {
+            profile.profilePhoto = mainPhotoItem.url;
+        }
+
+        profile.portfolio = profile.portfolio || { photos: [], videos: [] };
+        profile.portfolio.photos = Array.from(new Set([...(profile.portfolio.photos || []), ...mediaPhotos]));
+        profile.portfolio.videos = Array.from(new Set([...(profile.portfolio.videos || []), ...mediaVideos]));
+    } catch (e) {
+        // Safe fallback
+    }
+};
+
 export const createOrUpdateProfile = async (req: Request, res: Response): Promise<any> => {
     try {
         const userId = req.user?.userId;
@@ -79,7 +100,7 @@ export const createOrUpdateProfile = async (req: Request, res: Response): Promis
         // Whitelist allowed user-editable fields
         const allowedFields = [
             "stageName", "firstName", "middleName", "lastName", "headline", "bio",
-            "profilePhoto", "dob", "gender", "nationality", "careerStage", "category",
+            "profilePhoto", "dob", "age", "gender", "nationality", "careerStage", "category",
             "primaryProfession", "secondaryProfessions", "primaryDepartment", "primaryDesignation",
             "specializations", "secondaryDepartments", "voiceAttributes", "danceAttributes",
             "crewAttributes", "socialLinks", "currentCity", "currentState", "country",
@@ -173,6 +194,9 @@ export const createOrUpdateProfile = async (req: Request, res: Response): Promis
         const effectiveDob = updateData.dob || profile?.dob;
         if (effectiveDob) {
             const age = calculateAge(effectiveDob);
+            if (age !== null) {
+                updateData.age = age;
+            }
             if (age !== null && age < 18) {
                 updateData.isUnder18 = true;
                 if (updateData.guardianDetails) {
@@ -241,6 +265,9 @@ export const createOrUpdateProfile = async (req: Request, res: Response): Promis
             // Apply non-critical / onboarding updates
             Object.assign(profile, updateData);
         }
+
+        // Sync media items from MediaItem collection so portfolio arrays are never wiped out
+        await syncUserMediaToProfile(profile, userId);
 
         // Calculate weighted completion percentage and step status
         const completionDetails = calculateProfileCompletionDetails(profile);
@@ -370,6 +397,9 @@ export const getMyProfile = async (req: Request, res: Response): Promise<any> =>
             emailNotificationsEnabled: user.emailNotificationsEnabled !== undefined ? user.emailNotificationsEnabled : true
         } : profile.userId;
 
+        // Sync media items from MediaItem collection so portfolio arrays are never lost
+        await syncUserMediaToProfile(profile, userId);
+
         const completionDetails = calculateProfileCompletionDetails(profile);
         profile.profileCompletionPercentage = completionDetails.percentage;
         fullProfile.stepsCompletion = completionDetails.stepsCompletion;
@@ -443,6 +473,9 @@ export const addTalentCredit = async (req: Request, res: Response): Promise<any>
 
         profile.credits.push(newCredit);
 
+        // Sync media items from MediaItem collection so portfolio arrays are never lost
+        await syncUserMediaToProfile(profile, userId);
+
         const completionDetails = calculateProfileCompletionDetails(profile);
         profile.profileCompletionPercentage = completionDetails.percentage;
         await profile.save();
@@ -493,6 +526,9 @@ export const updateTalentCredit = async (req: Request, res: Response): Promise<a
         credit.isVerifiedCredit = false;
         credit.verificationStatus = "pending";
 
+        // Sync media items from MediaItem collection so portfolio arrays are never lost
+        await syncUserMediaToProfile(profile, userId);
+
         const completionDetails = calculateProfileCompletionDetails(profile);
         profile.profileCompletionPercentage = completionDetails.percentage;
         await profile.save();
@@ -523,6 +559,9 @@ export const deleteTalentCredit = async (req: Request, res: Response): Promise<a
         }
 
         (profile.credits as any).pull({ _id: creditId });
+
+        // Sync media items from MediaItem collection so portfolio arrays are never lost
+        await syncUserMediaToProfile(profile, userId);
 
         const completionDetails = calculateProfileCompletionDetails(profile);
         profile.profileCompletionPercentage = completionDetails.percentage;

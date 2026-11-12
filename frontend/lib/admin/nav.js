@@ -17,6 +17,8 @@ import {
   UserCheck,
   History,
   Ticket,
+  Mail,
+  MessageSquare,
 } from "lucide-react";
 
 export const adminNavSections = [
@@ -153,6 +155,13 @@ export const adminNavSections = [
   {
     group: "COMMUNICATION & INSIGHTS",
     items: [
+      {
+        title: "Public Contact Inquiries & Helpdesk",
+        label: "Contact Inquiries",
+        href: "/admin/inquiries",
+        icon: Mail,
+        badgeKey: "pendingInquiries",
+      },
       {
         title: "Platform Broadcasts (Operational Notices Only)",
         label: "Broadcasts",

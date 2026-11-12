@@ -64,7 +64,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity (Name & DOB)", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name, DOB, and stage name" },
             { key: "profile_photo", label: "Main Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Mandatory portrait profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city for auditions and casting" },
             { key: "professional_identity", label: "Professional Hierarchy", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Primary profession and career stage" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "At least 1 acting skill and 1 language" },
@@ -81,7 +81,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity (Name & DOB)", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name, DOB" },
             { key: "profile_photo", label: "Main Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Mandatory portrait profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city" },
             { key: "professional_identity", label: "Professional Hierarchy", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Model type / career stage" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "Skills and languages" },
@@ -97,7 +97,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name" },
             { key: "profile_photo", label: "Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city" },
             { key: "professional_identity", label: "Professional Hierarchy", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Specialization and career stage" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "Photography skills, software & languages" },
@@ -113,7 +113,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name" },
             { key: "profile_photo", label: "Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city" },
             { key: "professional_identity", label: "Professional Hierarchy", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Cinematography designation & specialization" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "Camera/lighting skills and languages" },
@@ -130,7 +130,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name" },
             { key: "profile_photo", label: "Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city" },
             { key: "professional_identity", label: "Professional Hierarchy", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Vocal designation & genres" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "Vocal skills and singing languages" },
@@ -147,7 +147,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name" },
             { key: "profile_photo", label: "Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city" },
             { key: "professional_identity", label: "Professional Hierarchy", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Dance category & stage" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "Dance skills and languages" },
@@ -164,7 +164,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name" },
             { key: "profile_photo", label: "Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city" },
             { key: "professional_identity", label: "Professional Hierarchy", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Choreography designation & stage" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "Choreography skills and languages" },
@@ -181,7 +181,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name" },
             { key: "profile_photo", label: "Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city" },
             { key: "professional_identity", label: "Professional Hierarchy", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Art direction designation & stage" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "Set design/art skills and languages" },
@@ -197,7 +197,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name" },
             { key: "profile_photo", label: "Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city" },
             { key: "professional_identity", label: "Professional Hierarchy", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Music direction & composition role" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "Composition skills and languages" },
@@ -213,7 +213,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name" },
             { key: "profile_photo", label: "Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city" },
             { key: "professional_identity", label: "Professional Hierarchy", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Make-up designation & stage" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "Make-up techniques and languages" },
@@ -229,7 +229,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name" },
             { key: "profile_photo", label: "Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city" },
             { key: "professional_identity", label: "Professional Hierarchy", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Voice role designation" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "Voice delivery skills and languages" },
@@ -245,7 +245,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name" },
             { key: "profile_photo", label: "Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city" },
             { key: "professional_identity", label: "Department & Designation", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Primary department and designation" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "Technical skills and languages" },
@@ -261,7 +261,7 @@ export const PROFILE_COMPLETION_CONFIGS: Record<string, ProfessionCompletionConf
         items: [
             { key: "basic_identity", label: "Basic Identity", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "First name, last name" },
             { key: "profile_photo", label: "Profile Photo", section: "identity", weight: 10, specOrigin: "SPEC_MANDATED", description: "Mandatory profile photo" },
-            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio between 200 and 1,000 characters" },
+            { key: "bio_headline", label: "Bio & Headline", section: "bio", weight: 10, specOrigin: "SPEC_MANDATED", description: "Professional bio (up to 1,000 characters)" },
             { key: "location", label: "Current City & Location", section: "location", weight: 10, specOrigin: "SPEC_MANDATED", description: "Base city" },
             { key: "professional_identity", label: "Professional Hierarchy", section: "professional", weight: 10, specOrigin: "SPEC_MANDATED", description: "Category & primary profession" },
             { key: "skills_languages", label: "Skills & Languages", section: "skills_languages", weight: 10, specOrigin: "SPEC_MANDATED", description: "Key skills and languages" },

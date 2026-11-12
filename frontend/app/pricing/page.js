@@ -124,7 +124,7 @@ export default function PricingPage() {
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
               gap: "28px",
-              maxWidth: "960px",
+              maxWidth: "1160px",
               margin: "0 auto",
               alignItems: "stretch",
             }}
@@ -453,7 +453,8 @@ export default function PricingPage() {
 
       {/* FAQs Section */}
       <section style={{ padding: "clamp(48px, 8vw, 80px) 0" }}>
-        <div className="public-container" style={{ maxWidth: "800px" }}>
+        <div className="public-container">
+          <div style={{ maxWidth: "880px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "40px" }}>
             <h2
               style={{
@@ -490,6 +491,7 @@ export default function PricingPage() {
                 </p>
               </div>
             ))}
+          </div>
           </div>
         </div>
       </section>

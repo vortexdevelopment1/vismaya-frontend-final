@@ -218,8 +218,17 @@ export function TalentProvider({ children }) {
         if (mounted) {
           if (profRes.status === "fulfilled" && profRes.value?.data) {
             const raw = profRes.value.data;
+            const hasVerifiedRecord = verRes.status === "fulfilled" && Array.isArray(verRes.value?.data)
+              ? verRes.value.data.some(v => (v.type === "identity" || v.verificationType === "identity") && (v.status === "verified" || v.verificationStatus === "verified"))
+              : false;
+            const isIdentityVerified = Boolean(raw.isVerified || profRes.value?.verificationBadges?.identityVerified || hasVerifiedRecord);
             const merged = {
               ...raw,
+              isVerified: isIdentityVerified,
+              verificationBadges: profRes.value?.verificationBadges || {
+                identityVerified: isIdentityVerified,
+                professionalVerified: Boolean(raw.isVerifiedCredit),
+              },
               email: raw.email || auth?.user?.email || "",
               mobile: raw.mobile || auth?.user?.mobile || auth?.user?.phone || "",
               phone: raw.phone || auth?.user?.mobile || auth?.user?.phone || "",
@@ -296,6 +305,8 @@ export function TalentProvider({ children }) {
             return {
               ...prev,
               ...fresh,
+              isVerified: fresh.isVerified !== undefined ? fresh.isVerified : prev.isVerified,
+              verificationBadges: fresh.verificationBadges || prev.verificationBadges,
               email: canonicalEmail,
               mobile: canonicalMobile,
               phone: canonicalMobile,
@@ -383,9 +394,13 @@ export function TalentProvider({ children }) {
     }
 
     // Persist to backend if talent module is real
+    let savedCompletionPercentage = null;
     if (isRealMode("talent")) {
       try {
-        await talentService.saveProfile({ profilePhoto: photoUrl });
+        const saveRes = await talentService.saveProfile({ profilePhoto: photoUrl });
+        if (saveRes?.profileCompletionPercentage !== undefined && saveRes?.profileCompletionPercentage !== null) {
+          savedCompletionPercentage = saveRes.profileCompletionPercentage;
+        }
       } catch (err) {
         console.warn("Could not save profile photo to backend:", err);
       }
@@ -402,6 +417,9 @@ export function TalentProvider({ children }) {
           avatar: photoUrl,
           profilePhoto: photoUrl,
         },
+        profileCompletionPercentage: savedCompletionPercentage !== null
+          ? savedCompletionPercentage
+          : (prev.profileCompletionPercentage ? Math.min(100, prev.profileCompletionPercentage + 10) : 10),
       };
       if (typeof window !== "undefined") {
         try {
@@ -410,6 +428,11 @@ export function TalentProvider({ children }) {
       }
       return updated;
     });
+
+    // Refresh profile in background so all checklist items, weights, and badges are in sync
+    try {
+      refreshProfile();
+    } catch {}
 
     // Sync AuthContext so Topbar & Sidebar update immediately without relogin
     if (auth?.updateUser) {
@@ -430,6 +453,9 @@ export function TalentProvider({ children }) {
     if (isRealMode("talent")) {
       try {
         await talentService.saveProfile({ profilePhoto: "" });
+        try {
+          refreshProfile();
+        } catch {}
       } catch (err) {
         console.warn("Could not clear profile photo in backend:", err);
       }
@@ -488,6 +514,9 @@ export function TalentProvider({ children }) {
         const res = await mediaService.addMedia(mediaItem);
         const savedMedia = res?.data || mediaItem;
         setPortfolio((prev) => [savedMedia, ...prev]);
+        try {
+          refreshProfile();
+        } catch {}
         addToast({
           type: "success",
           title: "Media Uploaded for Moderation",
@@ -549,6 +578,9 @@ export function TalentProvider({ children }) {
     if (isRealMode("media")) {
       try {
         await mediaService.deleteMedia(id);
+        try {
+          refreshProfile();
+        } catch {}
       } catch (err) {
         addToast({
           type: "danger",
@@ -630,6 +662,8 @@ export function TalentProvider({ children }) {
         setProfile((prev) => ({
           ...prev,
           ...fresh,
+          isVerified: fresh.isVerified !== undefined ? fresh.isVerified : prev.isVerified,
+          verificationBadges: fresh.verificationBadges || res.verificationBadges || prev.verificationBadges,
           email: fresh.email || prev.email || auth?.user?.email || "",
           mobile: fresh.mobile || fresh.phone || prev.mobile || prev.phone || auth?.user?.mobile || auth?.user?.phone || "",
           phone: fresh.mobile || fresh.phone || prev.mobile || prev.phone || auth?.user?.mobile || auth?.user?.phone || "",

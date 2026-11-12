@@ -357,7 +357,7 @@ export default function VerificationQueuesPage() {
                     </div>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                        <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: isUserMissing ? "#706E66" : "#2B2D2A" }}>
+                        <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: isUserMissing ? "#706E66" : "#2B2D2A", textTransform: "capitalize" }}>
                           {isUserMissing ? "User no longer exists" : (ver.userName || (isBusiness ? "Organization" : "Talent Member"))}
                         </h3>
                         {isUserMissing && (
@@ -964,6 +964,7 @@ export default function VerificationQueuesPage() {
                           color: isUserMissing ? "#6B6254" : "#2A241A",
                           overflowWrap: "anywhere",
                           wordBreak: "break-word",
+                          textTransform: "capitalize",
                         }}
                       >
                         {isUserMissing ? "User no longer exists" : (ver.userName || (isBusiness ? "Organization" : "Talent Member"))}

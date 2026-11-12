@@ -515,7 +515,7 @@ export default function AdminApplicationsOverviewPage() {
                             </div>
                           )}
                           <div>
-                            <div style={{ fontWeight: 600, color: "#2B2D2A" }}>
+                            <div style={{ fontWeight: 600, color: "#2B2D2A", textTransform: "capitalize" }}>
                               {app.talentName}
                             </div>
                             <div style={{ fontSize: "12px", color: "#5A584F", marginTop: "2px" }}>
@@ -643,10 +643,10 @@ export default function AdminApplicationsOverviewPage() {
                         </div>
                       )}
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, color: "#2B2D2A", fontSize: "14.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        <div style={{ fontWeight: 600, color: "#2B2D2A", fontSize: "14.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "capitalize" }}>
                           {app.talentName}
                         </div>
-                        <div style={{ fontSize: "12px", color: "#5A584F" }}>
+                        <div style={{ fontSize: "12px", color: "#5A584F", textTransform: "capitalize" }}>
                           {prof.city || "Mumbai"}
                         </div>
                       </div>

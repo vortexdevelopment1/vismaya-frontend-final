@@ -35,13 +35,24 @@ export interface IBusinessData {
     otherEvidenceDocNames?: string[];
 }
 
+export interface IAadhaarData {
+    refId: string;
+    nameOnId?: string;
+    isAgeEligible: boolean;
+    maskedAadhaarPreview?: string;
+    verifiedAt: Date;
+    verificationMethod: string;
+    consentAuditId?: Types.ObjectId;
+}
+
 export interface IVerification extends Document {
     userId: Types.ObjectId;
     verificationType: "identity" | "professional" | "organization_business";
     identityData?: IIdentityData;
     professionalData?: IProfessionalData;
     businessData?: IBusinessData;
-    status: "pending" | "under_review" | "additional_info_required" | "verified" | "rejected" | "suspended";
+    status: "pending" | "under_review" | "additional_info_required" | "verified" | "rejected" | "suspended" | "consent_withdrawn";
+    aadhaarData?: IAadhaarData;
     rejectionReason?: string;
     moreInfoRequested: boolean;
     moreInfoNotes?: string;
@@ -79,6 +90,16 @@ const verificationSchema = new Schema<IVerification>(
             documentFrontUrl: { type: String, trim: true },
             documentBackUrl: { type: String, trim: true },
             selfiePhotoUrl: { type: String, trim: true }
+        },
+
+        aadhaarData: {
+            refId: { type: String, trim: true, index: true },
+            nameOnId: { type: String, trim: true },
+            isAgeEligible: { type: Boolean, default: true },
+            maskedAadhaarPreview: { type: String, trim: true },
+            verifiedAt: { type: Date },
+            verificationMethod: { type: String, trim: true, default: "mock_harness_dev" },
+            consentAuditId: { type: Schema.Types.ObjectId, ref: "UserConsent" }
         },
 
         professionalData: {

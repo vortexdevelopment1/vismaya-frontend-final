@@ -10,15 +10,12 @@ export const calculateAge = (dob: any): number | null => {
 export const validateTalentProfileInput = (data: any, isCreation = false): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
 
-    // Bio validation (T3: 200 - 1000 chars)
+    // Bio validation (Max 1000 chars)
     if (data.bio !== undefined && data.bio !== null) {
         let trimmedBio = String(data.bio).trim();
         if (trimmedBio.length > 1000) {
             trimmedBio = trimmedBio.slice(0, 1000);
             data.bio = trimmedBio;
-        }
-        if (trimmedBio.length > 0 && trimmedBio.length < 200) {
-            errors.push("Bio must be at least 200 characters in length.");
         }
     }
 

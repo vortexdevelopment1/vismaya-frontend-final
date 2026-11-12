@@ -15,6 +15,9 @@ import {
   AlertOctagon,
   ShieldCheck,
   ChevronRight,
+  Mail,
+  Send,
+  Clock,
 } from "lucide-react";
 import { useAdmin } from "@/lib/admin/AdminContext";
 import { useWorkflow } from "@/lib/shared/workflowStore";
@@ -22,6 +25,7 @@ import { isRealMode } from "@/lib/api/config";
 import { adminService } from "@/lib/api/services/adminService";
 import PageHeader from "@/components/shared/PageHeader";
 import StatCard from "@/components/shared/StatCard";
+import StatusBadge from "@/components/shared/StatusBadge";
 
 export default function AdminDashboardPage() {
   const { talents = [], recruiters = [], activities = [] } = useAdmin();
@@ -35,7 +39,24 @@ export default function AdminDashboardPage() {
   } = useWorkflow();
 
   const [metrics, setMetrics] = React.useState(null);
+  const [inquiries, setInquiries] = React.useState([]);
+  const [inquiriesLoading, setInquiriesLoading] = React.useState(true);
   const isReal = isRealMode("admin");
+
+  React.useEffect(() => {
+    let mounted = true;
+    adminService.getContactInquiries({ limit: 4 })
+      .then((res) => {
+        if (mounted && Array.isArray(res?.data)) {
+          setInquiries(res.data);
+        }
+      })
+      .catch((err) => console.warn("Failed to load inquiries on dashboard:", err))
+      .finally(() => {
+        if (mounted) setInquiriesLoading(false);
+      });
+    return () => { mounted = false; };
+  }, []);
 
   React.useEffect(() => {
     if (!isReal) return;
@@ -100,8 +121,21 @@ export default function AdminDashboardPage() {
     return auditions.filter((a) => a.status === "Self-tape Received").length;
   }, [isReal, metrics, auditions]);
 
+  const pendingInquiriesCount = useMemo(() => {
+    if (isReal && metrics?.inquiries?.pending !== undefined) return metrics.inquiries.pending;
+    return inquiries.filter((i) => i.status === "pending").length;
+  }, [isReal, metrics, inquiries]);
+
   // "Needs Attention" Queue: uniform styling per spec
   const attentionItems = [
+    {
+      id: "att-inquiries",
+      title: "Contact & Helpdesk Inquiries",
+      count: pendingInquiriesCount,
+      description: "Direct messages received from the public Contact Us desk",
+      link: "/admin/inquiries",
+      icon: Mail,
+    },
     {
       id: "att-opps",
       title: "Opportunities Awaiting Review",
@@ -554,6 +588,433 @@ export default function AdminDashboardPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Registered Studios & Registered Talents Section (All names capitalized) */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(450px, 100%), 1fr))",
+          gap: "20px",
+          width: "100%",
+        }}
+      >
+        {/* Studios / Production Houses Card */}
+        <div
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            borderRadius: "18px",
+            padding: "24px",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+          }}
+          className="admin-dash-card"
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "10px",
+                  backgroundColor: "#F3EFE6",
+                  color: "#8A6B2E",
+                  border: "1px solid #E8E2D4",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Building2 size={18} />
+              </div>
+              <div>
+                <h3
+                  style={{
+                    fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                    fontSize: "18px",
+                    fontWeight: 600,
+                    color: "#2B2D2A",
+                    margin: 0,
+                  }}
+                >
+                  Studios &amp; Production Houses
+                </h3>
+                <p style={{ fontSize: "12.5px", color: "#5A584F", margin: "2px 0 0" }}>
+                  Registered casting organizations
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/admin/recruiter-management"
+              style={{
+                fontSize: "13px",
+                color: "#8A6B2E",
+                fontWeight: "600",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              Manage all <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {recruiters.length === 0 ? (
+              <div style={{ padding: "20px 0", textAlign: "center", color: "#77756B", fontSize: "13.5px" }}>
+                No registered studios yet
+              </div>
+            ) : (
+              recruiters.slice(0, 5).map((org) => {
+                const studioName = org.companyName || org.company || org.organizationName || org.name || "Studio";
+                const contactPerson = org.contactPerson || org.contactName || org.responsiblePerson?.name || "Contact";
+                return (
+                  <div
+                    key={org.id || org._id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 14px",
+                      borderRadius: "12px",
+                      backgroundColor: "#FAF9F6",
+                      border: "1px solid #E8E2D4",
+                      gap: "12px",
+                    }}
+                  >
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          fontSize: "14px",
+                          color: "#2B2D2A",
+                          textTransform: "capitalize",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={studioName}
+                      >
+                        {studioName}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "#5A584F",
+                          marginTop: "2px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        <span>{contactPerson}</span>
+                        <span>&bull;</span>
+                        <span>{org.city || org.location || "Mumbai"}</span>
+                      </div>
+                    </div>
+                    <StatusBadge status={org.status || (org.isVerified ? "Verified" : "Pending")} size="xs" />
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Talents Card */}
+        <div
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E8E2D4",
+            borderRadius: "18px",
+            padding: "24px",
+            boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+          }}
+          className="admin-dash-card"
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "10px",
+                  backgroundColor: "#F3EFE6",
+                  color: "#8A6B2E",
+                  border: "1px solid #E8E2D4",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Users size={18} />
+              </div>
+              <div>
+                <h3
+                  style={{
+                    fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                    fontSize: "18px",
+                    fontWeight: 600,
+                    color: "#2B2D2A",
+                    margin: 0,
+                  }}
+                >
+                  Artists &amp; Talent Profiles
+                </h3>
+                <p style={{ fontSize: "12.5px", color: "#5A584F", margin: "2px 0 0" }}>
+                  Screen actors, models &amp; performers
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/admin/talent-management"
+              style={{
+                fontSize: "13px",
+                color: "#8A6B2E",
+                fontWeight: "600",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              Manage all <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {talents.length === 0 ? (
+              <div style={{ padding: "20px 0", textAlign: "center", color: "#77756B", fontSize: "13.5px" }}>
+                No registered talents yet
+              </div>
+            ) : (
+              talents.slice(0, 5).map((tal) => {
+                const artistName = tal.stageName || tal.name || "Artist";
+                const craft = tal.primaryProfession || tal.profession || tal.craft || "Actor / Screen Artist";
+                return (
+                  <div
+                    key={tal.id || tal._id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 14px",
+                      borderRadius: "12px",
+                      backgroundColor: "#FAF9F6",
+                      border: "1px solid #E8E2D4",
+                      gap: "12px",
+                    }}
+                  >
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          fontSize: "14px",
+                          color: "#2B2D2A",
+                          textTransform: "capitalize",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={artistName}
+                      >
+                        {artistName}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "#5A584F",
+                          marginTop: "2px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        <span>{craft}</span>
+                        <span>&bull;</span>
+                        <span>{tal.currentCity || tal.city || "Mumbai"}</span>
+                      </div>
+                    </div>
+                    <StatusBadge status={tal.status || (tal.isVerified ? "Approved" : "Pending")} size="xs" />
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Contact & Helpdesk Inquiries Section */}
+      <div
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E8E2D4",
+          borderRadius: "18px",
+          padding: "26px",
+          boxShadow: "0 2px 4px rgba(43, 45, 42, 0.04), 0 12px 28px rgba(43, 45, 42, 0.06)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "18px",
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+        className="admin-dash-card"
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "10px",
+                backgroundColor: "#F3EFE6",
+                border: "1px solid #E8E2D4",
+                color: "#8A6B2E",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Mail size={20} />
+            </div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <h3
+                  style={{
+                    fontFamily: "var(--font-heading), 'Playfair Display', Georgia, serif",
+                    fontSize: "20px",
+                    fontWeight: 600,
+                    color: "#2B2D2A",
+                    margin: 0,
+                  }}
+                >
+                  Contact &amp; Helpdesk Inquiries
+                </h3>
+                {pendingInquiriesCount > 0 && (
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: "700",
+                      padding: "2px 8px",
+                      borderRadius: "999px",
+                      backgroundColor: "rgba(138, 107, 46, 0.12)",
+                      color: "#8A6B2E",
+                      border: "1px solid rgba(138, 107, 46, 0.25)",
+                    }}
+                  >
+                    {pendingInquiriesCount} Pending
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: "13px", color: "#5A584F", margin: "2px 0 0", fontFamily: "var(--font-body), 'Inter', sans-serif" }}>
+                Messages submitted via the Public Contact form &bull; Delivered to <strong>vortexcubesdevelopment@gmail.com</strong>
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/admin/inquiries"
+            style={{
+              fontSize: "13.5px",
+              color: "#8A6B2E",
+              fontWeight: "600",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              fontFamily: "var(--font-body), 'Inter', sans-serif",
+            }}
+          >
+            Open Helpdesk Console <ArrowRight size={15} />
+          </Link>
+        </div>
+
+        {inquiriesLoading ? (
+          <div style={{ padding: "30px 0", textAlign: "center", color: "#77756B", fontSize: "13.5px" }}>
+            Loading contact inquiries...
+          </div>
+        ) : inquiries.length === 0 ? (
+          <div style={{ padding: "26px 0", textAlign: "center", color: "#5A584F", fontSize: "14px" }}>
+            No contact inquiries received yet. When users submit the Contact form, their inquiries will appear here.
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13.5px" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #E8E2D4", color: "#77756B", textTransform: "uppercase", fontSize: "11px", letterSpacing: "0.06em" }}>
+                  <th style={{ padding: "10px 14px", fontWeight: "700" }}>Sender</th>
+                  <th style={{ padding: "10px 14px", fontWeight: "700" }}>Subject &amp; Message</th>
+                  <th style={{ padding: "10px 14px", fontWeight: "700" }}>Received</th>
+                  <th style={{ padding: "10px 14px", fontWeight: "700" }}>Status</th>
+                  <th style={{ padding: "10px 14px", fontWeight: "700", textAlign: "right" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inquiries.slice(0, 4).map((item) => (
+                  <tr key={item._id} style={{ borderBottom: "1px solid #F3EFE6" }}>
+                    <td style={{ padding: "12px 14px", verticalAlign: "middle" }}>
+                      <div style={{ fontWeight: "600", color: "#2B2D2A" }}>{item.name}</div>
+                      <div style={{ fontSize: "12px", color: "#8A6B2E" }}>{item.email}</div>
+                    </td>
+                    <td style={{ padding: "12px 14px", verticalAlign: "middle", maxWidth: "420px" }}>
+                      <div style={{ fontWeight: "600", color: "#2B2D2A", fontSize: "13px" }}>{item.subject || "General Inquiry"}</div>
+                      <div style={{ fontSize: "12.5px", color: "#5A584F", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+                        {item.message}
+                      </div>
+                    </td>
+                    <td style={{ padding: "12px 14px", verticalAlign: "middle", color: "#77756B", fontSize: "12px", whiteSpace: "nowrap" }}>
+                      {item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Recent"}
+                    </td>
+                    <td style={{ padding: "12px 14px", verticalAlign: "middle", whiteSpace: "nowrap" }}>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: "700",
+                          textTransform: "uppercase",
+                          padding: "3px 8px",
+                          borderRadius: "999px",
+                          backgroundColor: item.status === "resolved" ? "rgba(16, 185, 129, 0.12)" : "rgba(138, 107, 46, 0.12)",
+                          color: item.status === "resolved" ? "#065F46" : "#8A6B2E",
+                          border: `1px solid ${item.status === "resolved" ? "rgba(16, 185, 129, 0.25)" : "rgba(138, 107, 46, 0.25)"}`,
+                        }}
+                      >
+                        {item.status || "pending"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "12px 14px", verticalAlign: "middle", textAlign: "right", whiteSpace: "nowrap" }}>
+                      <Link
+                        href="/admin/inquiries"
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: "8px",
+                          backgroundColor: "#8A6B2E",
+                          color: "#FFFFFF",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          textDecoration: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
+                        }}
+                      >
+                        <Send size={11} /> Reply &amp; Manage
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Workflow Role Architecture Note Card (Full-width) */}

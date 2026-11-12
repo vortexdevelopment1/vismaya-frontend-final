@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
 export interface IUserConsent extends Document {
     userId: Types.ObjectId;
-    policyType: "terms_and_conditions" | "privacy_policy" | "registration_consent" | "per_application_consent" | "guardian_consent" | "social_sharing_consent";
+    policyType: "terms_and_conditions" | "privacy_policy" | "registration_consent" | "per_application_consent" | "guardian_consent" | "social_sharing_consent" | "aadhaar_kyc_consent";
     policyVersion: string;
     isAccepted: boolean;
     acceptedAt: Date;
@@ -30,7 +30,8 @@ const userConsentSchema = new Schema<IUserConsent>(
                 "registration_consent",
                 "per_application_consent",
                 "guardian_consent",
-                "social_sharing_consent"
+                "social_sharing_consent",
+                "aadhaar_kyc_consent"
             ],
             required: true,
             index: true

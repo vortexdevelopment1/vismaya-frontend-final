@@ -275,7 +275,7 @@ export default function ProfileBuilder({ onFinish }) {
   const stepsCompletion = profile.stepsCompletion || {
     step1: Boolean(
       (profile.category && (profile.primaryProfession || profile.profession)) &&
-      (profile.bio && profile.bio.trim().length >= 200) &&
+      (profile.bio && profile.bio.trim().length > 0) &&
       (profile.currentCity || profile.city) &&
       (profile.skills && profile.skills.length > 0) &&
       (profile.languages && profile.languages.length > 0)
@@ -328,9 +328,7 @@ export default function ProfileBuilder({ onFinish }) {
     if (!formState.primaryProfession?.trim()) errs.primaryProfession = "Primary profession is required.";
     const bioTrimmed = formState.bio?.trim() || "";
     if (!bioTrimmed) {
-      errs.bio = "Professional bio is required (200 - 1000 characters).";
-    } else if (bioTrimmed.length < 200) {
-      errs.bio = `Bio is too short (${bioTrimmed.length}/200 characters). Must be at least 200 characters.`;
+      errs.bio = "Professional bio is required (up to 1000 characters).";
     } else if (bioTrimmed.length > 1000) {
       errs.bio = `Bio exceeds 1000 characters (${bioTrimmed.length}/1000).`;
     }
@@ -394,7 +392,7 @@ export default function ProfileBuilder({ onFinish }) {
 
     const objectUrl = URL.createObjectURL(file);
     const img = new Image();
-    img.onload = () => {
+    img.onload = async () => {
       const dimCheck = validatePhotoFile(file, img.naturalWidth, img.naturalHeight);
       if (!dimCheck.valid) {
         URL.revokeObjectURL(objectUrl);
@@ -404,6 +402,20 @@ export default function ProfileBuilder({ onFinish }) {
       }
       setSelectedPhotoFile(file);
       setPhotoPreview(objectUrl);
+
+      // Auto-upload immediately so user doesn't have to manually hunt for a second save button
+      setIsUploadingPhoto(true);
+      try {
+        await updateProfilePhoto(file);
+        setSelectedPhotoFile(null);
+        URL.revokeObjectURL(objectUrl);
+        setPhotoPreview(null);
+        if (photoInputRef.current) photoInputRef.current.value = "";
+      } catch (err) {
+        setPhotoError(err.message || "Failed to update profile photo.");
+      } finally {
+        setIsUploadingPhoto(false);
+      }
     };
     img.onerror = () => {
       URL.revokeObjectURL(objectUrl);
@@ -413,17 +425,19 @@ export default function ProfileBuilder({ onFinish }) {
     img.src = objectUrl;
   };
 
-  const handleSavePhoto = async () => {
-    if (!selectedPhotoFile) return;
+  const handleSavePhoto = async (fileToUse = null) => {
+    const file = fileToUse || selectedPhotoFile;
+    if (!file) return;
     setIsUploadingPhoto(true);
     setPhotoError("");
     try {
-      await updateProfilePhoto(selectedPhotoFile);
+      await updateProfilePhoto(file);
       setSelectedPhotoFile(null);
       if (photoPreview) {
         URL.revokeObjectURL(photoPreview);
         setPhotoPreview(null);
       }
+      if (photoInputRef.current) photoInputRef.current.value = "";
     } catch (err) {
       setPhotoError(err.message || "Failed to update profile photo.");
     } finally {
@@ -592,7 +606,7 @@ export default function ProfileBuilder({ onFinish }) {
   // Calculate missing items count per step for step indicator badge
   const step1MissingCount = [
     Boolean(profile.category && (profile.primaryProfession || profile.profession)),
-    Boolean(profile.bio && profile.bio.trim().length >= 200),
+    Boolean(profile.bio && profile.bio.trim().length > 0),
     Boolean(profile.currentCity || profile.city),
     Boolean(profile.skills && profile.skills.length > 0),
     Boolean(profile.languages && profile.languages.length > 0),
@@ -644,7 +658,7 @@ export default function ProfileBuilder({ onFinish }) {
       key: "step4",
       done: stepsCompletion.step4,
       missingCount: step4MissingCount > 0 ? step4MissingCount : 1,
-      missingHint: isMinor ? "Needs height & guardian consent" : "Needs height measurement"
+      missingHint: isMinor ? "Needs height & guardian consent" : "Needs height & date of birth"
     },
   ];
 
@@ -743,7 +757,7 @@ export default function ProfileBuilder({ onFinish }) {
           <div className="pb-mobile-progress-info">
             <span className="pb-col-label">Profile Strength</span>
             <span className="pb-mobile-items-left">
-              {itemsLeft === 0 ? "Profile 100% complete" : `${itemsLeft} item${itemsLeft > 1 ? "s" : ""} left to reach 100%`}
+              {itemsLeft === 0 ? "Profile 100% complete" : `${itemsLeft} step${itemsLeft > 1 ? "s" : ""} left to reach 100%`}
             </span>
             {itemsLeft > 0 && (
               <span className="pb-mobile-hint-text">
@@ -829,7 +843,7 @@ export default function ProfileBuilder({ onFinish }) {
               <div className="pb-ring-meta">
                 <span className="pb-col-label">Profile strength</span>
                 <span className="pb-items-left-text">
-                  {itemsLeft === 0 ? "Profile 100% complete" : `${itemsLeft} item${itemsLeft > 1 ? "s" : ""} left to reach 100%`}
+                  {itemsLeft === 0 ? "Profile 100% complete" : `${itemsLeft} step${itemsLeft > 1 ? "s" : ""} left to reach 100%`}
                 </span>
               </div>
             </div>
@@ -1124,21 +1138,21 @@ export default function ProfileBuilder({ onFinish }) {
               <div style={{ gridColumn: "1 / -1" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
                   <label style={{ ...labelStyle, marginBottom: 0 }}>
-                    Professional Bio * (200 - 1000 characters)
+                    Professional Bio * (Max 1000 characters)
                   </label>
                   <span
                     style={{
                       fontSize: "12px",
                       fontWeight: "600",
-                      color: formState.bio.length < 200 || formState.bio.length > 1000 ? "#B42318" : "#027A48",
+                      color: formState.bio.length > 1000 ? "#B42318" : "#027A48",
                     }}
                   >
-                    {formState.bio.length} / 1000 characters {formState.bio.length < 200 ? `(need ${200 - formState.bio.length} more)` : "✓"}
+                    {formState.bio.length} / 1000 characters {formState.bio.length > 1000 ? "(Exceeds limit)" : "✓"}
                   </span>
                 </div>
                 <textarea
                   rows={5}
-                  placeholder="Describe your artistic journey, training background, monologue strengths, notable roles, and craft aspirations. Minimum 200 characters required."
+                  placeholder="Describe your artistic journey, training background, monologue strengths, notable roles, and craft aspirations (up to 1,000 characters)."
                   value={formState.bio}
                   onChange={(e) => handleChange("bio", e.target.value)}
                   style={{
@@ -1486,11 +1500,12 @@ export default function ProfileBuilder({ onFinish }) {
                       <button
                         type="button"
                         onClick={() => photoInputRef.current && photoInputRef.current.click()}
+                        disabled={isUploadingPhoto}
                         className="btn-primary"
                         style={{ padding: "8px 18px", fontSize: "13px", height: "38px" }}
                       >
                         <Upload size={14} />
-                        <span>{profile.profilePhoto || profile.avatar ? "Change Photo" : "Choose File"}</span>
+                        <span>{isUploadingPhoto ? "Uploading Photo..." : (profile.profilePhoto || profile.avatar ? "Change Photo" : "Choose File")}</span>
                       </button>
 
                       {(profile.profilePhoto || profile.avatar) && (
@@ -2202,10 +2217,17 @@ export default function ProfileBuilder({ onFinish }) {
 
               <button
                 type="button"
-                disabled={isSaving}
-                onClick={() => {
+                disabled={isSaving || isUploadingPhoto}
+                onClick={async () => {
                   if (currentStep === 1) handleSaveStep1(true);
-                  else if (currentStep === 2) navigateToStep(3);
+                  else if (currentStep === 2) {
+                    if (selectedPhotoFile && !isUploadingPhoto) {
+                      try {
+                        await handleSavePhoto(selectedPhotoFile);
+                      } catch {}
+                    }
+                    navigateToStep(3);
+                  }
                   else if (currentStep === 3) navigateToStep(4);
                   else if (currentStep === 4) handleSaveStep4(true);
                 }}

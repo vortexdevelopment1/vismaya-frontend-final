@@ -1,22 +1,7 @@
-import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 import { WorkflowProvider } from "@/lib/shared/workflowStore";
 import { AuthProvider } from "@/context/AuthContext";
 import BackendWakeupPing from "@/components/shared/BackendWakeupPing";
-
-const playfairDisplay = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  display: "swap",
-  variable: "--font-heading",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-  variable: "--font-body",
-});
 
 export const metadata = {
   title: "Vismaya - Casting & Talent Platform",
@@ -25,7 +10,15 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${playfairDisplay.variable} ${inter.variable}`}>
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body suppressHydrationWarning>
         <BackendWakeupPing />
         <WorkflowProvider>

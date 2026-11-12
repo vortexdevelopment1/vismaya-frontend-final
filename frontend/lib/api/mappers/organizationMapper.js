@@ -20,18 +20,41 @@ export function fromApi(org) {
   const gstNumber = org.gstNumber || "";
   const website = org.website || "";
 
-  // Normalize status: "Pending" | "Verified" | "Rejected" | "Suspended"
-  const rawStatus = (org.status || org.verificationState || userIdObj?.status || "pending").toLowerCase();
+  // Normalize verification state and accreditation
+  const hasSubmittedKyc = Boolean(
+    org.hasSubmittedKyc ||
+    org.verificationRecord ||
+    (org.registrationNumber && org.registrationNumber.trim() && org.registrationNumber.trim() !== "PENDING") ||
+    (org.cinNumber && org.cinNumber.trim() && org.cinNumber.trim() !== "PENDING") ||
+    (org.verificationDocs && org.verificationDocs.length > 0) ||
+    (org.documents && org.documents.length > 0)
+  );
+
+  const verificationState = String(
+    (typeof org.verificationStatus === "string" ? org.verificationStatus : null) ||
+    org.verificationState ||
+    org.verificationStatus?.overallStatus ||
+    (org.verificationStatus?.businessVerified ? "verified" : "") ||
+    "pending"
+  ).toLowerCase();
+
+  const isVerified = verificationState === "verified" || verificationState === "approved" || Boolean(org.verificationStatus?.businessVerified) || org.isVerified === true;
+  const isPendingReview = !isVerified && (hasSubmittedKyc || verificationState === "pending" || verificationState === "in_review");
+  const verificationStatus = isVerified ? "verified" : (isPendingReview ? "in_review" : (verificationState === "more_info_needed" ? "more_info_needed" : (verificationState === "rejected" ? "rejected" : "pending")));
+
+  // Account / Organization Status: "Pending" | "Verified" | "Rejected" | "Suspended"
   let status = "Pending";
-  if (rawStatus === "verified" || rawStatus === "active" || rawStatus === "approved") {
+  if (isVerified) {
     status = "Verified";
-  } else if (rawStatus === "rejected") {
+  } else if (verificationState === "rejected" || org.status === "rejected") {
     status = "Rejected";
-  } else if (rawStatus === "suspended") {
+  } else if (org.status === "suspended") {
     status = "Suspended";
   } else {
     status = "Pending";
   }
+
+  const rawStatus = (org.status || org.verificationState || "pending").toLowerCase();
 
   const joinedDate = org.createdAt ? new Date(org.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Recent";
 
@@ -70,6 +93,12 @@ export function fromApi(org) {
     website,
     status,
     rawStatus,
+    hasSubmittedKyc,
+    isPendingReview,
+    isVerified,
+    verificationStatus,
+    verificationState,
+    isKycCompleted: isVerified,
     credits: org.credits ?? org.walletCredits ?? 100,
     walletCredits: org.credits ?? org.walletCredits ?? 100,
     requirementsCount: org.requirementsCount ?? org.requirementsPosted ?? 0,

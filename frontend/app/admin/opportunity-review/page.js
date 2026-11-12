@@ -652,7 +652,7 @@ export default function OpportunityReviewPage() {
                   {/* Line 3: Organization Name */}
                   <div className="opp-item-org" title={org?.name || "Organization"}>
                     <Building2 size={13} style={{ color: "#7c869e", flexShrink: 0 }} />
-                    <span className="opp-truncate-text">{org?.name || "Organization"}</span>
+                    <span className="opp-truncate-text" style={{ textTransform: "capitalize" }}>{org?.name || "Organization"}</span>
                   </div>
 
                   {/* Line 4: Project Name & Closes Date */}
@@ -919,7 +919,7 @@ export default function OpportunityReviewPage() {
 
                     <div>
                       <span style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.04em", color: "#7c869e", display: "block", marginBottom: "3px" }}>Organization</span>
-                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", display: "block" }}>
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", display: "block", textTransform: "capitalize" }}>
                         {selectedOrg?.name || selectedProject?.organizationName || "Not provided"}
                       </span>
                     </div>
@@ -933,7 +933,7 @@ export default function OpportunityReviewPage() {
 
                     <div>
                       <span style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.04em", color: "#7c869e", display: "block", marginBottom: "3px" }}>Project Opportunities</span>
-                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", display: "block" }}>
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#2B2D2A", display: "block", textTransform: "capitalize" }}>
                         {(() => {
                           const count = selectedProject?.opportunityCount ?? selectedProject?.opportunitiesCount ?? selectedOpportunity?.project?.opportunityCount ?? selectedOpportunity?.project?.opportunitiesCount ?? opportunities.filter(o => {
                             const oppProjId = o.projectId?._id || o.projectId?.id || o.projectId;

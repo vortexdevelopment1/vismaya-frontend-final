@@ -732,10 +732,14 @@ function RegisterPageContent() {
   const handleBasicIdentitySubmit = (e) => {
     e.preventDefault();
     if (selectedRole === "talent") {
-      // Photo, Age and City are optional - can be completed later in profile
+      const ageNum = Number(age);
+      if (!age || isNaN(ageNum) || ageNum < 5 || ageNum > 100) {
+        setFormError("Age is compulsory. Please enter a valid age between 5 and 100.");
+        return;
+      }
       setFormError("");
       setCurrentStep(4); // Payment step for Talent
-      saveDraft({ step: 4 });
+      saveDraft({ step: 4, age: ageNum });
     } else {
       // Organization basic identity
       if (!companyType || !orgPhone || !city) {
@@ -848,6 +852,7 @@ function RegisterPageContent() {
         city: city || "Mumbai",
         phone: cleanContact,
         mobile: cleanContact,
+        age: selectedRole === "talent" ? Number(age) : undefined,
         profilePhoto: photoUrl,
         stageName: name.trim(),
         primaryProfession: primaryCraft,
@@ -875,7 +880,8 @@ function RegisterPageContent() {
 
       const res = await register(payload);
       if (res.success && res.user) {
-        const activated = res.user.status === "active" && Boolean(res.token);
+        const statusLower = (res.user.status || res.user.rawStatus || "").toLowerCase();
+        const activated = Boolean(res.token) || statusLower === "active" || statusLower === "approved";
         setIsAccountActivated(activated);
         // Clear registration draft and active session from storage upon successful onboarding.
         const tokenToDelete = draftToken || (typeof window !== "undefined" ? sessionStorage.getItem("vismaya_draft_token") : null);
@@ -891,11 +897,16 @@ function RegisterPageContent() {
           }
         }
         setIsRegistrationComplete(true);
-        if (activated) {
-          setTimeout(() => {
+        // Always redirect directly to the KYC onboarding page!
+        setTimeout(() => {
+          if (selectedRole === "talent") {
+            router.push("/talent/verification?onboarding=true");
+          } else if (selectedRole === "organization") {
+            router.push("/recruiter/verification?onboarding=true");
+          } else {
             router.push(getDashboardPath(selectedRole));
-          }, 1500);
-        }
+          }
+        }, 1000);
       } else {
         const errMsg = res.error || "Registration error occurred. Please try again.";
         const lower = errMsg.toLowerCase();
@@ -1296,7 +1307,7 @@ function RegisterPageContent() {
                     <div>
                       <button
                         type="button"
-                        onClick={() => router.push(getDashboardPath(selectedRole))}
+                        onClick={() => router.push(selectedRole === "talent" ? "/talent/verification?onboarding=true" : getDashboardPath(selectedRole))}
                         className="btn-primary"
                         style={{ margin: "0 auto", padding: "0 28px", height: "44px", justifyContent: "center" }}
                       >
@@ -1365,15 +1376,23 @@ function RegisterPageContent() {
                       <span>Status: Incomplete Registration (Payment / OTP Required)</span>
                     </div>
 
-                    <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+                    <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
                       <button
                         type="button"
-                        onClick={() => router.push("/login")}
+                        onClick={() => router.push(selectedRole === "talent" ? "/talent/verification?onboarding=true" : (selectedRole === "organization" ? "/recruiter/verification?onboarding=true" : getDashboardPath(selectedRole)))}
                         className="btn-primary"
                         style={{ padding: "0 28px", height: "44px", justifyContent: "center" }}
                       >
-                        <span>Go to Sign In</span>
+                        <span>Proceed to KYC Verification</span>
                         <ArrowRight size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => router.push("/login")}
+                        className="btn-secondary"
+                        style={{ padding: "0 20px", height: "44px", justifyContent: "center" }}
+                      >
+                        <span>Sign In</span>
                       </button>
                       <button
                         type="button"
@@ -2036,14 +2055,21 @@ function RegisterPageContent() {
                         letterSpacing: "0.04em",
                       }}
                     >
-                      Age
+                      Age *
                     </label>
                     <input
                       type="number"
+                      required
+                      min="5"
+                      max="100"
+                      placeholder="e.g. 24"
                       autoComplete="off"
                       value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      style={{ width: "100%", height: "42px", borderRadius: "6px", border: "1px solid #E8E2D4", boxSizing: "border-box" }}
+                      onChange={(e) => {
+                        setAge(e.target.value);
+                        if (formError) setFormError("");
+                      }}
+                      style={{ width: "100%", height: "42px", padding: "0 12px", borderRadius: "6px", border: "1px solid #E8E2D4", boxSizing: "border-box" }}
                     />
                   </div>
 

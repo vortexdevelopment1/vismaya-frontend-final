@@ -18,6 +18,8 @@ import CreditTransaction from "../models/creditTransaction.model.js";
 import Report from "../models/report.model.js";
 import ProjectShortlist from "../models/projectShortlist.model.js";
 import Audition from "../models/audition.model.js";
+import ContactInquiry from "../models/contactInquiry.model.js";
+import { sendEmail } from "../services/email.service.js";
 import { logAdminAction } from "../services/audit.service.js";
 import { notifyUser } from "../services/notification.service.js";
 import { revokeAllUserSessions } from "../services/session.service.js";
@@ -4018,9 +4020,18 @@ export const getDashboardMetrics = async (req: Request, res: Response): Promise<
             { stage: "Final Bookings & Selected", count: selectedApps, percent: totalApplications > 0 ? Math.round((selectedApps / totalApplications) * 100) : 0 }
         ];
 
+        const [pendingInquiries, totalInquiries] = await Promise.all([
+            ContactInquiry.countDocuments({ status: "pending" }),
+            ContactInquiry.countDocuments()
+        ]);
+
         res.status(200).json({
             success: true,
             metrics: {
+                inquiries: {
+                    total: totalInquiries,
+                    pending: pendingInquiries
+                },
                 users: {
                     total: totalUsers,
                     talent: talentCount,
@@ -4395,5 +4406,152 @@ export const updateAdminProfile = async (req: Request, res: Response): Promise<a
     } catch (error: any) {
         console.error("Update admin profile error:", error);
         return res.status(500).json({ success: false, message: "Failed to update admin profile" });
+    }
+};
+
+// --- CONTACT INQUIRIES & HELPDESK ---
+
+export const getContactInquiries = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { status, search, limit = 50, page = 1 } = req.query;
+        const query: any = {};
+
+        if (status && status !== "all") {
+            query.status = status;
+        }
+
+        if (search && typeof search === "string" && search.trim()) {
+            const s = escapeRegex(search.trim());
+            query.$or = [
+                { name: { $regex: s, $options: "i" } },
+                { email: { $regex: s, $options: "i" } },
+                { subject: { $regex: s, $options: "i" } },
+                { message: { $regex: s, $options: "i" } }
+            ];
+        }
+
+        const skip = (Math.max(1, Number(page)) - 1) * Math.max(1, Number(limit));
+        const [inquiries, total, pendingCount] = await Promise.all([
+            ContactInquiry.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+            ContactInquiry.countDocuments(query),
+            ContactInquiry.countDocuments({ status: "pending" })
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            data: inquiries,
+            count: inquiries.length,
+            total,
+            pendingCount
+        });
+    } catch (error: any) {
+        console.error("Get contact inquiries error:", error);
+        return res.status(500).json({ success: false, message: "Failed to fetch contact inquiries" });
+    }
+};
+
+export const updateContactInquiryStatus = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!["pending", "reviewed", "resolved"].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid status. Must be pending, reviewed, or resolved."
+            });
+        }
+
+        const inquiry = await ContactInquiry.findByIdAndUpdate(
+            id,
+            { status },
+            { new: true }
+        );
+
+        if (!inquiry) {
+            return res.status(404).json({ success: false, message: "Inquiry not found" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Inquiry status updated to ${status}`,
+            data: inquiry
+        });
+    } catch (error: any) {
+        console.error("Update inquiry status error:", error);
+        return res.status(500).json({ success: false, message: "Failed to update inquiry status" });
+    }
+};
+
+export const deleteContactInquiry = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const inquiry = await ContactInquiry.findByIdAndDelete(id);
+        if (!inquiry) {
+            return res.status(404).json({ success: false, message: "Inquiry not found" });
+        }
+        return res.status(200).json({
+            success: true,
+            message: "Inquiry deleted successfully"
+        });
+    } catch (error: any) {
+        console.error("Delete inquiry error:", error);
+        return res.status(500).json({ success: false, message: "Failed to delete inquiry" });
+    }
+};
+
+export const replyToContactInquiry = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const { replyMessage, replySubject, markResolved } = req.body;
+
+        if (!replyMessage || !replyMessage.trim()) {
+            return res.status(400).json({ success: false, message: "Reply message cannot be empty" });
+        }
+
+        const inquiry = await ContactInquiry.findById(id);
+        if (!inquiry) {
+            return res.status(404).json({ success: false, message: "Inquiry not found" });
+        }
+
+        const subject = replySubject?.trim() || `Re: ${inquiry.subject || "Vismaya Inquiry"}`;
+
+        await sendEmail({
+            to: inquiry.email,
+            subject,
+            text: `Dear ${inquiry.name},\n\n${replyMessage.trim()}\n\n---\nOriginal Inquiry:\n"${inquiry.message}"\n\nBest regards,\nVismaya Creative Studios Operations Desk`,
+            html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #E8E2D4; border-radius: 12px; overflow: hidden;">
+                <div style="background-color: #8A6B2E; color: #FFFFFF; padding: 20px 24px;">
+                    <h2 style="margin: 0; font-size: 20px; font-family: Georgia, serif;">Vismaya Creative Studios</h2>
+                    <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.9;">Response from Helpdesk Desk</p>
+                </div>
+                <div style="padding: 24px; background-color: #FFFFFF; color: #2B2D2A;">
+                    <p style="font-size: 15px; line-height: 1.6; margin-top: 0;">Dear <strong>${inquiry.name}</strong>,</p>
+                    <div style="font-size: 14.5px; line-height: 1.7; color: #2B2D2A; white-space: pre-wrap; margin: 16px 0; padding: 14px 18px; background-color: #FAF9F7; border: 1px solid #E8E2D4; border-radius: 8px;">${replyMessage.trim()}</div>
+                    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #E8E2D4; font-size: 12.5px; color: #77756B;">
+                        <strong>Your Original Message (${new Date(inquiry.createdAt).toLocaleDateString("en-IN")}):</strong>
+                        <div style="margin-top: 6px; padding-left: 12px; border-left: 3px solid #D1C9B8; color: #5A584F; font-style: italic;">
+                            ${inquiry.message}
+                        </div>
+                    </div>
+                </div>
+                <div style="background-color: #F5F3EC; padding: 14px 24px; text-align: center; font-size: 12px; color: #77756B; border-top: 1px solid #E8E2D4;">
+                    Vismaya Creative Studios &bull; Mumbai, India &bull; <a href="https://vismayastudios.com" style="color: #8A6B2E;">vismayastudios.com</a>
+                </div>
+            </div>`
+        });
+
+        inquiry.status = markResolved ? "resolved" : "reviewed";
+        await inquiry.save();
+
+        return res.status(200).json({
+            success: true,
+            message: `Email reply successfully delivered to ${inquiry.email}`,
+            data: inquiry
+        });
+    } catch (error: any) {
+        console.error("Reply to inquiry error:", error);
+        return res.status(500).json({ success: false, message: error?.message || "Failed to send email reply" });
     }
 };

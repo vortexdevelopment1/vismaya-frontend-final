@@ -376,6 +376,18 @@ export function RecruiterProvider({ children }) {
     });
   };
 
+  const refreshCompanyProfile = async () => {
+    try {
+      const res = await recruiterService.getOrganizationProfile();
+      if (res?.data) {
+        setCompanyProfile(res.data);
+        return res.data;
+      }
+    } catch (err) {
+      console.warn("Could not refresh company profile:", err);
+    }
+  };
+
   // Credit & Shortlist Actions
   const unlockTalentProfile = async (talentId) => {
     if (isRealMode("recruiter")) {
@@ -495,6 +507,7 @@ export function RecruiterProvider({ children }) {
     <RecruiterContext.Provider
       value={{
         companyProfile,
+        refreshCompanyProfile,
         updateCompanyProfile,
         requirements,
         addRequirement,

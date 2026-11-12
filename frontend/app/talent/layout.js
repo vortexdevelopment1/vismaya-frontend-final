@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { TalentProvider, useTalent } from "@/lib/talent/TalentContext";
 import TalentSidebar from "@/components/talent/TalentSidebar";
 import TalentTopbar from "@/components/talent/TalentTopbar";
@@ -10,6 +11,9 @@ import { useAuth } from "@/context/AuthContext";
 import LogoutConfirmModal from "@/components/shared/LogoutConfirmModal";
 
 function TalentLayoutContent({ children }) {
+  const searchParams = useSearchParams();
+  const isOnboarding = searchParams?.get("onboarding") === "true";
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const { toasts, removeToast } = useTalent();
@@ -25,6 +29,31 @@ function TalentLayoutContent({ children }) {
       }
     };
   }, [mobileOpen]);
+
+  // When in standalone onboarding mode, render a clean centered container matching the registration form (no dashboard sidebar/topbar)
+  if (isOnboarding) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "#FAF9F7",
+          color: "#2B2D2A",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: "clamp(24px, 4vw, 48px) 16px",
+          boxSizing: "border-box",
+          position: "relative",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: "520px" }}>
+          {children}
+        </div>
+        <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -147,7 +176,9 @@ export default function TalentLayout({ children }) {
   return (
     <RequireRole allowedRoles={["talent"]}>
       <TalentProvider>
-        <TalentLayoutContent>{children}</TalentLayoutContent>
+        <Suspense fallback={<div style={{ minHeight: "100vh", backgroundColor: "#FAF9F7" }} />}>
+          <TalentLayoutContent>{children}</TalentLayoutContent>
+        </Suspense>
       </TalentProvider>
     </RequireRole>
   );

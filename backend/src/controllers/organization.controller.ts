@@ -86,7 +86,7 @@ export const getOrganizationProfile = async (req: Request, res: Response): Promi
     try {
         const userId = req.user?.userId;
 
-        const organization = await Organization.findOne({ userId }).select("-verificationDocuments");
+        const organization = await Organization.findOne({ userId }).select("-verificationDocuments").lean();
 
         if (!organization) {
             return res.status(404).json({
@@ -95,9 +95,30 @@ export const getOrganizationProfile = async (req: Request, res: Response): Promi
             });
         }
 
+        const latestVerification = await Verification.findOne({
+            userId,
+            verificationType: "organization_business"
+        }).sort({ createdAt: -1, submittedAt: -1 }).lean();
+
+        const hasSubmittedKyc = Boolean(
+            latestVerification && (
+                latestVerification.status === "under_review" ||
+                latestVerification.status === "verified" ||
+                (latestVerification.businessData?.documentUrl && latestVerification.businessData.documentUrl.trim()) ||
+                (latestVerification.businessData?.businessRegistrationDocUrl && latestVerification.businessData.businessRegistrationDocUrl.trim()) ||
+                (latestVerification.businessData?.businessRegNumber && latestVerification.businessData.businessRegNumber !== "PENDING" && latestVerification.businessData.businessRegNumber.trim())
+            )
+        );
+        const verificationStatus = latestVerification ? latestVerification.status : (organization.verificationState || "pending");
+
         res.status(200).json({
             success: true,
-            organization
+            organization: {
+                ...organization,
+                hasSubmittedKyc,
+                verificationStatus,
+                verificationRecord: latestVerification || null
+            }
         });
 
     } catch (error) {

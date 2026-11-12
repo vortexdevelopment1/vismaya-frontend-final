@@ -162,7 +162,8 @@ export function AuthProvider({ children }) {
     try {
       const res = await authService.register(payload);
       if (res.success && res.user) {
-        if (res.token && res.user.status === "active") {
+        const statusLower = (res.user.status || res.user.rawStatus || "").toLowerCase();
+        if (res.token && (statusLower === "active" || statusLower === "approved" || statusLower === "pending")) {
           saveSession(res.user, res.token);
         }
         return { success: true, user: res.user, token: res.token };

@@ -376,8 +376,8 @@ export const paymentService = {
 
     const normalizedPackageType = PACKAGE_TYPE_MAP[packageType] || packageType;
 
-    // Real backend POST /api/payments/apply-coupon (requires authenticated session)
-    if (isRealMode("payments") && getAuthToken()) {
+    // Real backend POST /api/payments/apply-coupon
+    if (isRealMode("payments")) {
       if (!normalizedPackageType) {
         return {
           success: false,
@@ -389,11 +389,29 @@ export const paymentService = {
           couponCode: cleanCode,
           packageType: normalizedPackageType,
         });
-        return res?.data || res;
+        if (res?.success) {
+          const d = res.data || res;
+          return {
+            success: true,
+            data: {
+              code: d.code || d.couponCode || cleanCode,
+              couponCode: d.couponCode || d.code || cleanCode,
+              discountType: d.discountType,
+              discountValue: d.discountValue,
+              discountAmount: d.discountAmount,
+              finalAmount: d.finalAmount !== undefined ? d.finalAmount : Math.max(0, baseAmount - (d.discountAmount || 0)),
+              description: d.description || "",
+            },
+          };
+        }
+        return {
+          success: false,
+          message: res?.message || "Invalid or expired coupon code.",
+        };
       } catch (err) {
         return {
           success: false,
-          message: err?.message || "Invalid or expired coupon code.",
+          message: err?.response?.data?.message || err?.message || "Invalid or expired coupon code.",
         };
       }
     }
@@ -437,7 +455,7 @@ export const paymentService = {
    */
   async getBestCoupon(packageType, { baseAmount = 0, userEmail = "", userId = "" } = {}) {
     const normalizedPackageType = PACKAGE_TYPE_MAP[packageType] || packageType;
-    if (isRealMode("payments") && getAuthToken()) {
+    if (isRealMode("payments")) {
       try {
         const res = await apiClient.get("/api/payments/best-coupon", {
           params: {
@@ -446,10 +464,15 @@ export const paymentService = {
             userEmail,
           },
         });
-        if (res?.success && res.data) {
-          return { success: true, data: res.data };
+        const couponData = res?.data || res?.coupon;
+        if (res?.success && couponData) {
+          return { success: true, data: couponData };
         }
-      } catch (err) {}
+        return { success: true, data: null };
+      } catch (err) {
+        console.warn("Best coupon lookup error, proceeding without coupon:", err);
+        return { success: true, data: null };
+      }
     }
 
     try {

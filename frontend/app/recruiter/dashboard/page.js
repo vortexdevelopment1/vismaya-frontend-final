@@ -17,6 +17,7 @@ import {
   Building2,
   Users,
   ShieldCheck,
+  ShieldAlert,
   Eye,
   CreditCard,
 } from "lucide-react";
@@ -31,8 +32,10 @@ import { useWorkflow } from "@/lib/shared/workflowStore";
 import { isRealMode } from "@/lib/api/config";
 
 import { recruiterService } from "@/lib/api/services/recruiterService";
+import { useRecruiter } from "@/lib/recruiter/RecruiterContext";
 
 export default function OrganizationDashboardPage() {
+  const { companyProfile } = useRecruiter() || {};
   const [credits, setCredits] = React.useState({ balance: 0, lowBalanceWarning: false });
   const [buyPlan, setBuyPlan] = React.useState(null);
   const [realProjects, setRealProjects] = React.useState([]);
@@ -136,12 +139,32 @@ export default function OrganizationDashboardPage() {
     }
   ).length;
 
+  // Organization & KYC Status Evaluation
+  const effectiveOrg = orgProfile || companyProfile;
+  const isOrgVerified = Boolean(
+    (orgProfile && orgProfile.isVerified) ||
+    (companyProfile && companyProfile.isVerified) ||
+    (effectiveOrg?.verificationState === "verified") ||
+    (effectiveOrg?.status === "Verified" && effectiveOrg?.verificationState === "verified")
+  );
+  const hasSubmittedKyc = Boolean(
+    effectiveOrg?.hasSubmittedKyc ||
+    effectiveOrg?.isPendingReview ||
+    effectiveOrg?.verificationStatus === "in_review" ||
+    effectiveOrg?.verificationStatus === "under_review" ||
+    (effectiveOrg?.registrationNumber && effectiveOrg?.registrationNumber !== "PENDING") ||
+    (effectiveOrg?.cinNumber && effectiveOrg?.cinNumber !== "PENDING") ||
+    (effectiveOrg?.documents && effectiveOrg.documents.length > 0) ||
+    (effectiveOrg?.verificationDocs && effectiveOrg.verificationDocs.length > 0)
+  );
+  const kycActionNeeded = !isOrgVerified && !hasSubmittedKyc;
+
   // Action needed list
   const newApplicants = orgApplications.filter((a) => a.status === "Applied").slice(0, 3);
   const readyAuditions = orgAuditions.filter((aud) => aud.status === "Forwarded to Organization" || aud.status === "Self-tape Received").slice(0, 3);
   const changesRequestedOpps = orgOpportunities.filter((o) => o.status === "Changes Requested").slice(0, 2);
 
-  const totalActionCount = newApplicants.length + readyAuditions.length + changesRequestedOpps.length;
+  const totalActionCount = (kycActionNeeded ? 1 : 0) + newApplicants.length + readyAuditions.length + changesRequestedOpps.length;
 
   // 9-Stage Casting Pipeline Workflow
   const workflowStages = [
@@ -163,14 +186,37 @@ export default function OrganizationDashboardPage() {
         title="Organization Overview"
         subtitle="Manage casting projects, post verified opportunities, screen talent submissions, and track audition self-tapes."
         badge={
-          orgProfile?.isVerified
-            ? `${orgProfile?.companyName || "Organization"} • Verified Production House`
-            : orgProfile?.verificationStatus === "pending"
+          isOrgVerified
+            ? `${effectiveOrg?.companyName || "Organization"} • Verified Production House`
+            : hasSubmittedKyc
             ? "Verification Pending Review"
-            : "Organization Portal"
+            : "KYC Pending"
         }
         action={
-          <div className="recruiter-dash-header-actions" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <div className="recruiter-dash-header-actions" style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+            {!isOrgVerified && (
+              <Link
+                href="/recruiter/verification"
+                className="btn-secondary dash-action-btn"
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  height: "36px",
+                  padding: "0 14px",
+                  gap: "6px",
+                  borderRadius: "10px",
+                  textDecoration: "none",
+                  backgroundColor: "#F3EFE6",
+                  color: "#8A6B2E",
+                  border: "1px solid #E8E2D4",
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+              >
+                <ShieldAlert size={15} />
+                <span>Verify Studio (KYC)</span>
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => setBuyPlan("bundle_views")}
@@ -200,12 +246,12 @@ export default function OrganizationDashboardPage() {
         }
       />
 
-      {/* Verification Status Widget (Spec §1 & §35 - displayed ONLY while verification is pending) */}
-      {(orgProfile?.verificationStatus === "pending" || (!orgProfile?.isVerified && orgProfile !== null)) && (
+      {/* Prominent KYC Status Widget (displayed when organization KYC is NOT yet verified) */}
+      {!isOrgVerified && (
         <div
           style={{
-            backgroundColor: "rgba(255, 188, 0, 0.08)",
-            border: "1px solid rgba(255, 188, 0, 0.35)",
+            backgroundColor: hasSubmittedKyc ? "rgba(255, 188, 0, 0.08)" : "rgba(217, 119, 6, 0.08)",
+            border: hasSubmittedKyc ? "1px solid rgba(255, 188, 0, 0.35)" : "1px solid rgba(217, 119, 6, 0.35)",
             borderRadius: "14px",
             padding: "16px 20px",
             display: "flex",
@@ -221,7 +267,7 @@ export default function OrganizationDashboardPage() {
                 width: "42px",
                 height: "42px",
                 borderRadius: "12px",
-                backgroundColor: "rgba(255, 188, 0, 0.15)",
+                backgroundColor: hasSubmittedKyc ? "rgba(255, 188, 0, 0.15)" : "rgba(217, 119, 6, 0.15)",
                 color: "#8A6B2E",
                 display: "flex",
                 alignItems: "center",
@@ -229,44 +275,54 @@ export default function OrganizationDashboardPage() {
                 flexShrink: 0,
               }}
             >
-              <ShieldCheck size={22} />
+              {hasSubmittedKyc ? <ShieldCheck size={22} /> : <ShieldAlert size={22} />}
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                 <strong style={{ fontSize: "0.95rem", color: "#2B2D2A" }}>
-                  Organization Verification Under Review
+                  {hasSubmittedKyc
+                    ? "Organization Verification Under Review"
+                    : "Complete Organization KYC Verification"}
                 </strong>
                 <span
                   style={{
                     fontSize: "0.725rem",
                     fontWeight: 700,
-                    color: "#8A6B2E",
-                    backgroundColor: "#F3EFE6",
+                    color: hasSubmittedKyc ? "#8A6B2E" : "#B45309",
+                    backgroundColor: hasSubmittedKyc ? "#F3EFE6" : "#FEF3C7",
                     padding: "2px 8px",
                     borderRadius: "8px",
+                    border: hasSubmittedKyc ? "1px solid #E8E2D4" : "1px solid #FDE68A",
                   }}
                 >
-                  Pending Compliance
+                  {hasSubmittedKyc ? "Under Review" : "Action Required"}
                 </span>
               </div>
               <p style={{ fontSize: "0.825rem", color: "#5A584F", margin: "3px 0 0 0", lineHeight: "1.4" }}>
-                Your production profile is being vetted by Vismaya Casting Desk. You can explore talent and draft projects while compliance documents are verified.
+                {hasSubmittedKyc
+                  ? "Your statutory business credentials are being vetted by the Vismaya Compliance Desk. You can explore talent and draft projects while compliance documents are verified."
+                  : "You skipped KYC verification during onboarding. Submit your business registration document (CIN / LLPIN / Udyam) and GST details to establish verified production house status and publish live casting briefs."}
               </p>
             </div>
           </div>
           <Link
-            href="/recruiter/settings"
-            className="btn-secondary"
+            href="/recruiter/verification"
+            className="btn-primary"
             style={{
-              height: "36px",
-              padding: "0 16px",
-              fontSize: "12.5px",
+              height: "38px",
+              padding: "0 18px",
+              fontSize: "13px",
               fontWeight: 600,
-              borderRadius: "8px",
+              borderRadius: "10px",
               textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              whiteSpace: "nowrap",
             }}
           >
-            <span>View Verification Status</span>
+            <span>{hasSubmittedKyc ? "View Verification Status" : "Complete KYC Now"}</span>
+            <ArrowRight size={15} />
           </Link>
         </div>
       )}
@@ -422,13 +478,13 @@ export default function OrganizationDashboardPage() {
         />
       </div>
 
-      {/* Main Grid: Action Needed (Left 2fr) + Workflow Flow Card (Right 1fr) */}
+      {/* Main Grid: Action Needed (Left 1.15fr) + Workflow Flow Card (Right 1fr) */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr)",
+          gridTemplateColumns: "minmax(0, 1.15fr) minmax(0, 1fr)",
           gap: "20px",
-          alignItems: "start",
+          alignItems: "stretch",
           width: "100%",
         }}
         className="dashboard-main-grid"
@@ -446,6 +502,7 @@ export default function OrganizationDashboardPage() {
             backgroundColor: "#FFFFFF",
             borderRadius: "16px",
             border: "1px solid #E8E2D4",
+            height: "100%",
           }}
         >
           <div
@@ -512,20 +569,119 @@ export default function OrganizationDashboardPage() {
             </span>
           </div>
 
-          <div className="action-needed-list" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div
+            className="action-needed-list"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+              flex: 1,
+              justifyContent: totalActionCount === 0 ? "center" : "flex-start",
+            }}
+          >
             {totalActionCount === 0 ? (
               <div
                 style={{
-                  padding: "24px 16px",
+                  padding: "40px 20px",
                   textAlign: "center",
                   color: "var(--text-muted)",
                   fontSize: "0.85rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "12px",
                 }}
               >
-                No immediate actions pending. All queues are up to date!
+                <div
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    borderRadius: "50%",
+                    backgroundColor: "#F3EFE6",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#8A6B2E",
+                    border: "1px solid #E8E2D4",
+                  }}
+                >
+                  <CheckCircle2 size={24} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
+                    All Caught Up!
+                  </div>
+                  <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "4px" }}>
+                    No immediate actions pending. All queues are up to date!
+                  </div>
+                </div>
               </div>
             ) : (
               <>
+                {/* Organization KYC Required Action Item */}
+                {kycActionNeeded && (
+                  <Link
+                    href="/recruiter/verification"
+                    className="action-needed-row kyc-action-row"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 14px",
+                      borderRadius: "12px",
+                      backgroundColor: "rgba(217, 119, 6, 0.08)",
+                      border: "1px solid rgba(217, 119, 6, 0.3)",
+                      textDecoration: "none",
+                      gap: "12px",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                      <div
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "8px",
+                          backgroundColor: "#FEF3C7",
+                          color: "#B45309",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "1px solid #FDE68A",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <ShieldAlert size={16} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: "0.825rem", fontWeight: 700, color: "#2B2D2A" }}>
+                          {hasSubmittedKyc ? "KYC Accreditation Under Review" : "Complete Studio KYC Verification"}
+                        </div>
+                        <div style={{ fontSize: "0.725rem", color: "#5A584F", marginTop: "2px" }}>
+                          {hasSubmittedKyc
+                            ? "Awaiting Vismaya compliance review of business documents"
+                            : "Submit CIN / GST documents to publish casting calls"}
+                        </div>
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        color: "#8A6B2E",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span>{hasSubmittedKyc ? "Check Status" : "Verify Studio"}</span>
+                      <ArrowRight size={13} />
+                    </span>
+                  </Link>
+                )}
+
                 {/* Changes Requested by Vismaya */}
                 {changesRequestedOpps.map((opp) => (
                   <Link
@@ -642,6 +798,7 @@ export default function OrganizationDashboardPage() {
             backgroundColor: "#FFFFFF",
             borderRadius: "16px",
             border: "1px solid #E8E2D4",
+            height: "100%",
           }}
         >
           <div
@@ -712,8 +869,9 @@ export default function OrganizationDashboardPage() {
             className="workflow-stages-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(min(125px, 100%), 1fr))",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
               gap: "8px",
+              flex: 1,
             }}
           >
             {workflowStages.map((stage) => (
@@ -728,6 +886,7 @@ export default function OrganizationDashboardPage() {
                   display: "flex",
                   flexDirection: "column",
                   gap: "4px",
+                  gridColumn: stage.num === 9 ? "span 2" : "span 1",
                 }}
               >
                 <div className="workflow-stage-title" style={{ fontSize: "0.8rem", fontWeight: 700, color: "#8A6B2E" }}>

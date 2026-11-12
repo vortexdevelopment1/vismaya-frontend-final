@@ -131,6 +131,11 @@ export function fromApi(profile) {
     rawStatus: profile.status || rawStatus || "pending",
     isProfileApproved: isApproved,
     isPaid: Boolean(profile.isPaid || userIdObj?.isPaid),
+    isVerified: Boolean(profile.isVerified || profile.verificationBadges?.identityVerified),
+    verificationBadges: profile.verificationBadges || {
+      identityVerified: Boolean(profile.isVerified),
+      professionalVerified: Boolean(profile.isVerifiedCredit || profile.verificationBadges?.professionalVerified),
+    },
     age: computedAge,
     createdAt: safeCreatedAt,
     joinedDate: formattedJoinedDate,

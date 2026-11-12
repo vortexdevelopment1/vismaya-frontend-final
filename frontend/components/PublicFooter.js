@@ -17,7 +17,7 @@ export default function PublicFooter() {
   ];
 
   const legalLinks = [
-    { label: "KYC Verification", href: "/terms#profile-and-verification" },
+    { label: "KYC Verification", href: "/kyc" },
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Service", href: "/terms" },
     { label: "Account Sign In", href: "/login" },

@@ -285,9 +285,7 @@ export default function ProfileSections() {
 
     // Bio length validation
     const bioText = (formData.personal?.bio || "").trim();
-    if (bioText.length > 0 && bioText.length < 200) {
-      newErrors.bio = "Bio must be at least 200 characters in length";
-    } else if (bioText.length > 1000) {
+    if (bioText.length > 1000) {
       newErrors.bio = "Bio cannot exceed 1000 characters in length";
     }
 
@@ -723,7 +721,7 @@ export default function ProfileSections() {
 
           <div className="field-full" style={{ gridColumn: "1 / -1" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
-              <label style={labelStyle}>Professional Bio &amp; Monologue Summary (200 - 1000 characters)</label>
+              <label style={labelStyle}>Professional Bio &amp; Monologue Summary (Max 1000 characters)</label>
               <span style={{ fontSize: "0.75rem", color: (formData?.personal?.bio?.length || 0) > 1000 ? "var(--danger)" : "var(--text-muted)" }}>
                 {formData?.personal?.bio?.length || 0} / 1000
               </span>

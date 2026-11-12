@@ -33,6 +33,14 @@ export const validateRegisterInput = (data: any): { isValid: boolean; errors: st
         errors.push("Role must be either 'talent' or 'organization'");
     }
 
+    if (role === "talent") {
+        const rawAge = data?.age;
+        const ageNum = Number(rawAge);
+        if (rawAge === undefined || rawAge === null || rawAge === "" || isNaN(ageNum) || ageNum < 5 || ageNum > 100) {
+            errors.push("Age is compulsory. Please enter a valid age between 5 and 100.");
+        }
+    }
+
     if (role === "organization") {
         // 1. Registration number (required)
         const rawRegNum = data?.registrationNumber || data?.cinNumber;
@@ -117,6 +125,7 @@ export const validateRegisterInput = (data: any): { isValid: boolean; errors: st
             phone: cleanMobile,
             password,
             role: ALLOWED_PUBLIC_ROLES.includes(role) ? role : undefined,
+            age: data?.age !== undefined && data?.age !== null && data?.age !== "" && !isNaN(Number(data.age)) ? Number(data.age) : undefined,
             city: data?.city ? String(data.city).trim() : undefined,
             profilePhoto: data?.profilePhoto ? String(data.profilePhoto).trim() : undefined,
             stageName: data?.stageName ? String(data.stageName).trim() : undefined,

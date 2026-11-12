@@ -114,7 +114,7 @@ export const calculateProfileCompletionDetails = (profile?: any): ProfileComplet
     const hasProfilePhoto = Boolean(profilePhoto);
 
     const bioText = (profile.bio || profile.personal?.bio || "").trim();
-    const hasValidBio = bioText.length >= 200 && bioText.length <= 1000;
+    const hasValidBio = bioText.length > 0 && bioText.length <= 1000;
 
     const currentCity = (profile.currentCity || profile.city || profile.personal?.city || "").trim();
     const hasLocation = Boolean(currentCity);
@@ -186,7 +186,7 @@ export const calculateProfileCompletionDetails = (profile?: any): ProfileComplet
                 if (hasValidBio) {
                     earned = item.weight;
                 } else {
-                    itemMissing.push("Bio: Write a professional bio between 200 and 1,000 characters.");
+                    itemMissing.push("Bio: Write a professional bio (up to 1,000 characters).");
                 }
                 break;
 

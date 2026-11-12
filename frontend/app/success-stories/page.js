@@ -34,7 +34,7 @@ export default function SuccessStoriesPage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "var(--bg-primary)" }}>
       <PublicNav />
 
-      <main style={{ flex: 1, padding: "48px 24px 80px 24px", maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
+      <main className="public-container" style={{ flex: 1, padding: "48px clamp(20px, 3.5vw, 48px) 80px clamp(20px, 3.5vw, 48px)" }}>
         {/* Navigation & Header */}
         <div style={{ marginBottom: "32px" }}>
           <Link

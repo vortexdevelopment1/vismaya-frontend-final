@@ -118,20 +118,22 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
             isUsed: true
         });
 
-        // Account is activated if real payment was completed (or OTP verified or in demo mode)
-        const isActivated = Boolean(successfulPayment || verifiedOtp || OTP_CONFIG.isDemoMode());
+        // Paid status: recorded if real payment was completed (or in demo mode)
+        const isPaid = Boolean(successfulPayment || OTP_CONFIG.isDemoMode());
+        const isEmailVerified = Boolean(verifiedOtp || OTP_CONFIG.isDemoMode());
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // New registrations are created in "pending" status awaiting administrator review and approval
         const user = await User.create({
             name,
             email: normalizedEmail,
             mobile,
             password: hashedPassword,
             role,
-            status: isActivated ? "active" : "pending",
-            isEmailVerified: isActivated,
-            isPaid: isActivated
+            status: "pending",
+            isEmailVerified,
+            isPaid
         });
 
         // Atomically initialize domain profile so data is not lost prior to approval
@@ -150,12 +152,13 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
                     userId: user._id,
                     vismayaId,
                     stageName: validation.sanitized.stageName || name,
+                    age: validation.sanitized.age,
                     primaryProfession: validation.sanitized.primaryProfession || "Actor / Screen Artist",
                     skills: (validation.sanitized.skills || []).map((s: string) => ({ name: s, proficiency: "intermediate" })),
                     bio: validation.sanitized.bio || "",
                     currentCity: validation.sanitized.city || "Mumbai",
                     profilePhoto: validation.sanitized.profilePhoto || "",
-                    isPaid: isActivated,
+                    isPaid: isPaid,
                     status: "pending"
                 });
             } else if (role === "organization") {
@@ -183,7 +186,7 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
                 });
 
                 // Initialize 100 included credits for new organization if payment was verified
-                if (isActivated) {
+                if (isPaid) {
                     try {
                         await initializeOrganizationCredits(org._id);
                     } catch (creditErr) {
@@ -239,8 +242,8 @@ export const registerUser = async (req: Request, res: Response): Promise<any> =>
             await successfulPayment.save();
         }
 
-        // If not activated (e.g. no verified payment or no verified OTP), return pending response without active session
-        if (!isActivated) {
+        // If payment is not completed and not in demo mode, return payment required response
+        if (!isPaid && !OTP_CONFIG.isDemoMode()) {
             return res.status(201).json({
                 success: true,
                 message: "Registration initiated. Verification and payment are required before account activation.",
@@ -411,7 +414,6 @@ export const verifyRegistration = async (req: Request, res: Response): Promise<a
 
             user.isEmailVerified = true;
             if (successfulPayment) {
-                user.status = "active";
                 user.isPaid = true;
             }
             await user.save();
@@ -577,7 +579,7 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
             });
         }
 
-        // Check account status - auto-activate if paid transaction exists
+        // Check account status - only active accounts approved by administrator may sign in
         if (user.status !== "active") {
             const expectedPackage = user.role === "organization" ? "industry_annual_4999" : "talent_annual_999";
             const successfulPayment = user.isPaid || await PaymentTransaction.findOne({
@@ -588,18 +590,27 @@ export const loginUser = async (req: Request, res: Response): Promise<any> => {
                 ]
             });
 
-            if (successfulPayment) {
-                user.status = "active";
+            if (successfulPayment && !user.isPaid) {
                 user.isPaid = true;
                 user.isEmailVerified = true;
                 await user.save();
-            } else {
+            }
+
+            if (user.status === "pending") {
                 return res.status(403).json({
                     success: false,
-                    message: getAccountStatusError(user.status),
+                    message: "Your account is currently under review by Admin. You will be able to sign in once an administrator approves your profile.",
+                    status: "pending",
                     isEmailVerified: user.isEmailVerified
                 });
             }
+
+            return res.status(403).json({
+                success: false,
+                message: getAccountStatusError(user.status),
+                status: user.status,
+                isEmailVerified: user.isEmailVerified
+            });
         }
 
         // 2FA Challenge if enabled

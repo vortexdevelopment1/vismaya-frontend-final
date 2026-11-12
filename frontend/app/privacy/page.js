@@ -78,7 +78,7 @@ export default function PrivacyPolicyPage() {
           position: "relative",
         }}
       >
-        <div className="public-container" style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px" }}>
+        <div className="public-container">
           <div style={{ maxWidth: "880px" }}>
             <div
               style={{
@@ -147,7 +147,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Main Body with Sidebar Table of Contents */}
       <main style={{ flex: 1, padding: "48px 0 80px 0" }}>
-        <div className="public-container" style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px" }}>
+        <div className="public-container">
           
           {/* Pending Legal Counsel Notice Banner */}
           <div

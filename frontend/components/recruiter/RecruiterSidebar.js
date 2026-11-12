@@ -22,6 +22,16 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile, on
 
   const unreadNotificationsCount = typeof wfUnread === "function" ? wfUnread("organization") : oldUnread;
   const shortlistsReadyCount = applications.filter((a) => a.status === "Shortlisted").length;
+  const isOrgVerified = Boolean(companyProfile?.isVerified);
+  const isUnderReview = Boolean(
+    !isOrgVerified &&
+    (companyProfile?.hasSubmittedKyc ||
+      companyProfile?.isPendingReview ||
+      companyProfile?.verificationStatus === "in_review" ||
+      companyProfile?.verificationStatus === "under_review" ||
+      (companyProfile?.registrationNumber && companyProfile?.registrationNumber !== "PENDING") ||
+      (companyProfile?.cinNumber && companyProfile?.cinNumber !== "PENDING"))
+  );
 
   // Active item determined by "most specific / longest match wins" and origin context
   const activeHref = getActiveRecruiterNavItem(pathname, fromParam);
@@ -163,23 +173,40 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile, on
               </div>
             </div>
 
-            <span
+            <Link
+              href="/recruiter/verification"
+              title={
+                isOrgVerified
+                  ? "Verified Production House"
+                  : isUnderReview
+                  ? "KYC Credentials Under Review by Vismaya Desk"
+                  : "KYC Needed - Click to Complete Verification"
+              }
               style={{
+                textDecoration: "none",
                 display: "inline-flex",
                 alignItems: "center",
                 padding: "2px 8px",
                 borderRadius: "999px",
-                backgroundColor: "rgba(138, 107, 46, 0.10)",
-                border: "1px solid rgba(138, 107, 46, 0.20)",
-                color: "#8A6B2E",
+                backgroundColor: isOrgVerified
+                  ? "rgba(138, 107, 46, 0.10)"
+                  : isUnderReview
+                  ? "rgba(138, 107, 46, 0.12)"
+                  : "rgba(217, 119, 6, 0.15)",
+                border: isOrgVerified
+                  ? "1px solid rgba(138, 107, 46, 0.20)"
+                  : isUnderReview
+                  ? "1px solid rgba(138, 107, 46, 0.30)"
+                  : "1px solid rgba(217, 119, 6, 0.35)",
+                color: isOrgVerified ? "#8A6B2E" : isUnderReview ? "#8A6B2E" : "#B45309",
                 fontSize: "10px",
                 fontWeight: "700",
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
               }}
             >
-              VERIFIED
-            </span>
+              {isOrgVerified ? "VERIFIED" : isUnderReview ? "UNDER REVIEW" : "KYC NEEDED"}
+            </Link>
           </div>
         </div>
 
@@ -198,10 +225,19 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile, on
             const active = activeHref === item.href;
             const Icon = item.icon;
             let badgeCount = null;
+            let badgeText = null;
             if (item.badgeKey === "unreadNotifications") {
               badgeCount = unreadNotificationsCount;
             } else if (item.badgeKey === "shortlistsReady") {
               badgeCount = shortlistsReadyCount;
+            } else if (item.href === "/recruiter/verification") {
+              if (isOrgVerified) {
+                badgeText = null;
+              } else if (isUnderReview) {
+                badgeText = "In Review";
+              } else {
+                badgeText = "Needed";
+              }
             }
 
             return (
@@ -245,6 +281,27 @@ export default function RecruiterSidebar({ mobileOpen = false, onCloseMobile, on
                   <span>{item.title}</span>
                 </div>
 
+                {badgeText && (
+                  <span
+                    style={{
+                      height: "18px",
+                      fontSize: "10px",
+                      fontWeight: "700",
+                      padding: "0 7px",
+                      borderRadius: "999px",
+                      backgroundColor: "rgba(217, 119, 6, 0.15)",
+                      color: "#B45309",
+                      border: "1px solid rgba(217, 119, 6, 0.3)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {badgeText}
+                  </span>
+                )}
                 {badgeCount !== null && badgeCount > 0 && (
                   <span
                     style={{

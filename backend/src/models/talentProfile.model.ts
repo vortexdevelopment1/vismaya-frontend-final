@@ -54,6 +54,7 @@ export interface ITalentProfile extends Document {
     bio?: string;
     profilePhoto?: string;
     dob?: Date;
+    age?: number;
     gender: "male" | "female" | "non_binary" | "transgender" | "prefer_not_to_say" | "other";
     nationality: string;
     careerStage: "aspiring" | "emerging" | "experienced" | "early_career" | "mid_level" | "veteran";
@@ -263,6 +264,7 @@ const talentProfileSchema = new Schema<ITalentProfile>(
         bio: { type: String, trim: true },
         profilePhoto: { type: String, trim: true },
         dob: { type: Date },
+        age: { type: Number },
         gender: {
             type: String,
             enum: ["male", "female", "non_binary", "transgender", "prefer_not_to_say", "other"],

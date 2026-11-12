@@ -13,7 +13,10 @@ import {
     submitProfessionalVerification,
     submitBusinessVerification,
     getMyVerifications,
-    getVerificationDocument
+    getVerificationDocument,
+    initiateAadhaarVerification,
+    verifyAadhaarOtp,
+    withdrawKycConsent
  } from "../controllers/verification.controller.js";
 
 const router = express.Router();
@@ -48,6 +51,25 @@ router.get(
     "/:verificationId/document",
     authenticateUser,
     getVerificationDocument
+);
+
+// Decoupled Aadhaar Verification Endpoints
+router.post(
+    "/aadhaar/initiate",
+    authenticateUser,
+    initiateAadhaarVerification
+);
+
+router.post(
+    "/aadhaar/verify",
+    authenticateUser,
+    verifyAadhaarOtp
+);
+
+router.post(
+    "/aadhaar/withdraw-consent",
+    authenticateUser,
+    withdrawKycConsent
 );
 
 export default router;

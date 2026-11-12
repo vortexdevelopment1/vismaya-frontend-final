@@ -1,10 +1,11 @@
-import cloudinary from "../config/cloudinary.js";
+import cloudinary, { configureCloudinary } from "../config/cloudinary.js";
 import streamifier from "stream";
 
 /**
  * Streams a buffer to Cloudinary
  */
 export const uploadStream = (buffer: Buffer, options: Record<string, unknown> = {}): Promise<any> => {
+    configureCloudinary();
     return new Promise((resolve, reject) => {
         const uploadStreamHandler = cloudinary.uploader.upload_stream(
             options,
@@ -113,6 +114,7 @@ export const generateSignedUploadParams = (folder = "vismaya/media", extraParams
     cloudName?: string;
     folder: string;
 } => {
+    configureCloudinary();
     const timestamp = Math.round(new Date().getTime() / 1000);
     const paramsToSign = {
         folder,

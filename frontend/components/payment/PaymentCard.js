@@ -42,12 +42,14 @@ export default function PaymentCard({
   const isRegistration = type === "talent_registration" || type === "organization_registration";
 
   // Initialize Order function callable for both initial load and manual retries
-  const initOrder = async () => {
+  const initOrder = async (couponOverride) => {
     if (isRealMode("payments") && !getAuthToken() && !isRegistration) {
       setPaymentState("failed");
       setErrorMessage("Please verify your account and sign in before starting a payment.");
       return;
     }
+
+    const activeCoupon = couponOverride !== undefined ? couponOverride : appliedCoupon;
 
     try {
       setPaymentState("processing");
@@ -55,35 +57,76 @@ export default function PaymentCard({
       const res = await paymentService.createPaymentOrder(type, {
         userName,
         userEmail,
-        couponCode: appliedCoupon?.code,
+        couponCode: activeCoupon?.code,
       });
       if (res && (res.success || res.orderId || res.data?.orderId)) {
         setOrder(res.data || res.order || res);
         setPaymentState("idle");
         setErrorMessage("");
       } else {
+        // If order creation failed and a coupon was attached, fallback gracefully without coupon!
+        if (activeCoupon?.code) {
+          console.warn("Coupon failed during order init, falling back without coupon:", res?.message);
+          setAppliedCoupon(null);
+          setCouponError(res?.message || "Coupon could not be applied");
+          try {
+            const fallbackRes = await paymentService.createPaymentOrder(type, {
+              userName,
+              userEmail,
+              couponCode: undefined,
+            });
+            if (fallbackRes && (fallbackRes.success || fallbackRes.orderId || fallbackRes.data?.orderId)) {
+              setOrder(fallbackRes.data || fallbackRes.order || fallbackRes);
+              setPaymentState("idle");
+              setErrorMessage("");
+              return;
+            }
+          } catch (e) {}
+        }
         setPaymentState("failed");
         setErrorMessage(res?.message || "Unable to initialize payment. Please try again.");
       }
     } catch (err) {
+      const errMsg = err?.response?.data?.message || err?.message || "";
+      // If error was caused by an invalid or exhausted coupon, fallback gracefully without coupon!
+      if (activeCoupon?.code) {
+        console.warn("Coupon failed during order init, falling back without coupon:", errMsg);
+        setAppliedCoupon(null);
+        setCouponError(errMsg || "Coupon could not be applied");
+        try {
+          const fallbackRes = await paymentService.createPaymentOrder(type, {
+            userName,
+            userEmail,
+            couponCode: undefined,
+          });
+          if (fallbackRes && (fallbackRes.success || fallbackRes.orderId || fallbackRes.data?.orderId)) {
+            setOrder(fallbackRes.data || fallbackRes.order || fallbackRes);
+            setPaymentState("idle");
+            setErrorMessage("");
+            return;
+          }
+        } catch (e) {}
+      }
+
       setPaymentState("failed");
       setErrorMessage(
         err?.status === 401
           ? "Please verify your account and sign in before starting a payment."
-          : (err?.message || "Unable to initialize payment. Please try again.")
+          : (errMsg || "Unable to initialize payment. Please try again.")
       );
     }
   };
 
-  // Automatically evaluate and apply best eligible coupon on checkout mount
+  // Combined mount initialization: evaluates best coupon once, then initializes order
   useEffect(() => {
     let isMounted = true;
-    const autoApplyBestCoupon = async () => {
+    const initializeCheckout = async () => {
+      let bestCoupon = null;
       try {
         const base = type === "organization_registration" ? PRICING_CONFIG.INDUSTRY_FEE : PRICING_CONFIG.TALENT_FEE;
         const res = await paymentService.getBestCoupon(type, { baseAmount: base, userEmail, userName });
         if (isMounted && res?.success && res.data) {
-          setAppliedCoupon({
+          bestCoupon = {
             code: res.data.code || res.data.couponCode,
             couponCode: res.data.couponCode || res.data.code,
             discountType: res.data.discountType,
@@ -91,18 +134,21 @@ export default function PaymentCard({
             discountAmount: res.data.discountAmount,
             finalAmount: res.data.finalAmount,
             description: res.data.description,
-          });
+          };
+          setAppliedCoupon(bestCoupon);
         }
-      } catch {}
+      } catch (err) {
+        console.warn("Best coupon lookup skipped:", err);
+      }
+
+      if (isMounted) {
+        await initOrder(bestCoupon);
+      }
     };
-    autoApplyBestCoupon();
+
+    initializeCheckout();
     return () => { isMounted = false; };
   }, [type, userEmail, userName]);
-
-  // Initialize Order on mount or dependency changes
-  useEffect(() => {
-    initOrder();
-  }, [type, userName, userEmail, appliedCoupon]);
 
   // Handle Coupon Application
   const handleApplyCoupon = async (e) => {
@@ -124,7 +170,7 @@ export default function PaymentCard({
     setIsApplyingCoupon(false);
     if (res.success) {
       const payload = res.data || res;
-      setAppliedCoupon({
+      const newCoupon = {
         code: payload.code || payload.couponCode || couponCode.trim().toUpperCase(),
         couponCode: payload.couponCode || payload.code || couponCode.trim().toUpperCase(),
         discountType: payload.discountType || (payload.percent ? "percentage" : "fixed"),
@@ -132,23 +178,29 @@ export default function PaymentCard({
         discountAmount: payload.discountAmount || 0,
         finalAmount: payload.finalAmount || Math.max(0, base - (payload.discountAmount || 0)),
         description: payload.description || payload.message || "",
-      });
+      };
+      setAppliedCoupon(newCoupon);
       setCouponError("");
+      await initOrder(newCoupon);
     } else {
       setAppliedCoupon(null);
       setCouponError(res.message || "Invalid coupon code.");
     }
   };
 
-  const handleRemoveCoupon = () => {
+  const handleRemoveCoupon = async () => {
     setAppliedCoupon(null);
     setCouponCode("");
     setCouponError("");
+    await initOrder(null);
   };
 
   const handleRetryPayment = async () => {
     setErrorMessage("");
-    if (!order) {
+    if (appliedCoupon && errorMessage.toLowerCase().includes("coupon")) {
+      setAppliedCoupon(null);
+      await initOrder(null);
+    } else if (!order) {
       await initOrder();
     } else {
       setPaymentState("idle");
@@ -755,33 +807,70 @@ export default function PaymentCard({
             </div>
           </div>
 
-          {/* Coupon Input Form */}
-          {appliedCoupon && (
+          {/* Coupon Section */}
+          {appliedCoupon ? (
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                backgroundColor: "#F3EFE6",
-                border: "1px solid #E8E2D4",
+                backgroundColor: "#F0FDF4",
+                border: "1px solid #BBF7D0",
                 borderRadius: "8px",
                 padding: "10px 14px",
                 fontSize: "13px",
-                color: "#8A6B2E",
+                color: "#166534",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Sparkles size={16} style={{ color: "#8A6B2E", flexShrink: 0 }} />
+                <Sparkles size={16} style={{ color: "#16A34A", flexShrink: 0 }} />
                 <span>
-                  Automatic Discount Applied: <strong>{appliedCoupon.code}</strong> ({appliedCoupon.description || `${appliedCoupon.discountValue}${appliedCoupon.discountType === "percentage" ? "%" : "₹"} Off`})
+                  Coupon Applied: <strong>{appliedCoupon.code || appliedCoupon.couponCode}</strong> ({appliedCoupon.description || `${appliedCoupon.discountValue}${appliedCoupon.discountType === "percentage" ? "%" : "₹"} Off`})
                 </span>
               </div>
             </div>
-          )}
-
-          {couponError && (
-            <div style={{ fontSize: "12.5px", color: "#C53030", marginTop: "-14px" }}>
-              {couponError}
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <form onSubmit={handleApplyCoupon} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <input
+                  type="text"
+                  placeholder="Enter promo / coupon code"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  style={{
+                    flex: 1,
+                    height: "38px",
+                    borderRadius: "6px",
+                    border: "1px solid #DDD8CD",
+                    padding: "0 12px",
+                    fontSize: "13px",
+                    backgroundColor: "#FAF9F6",
+                    textTransform: "uppercase",
+                    fontFamily: "monospace",
+                    letterSpacing: "0.05em",
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={isApplyingCoupon || !couponCode.trim()}
+                  className="btn-secondary"
+                  style={{
+                    height: "38px",
+                    padding: "0 16px",
+                    fontSize: "12.5px",
+                    fontWeight: "600",
+                    whiteSpace: "nowrap",
+                    cursor: (!couponCode.trim() || isApplyingCoupon) ? "not-allowed" : "pointer",
+                    backgroundColor: "#FAF9F6",
+                  }}
+                >
+                  {isApplyingCoupon ? "Applying..." : "Apply Coupon"}
+                </button>
+              </form>
+              {couponError && (
+                <div style={{ fontSize: "12px", color: "#DC2626", paddingLeft: "2px" }}>
+                  {couponError}
+                </div>
+              )}
             </div>
           )}
 

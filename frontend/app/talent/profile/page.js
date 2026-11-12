@@ -15,12 +15,12 @@ function TalentProfileContent() {
   const stepParam = searchParams.get("step");
   const editParam = searchParams.get("edit");
 
-  // Step 1 complete check: authoritative stepsCompletion.step1, or has primary profession, city, and bio >= 200 chars
+  // Step 1 complete check: authoritative stepsCompletion.step1, or has primary profession, city, and bio
   const hasSavedStep1 = Boolean(
     profile.stepsCompletion?.step1 ||
     ((profile.primaryProfession || profile.profession || profile.personal?.primaryRole) &&
      (profile.currentCity || profile.personal?.city || profile.city) &&
-     (profile.bio?.trim()?.length >= 200 || profile.personal?.bio?.trim()?.length >= 200))
+     (profile.bio?.trim() || profile.personal?.bio?.trim()))
   );
 
   // Builder opens only when:

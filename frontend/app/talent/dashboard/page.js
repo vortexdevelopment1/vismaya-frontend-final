@@ -29,6 +29,7 @@ import Modal from "@/components/shared/Modal";
 import PaymentCard from "@/components/payment/PaymentCard";
 import { paymentService } from "@/lib/api/services/paymentService";
 import { PRICING_CONFIG } from "@/lib/config/pricing";
+import { verificationService } from "@/lib/api/services/verificationService";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import { useTalent } from "@/lib/talent/TalentContext";
 import { isRealMode } from "@/lib/api/config";
@@ -56,6 +57,38 @@ export default function TalentDashboardPage() {
 
   const [realApplications, setRealApplications] = useState([]);
   const [realAuditions, setRealAuditions] = useState([]);
+  const [kycStatus, setKycStatus] = useState(null);
+  const [kycLoading, setKycLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    verificationService.getMyVerifications()
+      .then((res) => {
+        if (mounted && Array.isArray(res?.data)) {
+          const idVer = res.data.find((v) => v.type === "identity" || v.verificationType === "identity");
+          if (idVer?.status === "verified" || idVer?.rawStatus === "verified" || idVer?.status === "approved") {
+            setKycStatus("verified");
+          } else if (idVer?.status === "rejected") {
+            setKycStatus("rejected");
+          } else if (idVer?.status) {
+            setKycStatus(idVer.status);
+          } else {
+            setKycStatus(profile?.isVerified ? "verified" : "pending");
+          }
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setKycStatus(profile?.isVerified ? "verified" : "pending");
+        }
+      })
+      .finally(() => {
+        if (mounted) setKycLoading(false);
+      });
+    return () => { mounted = false; };
+  }, [profile?.isVerified]);
+
+  const isKycVerified = kycStatus === "verified" || Boolean(profile?.isVerified) || Boolean(profile?.verificationBadges?.identityVerified);
 
   useEffect(() => {
     if (!isRealMode("talent") && !isRealMode("applications")) return;
@@ -384,6 +417,139 @@ export default function TalentDashboardPage() {
           <Megaphone size={16} className="talent-browse-icon-desktop" />
           <span>Browse Opportunities</span>
         </Link>
+      </div>
+
+      
+      {/* 0.1 Dedicated KYC Status Card */}
+      <div
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: isKycVerified ? "1px solid #BBF7D0" : "1px solid #E8E2D4",
+          borderLeft: isKycVerified ? "4px solid #10B981" : "4px solid #8A6B2E",
+          borderRadius: "12px",
+          padding: "16px 20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "16px",
+          flexWrap: "wrap",
+          boxShadow: "0 2px 8px rgba(43, 45, 42, 0.03)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", flex: 1, minWidth: "260px" }}>
+          <div
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "10px",
+              backgroundColor: isKycVerified ? "#DCFCE7" : "#F3EFE6",
+              color: isKycVerified ? "#10B981" : "#8A6B2E",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <ShieldCheck size={22} />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "14.5px", fontWeight: "700", color: "#2B2D2A" }}>
+                Aadhaar Identity Verification (KYC)
+              </span>
+
+              {isKycVerified ? (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "3px 10px",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    fontWeight: "700",
+                    backgroundColor: "#DCFCE7",
+                    color: "#15803D",
+                    border: "1px solid #BBF7D0",
+                  }}
+                >
+                  <CheckCircle2 size={13} />
+                  <span>Verified</span>
+                </span>
+              ) : (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "3px 10px",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    fontWeight: "700",
+                    backgroundColor: "#FFF9E6",
+                    color: "#8A6B2E",
+                    border: "1px solid #F0D078",
+                  }}
+                >
+                  <Clock size={13} />
+                  <span>KYC Pending</span>
+                </span>
+              )}
+            </div>
+
+            <div style={{ fontSize: "13px", color: "#5A584F", lineHeight: "19px" }}>
+              {isKycVerified
+                ? "Your identity has been authenticated via Aadhaar verification. Your Verified Badge is active on all casting applications."
+                : "Aadhaar verification is optional. Verify your identity via instant OTP to unlock verified casting priority and stand out to casting directors."}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          {isKycVerified ? (
+            <Link
+              href="/talent/verification"
+              className="btn-secondary"
+              style={{
+                padding: "0 16px",
+                height: "38px",
+                fontSize: "13px",
+                fontWeight: "600",
+                borderRadius: "6px",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                backgroundColor: "#FAF9F6",
+              }}
+            >
+              <span>Manage Verification</span>
+              <ChevronRight size={14} />
+            </Link>
+          ) : (
+            <Link
+              href="/talent/verification"
+              className="btn-primary"
+              style={{
+                padding: "0 18px",
+                height: "38px",
+                fontSize: "13px",
+                fontWeight: "700",
+                borderRadius: "6px",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <ShieldCheck size={15} />
+              <span>Verify Now</span>
+              <ArrowRight size={14} />
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Top 4 Stat Cards: Desktop Grid (hidden on mobile <= 767px) */}

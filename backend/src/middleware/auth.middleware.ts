@@ -34,10 +34,16 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
         }
 
         if (user.status !== "active") {
-            return res.status(403).json({
-                success: false,
-                message: `Account is ${user.status}. Access denied.`
-            });
+            const reqPath = (req.originalUrl || req.baseUrl || req.path || "").toLowerCase();
+            const isAllowedForPending = reqPath.includes("verification") || reqPath.includes("auth/me") || reqPath.includes("profile");
+            if (user.status === "pending" && isAllowedForPending) {
+                // Allowed for pending users completing KYC onboarding / verification
+            } else {
+                return res.status(403).json({
+                    success: false,
+                    message: `Account is ${user.status}. Access denied.`
+                });
+            }
         }
 
         // Reject tokens lacking sessionId unless legacy flag is enabled

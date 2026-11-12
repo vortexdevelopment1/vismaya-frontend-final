@@ -1805,4 +1805,48 @@ export const adminService = {
     const res = await apiClient.post(`/api/admin/informational-profiles/${id}/restore`);
     return res?.data || res;
   },
+
+  async getContactInquiries(params = {}) {
+    if (!isRealMode("admin")) {
+      return {
+        success: true,
+        data: [],
+        count: 0,
+        total: 0,
+        pendingCount: 0,
+      };
+    }
+    const res = await apiClient.get("/api/admin/contact-inquiries", { params });
+    return {
+      success: true,
+      data: res?.data || [],
+      count: res?.count ?? (res?.data?.length || 0),
+      total: res?.total ?? (res?.data?.length || 0),
+      pendingCount: res?.pendingCount ?? 0,
+    };
+  },
+
+  async updateContactInquiryStatus(id, status) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: `Status updated to ${status} (Mock)` };
+    }
+    const res = await apiClient.patch(`/api/admin/contact-inquiries/${id}`, { status });
+    return res;
+  },
+
+  async deleteContactInquiry(id) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Inquiry deleted (Mock)" };
+    }
+    const res = await apiClient.delete(`/api/admin/contact-inquiries/${id}`);
+    return res;
+  },
+
+  async replyToContactInquiry(id, payload) {
+    if (!isRealMode("admin")) {
+      return { success: true, message: "Reply email sent successfully (Mock)" };
+    }
+    const res = await apiClient.post(`/api/admin/contact-inquiries/${id}/reply`, payload);
+    return res;
+  },
 };

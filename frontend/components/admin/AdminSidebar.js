@@ -9,6 +9,7 @@ import { adminNavSections, adminNav } from "@/lib/admin/nav";
 import { useAdmin } from "@/lib/admin/AdminContext";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkflow } from "@/lib/shared/workflowStore";
+import { adminService } from "@/lib/api/services/adminService";
 
 export default function AdminSidebar({ mobileOpen = false, onCloseMobile, onOpenLogout }) {
   const pathname = usePathname();
@@ -39,6 +40,22 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile, onOpen
   const unreadAdminNotificationsCount = notifications.filter(
     (n) => !n.read && (n.toRole === "vismaya" || (!n.toRole && !n.toUserId))
   ).length;
+
+  const [pendingInquiriesCount, setPendingInquiriesCount] = React.useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+    adminService.getContactInquiries({ status: "pending", limit: 1 })
+      .then((res) => {
+        if (mounted && res?.pendingCount !== undefined) {
+          setPendingInquiriesCount(res.pendingCount);
+        } else if (mounted && Array.isArray(res?.data)) {
+          setPendingInquiriesCount(res.data.length);
+        }
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, [pathname]);
 
   // Auto-close on escape key and route change on mobile
   useEffect(() => {
@@ -89,6 +106,8 @@ export default function AdminSidebar({ mobileOpen = false, onCloseMobile, onOpen
         return 0;
       case "pendingCancellations":
         return pendingCancellationsCount;
+      case "pendingInquiries":
+        return pendingInquiriesCount;
       case "unreadNotifications":
         return unreadAdminNotificationsCount;
       default:

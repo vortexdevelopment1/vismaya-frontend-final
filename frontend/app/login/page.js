@@ -142,7 +142,7 @@ return (
           Welcome Back
         </h1>
         <p style={{ fontSize: "14px", color: "var(--text-secondary, #777970)", margin: 0, lineHeight: "22px" }}>
-          Access your talent portfolio, organization briefs, or admin desk.
+          Access your talent portfolio or organization briefs.
         </p>
       </div>
 

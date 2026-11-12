@@ -1489,6 +1489,7 @@ export default function AdminAuditionsManagementPage() {
           font-size: 15px;
           font-weight: 600;
           line-height: 1.3;
+          text-transform: capitalize;
         }
 
         .aud-candidate-date {

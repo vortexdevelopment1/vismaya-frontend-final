@@ -128,6 +128,7 @@ export default function RecruiterManagementPage() {
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
+                  textTransform: "capitalize",
                 }}
                 title={compName}
               >
@@ -169,6 +170,7 @@ export default function RecruiterManagementPage() {
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
+                textTransform: "capitalize",
               }}
               title={name}
             >
@@ -220,7 +222,7 @@ export default function RecruiterManagementPage() {
       label: "City",
       minWidth: "110px",
       render: (val, row) => (
-        <span style={{ fontSize: "13px", color: "#5A584F", whiteSpace: "nowrap" }}>
+        <span style={{ fontSize: "13px", color: "#5A584F", whiteSpace: "nowrap", textTransform: "capitalize" }}>
           {val || row.location || "Mumbai"}
         </span>
       ),
@@ -352,6 +354,7 @@ export default function RecruiterManagementPage() {
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
+                  textTransform: "capitalize",
                 }}
                 title={compName}
               >
@@ -391,7 +394,7 @@ export default function RecruiterManagementPage() {
           <span style={{ fontSize: "11px", color: "#5A584F", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
             Authorized Contact
           </span>
-          <div style={{ fontSize: "14px", fontWeight: 600, color: "#2B2D2A" }}>
+          <div style={{ fontSize: "14px", fontWeight: 600, color: "#2B2D2A", textTransform: "capitalize" }}>
             {contactName}
           </div>
           {email && (

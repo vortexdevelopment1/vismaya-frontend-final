@@ -151,8 +151,8 @@ export default function TalentManagementPage() {
                 gap: "6px",
               }}
             >
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={row.name}>{row.name}</span>
-              {row.age < 18 && (
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textTransform: "capitalize" }} title={row.name}>{row.name}</span>
+              {Boolean(row.isUnder18 || (row.age && Number(row.age) > 0 && Number(row.age) < 18)) && (
                 <span
                   title="Minor artist (Guardian consent verified)"
                   style={{
@@ -196,8 +196,8 @@ export default function TalentManagementPage() {
       minWidth: "140px",
       render: (val, row) => (
         <div style={{ whiteSpace: "nowrap" }}>
-          <div style={{ fontSize: "14px", fontWeight: 600, color: "#2B2D2A" }}>{row.city}</div>
-          <div style={{ fontSize: "12px", color: "#5A584F" }}>{row.state}</div>
+          <div style={{ fontSize: "14px", fontWeight: 600, color: "#2B2D2A", textTransform: "capitalize" }}>{row.city}</div>
+          <div style={{ fontSize: "12px", color: "#5A584F", textTransform: "capitalize" }}>{row.state}</div>
         </div>
       ),
     },
@@ -345,12 +345,13 @@ export default function TalentManagementPage() {
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
+                    textTransform: "capitalize",
                   }}
                   title={row.name}
                 >
                   {row.name}
                 </span>
-                {row.age < 18 && (
+                {Boolean(row.isUnder18 || (row.age && Number(row.age) > 0 && Number(row.age) < 18)) && (
                   <span
                     style={{
                       fontSize: "11px",

@@ -7,11 +7,11 @@
 export const PHOTO_UPLOAD_CONFIG = {
   allowedTypes: ["image/jpeg", "image/png", "image/webp"],
   allowedExtensions: [".jpg", ".jpeg", ".png", ".webp"],
-  minWidth: 400,
-  minHeight: 400,
+  minWidth: 200,
+  minHeight: 200,
   maxSizeMB: 5,
   maxSizeBytes: 5 * 1024 * 1024,
-  helperText: "JPG/PNG/WebP, at least 400x400px, max 5 MB",
+  helperText: "JPG/PNG/WebP, at least 200x200px, max 5 MB",
 };
 
 /**
