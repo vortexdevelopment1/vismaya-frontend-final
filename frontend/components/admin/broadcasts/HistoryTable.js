@@ -36,7 +36,24 @@ export default function HistoryTable({
     const s = (status || "").toLowerCase();
     if (s === "sent" || s === "delivered") return "#6E5420";
     if (s === "scheduled") return "#8A6B2E";
+    if (s === "processing") return "#2563EB";
+    if (s === "queued") return "#D97706";
+    if (s === "partially failed" || s === "partially_failed") return "#D97706";
+    if (s === "failed") return "#DC2626";
     return "#5A584F";
+  };
+
+  const getStatusLabel = (status) => {
+    if (!status) return "Sent";
+    const s = status.toLowerCase();
+    if (s === "scheduled") return "Scheduled";
+    if (s === "draft") return "Draft";
+    if (s === "queued") return "Queued";
+    if (s === "processing") return "Processing";
+    if (s === "partially failed" || s === "partially_failed") return "Partially Failed";
+    if (s === "failed") return "Failed";
+    if (s === "sent" || s === "delivered") return "Sent";
+    return status;
   };
 
   const filteredHistory = useMemo(() => {
@@ -154,7 +171,11 @@ export default function HistoryTable({
         >
           <option value="ALL">All Statuses</option>
           <option value="sent">Sent</option>
+          <option value="queued">Queued</option>
+          <option value="processing">Processing</option>
           <option value="scheduled">Scheduled</option>
+          <option value="partially failed">Partially Failed</option>
+          <option value="failed">Failed</option>
           <option value="draft">Draft</option>
         </select>
       </div>
@@ -198,7 +219,7 @@ export default function HistoryTable({
               <span className={styles.n}>{Number(reachCount).toLocaleString()}</span>
               <span>
                 <span className={styles.chip} style={{ "--c": getStatusColor(bc.status) }}>
-                  {bc.status === "scheduled" ? "Scheduled" : bc.status === "draft" ? "Draft" : "Sent"}
+                  {getStatusLabel(bc.status)}
                 </span>
               </span>
               <div style={{ position: "relative" }}>

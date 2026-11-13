@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import styles from "@/components/admin/broadcasts/broadcasts.module.css";
 import { useWorkflow } from "@/lib/shared/workflowStore";
 import ComposerCard from "@/components/admin/broadcasts/ComposerCard";
@@ -14,7 +14,13 @@ import { isRealMode } from "@/lib/api/config";
 
 export default function AdminNotificationsPage() {
   const adminCtx = useAdmin();
-  const { notifications = [], broadcasts = [], sendBroadcast, saveBroadcastDraft, cancelScheduledBroadcast, markNotificationRead, markAllNotificationsRead, isHydrated } = useWorkflow();
+  const { notifications = [], broadcasts = [], sendBroadcast, saveBroadcastDraft, cancelScheduledBroadcast, refreshBroadcasts, markNotificationRead, markAllNotificationsRead, isHydrated } = useWorkflow();
+
+  useEffect(() => {
+    if (isHydrated && typeof refreshBroadcasts === "function") {
+      refreshBroadcasts();
+    }
+  }, [isHydrated, refreshBroadcasts]);
   const [activeTab, setActiveTab] = useState("broadcasts");
   const [audience, setAudience] = useState("All users");
   const [targetCity, setTargetCity] = useState("Mumbai");
@@ -82,25 +88,38 @@ export default function AdminNotificationsPage() {
 
   const handleOpenConfirm = (e) => { e?.preventDefault?.(); if (validateBroadcast()) setConfirmSendModal(true); };
 
-  const handleConfirmSend = () => {
+  const handleConfirmSend = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    sendBroadcast({
-      title: title.trim(), message: message.trim(), audience: audienceLabel, category,
-      channels: { inApp: true, email: emailChannel, sms: smsChannel, whatsapp: whatsappChannel },
-      scheduledFor: deliveryMode === "schedule" ? new Date(scheduledDateTime).toISOString() : null,
-      targetCity: audience === "Talent by city" ? targetCity : "All", targetOrgType: audience === "Organizations by type" ? targetOrgType : "All",
-    });
-    setToastMessage(deliveryMode === "schedule" ? `Broadcast scheduled for ${deliverySummary}.` : `Broadcast dispatched to ${estimatedReach}.`);
-    setTimeout(() => setToastMessage(null), 4000);
-    setTitle(""); setMessage(""); setDeliveryMode("now"); setScheduledDateTime(""); setConfirmSendModal(false); setIsSubmitting(false);
+    try {
+      await sendBroadcast({
+        title: title.trim(), message: message.trim(), audience: audienceLabel, category,
+        channels: { inApp: true, email: emailChannel, sms: smsChannel, whatsapp: whatsappChannel },
+        scheduledFor: deliveryMode === "schedule" ? new Date(scheduledDateTime).toISOString() : null,
+        targetCity: audience === "Talent by city" ? targetCity : "All", targetOrgType: audience === "Organizations by type" ? targetOrgType : "All",
+      });
+      setToastMessage(deliveryMode === "schedule" ? `Broadcast scheduled for ${deliverySummary}.` : `Broadcast dispatched to ${estimatedReach}.`);
+      setTitle(""); setMessage(""); setDeliveryMode("now"); setScheduledDateTime(""); setConfirmSendModal(false);
+      setTimeout(() => setToastMessage(null), 4000);
+    } catch (err) {
+      const msg = err?.message || err?.response?.data?.message || "Failed to dispatch broadcast. Please verify you are logged in as admin.";
+      setValidationError(msg);
+      setToastMessage(msg);
+      setTimeout(() => setToastMessage(null), 5000);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     if (!message.trim() && !title.trim()) return setValidationError("Please enter a title or message to save a draft.");
-    saveBroadcastDraft({ title: title.trim(), message: message.trim(), audience: audienceLabel, category, channels: { inApp: true, email: emailChannel, sms: smsChannel, whatsapp: whatsappChannel } });
-    setToastMessage("Broadcast draft saved.");
-    setTimeout(() => setToastMessage(null), 3000);
+    try {
+      await saveBroadcastDraft({ title: title.trim(), message: message.trim(), audience: audienceLabel, category, channels: { inApp: true, email: emailChannel, sms: smsChannel, whatsapp: whatsappChannel } });
+      setToastMessage("Broadcast draft saved.");
+      setTimeout(() => setToastMessage(null), 3000);
+    } catch (err) {
+      setValidationError(err?.message || "Failed to save draft.");
+    }
   };
 
   const handleClear = () => { setTitle(""); setMessage(""); setValidationError(""); setDeliveryMode("now"); setScheduledDateTime(""); };

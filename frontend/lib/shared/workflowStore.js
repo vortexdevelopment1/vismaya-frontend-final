@@ -2005,6 +2005,13 @@ function workflowReducer(state, action) {
     // ------------------------------------------------------------------------
     // BROADCAST ACTIONS
     // ------------------------------------------------------------------------
+    case "SET_BROADCASTS": {
+      return {
+        ...state,
+        broadcasts: Array.isArray(action.payload) ? action.payload : [],
+      };
+    }
+
     case "SEND_BROADCAST": {
       const {
         id,
@@ -2278,7 +2285,16 @@ export function WorkflowProvider({ children }) {
       } catch (err) {
         console.warn("WorkflowStore hydration failed, falling back to default seed:", err);
       } finally {
-        if (mounted) setIsHydrated(true);
+        if (mounted) {
+          setIsHydrated(true);
+          if (isRealMode("admin") && getAuthToken()) {
+            adminService.getBroadcasts().then((res) => {
+              if (mounted && res?.data && Array.isArray(res.data)) {
+                dispatch({ type: "SET_BROADCASTS", payload: res.data });
+              }
+            }).catch((err) => console.warn("Failed to load initial broadcasts:", err));
+          }
+        }
       }
     }
 
@@ -2333,6 +2349,24 @@ export function WorkflowProvider({ children }) {
         }
       } catch (err) {
         console.warn("refreshProjects failed:", err);
+      }
+    }
+    return null;
+  };
+
+  const refreshBroadcasts = async () => {
+    if (getAuthToken() && isRealMode("admin")) {
+      try {
+        const res = await adminService.getBroadcasts();
+        if (res?.data && Array.isArray(res.data)) {
+          dispatch({
+            type: "SET_BROADCASTS",
+            payload: res.data,
+          });
+          return res.data;
+        }
+      } catch (err) {
+        console.warn("refreshBroadcasts failed:", err);
       }
     }
     return null;
@@ -2590,13 +2624,15 @@ export function WorkflowProvider({ children }) {
   const sendBroadcast = async (broadcastData) => {
     if (isRealMode("admin")) {
       try {
-        const res = await adminService.createBroadcast(broadcastData);
+        const res = await adminService.sendBroadcast(broadcastData);
         if (res?.data) {
           dispatch({ type: "SEND_BROADCAST", payload: res.data });
+          await refreshBroadcasts();
           return res.data;
         }
       } catch (err) {
         console.warn("Real sendBroadcast failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "SEND_BROADCAST", payload: broadcastData });
@@ -2608,10 +2644,12 @@ export function WorkflowProvider({ children }) {
         const res = await adminService.saveBroadcastDraft(draftData);
         if (res?.data) {
           dispatch({ type: "SAVE_BROADCAST_DRAFT", payload: res.data });
+          await refreshBroadcasts();
           return res.data;
         }
       } catch (err) {
         console.warn("Real saveBroadcastDraft failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "SAVE_BROADCAST_DRAFT", payload: draftData });
@@ -2621,8 +2659,10 @@ export function WorkflowProvider({ children }) {
     if (isRealMode("admin")) {
       try {
         await adminService.cancelBroadcast(broadcastId);
+        await refreshBroadcasts();
       } catch (err) {
         console.warn("Real cancelScheduledBroadcast failed:", err);
+        throw err;
       }
     }
     dispatch({ type: "CANCEL_SCHEDULED_BROADCAST", payload: { broadcastId } });
@@ -2710,6 +2750,7 @@ export function WorkflowProvider({ children }) {
       // Actions
       createProject,
       refreshProjects,
+      refreshBroadcasts,
       markProjectCompleted,
       submitOpportunity,
       adminApproveAndPublish,

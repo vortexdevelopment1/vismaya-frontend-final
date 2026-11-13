@@ -16,21 +16,26 @@ export function fromApi(b) {
   if (!b) return null;
 
   const id = b._id ? String(b._id) : (b.id ? String(b.id) : "");
+  const reach = Number(b.deliveredCount ?? b.recipientsCount ?? b.stats?.reachCount ?? 0);
 
   return {
     id,
     _id: id,
     title: b.title || "Untitled Broadcast",
     message: b.message || "",
-    targetAudience: b.targetAudience || b.audience || "all",
+    audience: b.audience || b.targetAudience || "All users",
+    targetAudience: b.targetAudience || b.audience || "All users",
     channels: Array.isArray(b.channels) ? b.channels : (b.channel ? [b.channel] : ["in_app"]),
     priority: b.priority || "normal",
-    status: toFrontendStatus("broadcast", b.status || "draft"),
-    rawStatus: b.status || "draft",
-    scheduledAt: safeIsoDate(b.scheduledAt, null),
+    status: toFrontendStatus("broadcast", b.status || "sent") || (b.status || "Sent"),
+    rawStatus: b.status || "sent",
+    scheduledFor: safeIsoDate(b.scheduledFor || b.scheduledAt, null),
+    scheduledAt: safeIsoDate(b.scheduledAt || b.scheduledFor, null),
     sentAt: safeIsoDate(b.sentAt, typeof b.sentAt === "string" ? b.sentAt : null),
+    deliveredCount: reach,
+    recipientsCount: reach,
     stats: {
-      reachCount: Number(b.stats?.reachCount || b.recipientsCount) || 0,
+      reachCount: reach,
       readCount: Number(b.stats?.readCount) || 0,
     },
     createdAt: safeIsoDate(b.createdAt, new Date().toISOString()),

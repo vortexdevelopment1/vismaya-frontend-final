@@ -3,12 +3,16 @@ import User from "../models/user.model.js";
 import AdminAuditLog from "../models/adminAuditLog.model.js";
 import { notifyUser } from "../services/notification.service.js";
 import { logAdminAction } from "../services/audit.service.js";
+import { isRedisHealthy } from "../config/redis.js";
+import { addBroadcastJob, removeBroadcastJobs } from "../queues/broadcast.queue.js";
 
 /**
  * POST /api/admin/broadcasts
- * Admin sends a broadcast notification to a target audience.
+ * Admin sends or schedules a broadcast notification to a target audience.
  * Channels: inApp (always), email, sms, whatsapp (optional)
  * SMS and WhatsApp only fire for "Urgent update" category.
+ *
+ * Implements non-blocking HTTP 202 response via BullMQ queue & batch processing.
  */
 export const sendBroadcast = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -21,6 +25,7 @@ export const sendBroadcast = async (req: Request, res: Response): Promise<any> =
             scheduledFor
         } = req.body;
 
+        // 1. Validation
         if (!message || !message.trim()) {
             return res.status(400).json({ success: false, message: "Message body is required" });
         }
@@ -31,7 +36,7 @@ export const sendBroadcast = async (req: Request, res: Response): Promise<any> =
             return res.status(400).json({ success: false, message: "Message cannot exceed 500 characters" });
         }
 
-        // ── Build user filter based on audience ──────────────────────────────
+        // 2. Build user filter based on audience
         const filter: Record<string, unknown> = { status: "active" };
 
         if (audience === "All talent") {
@@ -40,14 +45,13 @@ export const sendBroadcast = async (req: Request, res: Response): Promise<any> =
             filter.role = "organization";
         } else if (typeof audience === "string" && audience.startsWith("Talent in ")) {
             filter.role = "talent";
-            // City-level targeting requires TalentProfile lookup — targeting all talent for now
         } else if (typeof audience === "string" && audience.startsWith("Organizations (")) {
             filter.role = "organization";
         }
-        // "All users" → no extra role filter
 
         const users = await User.find(filter).select("_id").lean();
 
+        // If zero recipients, keep existing behavior (do not enqueue empty jobs)
         if (!users.length) {
             return res.status(200).json({
                 success: true,
@@ -56,40 +60,41 @@ export const sendBroadcast = async (req: Request, res: Response): Promise<any> =
             });
         }
 
-        // ── Channel flags ────────────────────────────────────────────────────
-        // SMS and WhatsApp are restricted to "Urgent update" category only
-        const isUrgent  = category === "Urgent update";
+        // 3. Pre-flight Redis Health Check (Before creating audit log)
+        const redisAvailable = await isRedisHealthy(1500);
+        if (!redisAvailable) {
+            console.warn("[BroadcastController] Redis health check failed. Aborting broadcast enqueue.");
+            return res.status(503).json({
+                success: false,
+                message: "Queue service unavailable"
+            });
+        }
+
+        // 4. Determine Delivery State & Batching
+        const isUrgent = category === "Urgent update";
         const sendEmail = channels.email === true;
-        const sendSms   = isUrgent && channels.sms === true;
-        const sendWa    = isUrgent && channels.whatsapp === true;
+        const sendSms = isUrgent && channels.sms === true;
+        const sendWa = isUrgent && channels.whatsapp === true;
 
         const broadcastTitle = title?.trim() || `Vismaya: ${category}`;
 
-        // ── Dispatch notifications (in parallel, errors don't abort others) ──
-        const results = await Promise.allSettled(
-            users.map(user =>
-                notifyUser({
-                    recipientId:       user._id,
-                    type:              "broadcast",
-                    title:             broadcastTitle,
-                    message:           message.trim(),
-                    referenceType:     "Broadcast",
-                    sendEmailAlert:    sendEmail,
-                    sendSmsAlert:      sendSms,
-                    sendWhatsappAlert: sendWa
-                })
-            )
+        const isScheduled = Boolean(
+            scheduledFor &&
+            !isNaN(new Date(scheduledFor).getTime()) &&
+            new Date(scheduledFor).getTime() > Date.now()
         );
+        const initialStatus = isScheduled ? "Scheduled" : "Queued";
 
-        const succeeded = results.filter(r => r.status === "fulfilled" && (r as PromiseFulfilledResult<any>).value).length;
-        const failed    = results.length - succeeded;
+        const rawBatchSize = parseInt(process.env.BROADCAST_BATCH_SIZE || "50", 10);
+        const batchSize = Math.max(1, isNaN(rawBatchSize) ? 50 : rawBatchSize);
+        const totalBatches = Math.ceil(users.length / batchSize);
 
-        // Audit log for traceability
-        await logAdminAction({
-            adminId:    req.user?.userId,
-            action:     "SEND_BROADCAST",
+        // 5. Create Audit Log in Queued/Scheduled state
+        const auditLog = await AdminAuditLog.create({
+            adminId: req.user?.userId,
+            action: "SEND_BROADCAST",
             targetType: "Broadcast",
-            details:    `Broadcast to ${succeeded}/${users.length} users. Channels: inApp${sendEmail ? " + email" : ""}${sendSms ? " + SMS" : ""}${sendWa ? " + WhatsApp" : ""}. Audience: ${audience}`,
+            details: `Broadcast to ${users.length} users. Channels: inApp${sendEmail ? " + email" : ""}${sendSms ? " + SMS" : ""}${sendWa ? " + WhatsApp" : ""}. Audience: ${audience}`,
             meta: {
                 title: broadcastTitle,
                 message: message.trim(),
@@ -101,30 +106,98 @@ export const sendBroadcast = async (req: Request, res: Response): Promise<any> =
                     sms: sendSms,
                     whatsapp: sendWa
                 },
-                dispatched: succeeded,
+                status: initialStatus,
                 total: users.length,
-                status: "Sent"
+                totalRecipients: users.length,
+                succeeded: 0,
+                dispatched: 0,
+                failed: 0,
+                emailFailed: 0,
+                smsFailed: 0,
+                waFailed: 0,
+                inAppFailed: 0,
+                totalBatches,
+                completedBatches: 0,
+                failedBatches: 0,
+                scheduledFor: isScheduled ? new Date(scheduledFor).toISOString() : null,
+                sentAt: !isScheduled ? new Date().toISOString() : null,
+                createdAt: new Date().toISOString()
             }
         });
 
-        return res.status(200).json({
-            success:    true,
-            message:    `Broadcast dispatched to ${succeeded} user(s)${failed ? ` (${failed} failed)` : ""}`,
-            dispatched: succeeded,
-            failed,
-            total:      users.length,
+        // 6. Enqueue batch jobs into BullMQ
+        let enqueueResult;
+        try {
+            enqueueResult = await addBroadcastJob({
+                broadcastId: auditLog._id.toString(),
+                title: broadcastTitle,
+                message: message.trim(),
+                category,
+                audience,
+                channels: {
+                    inApp: true,
+                    email: sendEmail,
+                    sms: sendSms,
+                    whatsapp: sendWa
+                },
+                recipientUserIds: users.map((u: any) => u._id.toString()),
+                scheduledFor: isScheduled ? new Date(scheduledFor).toISOString() : null
+            });
+
+            // Explicitly ensure meta.totalBatches is set to actual enqueued batches
+            await AdminAuditLog.updateOne(
+                { _id: auditLog._id },
+                { $set: { "meta.totalBatches": enqueueResult.totalBatches } }
+            );
+        } catch (enqueueErr) {
+            console.error("[BroadcastController] Failed to enqueue broadcast batches:", enqueueErr);
+            // Revert state to Failed via atomic updateOne so no orphan "Queued" logs remain
+            await AdminAuditLog.updateOne(
+                { _id: auditLog._id },
+                {
+                    $set: {
+                        "meta.status": "Failed",
+                        "meta.failureReason": "Failed to enqueue jobs to Redis queue"
+                    }
+                }
+            );
+            return res.status(500).json({
+                success: false,
+                message: "Failed to queue broadcast for delivery"
+            });
+        }
+
+        // 7. Return HTTP 202 Accepted immediately
+        return res.status(202).json({
+            success: true,
+            message: isScheduled
+                ? `Broadcast scheduled for delivery to ${users.length} recipients`
+                : `Broadcast queued for delivery to ${users.length} recipients across ${totalBatches} batches`,
+            broadcastId: auditLog._id.toString(),
+            status: initialStatus,
+            totalRecipients: users.length,
+            totalBatches,
             channels: {
-                inApp:    true,
-                email:    sendEmail,
-                sms:      sendSms,
+                inApp: true,
+                email: sendEmail,
+                sms: sendSms,
                 whatsapp: sendWa
             },
             broadcast: {
-                title:     broadcastTitle,
-                message:   message.trim(),
+                id: auditLog._id.toString(),
+                _id: auditLog._id.toString(),
+                title: broadcastTitle,
+                message: message.trim(),
                 audience,
                 category,
-                sentAt:    new Date().toISOString()
+                status: initialStatus,
+                scheduledFor: isScheduled ? new Date(scheduledFor).toISOString() : null,
+                sentAt: null,
+                createdAt: auditLog.createdAt || new Date().toISOString(),
+                stats: {
+                    reachCount: users.length,
+                    readCount: 0
+                }
             }
         });
 
@@ -164,12 +237,13 @@ export const getBroadcasts = async (req: Request, res: Response): Promise<any> =
                 targetAudience: audience,
                 channels: channels.length > 0 ? channels : ["in_app"],
                 priority: meta.priority || "Normal",
-                status: "Sent",
-                sentAt: log.createdAt,
+                status: meta.status || "Sent",
+                sentAt: meta.sentAt || log.createdAt,
                 createdAt: log.createdAt,
-                recipientsCount: meta.dispatched || meta.total || 0,
+                recipientsCount: meta.dispatched ?? meta.succeeded ?? meta.total ?? 0,
+                deliveredCount: meta.dispatched ?? meta.succeeded ?? meta.total ?? 0,
                 stats: {
-                    reachCount: meta.dispatched || meta.total || 0,
+                    reachCount: meta.dispatched ?? meta.succeeded ?? meta.total ?? 0,
                     readCount: 0
                 }
             };
@@ -192,7 +266,7 @@ export const getBroadcasts = async (req: Request, res: Response): Promise<any> =
  */
 export const getBroadcastById = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { broadcastId } = req.params;
+        const broadcastId = String(req.params.broadcastId);
 
         const log: any = await AdminAuditLog.findById(broadcastId).lean();
         if (!log || (log.action !== "SEND_BROADCAST" && log.targetType !== "Broadcast")) {
@@ -217,11 +291,11 @@ export const getBroadcastById = async (req: Request, res: Response): Promise<any
             channels: channels.length > 0 ? channels : ["in_app"],
             priority: meta.priority || "Normal",
             status: meta.status || "Sent",
-            sentAt: log.createdAt,
+            sentAt: meta.sentAt || log.createdAt,
             createdAt: log.createdAt,
-            recipientsCount: meta.dispatched || meta.total || 0,
+            recipientsCount: meta.dispatched ?? meta.succeeded ?? meta.total ?? 0,
             stats: {
-                reachCount: meta.dispatched || meta.total || 0,
+                reachCount: meta.dispatched ?? meta.succeeded ?? meta.total ?? 0,
                 readCount: 0
             }
         };
@@ -240,39 +314,93 @@ export const getBroadcastById = async (req: Request, res: Response): Promise<any
 /**
  * PATCH /api/admin/broadcasts/:broadcastId
  * Updates a broadcast draft or scheduled announcement metadata.
+ * In-flight broadcasts (Queued or Processing) cannot be edited (returns 409).
  */
 export const updateBroadcast = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { broadcastId } = req.params;
-        const { title, message, audience, category, status } = req.body;
+        const broadcastId = String(req.params.broadcastId);
+        const { title, message, audience, category, status, scheduledFor } = req.body;
 
         const log: any = await AdminAuditLog.findById(broadcastId);
         if (!log) {
             return res.status(404).json({ success: false, message: "Broadcast not found" });
         }
 
-        log.meta = log.meta || {};
-        if (title) log.meta.title = title.trim();
-        if (message) {
-            log.meta.message = message.trim();
-            log.details = `Broadcast: ${message.trim().slice(0, 100)}`;
+        const currentStatus = log.meta?.status || "Sent";
+        if (currentStatus === "Queued" || currentStatus === "Processing") {
+            return res.status(409).json({
+                success: false,
+                message: "Cannot edit a broadcast while it is queued or actively being processed."
+            });
         }
-        if (audience) log.meta.audience = audience;
-        if (category) log.meta.category = category;
-        if (status) log.meta.status = status;
 
-        await log.save();
+        const updateSet: Record<string, any> = {
+            "meta.updatedAt": new Date().toISOString()
+        };
+
+        if (title !== undefined) {
+            updateSet["meta.title"] = title.trim();
+        }
+        if (message !== undefined) {
+            updateSet["meta.message"] = message.trim();
+            updateSet["details"] = `Broadcast: ${message.trim().slice(0, 100)}`;
+        }
+        if (audience !== undefined) {
+            updateSet["meta.audience"] = audience;
+        }
+        if (category !== undefined) {
+            updateSet["meta.category"] = category;
+        }
+        if (status !== undefined) {
+            updateSet["meta.status"] = status;
+        }
+
+        // Handle rescheduling for scheduled broadcast
+        if (scheduledFor !== undefined && currentStatus === "Scheduled") {
+            const newScheduledTime = new Date(scheduledFor).getTime();
+            if (!isNaN(newScheduledTime) && newScheduledTime > Date.now()) {
+                updateSet["meta.scheduledFor"] = new Date(scheduledFor).toISOString();
+                // Remove old delayed jobs and re-add with new delay
+                await removeBroadcastJobs(broadcastId, log.meta?.totalBatches || 50);
+
+                const filter: Record<string, unknown> = { status: "active" };
+                const aud = audience || log.meta?.audience || "All users";
+                if (aud === "All talent") filter.role = "talent";
+                else if (aud === "All organizations") filter.role = "organization";
+
+                const users = await User.find(filter).select("_id").lean();
+                if (users.length > 0) {
+                    await addBroadcastJob({
+                        broadcastId,
+                        title: title?.trim() || log.meta?.title || "Platform Announcement",
+                        message: message?.trim() || log.meta?.message || "",
+                        category: category || log.meta?.category || "Platform announcement",
+                        audience: aud,
+                        channels: log.meta?.channels || { inApp: true },
+                        recipientUserIds: users.map((u: any) => u._id.toString()),
+                        scheduledFor: new Date(scheduledFor).toISOString()
+                    });
+                }
+            }
+        }
+
+        // Strictly update specific paths using updateOne to avoid overwriting worker $inc counters
+        await AdminAuditLog.updateOne({ _id: broadcastId }, { $set: updateSet });
+
+        const updatedLog: any = await AdminAuditLog.findById(broadcastId).lean();
+        const updatedMeta = updatedLog?.meta || {};
 
         const updatedBroadcast = {
-            id: log._id.toString(),
-            _id: log._id.toString(),
-            title: log.meta.title || "Platform Announcement",
-            message: log.meta.message || log.details,
-            audience: log.meta.audience || "All users",
-            category: log.meta.category || "Platform announcement",
-            status: log.meta.status || "Sent",
-            createdAt: log.createdAt,
-            updatedAt: log.updatedAt
+            id: broadcastId,
+            _id: broadcastId,
+            title: updatedMeta.title || "Platform Announcement",
+            message: updatedMeta.message || updatedLog?.details,
+            audience: updatedMeta.audience || "All users",
+            category: updatedMeta.category || "Platform announcement",
+            status: updatedMeta.status || "Sent",
+            scheduledFor: updatedMeta.scheduledFor || null,
+            createdAt: updatedLog?.createdAt,
+            updatedAt: updatedMeta.updatedAt || new Date().toISOString()
         };
 
         return res.status(200).json({
@@ -290,15 +418,31 @@ export const updateBroadcast = async (req: Request, res: Response): Promise<any>
 /**
  * DELETE /api/admin/broadcasts/:broadcastId
  * Removes or cancels a broadcast announcement.
+ * In-flight broadcasts (Queued or Processing) cannot be deleted (returns 409).
  */
 export const deleteBroadcast = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { broadcastId } = req.params;
+        const broadcastId = String(req.params.broadcastId);
 
-        const deleted = await AdminAuditLog.findByIdAndDelete(broadcastId);
-        if (!deleted) {
+        const log: any = await AdminAuditLog.findById(broadcastId).lean();
+        if (!log) {
             return res.status(404).json({ success: false, message: "Broadcast not found" });
         }
+
+        const currentStatus = log.meta?.status || "Sent";
+        if (currentStatus === "Queued" || currentStatus === "Processing") {
+            return res.status(409).json({
+                success: false,
+                message: "Cannot delete a broadcast while it is queued or actively being processed."
+            });
+        }
+
+        // If it was Scheduled, remove delayed jobs from BullMQ queue
+        if (currentStatus === "Scheduled" || log.meta?.totalBatches) {
+            await removeBroadcastJobs(broadcastId, log.meta?.totalBatches || 50);
+        }
+
+        await AdminAuditLog.findByIdAndDelete(broadcastId);
 
         return res.status(200).json({
             success: true,

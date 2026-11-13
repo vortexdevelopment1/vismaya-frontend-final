@@ -5,6 +5,9 @@ import path from "node:path";
 import app from "./app.js";
 import connectDatabase from "./config/database.js";
 import { startDeadlineChecker, stopDeadlineChecker } from "./jobs/deadlineChecker.job.js";
+import { isRedisHealthy, closeRedisConnections } from "./config/redis.js";
+import { closeBroadcastQueue } from "./queues/broadcast.queue.js";
+import { startBroadcastWorker, stopBroadcastWorker } from "./workers/broadcast.worker.js";
 
 const PORT = process.env.PORT || 5000;
 
@@ -88,6 +91,20 @@ export const startServer = async (): Promise<void> => {
 
     await connectDatabase();
 
+    // Non-blocking Redis health check on startup
+    const redisOk = await isRedisHealthy();
+    if (redisOk) {
+        console.log("✅ Redis connection established for broadcast queue.");
+    } else {
+        console.warn("⚠️ Redis is offline or unreachable. Broadcast queue will return HTTP 503 if invoked.");
+    }
+
+    // Start embedded worker only if explicitly requested
+    if (process.env.BROADCAST_EMBEDDED_WORKER === "true") {
+        console.log("Starting broadcast worker in embedded mode (BROADCAST_EMBEDDED_WORKER=true)...");
+        startBroadcastWorker();
+    }
+
     startDeadlineChecker(60 * 60 * 1000); // Check hourly
 
     const server = app.listen(PORT, () => {
@@ -95,9 +112,25 @@ export const startServer = async (): Promise<void> => {
     });
 
     // Graceful shutdown handling
-    const gracefulShutdown = (signal: string) => {
+    const gracefulShutdown = async (signal: string) => {
         console.log(`Received ${signal}. Shutting down server gracefully...`);
         stopDeadlineChecker();
+
+        if (process.env.BROADCAST_EMBEDDED_WORKER === "true") {
+            try {
+                await stopBroadcastWorker();
+            } catch (err: any) {
+                console.error("Error stopping embedded broadcast worker:", err?.message || err);
+            }
+        }
+
+        try {
+            await closeBroadcastQueue();
+            await closeRedisConnections();
+        } catch (err: any) {
+            console.error("Error closing Redis connections:", err?.message || err);
+        }
+
         server.close(() => {
             console.log("HTTP server closed.");
             process.exit(0);

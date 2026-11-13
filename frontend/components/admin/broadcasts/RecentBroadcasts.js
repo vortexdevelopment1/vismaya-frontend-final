@@ -29,7 +29,24 @@ export default function RecentBroadcasts({
     const s = (status || "").toLowerCase();
     if (s === "sent" || s === "delivered") return "var(--ok, #34d399)";
     if (s === "scheduled") return "var(--gold, #ffbc00)";
+    if (s === "processing") return "#3b82f6";
+    if (s === "queued") return "#f59e0b";
+    if (s === "partially failed" || s === "partially_failed") return "#f59e0b";
+    if (s === "failed") return "#ef4444";
     return "var(--mu, #a3acc2)";
+  };
+
+  const getStatusLabel = (status) => {
+    if (!status) return "Sent";
+    const s = status.toLowerCase();
+    if (s === "scheduled") return "Scheduled";
+    if (s === "draft") return "Draft";
+    if (s === "queued") return "Queued";
+    if (s === "processing") return "Processing";
+    if (s === "partially failed" || s === "partially_failed") return "Partially Failed";
+    if (s === "failed") return "Failed";
+    if (s === "sent" || s === "delivered") return "Sent";
+    return status;
   };
 
   // Recent 5 broadcasts
@@ -98,7 +115,7 @@ export default function RecentBroadcasts({
               <span className={styles.n}>{Number(reachCount).toLocaleString()}</span>
               <span>
                 <span className={styles.chip} style={{ "--c": getStatusColor(bc.status) }}>
-                  {bc.status === "scheduled" ? "Scheduled" : bc.status === "draft" ? "Draft" : "Sent"}
+                  {getStatusLabel(bc.status)}
                 </span>
               </span>
               <div style={{ position: "relative" }}>

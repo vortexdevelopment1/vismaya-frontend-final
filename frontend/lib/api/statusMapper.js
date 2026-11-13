@@ -246,6 +246,10 @@ export const BROADCAST_STATUS_MAP = {
   sent: "Sent",
   cancelled: "Cancelled",
   failed: "Failed",
+  queued: "Queued",
+  processing: "Processing",
+  partially_failed: "Partially Failed",
+  "partially failed": "Partially Failed",
 };
 
 export const BROADCAST_BACKEND_STATUS_MAP = {
