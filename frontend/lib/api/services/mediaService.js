@@ -289,14 +289,19 @@ export const mediaService = {
    * @param {Object} options { type, title, isHeadshot }
    */
   async uploadAndRegisterMedia(file, options = {}) {
-    const uploadRes = await uploadMedia(file, options);
-    if (!uploadRes.success) return uploadRes;
+  const uploadRes = await uploadMedia(file, options);
 
-    return this.addMedia({
-      url: uploadRes.url,
-      type: options.type || "photo",
-      title: options.title || file.name || "Upload",
-      isHeadshot: options.isHeadshot || false,
-    });
-  },
+  if (!uploadRes.url || uploadRes.isFallback) {
+    return uploadRes;
+  }
+
+  return this.addMedia({
+    url: uploadRes.url,
+    objectKey: uploadRes.objectKey,
+    storageProvider: uploadRes.storageProvider,
+    type: options.type || "photo",
+    title: options.title || file.name || "Upload",
+    isHeadshot: options.isHeadshot || false,
+  });
+},
 };

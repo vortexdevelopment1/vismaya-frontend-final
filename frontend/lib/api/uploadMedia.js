@@ -261,10 +261,13 @@ export async function uploadMedia(fileOrConfig = {}, options = {}) {
           const rawItem = response.mediaItem || response.data || response;
           const mapped = mapMedia ? mapMedia(rawItem) : rawItem;
           resolve({
-            ...mapped,
-            url: rawItem.url || mapped?.url,
-            raw: rawItem,
-          });
+          ...mapped,
+          url: rawItem.url || mapped?.url,
+          objectKey: rawItem.objectKey,
+          storageProvider: rawItem.storageProvider,
+          publicId: rawItem.publicId,
+          raw: rawItem,
+});
         } catch (err) {
           reject(new ApiError("Invalid response from server.", xhr.status));
         }

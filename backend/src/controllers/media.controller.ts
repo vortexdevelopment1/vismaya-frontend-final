@@ -5,7 +5,14 @@ import TalentProfile from "../models/talentProfile.model.js";
 import Report from "../models/report.model.js";
 import { calculateProfileCompletion } from "../utils/profileCompletion.util.js";
 import { isSafeUrl } from "../utils/sanitize.util.js";
-import { uploadFileBuffer, generateSignedUploadParams } from "../services/cloudinary.service.js";
+import {
+    uploadFileBuffer,
+    generateSignedUploadParams
+} from "../services/cloudinary.service.js";
+import {
+    getRustFSPresignedUrl,
+    deleteFromRustFS
+} from "../services/rustfs.service.js";
 import mediaLimits from "../config/mediaLimits.js";
 
 /**
@@ -101,6 +108,8 @@ export const getUploadSignature = (req: Request, res: Response): any => {
 export const addMediaItem = async (req: Request, res: Response): Promise<any> => {
     try {
         const userId = req.user?.userId;
+        let storageProvider: "rustfs" | "cloudinary" | "external" | undefined;
+        let objectKey: string | undefined;
         let {
             mediaType,
             category,
@@ -117,6 +126,12 @@ export const addMediaItem = async (req: Request, res: Response): Promise<any> =>
             rightsConfirmed,
             contentHash
         } = req.body;
+
+        // Preserve RustFS metadata when registering an already-uploaded file
+if (req.body.objectKey && req.body.storageProvider === "rustfs") {
+    objectKey = req.body.objectKey;
+    storageProvider = "rustfs";
+}
 
         // Specification Rule: Rights confirmation is mandatory
         if (rightsConfirmed !== true && rightsConfirmed !== "true") {
@@ -151,7 +166,11 @@ export const addMediaItem = async (req: Request, res: Response): Promise<any> =>
             const isMain = isMainProfilePhoto === true || isMainProfilePhoto === "true";
             const folder = isMain ? "vismaya/profiles" : "vismaya/media";
             const uploadRes = await uploadFileBuffer(req.file, folder);
+
             url = uploadRes.url;
+            objectKey = uploadRes.objectKey;
+            storageProvider = "rustfs";
+
             mimeType = mimeType || req.file.mimetype;
             fileSizeBytes = fileSizeBytes || uploadRes.bytes;
             durationSeconds = durationSeconds || uploadRes.duration;
@@ -272,6 +291,8 @@ export const addMediaItem = async (req: Request, res: Response): Promise<any> =>
             title,
             description,
             url,
+            storageProvider: storageProvider || "external",
+            objectKey,
             thumbnailUrl,
             mimeType,
             fileSizeBytes,
@@ -331,12 +352,27 @@ export const getMyMedia = async (req: Request, res: Response): Promise<any> => {
         if (mediaType) filter.mediaType = mediaType;
         if (category) filter.category = category;
 
-        const mediaItems = await MediaItem.find(filter).sort({ displayOrder: 1, createdAt: -1 });
+                    const mediaItems = await MediaItem.find(filter).sort({
+                displayOrder: 1,
+                createdAt: -1
+            });
+
+            const updatedMediaItems = await Promise.all(
+                mediaItems.map(async (item) => {
+                    const media = item.toObject();
+
+                    if (media.storageProvider === "rustfs" && media.objectKey) {
+                        media.url = await getRustFSPresignedUrl(media.objectKey);
+                    }
+
+                    return media;
+                })
+            );
 
         res.status(200).json({
             success: true,
             count: mediaItems.length,
-            mediaItems
+            mediaItems: updatedMediaItems
         });
 
     } catch (error) {
@@ -370,12 +406,27 @@ export const getUserMedia = async (req: Request, res: Response): Promise<any> =>
             filter.visibility = "public";
         }
 
-        const mediaItems = await MediaItem.find(filter).sort({ displayOrder: 1, createdAt: -1 });
+       const mediaItems = await MediaItem.find(filter).sort({
+    displayOrder: 1,
+    createdAt: -1
+});
+
+const updatedMediaItems = await Promise.all(
+    mediaItems.map(async (item) => {
+        const media = item.toObject();
+
+        if (media.storageProvider === "rustfs" && media.objectKey) {
+            media.url = await getRustFSPresignedUrl(media.objectKey);
+        }
+
+        return media;
+    })
+);     
 
         res.status(200).json({
             success: true,
             count: mediaItems.length,
-            mediaItems
+            mediaItems: updatedMediaItems
         });
 
     } catch (error) {
@@ -466,6 +517,12 @@ export const deleteMediaItem = async (req: Request, res: Response): Promise<any>
             });
         }
 
+        // Delete the actual file from RustFS first
+        if (mediaItem.storageProvider === "rustfs" && mediaItem.objectKey) {
+            await deleteFromRustFS(mediaItem.objectKey);
+        }
+
+        // Delete the MongoDB record
         await MediaItem.findByIdAndDelete(String(mediaId));
 
         // If it was the main profile photo, clear it from TalentProfile

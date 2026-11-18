@@ -98,3 +98,5 @@ services:
         sync: false
       - key: BROADCAST_EMBEDDED_WORKER
         value: "true"
+
+

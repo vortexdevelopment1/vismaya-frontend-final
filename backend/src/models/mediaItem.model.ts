@@ -8,6 +8,8 @@ export interface IMediaItem extends Document {
     title?: string;
     description?: string;
     url: string;
+    storageProvider?: "rustfs" | "cloudinary" | "external";
+    objectKey?: string;
     thumbnailUrl?: string;
     mimeType?: string;
     fileSizeBytes?: number;
@@ -79,6 +81,16 @@ const mediaItemSchema = new Schema<IMediaItem>(
         url: {
             type: String,
             required: true,
+            trim: true
+        },
+
+        storageProvider: {
+            type: String,
+        enum: ["rustfs", "cloudinary", "external"]
+        },
+
+        objectKey: {
+            type: String,
             trim: true
         },
 

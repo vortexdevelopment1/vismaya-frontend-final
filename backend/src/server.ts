@@ -107,9 +107,9 @@ export const startServer = async (): Promise<void> => {
 
     startDeadlineChecker(60 * 60 * 1000); // Check hourly
 
-    const server = app.listen(PORT, () => {
-        console.log(`Vismaya backend running on http://localhost:${PORT}`);
-    });
+    const server = app.listen(Number(PORT), "0.0.0.0", () => {
+    console.log(`Vismaya backend running on port ${PORT}`);
+});
 
     // Graceful shutdown handling
     const gracefulShutdown = async (signal: string) => {

@@ -13,5 +13,9 @@
     "start:frontend": "npm --prefix frontend run start",
     "start:backend": "npm --prefix backend run start",
     "admin:create": "npm --prefix backend run create-admin"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1170.0",
+    "@aws-sdk/s3-request-presigner": "^3.1170.0"
   }
 }
