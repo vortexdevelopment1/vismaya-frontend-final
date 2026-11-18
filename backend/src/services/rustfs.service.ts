@@ -6,7 +6,11 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { rustfsClient, RUSTFS_BUCKET } from "../config/rustfs.js";
+import {
+  rustfsClient,
+  rustfsPublicClient,
+  RUSTFS_BUCKET,
+} from "../config/rustfs.js";
 import { randomUUID } from "crypto";
 import path from "path";
 
@@ -45,7 +49,7 @@ export const uploadToRustFS = async (
 
 export const getRustFSPresignedUrl = async (key: string) => {
   return getSignedUrl(
-    rustfsClient,
+    rustfsPublicClient,
     new GetObjectCommand({
       Bucket: RUSTFS_BUCKET,
       Key: key,

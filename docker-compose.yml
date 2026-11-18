@@ -5,7 +5,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: /api
+        NEXT_PUBLIC_API_URL: ""
     container_name: vismaya-frontend
     restart: unless-stopped
     expose:

@@ -44,11 +44,13 @@ export const resolveApiUrl = () => {
         if (remoteCandidate) return remoteCandidate;
       }
     }
+
+    
     return (process.env.NODE_ENV === "development"
       ? urls.find(u => u.includes("localhost") || u.includes("127.0.0.1")) || urls[0]
       : urls.find(u => !u.includes("localhost") && !u.includes("127.0.0.1")) || urls[0]);
   }
-  return (envUrl || "https://vismaya-frontend-final.onrender.com").replace(/\/+$/, "");
+  return (envUrl ?? "").replace(/\/+$/, "");
 };
 
 export const API_URL = resolveApiUrl();
